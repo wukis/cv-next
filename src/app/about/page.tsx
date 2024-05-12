@@ -55,18 +55,33 @@ export const metadata: Metadata = {
 export default function About() {
   return (
     <Container className="mt-10">
-      <div className="grid grid-cols-1 gap-y-16 lg:grid-cols-2 lg:grid-rows-[auto_1fr] lg:gap-y-12">
-        <div className="lg:pl-20">
-          <div className="max-w-xs px-2.5 lg:max-w-none">
+      <div className="grid grid-cols-12 gap-y-8 lg:gap-y-8">
+        <div className="col-span-4 lg:pl-20 md:order-2 md:mt-32">
+          <div className="max-w-xs px-2.5 lg:max-w-64">
             <Image
               src={portraitImage}
               alt=""
               sizes="(min-width: 1024px) 32rem, 20rem"
               className="scale-x-[-1] aspect-square rotate-3 rounded-2xl object-cover"
             />
+            <ul role="list" className="mt-8">
+              <SocialLink
+                  href="mailto:jonas@petrik.dev"
+                  icon={MailIcon}
+                  className="mt-4"
+              >
+                jonas@petrik.dev
+              </SocialLink>
+              <SocialLink href="#" icon={LinkedInIcon} className="mt-4">
+                Find me on LinkedIn
+              </SocialLink>
+              <SocialLink href="#" icon={GitHubIcon} className="mt-4">
+                Find me on GitHub
+              </SocialLink>
+            </ul>
           </div>
         </div>
-        <div className="lg:order-first lg:row-span-2">
+        <div className="col-span-8 bg-neutral-50/50 dark:bg-neutral-800/25 p-8">
           <h1 className="text-4xl font-bold tracking-tight text-neutral-800 sm:text-5xl dark:text-neutral-100">
             Hey there, a little bit about me
           </h1>
@@ -91,23 +106,6 @@ export default function About() {
               Thank you for visiting my page. Whether you're interested in potential collaborations or wish to exchange ideas, feel free to connect with me on LinkedIn or reach out directly through my contact details available here. I look forward to exploring how we can work together to create exceptional solutions that drive success.
             </p>
           </div>
-        </div>
-        <div className="lg:pl-20">
-          <ul role="list">
-            <SocialLink
-                href="mailto:jonas@petrik.dev"
-                icon={MailIcon}
-                className="mt-4"
-            >
-              jonas@petrik.dev
-            </SocialLink>
-            <SocialLink href="#" icon={LinkedInIcon} className="mt-4">
-              Find me on LinkedIn
-            </SocialLink>
-            <SocialLink href="#" icon={GitHubIcon} className="mt-4">
-              Find me on GitHub
-            </SocialLink>
-          </ul>
         </div>
       </div>
     </Container>

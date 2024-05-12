@@ -12,6 +12,17 @@ import portraitImage from '@/images/jonas-petrik-portrait.png'
 import recommendations from '@/data/recommendations.json'
 import linkedin from '@/data/linkedin.json'
 
+function MailIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
+    return (
+        <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+            <path
+                fillRule="evenodd"
+                d="M6 5a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3H6Zm.245 2.187a.75.75 0 0 0-.99 1.126l6.25 5.5a.75.75 0 0 0 .99 0l6.25-5.5a.75.75 0 0 0-.99-1.126L12 12.251 6.245 7.187Z"
+            />
+        </svg>
+    )
+}
+
 function Recommendations() {
   return (
       <div className="mx-auto mt-16 max-w-5xl">
@@ -83,6 +94,7 @@ export default async function Home() {
                 className="aspect-square rotate-3 rounded-2xl object-cover"
             />
             <div className="mt-4 flex gap-6">
+                <SocialLink href="mailto:jonas@petrik.dev" icon={MailIcon}  aria-label="Email me" />
                 <SocialLink href="https://www.linkedin.com/in/jonas-petrik/" target="_blank" aria-label="Find me on LinkedIn" icon={LinkedInIcon} />
                 <SocialLink href="https://github.com/wukis" target="_blank" aria-label="Find me on GitHub" icon={GitHubIcon} />
             </div>
