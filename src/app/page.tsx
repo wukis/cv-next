@@ -211,14 +211,20 @@ export default async function Home() {
   return (
     <>
       <Container className="mt-9">
-        <div className="flex flex-col md:flex-row gap-6">
-          <div className="flex-1 max-w-xs px-2.5 lg:max-w-1xl">
+        <div className="flex flex-col md:flex-row gap-16">
+          <div className="flex-1 max-w-xs px-2.5 lg:max-w-52">
             <Image
                 src={portraitImage}
                 alt=""
                 sizes="(min-width: 1024px) 32rem, 20rem"
                 className="aspect-square rotate-3 rounded-2xl bg-neutral-100 object-cover dark:bg-neutral-800"
             />
+            <div className="mt-4 flex gap-6">
+              <SocialLink href="#" aria-label="Follow on X" icon={XIcon} />
+              <SocialLink href="#" aria-label="Follow on Instagram" icon={InstagramIcon} />
+              <SocialLink href="#" aria-label="Follow on GitHub" icon={GitHubIcon} />
+              <SocialLink href="#" aria-label="Follow on LinkedIn" icon={LinkedInIcon} />
+            </div>
           </div>
           <div className="flex-1">
             <h1 className="text-4xl font-bold tracking-tight text-neutral-800 sm:text-5xl dark:text-neutral-100">
@@ -229,12 +235,6 @@ export default async function Home() {
             </p>
           </div>
 
-        </div>
-        <div className="mt-6 flex gap-6">
-          <SocialLink href="#" aria-label="Follow on X" icon={XIcon} />
-          <SocialLink href="#" aria-label="Follow on Instagram" icon={InstagramIcon} />
-          <SocialLink href="#" aria-label="Follow on GitHub" icon={GitHubIcon} />
-          <SocialLink href="#" aria-label="Follow on LinkedIn" icon={LinkedInIcon} />
         </div>
       </Container>
       <Container className="mt-24 md:mt-28">
