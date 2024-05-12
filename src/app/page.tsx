@@ -1,3 +1,4 @@
+'use client';
 import Image from 'next/image'
 import Link from 'next/link'
 import { Container } from '@/components/Container'
@@ -11,6 +12,7 @@ import { type RecommendationInterface } from '@/lib/recommendations'
 import portraitImage from '@/images/jonas-petrik-portrait.png'
 import recommendations from '@/data/recommendations.json'
 import linkedin from '@/data/linkedin.json'
+import {useState} from "react";
 
 function MailIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
     return (
@@ -24,23 +26,38 @@ function MailIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
 }
 
 function Recommendations() {
-  return (
-      <div className="mx-auto mt-16 max-w-5xl">
-        <div className="mx-auto max-w-xl text-center">
-          <h2 className="text-4xl font-bold tracking-tight text-neutral-800 sm:text-5xl dark:text-neutral-100">Recommendations</h2>
-        </div>
-        <div className="mx-auto mt-12 flow-root max-w-2xl lg:mx-0 lg:max-w-none">
-          <div className="-mt-8 sm:-mx-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {recommendations.map((recommendation, recommendationIndex) => (
-                <div key={recommendationIndex} className="sm:inline-block sm:w-full">
-                  <Recommendation recommendation={recommendation} />
+    const [showAll, setShowAll] = useState(false);
+
+    const displayedRecommendations = showAll ? recommendations : recommendations.slice(0, 6);
+
+    return (
+        <div className="mx-auto mt-16 max-w-5xl">
+            <div className="mx-auto max-w-xl text-center">
+                <h2 className="text-4xl font-bold tracking-tight text-neutral-800 sm:text-5xl dark:text-neutral-100">Recommendations</h2>
+            </div>
+            <div className="mx-auto mt-12 flow-root max-w-2xl lg:mx-0 lg:max-w-none">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {displayedRecommendations.map((recommendation, index) => (
+                        <div key={index} className="pt-4">
+                            <Recommendation recommendation={recommendation} />
+                        </div>
+                    ))}
                 </div>
-            ))}
-          </div>
+                {recommendations.length > 6 && !showAll && (
+                    <div className="text-right mt-4">
+                        <button
+                            className="rounded bg-white/25 px-3 py-2 text-sm font-medium text-neutral-800 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-900/5 backdrop-blur hover:bg-neutral-100 dark:bg-neutral-800/25 dark:text-neutral-200 dark:ring-white/10 dark:hover:bg-neutral-700"
+                            onClick={() => setShowAll(true)}
+                        >
+                            Show All ({recommendations.length})
+                        </button>
+                    </div>
+                )}
+            </div>
         </div>
-      </div>
-  )
+    );
 }
+
 
 function SocialLink({
   icon: Icon,
