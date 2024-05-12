@@ -1,10 +1,12 @@
 'use client';
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { Footer } from '@/components/Footer';
 import { Header } from '@/components/Header';
-import Particles, { initParticlesEngine } from "@tsparticles/react";
+import { initParticlesEngine } from "@tsparticles/react";
 import { loadAll } from "@tsparticles/all";
 import { type Container, type ISourceOptions } from "@tsparticles/engine";
+
+const Particles = lazy(() => import("@tsparticles/react").then(module => ({ default: module.Particles })));
 
 export function Layout({ children }: { children: React.ReactNode }) {
     const [init, setInit] = useState(false);
@@ -100,12 +102,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
     return (
         <>
             {init && (
-                <Particles
-                    id="tsparticles"
-                    options={options}
-                    particlesLoaded={particlesLoaded}
-                    className="fixed inset-0 z-0"
-                />
+                <Suspense fallback={<div className="fixed inset-0 z-0"></div>}>
+                    <Particles
+                        id="tsparticles"
+                        options={options}
+                        particlesLoaded={particlesLoaded}
+                        className="fixed inset-0 z-0"
+                    />
+                </Suspense>
             )}
             <div className="relative z-10 flex w-full flex-col">
                 <Header />
