@@ -14,7 +14,7 @@ import linkedin from '@/data/linkedin.json'
 
 function Recommendations() {
   return (
-      <div className="mx-auto mt-16 max-w-7xl px-6 lg:px-8">
+      <div className="mx-auto mt-16 max-w-5xl">
         <div className="mx-auto max-w-xl text-center">
           <h2 className="text-4xl font-bold tracking-tight text-neutral-800 sm:text-5xl dark:text-neutral-100">Recommendations</h2>
         </div>
@@ -60,7 +60,7 @@ function Recommendation({ recommendation }: { recommendation: RecommendationInte
             />
             <div>
               <div className="font-semibold">{recommendation.fullName}</div>
-              <div className="font-light">{recommendation.position}</div>
+              <div className="font-light line-clamp-1">{recommendation.position}</div>
               <div className="font-light">{recommendation.date}</div>
             </div>
           </figcaption>
