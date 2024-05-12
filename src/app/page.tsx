@@ -30,9 +30,9 @@ function Recommendations() {
           <h2 className="text-4xl font-bold tracking-tight text-neutral-800 sm:text-5xl dark:text-neutral-100">Recommendations</h2>
         </div>
         <div className="mx-auto mt-12 flow-root max-w-2xl lg:mx-0 lg:max-w-none">
-          <div className="-mt-8 sm:-mx-4 sm:columns-2 sm:text-[0] lg:columns-3">
+          <div className="-mt-8 sm:-mx-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {recommendations.map((recommendation, recommendationIndex) => (
-                <div key={recommendationIndex} className="pt-4 sm:inline-block sm:w-full sm:px-4">
+                <div key={recommendationIndex} className="sm:inline-block sm:w-full">
                   <Recommendation recommendation={recommendation} />
                 </div>
             ))}
