@@ -73,7 +73,7 @@ function Recommendation({ recommendation }: { recommendation: RecommendationInte
 export default async function Home() {
   return (
     <>
-      <Container className="mt-9">
+      <Container className="mt-10">
         <div className="flex flex-col md:flex-row gap-8 items-center">
           <div className="flex-1 max-w-xs px-2.5 lg:max-w-52 items-center">
             <Image
