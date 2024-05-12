@@ -10,7 +10,7 @@ import {
   LinkedInIcon,
   XIcon,
 } from '@/components/SocialIcons'
-import portraitImage from '@/images/jonas-petrik-portrait.png'
+import portraitImage from '@/images/jonas-petrik-portrait-2.jpg'
 
 function SocialLink({
   className,
@@ -62,7 +62,7 @@ export default function About() {
               src={portraitImage}
               alt=""
               sizes="(min-width: 1024px) 32rem, 20rem"
-              className="scale-x-[-1] aspect-square rotate-3 rounded-2xl object-cover"
+              className="aspect-square rotate-3 rounded-2xl object-cover"
             />
             <ul role="list" className="mt-8 px-6">
               <SocialLink

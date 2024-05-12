@@ -43,20 +43,21 @@ function Recommendations() {
                         </div>
                     ))}
                 </div>
-                {recommendations.length > 6 && !showAll && (
-                    <div className="text-right mt-4">
+                <div className="text-right mt-4">
+                    {recommendations.length > 6 && (
                         <button
                             className="rounded bg-white/25 px-3 py-2 text-sm font-medium text-neutral-800 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-900/5 backdrop-blur hover:bg-neutral-100 dark:bg-neutral-800/25 dark:text-neutral-200 dark:ring-white/10 dark:hover:bg-neutral-700"
-                            onClick={() => setShowAll(true)}
+                            onClick={() => setShowAll(!showAll)}
                         >
-                            Show All ({recommendations.length})
+                            {showAll ? `Show Less` : `Show All (${recommendations.length})`}
                         </button>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </div>
     );
 }
+
 
 
 function SocialLink({
@@ -85,7 +86,7 @@ function Recommendation({ recommendation }: { recommendation: RecommendationInte
                 className="h-18 w-18 rounded"
                 width={40}
                 height={40}
-                src={require(`@/images/photos/${recommendation.image}`).default}
+                src={require(`@/images/recommendations/${recommendation.image}`).default}
                 alt={recommendation.fullName}
             />
             <div>
