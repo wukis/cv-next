@@ -25,7 +25,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         () => ({
                 particles: {
                     color: {
-                        value: "#1e40af",
+                        value: "#2563eb",
                         animation: {
                             enable: true,
                             speed: 10
