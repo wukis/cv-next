@@ -20,6 +20,7 @@ import { type RecommendationInterface } from '@/lib/recommendations'
 import { formatDate } from '@/lib/formatDate'
 import portraitImage from '@/images/jonas-petrik-portrait.png'
 import recommendations from '@/data/recommendations.json'
+import linkedin from '@/data/linkedin.json'
 
 function MailIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
@@ -275,10 +276,10 @@ export default async function Home() {
           </div>
           <div className="p-8 flex-1 bg-neutral-50/50 dark:bg-neutral-800/50">
             <h1 className="text-4xl font-bold tracking-tight text-neutral-800 sm:text-5xl dark:text-neutral-100">
-              Software designer, founder, and amateur astronaut.
+              { linkedin.basics.label }
             </h1>
             <p className="mt-6 text-base text-neutral-600 dark:text-neutral-400">
-              I’m Spencer, a software designer and entrepreneur based in New York City. I’m the founder and CEO of Planetaria, where we develop technologies that empower regular people to explore space on their own terms.
+              { linkedin.basics.summary }
             </p>
           </div>
 

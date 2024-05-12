@@ -2,17 +2,17 @@ import { type Metadata } from 'next'
 
 import { Providers } from '@/app/providers'
 import { Layout } from '@/components/Layout'
+import linkedin from '@/data/linkedin.json'
 
 import '@/styles/tailwind.css'
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | Jonas Petrik',
+    template: '%s | ' + linkedin.basics.name,
     default:
-      'Jonas Petrik - Software designer, founder, and amateur astronaut',
+    linkedin.basics.name + ' - ' + linkedin.basics.label,
   },
-  description:
-    'Hello, I\'m Jonas Petrik and I\'m a passionate and creative full stack web developer who specializes in Javascript and PHP.',
+  description: linkedin.basics.summary,
   alternates: {
     types: {
       'application/rss+xml': `${process.env.NEXT_PUBLIC_SITE_URL}/feed.xml`,
