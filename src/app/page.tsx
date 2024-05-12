@@ -81,10 +81,8 @@ export default async function Home() {
                 className="aspect-square rotate-3 rounded-2xl object-cover"
             />
             <div className="mt-4 flex gap-6">
-              <SocialLink href="#" aria-label="Follow on X" icon={XIcon} />
-              <SocialLink href="#" aria-label="Follow on Instagram" icon={InstagramIcon} />
-              <SocialLink href="#" aria-label="Follow on GitHub" icon={GitHubIcon} />
-              <SocialLink href="https://www.linkedin.com/in/jonas-petrik/" target="_blank" aria-label="Follow on LinkedIn" icon={LinkedInIcon} />
+                <SocialLink href="https://www.linkedin.com/in/jonas-petrik/" target="_blank" aria-label="Find me on LinkedIn" icon={LinkedInIcon} />
+                <SocialLink href="https://github.com/wukis" target="_blank" aria-label="Find me on GitHub" icon={GitHubIcon} />
             </div>
           </div>
           <div className="p-8 flex-1 bg-neutral-50/50 dark:bg-neutral-800/50">
