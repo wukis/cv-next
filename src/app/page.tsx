@@ -162,7 +162,7 @@ function Recommendation({ recommendation }: { recommendation: RecommendationInte
             <p>{`“${recommendation.body}”`}</p>
           </blockquote>
           <figcaption className="mt-6 flex items-center gap-x-4">
-            <img className="h-10 w-10 rounded" src={recommendation.imageUrl} alt={recommendation.fullName} />
+            <Image className="h-10 w-10 rounded" src={recommendation.imageUrl} alt={recommendation.fullName} />
             <div>
               <div className="font-semibold">{recommendation.fullName}</div>
             </div>
