@@ -162,7 +162,7 @@ function Recommendation({ recommendation }: { recommendation: RecommendationInte
             <p>{`“${recommendation.body}”`}</p>
           </blockquote>
           <figcaption className="mt-6 flex items-center gap-x-4">
-            <Image className="h-10 w-10 rounded" src={recommendation.imageUrl} alt={recommendation.fullName} />
+            <img className="h-10 w-10 rounded" src={recommendation.imageUrl} alt={recommendation.fullName} />
             <div>
               <div className="font-semibold">{recommendation.fullName}</div>
             </div>
@@ -280,7 +280,7 @@ export default async function Home() {
               <SocialLink href="#" aria-label="Follow on X" icon={XIcon} />
               <SocialLink href="#" aria-label="Follow on Instagram" icon={InstagramIcon} />
               <SocialLink href="#" aria-label="Follow on GitHub" icon={GitHubIcon} />
-              <SocialLink href="#" aria-label="Follow on LinkedIn" icon={LinkedInIcon} />
+              <SocialLink href="https://www.linkedin.com/in/jonas-petrik/" target="_blank" aria-label="Follow on LinkedIn" icon={LinkedInIcon} />
             </div>
           </div>
           <div className="flex-1">
