@@ -55,8 +55,8 @@ export const metadata: Metadata = {
 export default function About() {
   return (
     <Container className="mt-10">
-      <div className="grid grid-cols-12 gap-y-8 lg:gap-y-8">
-        <div className="col-span-4 lg:pl-20 md:order-2 md:mt-32">
+      <div className="md:grid md:grid-cols-12 gap-y-8 lg:gap-y-8">
+        <div className="md:col-span-4 lg:pl-20 md:order-2 md:mt-32">
           <div className="max-w-xs px-2.5 lg:max-w-64">
             <Image
               src={portraitImage}
@@ -64,7 +64,7 @@ export default function About() {
               sizes="(min-width: 1024px) 32rem, 20rem"
               className="scale-x-[-1] aspect-square rotate-3 rounded-2xl object-cover"
             />
-            <ul role="list" className="mt-8">
+            <ul role="list" className="mt-8 px-6">
               <SocialLink
                   href="mailto:jonas@petrik.dev"
                   icon={MailIcon}
@@ -81,11 +81,11 @@ export default function About() {
             </ul>
           </div>
         </div>
-        <div className="col-span-8 bg-neutral-50/50 dark:bg-neutral-800/25 p-8">
+        <div className="md:col-span-8 bg-neutral-50/50 dark:bg-neutral-800/25 p-8">
           <h1 className="text-4xl font-bold tracking-tight text-neutral-800 sm:text-5xl dark:text-neutral-100">
             Hey there, a little bit about me
           </h1>
-          <div className="mt-6 space-y-7 text-base text-neutral-600 dark:text-neutral-400">
+          <div className="mt-6 space-y-7 text-base text-neutral-800 dark:text-neutral-200">
             <p>
               Welcome! I'm Jonas Petrik, a Senior Software Engineer and Team Lead with a profound passion for developing software solutions that not only meet the immediate needs of our clients but are also designed to be scalable and future-proof. My professional journey has been defined by a blend of technical expertise and leadership roles, primarily focused on PHP, JavaScript, Go, and various other technologies. Dive into my portfolio at petrik.dev to explore my work and the impact it has had across various industries.
             </p>
@@ -99,7 +99,7 @@ export default function About() {
             </p>
 
             <p>
-              I am also an avid learner and a mentor. I believe in the continuous exchange of knowledge and experiences to foster a learning environment that benefits both my team members and myself. My multilingual proficiency in English, German, Russian, and Lithuanian has enabled me to work effectively in diverse cultural environments and has enriched my personal and professional experiences.
+              I am also an avid learner and a mentor. I believe in the continuous exchange of knowledge and experiences to foster a learning environment that benefits both my team members and myself.
             </p>
 
             <p>
