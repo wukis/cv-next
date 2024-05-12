@@ -16,6 +16,7 @@ import logoFacebook from '@/images/logos/facebook.svg'
 import logoPlanetaria from '@/images/logos/planetaria.svg'
 import logoStarbucks from '@/images/logos/starbucks.svg'
 import { type ArticleWithSlug, getAllArticles } from '@/lib/articles'
+import { type RecommendationInterface } from '@/lib/recommendations'
 import { formatDate } from '@/lib/formatDate'
 import portraitImage from '@/images/jonas-petrik-portrait.png'
 
@@ -78,6 +79,46 @@ function ArrowDownIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   )
 }
 
+function Recommendations() {
+  const recommendations: Array<RecommendationInterface> = [
+    {
+      fullName: 'Leslie Alexander',
+      imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
+      body: 'Laborum quis quam. Dolorum et ut quod quia. Voluptas numquam delectus nihil. Aut enim doloremque et ipsam.',
+      date: '2019'
+    },
+    {
+      fullName: 'Leslie Alexander',
+      imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
+      body: 'Laborum quis quam. Dolorum et ut quod quia. Voluptas numquam delectus nihil. Aut enim doloremque et ipsam.',
+      date: '2019'
+    },
+    {
+      fullName: 'Leslie Alexander',
+      imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
+      body: 'Laborum quis quam. Dolorum et ut quod quia. Voluptas numquam delectus nihil. Aut enim doloremque et ipsam.',
+      date: '2019'
+    }
+  ]
+
+  return (
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="mx-auto max-w-xl text-center">
+          <h2 className="text-4xl font-semibold">Recommendations</h2>
+        </div>
+        <div className="mx-auto mt-16 flow-root max-w-2xl sm:mt-20 lg:mx-0 lg:max-w-none">
+          <div className="-mt-8 sm:-mx-4 sm:columns-2 sm:text-[0] lg:columns-3">
+            {recommendations.map((recommendation, recommendationIndex) => (
+                <div key={recommendationIndex} className="pt-8 sm:inline-block sm:w-full sm:px-4">
+                  <Recommendation recommendation={recommendation} />
+                </div>
+            ))}
+          </div>
+        </div>
+      </div>
+  )
+}
+
 function Article({ article }: { article: ArticleWithSlug }) {
   return (
     <Card as="article">
@@ -112,6 +153,22 @@ interface Role {
   logo: ImageProps['src']
   start: string | { label: string; dateTime: string }
   end: string | { label: string; dateTime: string }
+}
+
+function Recommendation({ recommendation }: { recommendation: RecommendationInterface }) {
+  return (
+        <figure className="rounded p-8 text-sm leading-6">
+          <blockquote>
+            <p>{`“${recommendation.body}”`}</p>
+          </blockquote>
+          <figcaption className="mt-6 flex items-center gap-x-4">
+            <img className="h-10 w-10 rounded" src={recommendation.imageUrl} alt={recommendation.fullName} />
+            <div>
+              <div className="font-semibold">{recommendation.fullName}</div>
+            </div>
+          </figcaption>
+        </figure>
+  )
 }
 
 function Role({ role }: { role: Role }) {
@@ -237,6 +294,7 @@ export default async function Home() {
 
         </div>
       </Container>
+      <Recommendations />
       <Container className="mt-24 md:mt-28">
         <div className="mx-auto grid max-w-xl grid-cols-1 gap-y-20 lg:max-w-none lg:grid-cols-2">
           <div className="flex flex-col gap-16">
