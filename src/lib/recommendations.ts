@@ -1,7 +1,8 @@
 export interface RecommendationInterface {
     fullName: string
-    imageUrl: string
-    body: string
+    position: string
     date: string
+    body: string
+    image: string
 }
 

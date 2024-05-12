@@ -19,6 +19,7 @@ import { type ArticleWithSlug, getAllArticles } from '@/lib/articles'
 import { type RecommendationInterface } from '@/lib/recommendations'
 import { formatDate } from '@/lib/formatDate'
 import portraitImage from '@/images/jonas-petrik-portrait.png'
+import recommendations from '@/data/recommendations.json'
 
 function MailIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
@@ -80,36 +81,15 @@ function ArrowDownIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
 }
 
 function Recommendations() {
-  const recommendations: Array<RecommendationInterface> = [
-    {
-      fullName: 'Leslie Alexander',
-      imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-      body: 'Laborum quis quam. Dolorum et ut quod quia. Voluptas numquam delectus nihil. Aut enim doloremque et ipsam.',
-      date: '2019'
-    },
-    {
-      fullName: 'Leslie Alexander',
-      imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-      body: 'Laborum quis quam. Dolorum et ut quod quia. Voluptas numquam delectus nihil. Aut enim doloremque et ipsam.',
-      date: '2019'
-    },
-    {
-      fullName: 'Leslie Alexander',
-      imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-      body: 'Laborum quis quam. Dolorum et ut quod quia. Voluptas numquam delectus nihil. Aut enim doloremque et ipsam.',
-      date: '2019'
-    }
-  ]
-
   return (
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+      <div className="mx-auto mt-16 max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-xl text-center">
-          <h2 className="text-4xl font-semibold">Recommendations</h2>
+          <h2 className="text-4xl font-bold tracking-tight text-neutral-800 sm:text-5xl dark:text-neutral-100">Recommendations</h2>
         </div>
-        <div className="mx-auto mt-16 flow-root max-w-2xl sm:mt-20 lg:mx-0 lg:max-w-none">
+        <div className="mx-auto mt-12 flow-root max-w-2xl lg:mx-0 lg:max-w-none">
           <div className="-mt-8 sm:-mx-4 sm:columns-2 sm:text-[0] lg:columns-3">
             {recommendations.map((recommendation, recommendationIndex) => (
-                <div key={recommendationIndex} className="pt-8 sm:inline-block sm:w-full sm:px-4">
+                <div key={recommendationIndex} className="pt-4 sm:inline-block sm:w-full sm:px-4">
                   <Recommendation recommendation={recommendation} />
                 </div>
             ))}
@@ -157,16 +137,26 @@ interface Role {
 
 function Recommendation({ recommendation }: { recommendation: RecommendationInterface }) {
   return (
-        <figure className="rounded p-8 text-sm leading-6">
+        <figure className="rounded p-8 text-sm leading-6 bg-neutral-50/50 dark:bg-neutral-800/50">
           <blockquote>
-            <p>{`“${recommendation.body}”`}</p>
+            <p className="line-clamp-6">{`“${recommendation.body}”`}</p>
           </blockquote>
           <figcaption className="mt-6 flex items-center gap-x-4">
-            <img className="h-10 w-10 rounded" src={recommendation.imageUrl} alt={recommendation.fullName} />
+            <Image
+                className="h-15 w-15 rounded"
+                width={50}
+                height={50}
+                src={require(`@/images/photos/${recommendation.image}`).default}
+                alt={recommendation.fullName}
+            />
             <div>
               <div className="font-semibold">{recommendation.fullName}</div>
+              <div className="font-light">{recommendation.position}</div>
+              <div className="font-light">{recommendation.date}</div>
             </div>
           </figcaption>
+
+
         </figure>
   )
 }
@@ -283,7 +273,7 @@ export default async function Home() {
               <SocialLink href="https://www.linkedin.com/in/jonas-petrik/" target="_blank" aria-label="Follow on LinkedIn" icon={LinkedInIcon} />
             </div>
           </div>
-          <div className="flex-1">
+          <div className="p-8 flex-1 bg-neutral-50/50 dark:bg-neutral-800/50">
             <h1 className="text-4xl font-bold tracking-tight text-neutral-800 sm:text-5xl dark:text-neutral-100">
               Software designer, founder, and amateur astronaut.
             </h1>
@@ -295,18 +285,6 @@ export default async function Home() {
         </div>
       </Container>
       <Recommendations />
-      <Container className="mt-24 md:mt-28">
-        <div className="mx-auto grid max-w-xl grid-cols-1 gap-y-20 lg:max-w-none lg:grid-cols-2">
-          <div className="flex flex-col gap-16">
-            {articles.map((article) => (
-              <Article key={article.slug} article={article} />
-            ))}
-          </div>
-          <div className="space-y-10 lg:pl-16 xl:pl-24">
-            <Resume />
-          </div>
-        </div>
-      </Container>
     </>
   )
 }
