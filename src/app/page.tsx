@@ -46,13 +46,13 @@ function SocialLink({
 
 function Recommendation({ recommendation }: { recommendation: RecommendationInterface }) {
   return (
-        <figure className="rounded p-8 text-sm leading-6 bg-neutral-50/50 dark:bg-neutral-800/50">
+        <figure className="rounded p-8 text-sm leading-6 bg-neutral-50/50 dark:bg-neutral-800/25">
           <blockquote>
             <p className="line-clamp-6">{`“${recommendation.body}”`}</p>
           </blockquote>
           <figcaption className="mt-6 flex items-center gap-x-4">
             <Image
-                className="h-15 w-15 rounded"
+                className="h-15 w-15 roundeds"
                 width={50}
                 height={50}
                 src={require(`@/images/photos/${recommendation.image}`).default}
@@ -85,7 +85,7 @@ export default async function Home() {
                 <SocialLink href="https://github.com/wukis" target="_blank" aria-label="Find me on GitHub" icon={GitHubIcon} />
             </div>
           </div>
-          <div className="p-8 flex-1 bg-neutral-50/50 dark:bg-neutral-800/50">
+          <div className="p-8 flex-1 bg-neutral-50/50 dark:bg-neutral-800/25">
             <h1 className="text-4xl font-bold tracking-tight text-neutral-800 sm:text-5xl dark:text-neutral-100">
               { linkedin.basics.label }
             </h1>
