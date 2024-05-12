@@ -217,7 +217,7 @@ export default async function Home() {
                 src={portraitImage}
                 alt=""
                 sizes="(min-width: 1024px) 32rem, 20rem"
-                className="aspect-square rotate-3 rounded-2xl bg-neutral-100 object-cover dark:bg-neutral-800"
+                className="aspect-square rotate-3 rounded-2xl object-cover"
             />
             <div className="mt-4 flex gap-6">
               <SocialLink href="#" aria-label="Follow on X" icon={XIcon} />

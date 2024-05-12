@@ -63,7 +63,7 @@ export default function About() {
               src={portraitImage}
               alt=""
               sizes="(min-width: 1024px) 32rem, 20rem"
-              className="scale-x-[-1] aspect-square rotate-3 rounded-2xl bg-neutral-100 object-cover dark:bg-neutral-800"
+              className="scale-x-[-1] aspect-square rotate-3 rounded-2xl object-cover"
             />
           </div>
         </div>

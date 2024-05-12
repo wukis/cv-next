@@ -67,7 +67,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                         value: 0
                     },
                     opacity: {
-                        value: 0.4
+                        value: 0.3
                     },
                     shape: {
                         type: "circle"
