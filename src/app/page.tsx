@@ -50,20 +50,22 @@ function Recommendation({ recommendation }: { recommendation: RecommendationInte
           <blockquote>
             <p className="line-clamp-6">{`“${recommendation.body}”`}</p>
           </blockquote>
+            <div className="font-light text-xs italic text-right">{recommendation.date}</div>
+
           <figcaption className="mt-6 flex items-center gap-x-4">
             <Image
-                className="h-15 w-15 roundeds"
-                width={50}
-                height={50}
+                className="h-18 w-18 rounded"
+                width={40}
+                height={40}
                 src={require(`@/images/photos/${recommendation.image}`).default}
                 alt={recommendation.fullName}
             />
             <div>
               <div className="font-semibold">{recommendation.fullName}</div>
               <div className="font-light line-clamp-1">{recommendation.position}</div>
-              <div className="font-light">{recommendation.date}</div>
             </div>
           </figcaption>
+
         </figure>
   )
 }
@@ -72,8 +74,8 @@ export default async function Home() {
   return (
     <>
       <Container className="mt-9">
-        <div className="flex flex-col md:flex-row gap-16">
-          <div className="flex-1 max-w-xs px-2.5 lg:max-w-52">
+        <div className="flex flex-col md:flex-row gap-16 items-center">
+          <div className="flex-1 max-w-xs px-2.5 lg:max-w-52 items-center">
             <Image
                 src={portraitImage}
                 alt=""
