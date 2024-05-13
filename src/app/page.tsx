@@ -116,7 +116,7 @@ export default async function Home() {
           </div>
           <div className="p-8 flex-1 bg-neutral-50/50 dark:bg-neutral-800/25">
             <h1 className="text-4xl font-bold tracking-tight text-neutral-800 sm:text-5xl dark:text-neutral-100">
-              I'm {linkedin.basics.name} - { linkedin.basics.label }
+              I&apos;m {linkedin.basics.name} - { linkedin.basics.label }
             </h1>
             <p className="mt-6 text-base text-neutral-600 dark:text-neutral-400">
               { linkedin.basics.summary }

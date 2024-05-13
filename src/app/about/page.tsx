@@ -87,15 +87,15 @@ export default function About() {
           </h1>
           <div className="mt-6 space-y-7 text-base text-neutral-800 dark:text-neutral-200">
             <p>
-              Welcome! I'm Jonas Petrik, a Senior Software Engineer and Team Lead with a profound passion for developing software solutions that not only meet the immediate needs of our clients but are also designed to be scalable and future-proof. My professional journey has been defined by a blend of technical expertise and leadership roles, primarily focused on PHP, JavaScript, Go, and various other technologies. Dive into my portfolio at petrik.dev to explore my work and the impact it has had across various industries.
+              Welcome! I&apos;m Jonas Petrik, a Senior Software Engineer and Team Lead with a profound passion for developing software solutions that not only meet the immediate needs of our clients but are also designed to be scalable and future-proof. My professional journey has been defined by a blend of technical expertise and leadership roles, primarily focused on PHP, JavaScript, Go, and various other technologies. Dive into my portfolio at petrik.dev to explore my work and the impact it has had across various industries.
             </p>
 
             <p>
-              Born in Lithuania and currently based in Germany, I've had the privilege of leading development teams at renowned tech firms, including anwalt.de, where I currently spearhead initiatives to enhance software architecture and integrate advanced technology solutions. My role involves deep engagement in all phases of the software development lifecycle, from initial design to deployment, ensuring robustness and high quality of our web platforms.
+              Born in Lithuania and currently based in Germany, I&apos;ve had the privilege of leading development teams at renowned tech firms, including anwalt.de, where I currently spearhead initiatives to enhance software architecture and integrate advanced technology solutions. My role involves deep engagement in all phases of the software development lifecycle, from initial design to deployment, ensuring robustness and high quality of our web platforms.
             </p>
 
             <p>
-              Throughout my career, I've emphasized the importance of team collaboration and agile project management. These principles have guided me in driving my teams towards achieving excellence and innovation in every project we undertake. At anwalt.de, I've played a pivotal role in transforming our digital platforms, making them more intuitive and accessible for users, and thereby significantly enhancing customer satisfaction.
+              Throughout my career, I&apos;ve emphasized the importance of team collaboration and agile project management. These principles have guided me in driving my teams towards achieving excellence and innovation in every project we undertake. At anwalt.de, I&apos;ve played a pivotal role in transforming our digital platforms, making them more intuitive and accessible for users, and thereby significantly enhancing customer satisfaction.
             </p>
 
             <p>
@@ -103,7 +103,7 @@ export default function About() {
             </p>
 
             <p>
-              Thank you for visiting my page. Whether you're interested in potential collaborations or wish to exchange ideas, feel free to connect with me on LinkedIn or reach out directly through my contact details available here. I look forward to exploring how we can work together to create exceptional solutions that drive success.
+              Thank you for visiting my page. Whether you&apos;re interested in potential collaborations or wish to exchange ideas, feel free to connect with me on LinkedIn or reach out directly through my contact details available here. I look forward to exploring how we can work together to create exceptional solutions that drive success.
             </p>
           </div>
         </div>
