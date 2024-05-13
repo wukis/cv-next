@@ -57,7 +57,7 @@ export default async function ArticlesIndex() {
     <SimpleLayout
       title="Recommendations that I've received throughout my carrier."
     >
-      <div className="md:border-l md:border-neutral-100 md:pl-6 md:dark:border-neutral-700/40">
+      <div className="md:border-l md:border-neutral-300 md:pl-6 md:dark:border-neutral-300/40">
         <div className="flex max-w-3xl flex-col space-y-16">
           {recommendations.map((recommendation: RecommendationInterface) => (
             <Recommendation key={recommendation.slug} recommendation={recommendation} />
