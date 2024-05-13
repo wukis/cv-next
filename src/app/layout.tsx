@@ -5,6 +5,7 @@ import { Layout } from '@/components/Layout'
 import linkedin from '@/data/linkedin.json'
 
 import '@/styles/tailwind.css'
+import ParticlesBackrgound from "@/components/ParticlesBackground";
 
 export const metadata: Metadata = {
   title: {
@@ -28,11 +29,14 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <body className="flex h-full bg-neutral-50 dark:bg-black">
+        <ParticlesBackrgound>
+
+        </ParticlesBackrgound>
         <Providers>
           <div className="flex w-full">
             <Layout>{children}</Layout>
           </div>
-        </Providers>
+        </Providers>s
       </body>
     </html>
   )

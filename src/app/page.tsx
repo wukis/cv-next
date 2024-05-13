@@ -1,4 +1,3 @@
-'use client';
 import Image from 'next/image'
 import Link from 'next/link'
 import { Container } from '@/components/Container'
@@ -26,9 +25,7 @@ function MailIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
 }
 
 function Recommendations() {
-    const [showAll, setShowAll] = useState(false);
-
-    const displayedRecommendations = showAll ? recommendations : recommendations.slice(0, 6);
+    const displayedRecommendations = recommendations.slice(0, 6);
 
     return (
         <div className="mx-auto mt-16 max-w-5xl">
@@ -44,14 +41,12 @@ function Recommendations() {
                     ))}
                 </div>
                 <div className="text-right mt-4">
-                    {recommendations.length > 6 && (
-                        <button
-                            className="rounded bg-white/25 px-3 py-2 text-sm font-medium text-neutral-800 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-900/5 backdrop-blur hover:bg-neutral-100 dark:bg-neutral-800/25 dark:text-neutral-200 dark:ring-white/10 dark:hover:bg-neutral-700"
-                            onClick={() => setShowAll(!showAll)}
-                        >
-                            {showAll ? `Show Less` : `Show All (${recommendations.length})`}
-                        </button>
-                    )}
+                    <a
+                        href={`/recommendations`}
+                        className="rounded bg-white/25 px-3 py-2 text-sm font-medium text-neutral-800 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-900/5 backdrop-blur hover:bg-neutral-100 dark:bg-neutral-800/25 dark:text-neutral-200 dark:ring-white/10 dark:hover:bg-neutral-700"
+                    >
+                        {`Show All (${recommendations.length})`}
+                    </a>
                 </div>
             </div>
         </div>
