@@ -57,12 +57,13 @@ export default function About() {
     <Container className="mt-10">
       <div className="md:grid md:grid-cols-12 gap-y-8 lg:gap-y-8">
         <div className="md:col-span-4 lg:pl-20 md:order-2 md:mt-32">
-          <div className="max-w-xs px-2.5 lg:max-w-64">
+          <div className="flex-1 max-w-xs px-2.5 lg:max-w-64 items-center">
             <Image
               src={portraitImage}
-              alt=""
+              alt="Jonas Petrik"
               sizes="(min-width: 1024px) 32rem, 20rem"
               className="aspect-square rotate-3 rounded-2xl object-cover"
+              priority={false}
             />
             <ul role="list" className="mt-8 px-6">
               <SocialLink

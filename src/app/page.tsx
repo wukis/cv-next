@@ -104,9 +104,10 @@ export default async function Home() {
           <div className="flex-1 max-w-xs px-2.5 lg:max-w-52 items-center">
             <Image
                 src={portraitImage}
-                alt=""
+                alt="Jonas Petrik"
                 sizes="(min-width: 1024px) 32rem, 20rem"
                 className="aspect-square rotate-3 rounded-2xl object-cover"
+                priority={false}
             />
             <div className="mt-4 flex gap-6">
                 <SocialLink href="mailto:jonas@petrik.dev" icon={MailIcon}  aria-label="Email me" />
