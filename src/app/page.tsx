@@ -33,7 +33,7 @@ function Recommendations() {
     return (
         <div className="mx-auto mt-16 max-w-5xl">
             <div className="mx-auto max-w-xl text-center">
-                <h2 className="text-4xl font-bold tracking-tight text-neutral-800 sm:text-5xl dark:text-neutral-100">Recommendations</h2>
+                <h2 className="text-4xl font-bold tracking-tight text-neutral-800 sm:text-5xl dark:text-neutral-100">What others say about me</h2>
             </div>
             <div className="mx-auto mt-12 flow-root max-w-2xl lg:mx-0 lg:max-w-none">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -75,9 +75,10 @@ function SocialLink({
 
 function Recommendation({ recommendation }: { recommendation: RecommendationInterface }) {
   return (
+      <a href={`/recommendations#${recommendation.slug}`}>
         <figure className="rounded p-8 text-sm leading-6 bg-neutral-50/50 dark:bg-neutral-800/25">
           <blockquote>
-            <p className="line-clamp-6">{`“${recommendation.body}”`}</p>
+            <p className="line-clamp-3">{`“${recommendation.body}”`}</p>
           </blockquote>
             <div className="font-light text-xs italic text-right">{recommendation.date}</div>
 
@@ -90,12 +91,13 @@ function Recommendation({ recommendation }: { recommendation: RecommendationInte
                 alt={recommendation.fullName}
             />
             <div>
-              <div className="font-semibold">{recommendation.fullName}</div>
+              <div className="font-semibold line-clamp-1">{recommendation.fullName}</div>
               <div className="font-light line-clamp-1">{recommendation.position}</div>
             </div>
           </figcaption>
 
         </figure>
+      </a>
   )
 }
 
@@ -119,7 +121,7 @@ export default async function Home() {
           </div>
           <div className="p-8 flex-1 bg-neutral-50/50 dark:bg-neutral-800/25">
             <h1 className="text-4xl font-bold tracking-tight text-neutral-800 sm:text-5xl dark:text-neutral-100">
-              { linkedin.basics.label }
+              I'm {linkedin.basics.name} - { linkedin.basics.label }
             </h1>
             <p className="mt-6 text-base text-neutral-600 dark:text-neutral-400">
               { linkedin.basics.summary }

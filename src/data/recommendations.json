@@ -1,5 +1,6 @@
 [
   {
+    "slug": "daniel-motzev",
     "fullName": "Daniel Motzev",
     "position": "Lead DevOps at anwalt.de",
     "date": "February 20, 2024",
@@ -7,6 +8,7 @@
     "image": "daniel-motzev.jpeg"
   },
   {
+    "slug": "tarik-el-bouyahyani",
     "fullName": "Dr. Tarik El Bouyahyani",
     "position": "Project manager at anwalt.de",
     "date": "January 8, 2024",
@@ -14,6 +16,7 @@
     "image": "tarik-el-bouyahyani.jpeg"
   },
   {
+    "slug": "bianca-della-rosa",
     "fullName": "Bianca Della Rosa",
     "position": "Frontend Engineer at anwalt.de",
     "date": "January 5, 2024",
@@ -21,6 +24,7 @@
     "image": "bianca-della-rosa.jpeg"
   },
   {
+    "slug": "osman-turan",
     "fullName": "Osman Turan",
     "position": "Full Stack Developer at anwalt.de",
     "date": "December 29, 2023",
@@ -28,6 +32,7 @@
     "image": "osman-turan.jpeg"
   },
   {
+    "slug": "roman-iudin",
     "fullName": "Roman Iudin",
     "position": "Lead Software Engineer at anwalt.de",
     "date": "December 25, 2023",
@@ -35,6 +40,7 @@
     "image": "roman-iudin.jpeg"
   },
   {
+    "slug": "hans-kreuger",
     "fullName": "Hans Kreuger",
     "position": "Frontend Developer at anwalt.de",
     "date": "December 22, 2023",
@@ -42,6 +48,7 @@
     "image": "hans-kreuger.jpeg"
   },
   {
+    "slug": "simon-sattes",
     "fullName": "Simon Sattes",
     "position": "Head of Architecture at anwalt.de",
     "date": "December 22, 2023",
@@ -49,6 +56,7 @@
     "image": "simon-sattes.jpeg"
   },
   {
+    "slug": "milan-ristic",
     "fullName": "Milan Ristic",
     "position": "Software Engineer at anwalt.de",
     "date": "December 22, 2023",
@@ -56,6 +64,7 @@
     "image": "milan-ristic.jpeg"
   },
   {
+    "slug": "andrei-lungu",
     "fullName": "Andrei Lungu",
     "position": "Senior Software Engineer at anwalt.de",
     "date": "October 10, 2023",
@@ -63,6 +72,7 @@
     "image": "andrei-lungu.jpeg"
   },
   {
+    "slug": "martin-will",
     "fullName": "Martin Will",
     "position": "CTO at anwalt.de",
     "date": "September 21, 2023",
@@ -70,6 +80,7 @@
     "image": "martin-will.jpeg"
   },
   {
+    "slug": "gintare-kaubryte",
     "fullName": "Gintarė Kaubrytė",
     "position": "Scrum Master at SOLUTIONLAB PRODUCTION",
     "date": "December 14, 2020",
@@ -77,6 +88,7 @@
     "image": "gintare-kaubryte.jpeg"
   },
   {
+    "slug": "henrikas-girdzijauskas",
     "fullName": "Henrikas Antanas Girdzijauskas",
     "position": "Machine Learning Engineer at AAI Labs",
     "date": "November 28, 2020",
@@ -84,6 +96,7 @@
     "image": "henrikas-girdzijauskas.jpeg"
   },
   {
+    "slug": "juste-urbanaviciene",
     "fullName": "Juste Urbanaviciene",
     "position": "Senior Management Coordinator | Retail Investment Tribe",
     "date": "November 26, 2020",
@@ -91,6 +104,7 @@
     "image": "juste-urbanaviciene.jpeg"
   },
   {
+    "slug": "antonina-stoliarova",
     "fullName": "Antonina Stoliarova",
     "position": "QA Engineer",
     "date": "November 26, 2020",
@@ -98,6 +112,7 @@
     "image": "antonina-stoliarova.jpeg"
   },
   {
+    "slug": "aleksandr-smailov",
     "fullName": "Aleksandr Šmailov",
     "position": "Technical Lead at SOLUTIONLAB PRODUCTION",
     "date": "November 25, 2020",
@@ -105,6 +120,7 @@
     "image": "aleksandr-smailov.jpeg"
   },
   {
+    "slug": "marius-zaleskis",
     "fullName": "Marius Zaleskis",
     "position": "React/Laravel developer, team lead.",
     "date": "April 14, 2020",
@@ -112,6 +128,7 @@
     "image": "marius-zaleskis.jpeg"
   },
   {
+    "slug": "karolina-rupsiene",
     "fullName": "Karolina Rupšienė",
     "position": "Frontend Developer at Wix.com",
     "date": "August 2, 2019",
@@ -119,6 +136,7 @@
     "image": "karolina-rupsiene.jpeg"
   },
   {
+    "slug": "donatas-maikstenas",
     "fullName": "Donatas Maikštėnas",
     "position": "Frontend Developer",
     "date": "December 23, 2016",
@@ -126,6 +144,7 @@
     "image": "donatas-maikstenas.jpeg"
   },
   {
+    "slug": "rytis-grinevicius",
     "fullName": "Rytis Grincevičius",
     "position": "Web Application Developer",
     "date": "December 23, 2016",
@@ -133,6 +152,7 @@
     "image": "rytis-grinevicius.jpeg"
   },
   {
+    "slug": "arnoldas-starkauskas",
     "fullName": "Arnoldas Starkauskas",
     "position": "Software Engineer at Swedbank Lietuvoje",
     "date": "December 22, 2016",
@@ -140,6 +160,7 @@
     "image": "arnoldas-starkauskas.jpeg"
   },
   {
+    "slug": "aleksei-golda",
     "fullName": "Aleksei Golda",
     "position": "Software Engineer",
     "date": "December 21, 2016",
@@ -147,6 +168,7 @@
     "image": "aleksei-golda.jpeg"
   },
   {
+    "slug": "dimitrij-skorobatov",
     "fullName": "Дмитрий Скоробогатов",
     "position": "Инженер-программист – АО «ЕЭТП» (Unified Electronic Trading Platfrom)",
     "date": "December 21, 2016",
@@ -154,6 +176,7 @@
     "image": "dimitrij-skorobatov.jpeg"
   },
   {
+    "slug": "eugene-bunin",
     "fullName": "Eugene Bunin",
     "position": "Backend developer: PHP|Golang",
     "date": "December 21, 2016",
@@ -161,6 +184,7 @@
     "image": "eugene-bunin.jpeg"
   },
   {
+    "slug": "dmitry-sergiets",
     "fullName": "Dmitry Sergiets",
     "position": "Senior Team Lead at АО «ЕЭТП» (Unified Electronic Trading Platfrom)",
     "date": "December 21, 2016",
