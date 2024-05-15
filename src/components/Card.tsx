@@ -77,6 +77,18 @@ Card.Description = function CardDescription({
   )
 }
 
+Card.Summary = function CardSummary({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+      <pre className="relative z-10 mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+        {children}
+      </pre>
+  )
+}
+
 Card.Cta = function CardCta({ children }: { children: React.ReactNode }) {
   return (
     <div
