@@ -55,8 +55,8 @@ const ParticlesBackground = ({ children }: { children: React.ReactNode }) => {
                         generator: "polygonPathGenerator",
                         options: {
                             sides: 6,
-                            turnSteps: 90,
-                            angle: 90
+                            turnSteps: 120,
+                            angle: 120
                         }
                     },
                     random: false,
@@ -67,7 +67,7 @@ const ParticlesBackground = ({ children }: { children: React.ReactNode }) => {
                     value: 0
                 },
                 opacity: {
-                    value: 0.6
+                    value: 0.3
                 },
                 shape: {
                     type: "circle"

@@ -42,7 +42,7 @@ function Recommendations() {
                 <div className="text-right mt-4">
                     <a
                         href={`/recommendations`}
-                        className="rounded bg-white/25 px-3 py-2 text-sm font-medium text-neutral-800 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-900/5 backdrop-blur hover:bg-neutral-100 dark:bg-neutral-800/25 dark:text-neutral-200 dark:ring-white/10 dark:hover:bg-neutral-700"
+                        className="text-neutral-600 hover:text-neutral-800 rounded px-3 py-2 text-sm font-medium hover:shadow-lg hover:bg-neutral-100/75 hover:dark:bg-neutral-800/50"
                     >
                         {`Show All (${recommendations.length})`}
                     </a>
@@ -70,7 +70,7 @@ function SocialLink({
 function Recommendation({ recommendation }: { recommendation: RecommendationInterface }) {
   return (
       <a href={`/recommendations#${recommendation.slug}`}>
-        <figure className="p-4 text-sm scale-95 hover:scale-100 hover:-100 hover:bg-neutral-100/75 hover:dark:bg-neutral-800/50 rounded">
+        <figure className="p-4 text-sm scale-95 hover:scale-100 hover:-100 hover:bg-neutral-100/75 hover:dark:bg-neutral-800/50 rounded hover:shadow-lg">
           <blockquote>
             <p className="line-clamp-3">{`“${recommendation.body}”`}</p>
           </blockquote>
