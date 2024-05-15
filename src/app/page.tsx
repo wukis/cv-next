@@ -11,7 +11,6 @@ import { type RecommendationInterface } from '@/lib/recommendations'
 import portraitImage from '@/images/jonas-petrik-portrait.png'
 import recommendations from '@/data/recommendations.json'
 import linkedin from '@/data/linkedin.json'
-import {useState} from "react";
 
 function MailIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
     return (
@@ -71,7 +70,7 @@ function SocialLink({
 function Recommendation({ recommendation }: { recommendation: RecommendationInterface }) {
   return (
       <a href={`/recommendations#${recommendation.slug}`}>
-        <figure className="rounded p-8 text-sm leading-6 bg-neutral-50/50 dark:bg-neutral-800/25">
+        <figure className="p-4 text-sm scale-95 hover:scale-100 hover:-100 hover:bg-neutral-100/75 hover:dark:bg-neutral-800/50 rounded">
           <blockquote>
             <p className="line-clamp-3">{`“${recommendation.body}”`}</p>
           </blockquote>
