@@ -29,10 +29,8 @@ export function Footer() {
               <div className="flex flex-wrap justify-center gap-x-6 gap-y-1 text-sm font-medium text-neutral-800 dark:text-neutral-200">
                 <NavLink href="/">Home</NavLink>
                 <NavLink href="/about">About</NavLink>
+                <NavLink href="/experience">Experience</NavLink>
                 <NavLink href="/recommendations">Recommendations</NavLink>
-                <NavLink href="/projects">Projects</NavLink>
-                <NavLink href="/speaking">Speaking</NavLink>
-                <NavLink href="/uses">Uses</NavLink>
               </div>
               <p className="text-sm text-neutral-400 dark:text-neutral-500">
                 &copy; {new Date().getFullYear()} Jonas Petrik. All rights

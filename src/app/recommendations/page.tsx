@@ -11,7 +11,7 @@ function Recommendation({ recommendation }: { recommendation: RecommendationInte
     <article id={recommendation.slug} className="md:grid md:grid-cols-4 md:items-baseline">
       <Card className="md:col-span-3">
         <Card.Title>
-          <div className="mt-6 flex items-center gap-x-4">
+          <div className="flex items-center gap-x-4">
             <Image
                 className="h-18 w-18 rounded"
                 width={40}
