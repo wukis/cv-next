@@ -127,13 +127,12 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                                             <div className="flex items-center space-x-2">
                                                 <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
                                                 <h3 className="text-base font-semibold">
-                                                    {experience.position}
+                                                    {experience.position} <span className="text-sm text-gray-600">
+                                                    ({getDuration(experience.startDate, experience.endDate)})
+                                                </span>
                                                 </h3>
                                             </div>
                                             <div className="pl-4">
-                                                <p className="text-sm text-gray-600">
-                                                    {getDuration(experience.startDate, experience.endDate)}
-                                                </p>
                                                 {experience.summary && (
                                                     <p className="text-sm text-gray-600">
                                                         {experience.summary.split('\n').map((line, i) => (
