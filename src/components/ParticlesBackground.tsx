@@ -5,6 +5,7 @@ import { Header } from '@/components/Header';
 import { initParticlesEngine } from "@tsparticles/react";
 import { loadAll } from "@tsparticles/all";
 import { type Container, type ISourceOptions } from "@tsparticles/engine";
+import ErrorBoundary from '@/components/ErrorBoundary';  // Import ErrorBoundary
 
 const Particles = lazy(() => import("@tsparticles/react").then(module => ({ default: module.Particles })));
 
@@ -12,6 +13,9 @@ const ParticlesBackground = ({ children }: { children: React.ReactNode }) => {
     const [init, setInit] = useState(false);
 
     useEffect(() => {
+        // Preload the Particles chunk
+        import("@tsparticles/react");
+
         initParticlesEngine(async (engine) => {
             await loadAll(engine);
         }).then(() => {
@@ -103,12 +107,14 @@ const ParticlesBackground = ({ children }: { children: React.ReactNode }) => {
         <>
             {init && (
                 <Suspense fallback={<div className="fixed inset-0 z-0"></div>}>
-                    <Particles
-                        id="tsparticles"
-                        options={options}
-                        particlesLoaded={particlesLoaded}
-                        className="fixed inset-0 z-0"
-                    />
+                    <ErrorBoundary>
+                        <Particles
+                            id="tsparticles"
+                            options={options}
+                            particlesLoaded={particlesLoaded}
+                            className="fixed inset-0 z-0"
+                        />
+                    </ErrorBoundary>
                 </Suspense>
             )}
             {children}
