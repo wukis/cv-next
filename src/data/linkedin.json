@@ -1,0 +1,460 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jsonresume/resume-schema/v1.0.0/schema.json",
+  "basics": {
+    "name": "Jonas Petrik",
+    "label": "Senior Software Engineer Team Lead",
+    "image": "",
+    "email": "jonas@petrik.dev",
+    "phone": "+491785119617",
+    "url": "http://petrik.dev",
+    "summary": "I'm a seasoned full-stack software engineer, specializing in PHP, JavaScript, GO and various other technologies. Leveraging extensive experience as a senior developer and team lead, my expertise lies in creating solutions that are not only tailored to client's immediate needs but also scalable and future-proof. I'm dedicated to effective collaboration, risk management, and building enduring systems.",
+    "location": {
+      "countryCode": "US",
+      "address": "Germany"
+    },
+    "profiles": [
+      {
+        "network": "LinkedIn",
+        "username": "jonas-petrik",
+        "url": "https://www.linkedin.com/in/jonas-petrik/"
+      }
+    ]
+  },
+  "work": [
+    {
+      "name": "anwalt.de",
+      "position": "Senior Software Engineer Team Lead",
+      "startDate": "2022-12-31",
+      "endDate": "now",
+      "highlights": [],
+      "summary": "Job description\n- Team leadership\n- Software architecture (planning and executing)\n- Scalability\n- Web/Software development (PHP/Javascript)\n- 3rd party software integration and APIs\n- Sprint planning\n- Quality assurance\n- Testing (Unit/Integration/E2E)\n- Code reviews\n- Continuous integration\n- DevOps\n- SaaS\n\nProjects:\n- \"anwalt.de\" - platform for lawyers and their services\n\nTechnologies used:\n- Laminas / PHP\n- GOlang\n- VueJS 2/3 / Javascript\n- MySQL\n- Amazon Web Services (AWS)\n- Elastic Search\n\nLinks:\n- https://www.anwalt.de",
+      "url": "https://www.linkedin.com/company/anwaltde/",
+      "location": "Nuremberg, Bavaria, Germany"
+    },
+    {
+      "name": "anwalt.de",
+      "position": "Senior Software Developer",
+      "startDate": "2020-12-31",
+      "endDate": "2022-12-31",
+      "highlights": [],
+      "url": "https://www.linkedin.com/company/anwaltde/",
+      "location": "Nuremberg, Bavaria, Germany"
+    },
+    {
+      "name": "SOLUTIONLAB PRODUCTION",
+      "position": "Senior Software Engineer Team Lead",
+      "startDate": "2018-01-31",
+      "endDate": "2020-12-31",
+      "highlights": [],
+      "summary": "Job description\n- Team leadership (10 associates)\n- Software architecture (planning and executing)\n- Scalability\n- Web/Software development (PHP/Javascript)\n- 3rd party software integration and APIs\n- Agile SCRUM\n- Sprint planning\n- Quality assurance\n- Testing (Unit/Integration/E2E)\n- Code reviews\n- Continuous integration\n- Mobile applications (Android/iOS)\n- DevOps\n- Multi-tenancy\n- SaaS\n\nProjects:\n- \"Atobi\" - platform with a gamified execution app for retailers and telcos\n- \"EffectiveRetail\" a tailored all-in-one app for retailers\n\nTechnologies used:\n- Phalcon / PHP\n- Laravel / PHP\n- Lumen / PHP\n- React / Javascript\n- jQuery / Javascript\n- MySQL\n- Amazon Web Services (AWS)\n\nLinks:\n- https://www.atobi.io\n- https://www.effectiveretail.com",
+      "url": "https://www.linkedin.com/company/solutionlab-production/",
+      "location": "Lithuania"
+    },
+    {
+      "name": "SOLUTIONLAB PRODUCTION",
+      "position": "Senior Web Developer",
+      "startDate": "2017-11-30",
+      "endDate": "2018-01-31",
+      "highlights": [],
+      "url": "https://www.linkedin.com/company/solutionlab-production/",
+      "location": "Lithuania"
+    },
+    {
+      "name": "Olympic Casino Group Baltija",
+      "position": "Full Stack Engineer",
+      "startDate": "2017-01-31",
+      "endDate": "2017-11-30",
+      "highlights": [],
+      "summary": "Job description:\n- Web development (PHP/Javascript)\n- Scalability\n- Software testing (Unit/E2E)\n- Test driven development (TDD)\n- 3rd party software integration and APIs\n- Quality assurance\n- Code reviews\n- Continuous integration\n\nProjects:\n- \"Olybet\" - online betting platform\n- \"Orakulas\" - online betting platform\n- Internal system for managing clients, finances and other tools to automate/speed-up workflow\n\nTechnologies used:\n- Laravel / PHP\n- VueJS / Javascript\n- MySQL\n- Rackray\n\nLinks:\n- http://olybet.eu\n- http://orakulas.lt \n- http://www.olympic-casino.com",
+      "url": "",
+      "location": "Lithuania, Vilnius"
+    },
+    {
+      "name": "UAB inlusion Netforms",
+      "position": "Senior Software Engineer Team Lead",
+      "startDate": "2016-02-28",
+      "endDate": "2017-01-31",
+      "highlights": [],
+      "summary": "Job description:\n- International project management\n- Team leadership (10 associates)\n- Software architecture (planned and executed)\n- Quality assurance\n- Code reviews\n- Testing (Unit/Integration/E2E)\n- Project management\n- Web/Software development (PHP/Javascript/C#)\n- Mobile applications (Android/iOS)\n- Desktop applications (Windows/Linux/MacOS)\n- Sprint planning\n- Agile SCRUM\n- DevOps\n\nProjects:\n- \"Columbina\" ERP system (SaaS)\n- \"Olivia\" CRM system (SaaS)\n- \"Smartups\" system for VC investors (Angel like)\n- \"Incrypta\" encrypted cloud storage solution\n\nTechnologies used:\n- .NET / C#\n- Laravel / PHP\n- VueJS / Javascript\n- MySQL\n- MSSQL\n\nLinks:\n- http://www.inlu.net\n- http://columbina.eu\n- http://incrypta.eu",
+      "url": "https://www.linkedin.com/company/inlusionxr/",
+      "location": "Lithuania, Vilnius"
+    },
+    {
+      "name": "Inlusion",
+      "position": "Senior Software Engineer",
+      "startDate": "2015-11-30",
+      "endDate": "2016-02-28",
+      "highlights": [],
+      "url": "https://www.linkedin.com/company/inlusionxr/"
+    },
+    {
+      "name": "UAB Integrus",
+      "position": "Full Stack Engineer",
+      "startDate": "2014-11-30",
+      "endDate": "2015-11-30",
+      "highlights": [],
+      "summary": "Job description:\n- Web development (PHP/Javascript)\n- 3rd party software integration and APIs (DPD/DHL/UPS)\n- Quality assurance\n- Testing (Unit/E2E)\n\nProjects:\n- \"Ecu.de\" spare parts platform for cars\n- \"Intranet\" internal management system for employees\n\nTechnologies used:\n- Laravel / PHP\n- jQuery / Javascript\n- MySQL\n\nLinks:\n- http://ecu.de\n- http://integrus.lt/",
+      "url": "",
+      "location": "Lithuania, Vilnius"
+    },
+    {
+      "name": "Itlogas JSC",
+      "position": "Ruby on Rails Developer",
+      "startDate": "2014-02-28",
+      "endDate": "2014-10-31",
+      "highlights": [],
+      "url": "https://www.linkedin.com/company/itlogas/"
+    },
+    {
+      "name": "Profectus Novus",
+      "position": "PHP Web Developer",
+      "startDate": "2013-04-30",
+      "endDate": "2014-02-28",
+      "highlights": [],
+      "url": "https://www.linkedin.com/company/profectus-novus/"
+    }
+  ],
+  "volunteer": [],
+  "education": [
+    {
+      "institution": "Vilniaus Universitetas",
+      "area": "Software Engineering",
+      "studyType": "Bachelor's degree",
+      "startDate": "2011",
+      "endDate": "2015",
+      "score": "",
+      "courses": []
+    }
+  ],
+  "awards": [],
+  "certificates": [],
+  "publications": [],
+  "skills": [
+    {
+      "name": "Go",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Software Development",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "PHP",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Team Leadership",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "anwalt.de",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "SolutionLab",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Team Management",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Vue.js",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Software Design Patterns",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Responsive Web Design",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Web Development",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Software Architectural Design",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Lean Management",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "MySQL",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Data Structures",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Agile Project Management",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "HTML5",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Webpack",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Symfony",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Cordova",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Laravel",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Ruby on Rails",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Cascading Style Sheets (CSS)",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Object-Oriented Programming (OOP)",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "LESS",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Test Driven Development",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Behavior-Driven Development (BDD)",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "ES6",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "SASS",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "JavaScript",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Unit Testing",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "DevOps",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Design Patterns",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "AngularJS",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Algorithms",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "MongoDB",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Quality Assurance",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Amazon Web Services (AWS)",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "SQL",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Node.js",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Electron",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Continuous Integration",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "C++",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "jQuery",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Search Engine Optimization (SEO)",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "React",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "C#",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Java",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Python",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "Redux",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": ".NET Framework",
+      "level": "",
+      "keywords": []
+    },
+    {
+      "name": "React Native",
+      "level": "",
+      "keywords": []
+    }
+  ],
+  "languages": [
+    {
+      "fluency": "Full Professional",
+      "language": "English"
+    },
+    {
+      "fluency": "Elementary",
+      "language": "German"
+    },
+    {
+      "fluency": "Native Speaker",
+      "language": "Lithuanian"
+    },
+    {
+      "fluency": "Professional Working",
+      "language": "Russian"
+    }
+  ],
+  "interests": [],
+  "references": [
+    {
+      "name": "Daniel Motzev",
+      "reference": "When I joined anwalt.de, Jonas very quickly (I believe it was in the first day or two) stood out from the rest of my new colleagues as a strongly goal oriented, let's-cut-through-the-nonsense professional. He and I quickly and easily agreed to maintain very direct and transparent communication for the sake of both speed and clarity of collaboration.\n\nIt wouldn't be appropriate for me to comment on Jonas's programming skills, but I can vouch for his experience with both my hands. He doesn't look into flashy and fancy solutions, but always puts functionality, maintainability and performance first - the cool and trendy stuff, if fitting the picture, is considered a good bonus on top, but not the main focus for him. Speaking from the perspective of DevOps and Infrastructure, such an attitude is pure gold - not because modern solutions and approaches to solving problems are bad, but because they aren't always mature enough. Jonas won't let something fitting this description slip through and make everyone's life a living nightmare!\n\nAlthough considerately outspoken and vocal, I also find Jonas an introspective and quite self-aware expert. When entering a topic or an area he's not deeply familiar with, he would always start with an open disclaimer about it and would respectively tag his comments as ideas, rather than instructions to solving a problem. The latter would in fact be a sensible description of his style of work altogether - he doesn't impose his thoughts and suggestions, no matter how good these are, but always discussed them with his colleagues to reach the most optimal solution and implementation possible.\n\nAll this said, I can't skip the fact Jonas and I have (naturally, I would say) had our disagreements and heated discussions, but it has always been at a very professional level. He's simply not the type of person who would put up with something that's either not working well or is overly complicated to deal with - rest assured, he'd speak up his mind! Which is even more of a reason for me to recommend Jonas as an excellent colleague, whom one can truly only appreciate working with."
+    },
+    {
+      "name": "Dr. Tarik El Bouyahyani",
+      "reference": "Working with Jonas was always a pleasure, professionally and personally. \n\nI can't remember a single workshop or scrum meeting where Jonas very sharp mind, extensive IT experience and backgorund, as well as his ability to think outside of the box have not significantly contributed to the discussion or the results. Jonas is definitely not afraid to speak his mind, take on challanges and display great leadership.\n\nI really valued working together with him and if you're looking to boost your IT and development capabilities, definitely reach out to Jonas!"
+    },
+    {
+      "name": "Bianca Della Rosa",
+      "reference": "I recommend Jonas, acknowledging not only the commendable recommendations he has received, with which I totally agree, but also based on the fortunate circumstance of having him as the closest colleague during my onboarding phase. \nHis willingness to interrupt his work to provide support, offering patient explanations and assistance during the initial stages, underscores the great value he brings. \n\nJonas exhibits not only as a highly capable professional but also as a dedicated team player, making him an ideal person to any collaborative environment."
+    },
+    {
+      "name": "Osman Turan",
+      "reference": "Jonas was one of the greatest team members I've ever worked with. He has extensive knowledge covering full stack software development and DevOps practices. Jonas is a patient team member and team lead who is always available with high quality solution in case of any help. \n\nDuring his time at anwalt.de Jonas was able to enhancing the quality and scalability from the whole platform in collaboration with multiple cross functional teams. What stands out most about Jonas is his incredible way to communicate and explain difficult problems to different stakeholders."
+    },
+    {
+      "name": "Roman Iudin",
+      "reference": "It has been my honor to work alongside Jonas for over two years. In this time, I’ve seen him excel as a highly competent engineer. He has extensive knowledge covering areas from software development to DevOps practices. What stands out most about Jonas is his attitude to work, which rarely can be found, and his commitment to quality. His proactive attitude and attention to detail have significantly enhanced our project structures. \n\nJonas played a crucial role in implementing significant enhancements to our projects and has played a pivotal role in enhancing the CI/CD pipelines in collaboration with the DevOps team for several projects.\n\nI strongly recommend Jonas not only as a highly capable professional but also as a dedicated team player. He is a professional who I believe will greatly contribute to and strengthen any team he joins."
+    },
+    {
+      "name": "Hans Kreuger",
+      "reference": "I have been working with Jonas for the last three years. He is a most knowledgable developer, has deep insights in advanced programming and has the ability to set up and work with complex data stuctures. Apart from his programming skills, Jonas also proved to be a great problem solver and he is always willing to help others out. It has been a pleassure to work together with him."
+    },
+    {
+      "name": "Simon Sattes",
+      "reference": "Jonas is a doer and one of those developers you really want to have in your company. He is actually a developer, devops, team lead and tech lead all rolled into one. He has in-depth knowledge and experience in so many areas and tools that it is no problem for him to find solutions for very extensive and tricky tasks across the entire tech stack. Driving projects forward and leading teams to success is part of his DNA. The very pleasant, constructive collaboration with Jonas was always fruitful and productive, and his commitment and passion are an asset to any company."
+    },
+    {
+      "name": "Milan Ristic",
+      "reference": "I am pleased to provide a strong recommendation for Jonas Petrik as a Team Lead Software Developer. Throughout our collaboration, Jonas consistently demonstrated exceptional qualities that significantly contributed to the success of our projects.\n\nJonas has proven to be an invaluable asset to the team, showcasing a remarkable ability to foster good teamwork and rapidly find optimal solutions for complex problems. His open and transparent communication style has been instrumental in preventing confusion and ensuring that important topics are effectively addressed.\n\nDespite facing numerous challenges and complex undertakings, Jonas has consistently led the team to successful outcomes. His deep understanding of the full development cycle and knowledge of the correct steps to take have been key factors in overcoming obstacles and achieving project goals.\n\nJonas's commitment to staying abreast of the latest tools, frameworks, and methodologies reflects his dedication to excellence. He consistently strives to incorporate modern technologies, ensuring that our projects benefit from the most up-to-date and effective solutions."
+    },
+    {
+      "name": "Andrei Lungu",
+      "reference": "I had the pleasure of working closely with Jonas for almost two years at Anwalt.de. He is a highly talented and dedicated professional who consistently impressed me with his skills and work ethic.\nJonas possesses a deep knowledge of PHP, MySQL, Elasticsearch, REST API design,  CI/CD, Kubernetes and more other. He was always willing to share that knowledge with the team. He is an excellent problem solver and never shies away from taking on challenging tasks.\n\nI have no doubt that Jonas will excel in any future endeavors he pursues. He is not only a great colleague but also a wonderful person to work with. I highly recommend him and would welcome the opportunity to work together again in the future."
+    },
+    {
+      "name": "Martin Will",
+      "reference": "Jonas is not only somebody nice to work with - he's also somebody who can bring in new aspects and also implement it. He has a very up2date and good technical understanding and can also lead teams in a very good way due to his Scrum Master knowledge. I really enjoyed working with him."
+    }
+  ],
+  "projects": [],
+  "meta": {
+    "version": "v1.0.0",
+    "canonical": "https://github.com/jsonresume/resume-schema/blob/v1.0.0/schema.json"
+  }
+}
