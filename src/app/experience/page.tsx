@@ -114,7 +114,7 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                                     />
                                     <div>
                                         <h2 className="text-lg font-semibold">
-                                            {companyData.company}
+                                            {companyData.company} - Full-time
                                         </h2>
                                         <p className="text-sm text-gray-600">
                                             {companyData.location}
@@ -127,9 +127,7 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                                             <div className="flex items-center space-x-2">
                                                 <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
                                                 <h3 className="text-base font-semibold">
-                                                    {experience.position} <span className="text-sm text-gray-600">
-                                                    ({getDuration(experience.startDate, experience.endDate)})
-                                                </span>
+                                                    {experience.position} <span className="text-sm text-gray-600">({getDuration(experience.startDate, experience.endDate)})</span>
                                                 </h3>
                                             </div>
                                             <div className="pl-4">
