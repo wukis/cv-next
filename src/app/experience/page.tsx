@@ -1,7 +1,7 @@
 import React from "react";
-import { type Metadata } from 'next'
+import { type Metadata } from 'next';
 
-import { Container } from '@/components/Container'
+import { Container } from '@/components/Container';
 import { Card } from "@/components/Card";
 import { EducationInterface, WorkInterface } from "@/lib/experience";
 import linkedIn from "@/data/linkedin.json";
@@ -11,40 +11,15 @@ import Image from "next/image";
 export const metadata: Metadata = {
     title: 'Experience',
     description: 'My experience and education.',
-}
-
-const getDuration = (startDate: string, endDate: string): string => {
-    const start = new Date(startDate);
-    const end = endDate === "now" ? new Date() : new Date(endDate);
-
-    let years = end.getFullYear() - start.getFullYear();
-    let months = end.getMonth() - start.getMonth() + 1;
-
-    if (months >= 12) {
-        years += 1;
-        months -= 12;
-    } else if (months < 0) {
-        years -= 1;
-        months += 12;
-    }
-
-    let duration = "";
-    if (years > 0) {
-        duration += `${years} year${years > 1 ? 's' : ''}`;
-    }
-    if (months > 0) {
-        if (years > 0) duration += " ";
-        duration += `${months} month${months > 1 ? 's' : ''}`;
-    }
-    return duration || "0 months";
 };
 
-const getTotalDuration = (startDate: string, endDate: string): { years: number, months: number } => {
+// Function for individual experience durations
+const getDuration = (startDate: string, endDate: string): { years: number, months: number } => {
     const start = new Date(startDate);
     const end = endDate === "now" ? new Date() : new Date(endDate);
 
     let years = end.getFullYear() - start.getFullYear();
-    let months = end.getMonth() - start.getMonth();
+    let months = end.getMonth() - start.getMonth() + 1; // Adding 1 month to correct the lost month issue
 
     if (months >= 12) {
         years += 1;
@@ -57,21 +32,24 @@ const getTotalDuration = (startDate: string, endDate: string): { years: number, 
     return { years, months };
 };
 
+// Function to format durations
 const formatDuration = (duration: { years: number, months: number }): string => {
-    let formatted = "";
-    if (duration.years > 0) {
-        formatted += `${duration.years} year${duration.years > 1 ? 's' : ''}`;
+    const { years, months } = duration;
+    let formatted = '';
+    if (years > 0) {
+        formatted += `${years} year${years !== 1 ? 's' : ''}`;
     }
-    if (duration.months > 0) {
-        if (duration.years > 0) formatted += " ";
-        formatted += `${duration.months} month${duration.months > 1 ? 's' : ''}`;
+    if (months > 0) {
+        if (formatted) formatted += ' ';
+        formatted += `${months} month${months !== 1 ? 's' : ''}`;
     }
-    return formatted || "0 months";
+    return formatted || '0 months';
 };
 
+// Function to group work experiences and calculate total duration
 const groupWorkExperiences = (workExperiences: WorkInterface[]) => {
     return workExperiences.reduce((acc, experience) => {
-        const { name } = experience;
+        const { name, startDate, endDate } = experience;
         if (!acc[name]) {
             acc[name] = {
                 company: name,
@@ -84,7 +62,7 @@ const groupWorkExperiences = (workExperiences: WorkInterface[]) => {
         }
         acc[name].experiences.push(experience);
 
-        const experienceDuration = getTotalDuration(experience.startDate, experience.endDate);
+        const experienceDuration = getDuration(startDate, endDate);
         acc[name].totalDuration.years += experienceDuration.years;
         acc[name].totalDuration.months += experienceDuration.months;
 
@@ -167,7 +145,7 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                                             <div className="flex items-center space-x-2">
                                                 <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
                                                 <h3 className="text-base font-semibold">
-                                                    {experience.position} <span className="text-sm text-gray-600">({getDuration(experience.startDate, experience.endDate)})</span>
+                                                    {experience.position} <span className="text-sm text-gray-600">({formatDuration(getDuration(experience.startDate, experience.endDate))})</span>
                                                 </h3>
                                             </div>
                                             <div className="pl-4">
