@@ -18,9 +18,12 @@ const getDuration = (startDate: string, endDate: string): string => {
     const end = endDate === "now" ? new Date() : new Date(endDate);
 
     let years = end.getFullYear() - start.getFullYear();
-    let months = end.getMonth() - start.getMonth();
+    let months = end.getMonth() - start.getMonth() + 1;
 
-    if (months < 0) {
+    if (months > 12) {
+        years += 1;
+        months -= 12;
+    } else if (months < 0) {
         years -= 1;
         months += 12;
     }
@@ -35,6 +38,7 @@ const getDuration = (startDate: string, endDate: string): string => {
     }
     return duration || "0 months";
 };
+
 
 const groupWorkExperiences = (workExperiences: WorkInterface[]) => {
     return workExperiences.reduce((acc, experience) => {
