@@ -1,14 +1,36 @@
+import React from "react";
 import { type Metadata } from 'next'
 
 import { Container } from '@/components/Container'
-import {Card} from "@/components/Card";
-import {EducationInterface, WorkInterface} from "@/lib/experience";
+import { Card } from "@/components/Card";
+import { EducationInterface, WorkInterface } from "@/lib/experience";
 import linkedIn from "@/data/linkedin.json";
+import work from "@/data/work.json";
+import Image from "next/image";
 
 export const metadata: Metadata = {
     title: 'Experience',
     description: 'My experience and education.',
 }
+
+const groupWorkExperiences = (workExperiences: WorkInterface[]) => {
+    return workExperiences.reduce((acc, experience) => {
+        const { name } = experience;
+        if (!acc[name]) {
+            acc[name] = {
+                company: name,
+                url: experience.url,
+                location: experience.location,
+                image: experience.image,
+                experiences: [],
+            };
+        }
+        acc[name].experiences.push(experience);
+        return acc;
+    }, {} as Record<string, { company: string, url: string, location: string, image: string, experiences: WorkInterface[] }>);
+};
+
+const groupedWorkExperiences = groupWorkExperiences(work);
 
 function Education({ education }: { education: EducationInterface }) {
     return (
@@ -38,36 +60,80 @@ function Education({ education }: { education: EducationInterface }) {
     )
 }
 
-function Work({ workExperience }: { workExperience: WorkInterface }) {
+function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<string, { company: string, url: string, location: string, image: string, experiences: WorkInterface[] }> }) {
     return (
-        <article className="md:grid md:grid-cols-4 md:items-baseline">
-            <Card className="md:col-span-3">
-                <Card.Title>
-                    <div>{workExperience.position}</div>
-                    <div><a href={workExperience.url} target="_blank">@{workExperience.name}</a></div>
-                    <div>{workExperience.location}</div>
-                </Card.Title>
-                <Card.Eyebrow
-                    as="time"
-                    dateTime={workExperience.startDate}
-                    className="md:hidden"
-                    decorate
-                >
-                    {`${workExperience.startDate} - ${workExperience.endDate}`}
-                </Card.Eyebrow>
-                <Card.Summary>{workExperience.summary}</Card.Summary>
-            </Card>
-            <Card.Eyebrow
-                as="time"
-                dateTime={workExperience.startDate}
-                className="mt-1 hidden md:block"
-            >
-                {`${workExperience.startDate} - ${workExperience.endDate}`}
-            </Card.Eyebrow>
-        </article>
-    )
+        <div>
+            {Object.keys(groupedWorkExperiences).map(company => {
+                const companyData = groupedWorkExperiences[company];
+                return (
+                    <article key={company} className="md:grid md:grid-cols-4 md:items-baseline">
+                        <Card className="md:col-span-3">
+                            <Card.Eyebrow
+                                as="time"
+                                dateTime={companyData.experiences[0].startDate}
+                                className="md:hidden"
+                                decorate
+                            >
+                                {`${companyData.experiences[0].startDate} - ${companyData.experiences[companyData.experiences.length - 1].endDate}`}
+                            </Card.Eyebrow>
+                            <Card.Description>
+                                <div className="flex items-start space-x-4 mb-8">
+                                    <Image
+                                        className="w-12 h-12 rounded"
+                                        width={50}
+                                        height={50}
+                                        src={require(`@/images/companies/${companyData.image}`).default}
+                                        alt={companyData.company}
+                                    />
+                                    <div>
+                                        <h2 className="text-lg font-semibold">
+                                            {companyData.company}
+                                        </h2>
+                                        <p className="text-sm text-gray-600">
+                                            {companyData.location}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="mt-4">
+                                    {companyData.experiences.map((experience, index) => (
+                                        <div key={index} className="flex items-start space-x-2 mb-4">
+                                            <div className="w-2 h-2 bg-gray-400 rounded-full mt-1"></div>
+                                            <div>
+                                                <h3 className="text-base font-semibold">
+                                                    {experience.position}
+                                                </h3>
+                                                <p className="text-sm text-gray-600">
+                                                    {new Date(experience.startDate).toLocaleDateString()} - {experience.endDate === "now" ? "Present" : new Date(experience.endDate).toLocaleDateString()}
+                                                </p>
+                                                {experience.summary && (
+                                                    <p className="text-sm text-gray-600">
+                                                        {experience.summary.split('\n').map((line, i) => (
+                                                            <React.Fragment key={i}>
+                                                                {line}
+                                                                <br />
+                                                            </React.Fragment>
+                                                        ))}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </Card.Description>
+                        </Card>
+                        <Card.Eyebrow
+                            as="time"
+                            dateTime={companyData.experiences[0].startDate}
+                            className="mt-1 hidden md:block"
+                        >
+                            {`${companyData.experiences[0].startDate} - ${companyData.experiences[companyData.experiences.length - 1].endDate}`}
+                        </Card.Eyebrow>
+                    </article>
+                );
+            })}
+        </div>
+    );
 }
-
 
 export default function Experience() {
     return (
@@ -78,12 +144,8 @@ export default function Experience() {
                 </h2>
 
                 <div className="flex max-w-3xl flex-col space-y-16">
-                    {linkedIn.work.map((workExperience: WorkInterface) => (
-                        <Work workExperience={workExperience} />
-                    ))}
+                    <Work groupedWorkExperiences={groupedWorkExperiences} />
                 </div>
-
-
             </Container>
 
             <Container className="mt-10">
@@ -93,12 +155,10 @@ export default function Experience() {
 
                 <div className="flex max-w-3xl flex-col space-y-16">
                     {linkedIn.education.map((education: EducationInterface) => (
-                        <Education education={education} />
+                        <Education key={education.institution} education={education} />
                     ))}
                 </div>
-
             </Container>
         </div>
-
     )
 }

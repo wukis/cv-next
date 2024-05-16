@@ -7,6 +7,7 @@ export interface WorkInterface {
     summary: string
     url: string
     location: string
+    image: string
 }
 
 export interface EducationInterface {
