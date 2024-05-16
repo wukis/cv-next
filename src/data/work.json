@@ -2,48 +2,53 @@
   {
     "name": "anwalt.de",
     "position": "Senior Software Engineer Team Lead",
+    "enrollment": "Full-time",
     "startDate": "2022-12",
     "endDate": "now",
     "highlights": [],
     "summary": "Job description\n- Team leadership\n- Software architecture (planning and executing)\n- Scalability\n- Web/Software development (PHP/Javascript)\n- 3rd party software integration and APIs\n- Sprint planning\n- Quality assurance\n- Testing (Unit/Integration/E2E)\n- Code reviews\n- Continuous integration\n- DevOps\n- SaaS\n\nProjects:\n- \"anwalt.de\" - platform for lawyers and their services\n\nTechnologies used:\n- Laminas / PHP\n- GOlang\n- VueJS 2/3 / Javascript\n- MySQL\n- Amazon Web Services (AWS)\n- Elastic Search\n\nLinks:\n- https://www.anwalt.de",
     "url": "https://www.linkedin.com/company/anwaltde/",
-    "location": "Nuremberg, Bavaria, Germany",
+    "location": "Nuremberg, Bavaria, Germany - Remote",
     "image": "anwalt.jpg"
   },
   {
     "name": "anwalt.de",
     "position": "Senior Software Developer",
+    "enrollment": "Full-time",
     "startDate": "2020-12",
     "endDate": "2022-12",
     "highlights": [],
     "url": "https://www.linkedin.com/company/anwaltde/",
-    "location": "Nuremberg, Bavaria, Germany",
+    "location": "Nuremberg, Bavaria, Germany - Remote",
     "image": "anwalt.jpg"
   },
   {
     "name": "SOLUTIONLAB PRODUCTION",
     "position": "Senior Software Engineer Team Lead",
+    "enrollment": "Full-time",
     "startDate": "2018-01",
     "endDate": "2020-12",
     "highlights": [],
     "summary": "Job description\n- Team leadership (10 associates)\n- Software architecture (planning and executing)\n- Scalability\n- Web/Software development (PHP/Javascript)\n- 3rd party software integration and APIs\n- Agile SCRUM\n- Sprint planning\n- Quality assurance\n- Testing (Unit/Integration/E2E)\n- Code reviews\n- Continuous integration\n- Mobile applications (Android/iOS)\n- DevOps\n- Multi-tenancy\n- SaaS\n\nProjects:\n- \"Atobi\" - platform with a gamified execution app for retailers and telcos\n- \"EffectiveRetail\" a tailored all-in-one app for retailers\n\nTechnologies used:\n- Phalcon / PHP\n- Laravel / PHP\n- Lumen / PHP\n- React / Javascript\n- jQuery / Javascript\n- MySQL\n- Amazon Web Services (AWS)\n\nLinks:\n- https://www.atobi.io\n- https://www.effectiveretail.com",
     "url": "https://www.linkedin.com/company/solutionlab-production/",
-    "location": "Lithuania",
+    "location": "Lithuania, Vilnius - Remote",
     "image": "solutionlab.jpg"
   },
   {
     "name": "SOLUTIONLAB PRODUCTION",
     "position": "Senior Web Developer",
+    "enrollment": "Full-time",
     "startDate": "2017-11",
     "endDate": "2018-01",
     "highlights": [],
     "url": "https://www.linkedin.com/company/solutionlab-production/",
-    "location": "Lithuania",
+    "location": "Lithuania, Vilnius - Remote",
     "image": "solutionlab.jpg"
   },
   {
     "name": "Olympic Casino Group Baltija",
     "position": "Full Stack Engineer",
+    "enrollment": "Full-time",
     "startDate": "2017-01",
     "endDate": "2017-11",
     "highlights": [],
@@ -55,6 +60,7 @@
   {
     "name": "UAB inlusion Netforms",
     "position": "Senior Software Engineer Team Lead",
+    "enrollment": "Full-time",
     "startDate": "2016-02",
     "endDate": "2017-01",
     "highlights": [],
@@ -66,6 +72,7 @@
   {
     "name": "UAB inlusion Netforms",
     "position": "Senior Software Engineer",
+    "enrollment": "Full-time",
     "startDate": "2015-11",
     "endDate": "2016-02",
     "highlights": [],
@@ -76,6 +83,7 @@
   {
     "name": "UAB Integrus",
     "position": "Full Stack Engineer",
+    "enrollment": "Full-time",
     "startDate": "2014-11",
     "endDate": "2015-11",
     "highlights": [],
@@ -87,6 +95,7 @@
   {
     "name": "Itlogas JSC",
     "position": "Ruby on Rails Developer",
+    "enrollment": "Full-time",
     "startDate": "2014-02",
     "endDate": "2014-10",
     "highlights": [],
@@ -96,6 +105,7 @@
   {
     "name": "Profectus Novus",
     "position": "PHP Web Developer",
+    "enrollment": "Full-time",
     "startDate": "2013-04",
     "endDate": "2014-02",
     "highlights": [],

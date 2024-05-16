@@ -1,6 +1,7 @@
 export interface WorkInterface {
     name: string
     position: string
+    enrollment: string
     startDate: string
     endDate: string
     highlights: Array<string>
