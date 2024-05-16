@@ -13,6 +13,29 @@ export const metadata: Metadata = {
     description: 'My experience and education.',
 }
 
+const getDuration = (startDate: string, endDate: string): string => {
+    const start = new Date(startDate);
+    const end = endDate === "now" ? new Date() : new Date(endDate);
+
+    let years = end.getFullYear() - start.getFullYear();
+    let months = end.getMonth() - start.getMonth();
+
+    if (months < 0) {
+        years -= 1;
+        months += 12;
+    }
+
+    let duration = "";
+    if (years > 0) {
+        duration += `${years} year${years > 1 ? 's' : ''}`;
+    }
+    if (months > 0) {
+        if (years > 0) duration += " ";
+        duration += `${months} month${months > 1 ? 's' : ''}`;
+    }
+    return duration || "0 months";
+};
+
 const groupWorkExperiences = (workExperiences: WorkInterface[]) => {
     return workExperiences.reduce((acc, experience) => {
         const { name } = experience;
@@ -105,7 +128,7 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                                             </div>
                                             <div className="pl-4">
                                                 <p className="text-sm text-gray-600">
-                                                    {new Date(experience.startDate).toLocaleDateString()} - {experience.endDate === "now" ? "Present" : new Date(experience.endDate).toLocaleDateString()}
+                                                    {getDuration(experience.startDate, experience.endDate)}
                                                 </p>
                                                 {experience.summary && (
                                                     <p className="text-sm text-gray-600">
