@@ -105,7 +105,18 @@ const groupWorkExperiences = (workExperiences: WorkInterface[]) => {
     }>);
 };
 
+// Function to calculate total work experience
+const calculateTotalExperience = (groupedWorkExperiences: Record<string, { totalDuration: { years: number, months: number } }>) => {
+    return Object.values(groupedWorkExperiences).reduce((acc, { totalDuration }) => {
+        acc.years += totalDuration.years;
+        acc.months += totalDuration.months;
+        return acc;
+    }, { years: 0, months: 0 });
+};
+
 const groupedWorkExperiences = groupWorkExperiences(work);
+const totalExperience = calculateTotalExperience(groupedWorkExperiences);
+const totalExperienceYears = totalExperience.years + Math.floor(totalExperience.months / 12);
 
 function Education({ education }: { education: EducationInterface }) {
     return (
@@ -216,7 +227,7 @@ export default function Experience() {
         <div>
             <Container className="mt-10">
                 <h2 className="text-4xl font-bold tracking-tight text-neutral-800 sm:text-5xl dark:text-neutral-100">
-                    My experience
+                    My {totalExperienceYears}+ years experience
                 </h2>
 
                 <div className="flex max-w-3xl flex-col space-y-16">
