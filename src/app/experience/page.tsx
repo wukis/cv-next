@@ -20,7 +20,7 @@ const getDuration = (startDate: string, endDate: string): string => {
     let years = end.getFullYear() - start.getFullYear();
     let months = end.getMonth() - start.getMonth() + 1;
 
-    if (months > 12) {
+    if (months >= 12) {
         years += 1;
         months -= 12;
     } else if (months < 0) {
@@ -39,43 +39,14 @@ const getDuration = (startDate: string, endDate: string): string => {
     return duration || "0 months";
 };
 
-
-const groupWorkExperiences = (workExperiences: WorkInterface[]) => {
-    return workExperiences.reduce((acc, experience) => {
-        const { name } = experience;
-        if (!acc[name]) {
-            acc[name] = {
-                company: name,
-                url: experience.url,
-                location: experience.location,
-                image: experience.image,
-                experiences: [],
-                totalDuration: { years: 0, months: 0 },
-            };
-        }
-        acc[name].experiences.push(experience);
-
-        const experienceDuration = getDurationObject(experience.startDate, experience.endDate);
-        acc[name].totalDuration.years += experienceDuration.years;
-        acc[name].totalDuration.months += experienceDuration.months;
-
-        if (acc[name].totalDuration.months >= 12) {
-            acc[name].totalDuration.years += Math.floor(acc[name].totalDuration.months / 12);
-            acc[name].totalDuration.months = acc[name].totalDuration.months % 12;
-        }
-
-        return acc;
-    }, {} as Record<string, { company: string, url: string, location: string, image: string, experiences: WorkInterface[], totalDuration: { years: number, months: number } }>);
-};
-
-const getDurationObject = (startDate: string, endDate: string): { years: number, months: number } => {
+const getTotalDuration = (startDate: string, endDate: string): { years: number, months: number } => {
     const start = new Date(startDate);
     const end = endDate === "now" ? new Date() : new Date(endDate);
 
     let years = end.getFullYear() - start.getFullYear();
-    let months = end.getMonth() - start.getMonth() + 1;
+    let months = end.getMonth() - start.getMonth();
 
-    if (months > 12) {
+    if (months >= 12) {
         years += 1;
         months -= 12;
     } else if (months < 0) {
@@ -98,6 +69,33 @@ const formatDuration = (duration: { years: number, months: number }): string => 
     return formatted || "0 months";
 };
 
+const groupWorkExperiences = (workExperiences: WorkInterface[]) => {
+    return workExperiences.reduce((acc, experience) => {
+        const { name } = experience;
+        if (!acc[name]) {
+            acc[name] = {
+                company: name,
+                url: experience.url,
+                location: experience.location,
+                image: experience.image,
+                experiences: [],
+                totalDuration: { years: 0, months: 0 },
+            };
+        }
+        acc[name].experiences.push(experience);
+
+        const experienceDuration = getTotalDuration(experience.startDate, experience.endDate);
+        acc[name].totalDuration.years += experienceDuration.years;
+        acc[name].totalDuration.months += experienceDuration.months;
+
+        if (acc[name].totalDuration.months >= 12) {
+            acc[name].totalDuration.years += Math.floor(acc[name].totalDuration.months / 12);
+            acc[name].totalDuration.months = acc[name].totalDuration.months % 12;
+        }
+
+        return acc;
+    }, {} as Record<string, { company: string, url: string, location: string, image: string, experiences: WorkInterface[], totalDuration: { years: number, months: number } }>);
+};
 
 const groupedWorkExperiences = groupWorkExperiences(work);
 
@@ -126,7 +124,7 @@ function Education({ education }: { education: EducationInterface }) {
                 {`${education.startDate} - ${education.endDate}`}
             </Card.Eyebrow>
         </article>
-    )
+    );
 }
 
 function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<string, { company: string, url: string, location: string, image: string, experiences: WorkInterface[], totalDuration: { years: number, months: number } }> }) {
@@ -203,7 +201,6 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
     );
 }
 
-
 export default function Experience() {
     return (
         <div>
@@ -229,5 +226,5 @@ export default function Experience() {
                 </div>
             </Container>
         </div>
-    )
+    );
 }
