@@ -48,8 +48,8 @@ const formatDuration = (duration: { years: number, months: number }): string => 
 
 // Function to get the earliest start date and latest end date
 const getCompanyDuration = (experiences: WorkInterface[]) => {
-    const startDates = experiences.map(exp => new Date(exp.startDate));
-    const endDates = experiences.map(exp => exp.endDate === "now" ? new Date() : new Date(exp.endDate));
+    const startDates = experiences.map(exp => new Date(exp.startDate).getTime());
+    const endDates = experiences.map(exp => exp.endDate === "now" ? new Date().getTime() : new Date(exp.endDate).getTime());
 
     const earliestStartDate = new Date(Math.min(...startDates));
     const latestEndDate = new Date(Math.max(...endDates));
@@ -68,7 +68,7 @@ const groupWorkExperiences = (workExperiences: WorkInterface[]) => {
             acc[name] = {
                 company: name,
                 url: experience.url,
-                location: experience.location,
+                location: experience.location ?? '', // Ensure location is a string
                 image: experience.image,
                 experiences: [],
                 totalDuration: { years: 0, months: 0 },
@@ -114,7 +114,7 @@ const calculateTotalExperience = (groupedWorkExperiences: Record<string, { total
     }, { years: 0, months: 0 });
 };
 
-const groupedWorkExperiences = groupWorkExperiences(work);
+const groupedWorkExperiences = groupWorkExperiences(work as WorkInterface[]); // Ensure work data is cast to WorkInterface[]
 const totalExperience = calculateTotalExperience(groupedWorkExperiences);
 const totalExperienceYears = totalExperience.years + Math.floor(totalExperience.months / 12);
 
