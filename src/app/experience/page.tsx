@@ -123,7 +123,23 @@ function Education({ education }: { education: EducationInterface }) {
         <article className="md:grid md:grid-cols-4 md:items-baseline">
             <Card className="md:col-span-3">
                 <Card.Title>
-                    {education.area} - {education.institution}
+                    <div className="flex items-start space-x-4 mb-8">
+                        <Image
+                            className="w-12 h-12 rounded"
+                            width={50}
+                            height={50}
+                            src={require(`@/images/universities/vilniaus-universitetas.png`).default}
+                            alt={education.institution}
+                        />
+                        <div>
+                            <h2 className="text-lg font-semibold">
+                                {education.studyType} in {education.area}
+                            </h2>
+                            <div>
+                                {education.institution}
+                            </div>
+                        </div>
+                    </div>
                 </Card.Title>
                 <Card.Eyebrow
                     as="time"
@@ -133,7 +149,6 @@ function Education({ education }: { education: EducationInterface }) {
                 >
                     {`${education.startDate} - ${education.endDate}`}
                 </Card.Eyebrow>
-                <Card.Description>{education.studyType}</Card.Description>
             </Card>
             <Card.Eyebrow
                 as="time"
@@ -193,7 +208,7 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                                             </div>
                                             <div className="pl-4">
                                                 {experience.summary && (
-                                                    <p className="text-sm text-gray-600">
+                                                    <p className="text-sm text-neutral-600 dark:text-neutral-300">
                                                         {experience.summary.split('\n').map((line, i) => (
                                                             <React.Fragment key={i}>
                                                                 {line}
@@ -236,7 +251,7 @@ export default function Experience() {
             </Container>
 
             <Container className="mt-10">
-                <h2 className="text-4xl font-bold tracking-tight text-neutral-800 sm:text-5xl dark:text-neutral-100">
+                <h2 className="text-4xl mb-4 font-bold tracking-tight text-neutral-800 sm:text-5xl dark:text-neutral-100">
                     My education
                 </h2>
 
