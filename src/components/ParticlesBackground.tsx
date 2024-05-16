@@ -9,7 +9,7 @@ import ErrorBoundary from '@/components/ErrorBoundary';  // Import ErrorBoundary
 
 const Particles = lazy(() => import("@tsparticles/react").then(module => ({ default: module.Particles })));
 
-const ParticlesBackground = ({ children }: { children: React.ReactNode }) => {
+const ParticlesBackground = () => {
     const [init, setInit] = useState(false);
 
     useEffect(() => {
@@ -117,7 +117,6 @@ const ParticlesBackground = ({ children }: { children: React.ReactNode }) => {
                     </ErrorBoundary>
                 </Suspense>
             )}
-            {children}
         </>
     );
 }
