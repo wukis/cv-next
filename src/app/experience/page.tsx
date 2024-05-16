@@ -46,6 +46,20 @@ const formatDuration = (duration: { years: number, months: number }): string => 
     return formatted || '0 months';
 };
 
+// Function to get the earliest start date and latest end date
+const getCompanyDuration = (experiences: WorkInterface[]) => {
+    const startDates = experiences.map(exp => new Date(exp.startDate));
+    const endDates = experiences.map(exp => exp.endDate === "now" ? new Date() : new Date(exp.endDate));
+
+    const earliestStartDate = new Date(Math.min(...startDates));
+    const latestEndDate = new Date(Math.max(...endDates));
+
+    return {
+        startDate: earliestStartDate,
+        endDate: latestEndDate,
+    };
+};
+
 // Function to group work experiences and calculate total duration
 const groupWorkExperiences = (workExperiences: WorkInterface[]) => {
     return workExperiences.reduce((acc, experience) => {
@@ -58,6 +72,8 @@ const groupWorkExperiences = (workExperiences: WorkInterface[]) => {
                 image: experience.image,
                 experiences: [],
                 totalDuration: { years: 0, months: 0 },
+                startDate: new Date(startDate),
+                endDate: endDate === "now" ? new Date() : new Date(endDate),
             };
         }
         acc[name].experiences.push(experience);
@@ -71,8 +87,22 @@ const groupWorkExperiences = (workExperiences: WorkInterface[]) => {
             acc[name].totalDuration.months = acc[name].totalDuration.months % 12;
         }
 
+        // Update the company's overall start and end dates
+        const companyDuration = getCompanyDuration(acc[name].experiences);
+        acc[name].startDate = companyDuration.startDate;
+        acc[name].endDate = companyDuration.endDate;
+
         return acc;
-    }, {} as Record<string, { company: string, url: string, location: string, image: string, experiences: WorkInterface[], totalDuration: { years: number, months: number } }>);
+    }, {} as Record<string, {
+        company: string,
+        url: string,
+        location: string,
+        image: string,
+        experiences: WorkInterface[],
+        totalDuration: { years: number, months: number },
+        startDate: Date,
+        endDate: Date
+    }>);
 };
 
 const groupedWorkExperiences = groupWorkExperiences(work);
@@ -105,21 +135,23 @@ function Education({ education }: { education: EducationInterface }) {
     );
 }
 
-function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<string, { company: string, url: string, location: string, image: string, experiences: WorkInterface[], totalDuration: { years: number, months: number } }> }) {
+function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<string, { company: string, url: string, location: string, image: string, experiences: WorkInterface[], totalDuration: { years: number, months: number }, startDate: Date, endDate: Date }> }) {
     return (
         <div>
             {Object.keys(groupedWorkExperiences).map(company => {
                 const companyData = groupedWorkExperiences[company];
+                const formattedStartDate = `${companyData.startDate.getFullYear()}-${String(companyData.startDate.getMonth() + 1).padStart(2, '0')}`;
+                const formattedEndDate = `${companyData.endDate.getFullYear()}-${String(companyData.endDate.getMonth() + 1).padStart(2, '0')}`;
                 return (
                     <article key={company} className="md:grid md:grid-cols-4 md:items-baseline">
                         <Card className="md:col-span-3">
                             <Card.Eyebrow
                                 as="time"
-                                dateTime={companyData.experiences[0].startDate}
+                                dateTime={formattedStartDate}
                                 className="md:hidden"
                                 decorate
                             >
-                                {`${companyData.experiences[0].startDate} - ${companyData.experiences[companyData.experiences.length - 1].endDate}`}
+                                {`${formattedStartDate} - ${formattedEndDate}`}
                             </Card.Eyebrow>
                             <Card.Description>
                                 <div className="flex items-start space-x-4 mb-8">
@@ -132,10 +164,10 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                                     />
                                     <div>
                                         <h2 className="text-lg font-semibold">
-                                            {companyData.company} - Full-time <span className="text-sm text-gray-600">({formatDuration(companyData.totalDuration)})</span>
+                                            {companyData.company} - Full-time
                                         </h2>
                                         <p className="text-sm text-gray-600">
-                                            {companyData.location}
+                                            <span className="text-sm text-gray-600">({formatDuration(companyData.totalDuration)})</span> {companyData.location}
                                         </p>
                                     </div>
                                 </div>
@@ -167,10 +199,10 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                         </Card>
                         <Card.Eyebrow
                             as="time"
-                            dateTime={companyData.experiences[0].startDate}
+                            dateTime={formattedStartDate}
                             className="mt-1 hidden md:block"
                         >
-                            {`${companyData.experiences[0].startDate} - ${companyData.experiences[companyData.experiences.length - 1].endDate}`}
+                            {`${formattedStartDate} - ${formattedEndDate}`}
                         </Card.Eyebrow>
                     </article>
                 );
