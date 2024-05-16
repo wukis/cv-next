@@ -96,12 +96,14 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                                 </div>
                                 <div className="mt-4">
                                     {companyData.experiences.map((experience, index) => (
-                                        <div key={index} className="flex items-start space-x-2 mb-4">
-                                            <div className="w-2 h-2 bg-gray-400 rounded-full mt-1"></div>
-                                            <div>
+                                        <div key={index} className="mb-4">
+                                            <div className="flex items-center space-x-2">
+                                                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
                                                 <h3 className="text-base font-semibold">
                                                     {experience.position}
                                                 </h3>
+                                            </div>
+                                            <div className="pl-4">
                                                 <p className="text-sm text-gray-600">
                                                     {new Date(experience.startDate).toLocaleDateString()} - {experience.endDate === "now" ? "Present" : new Date(experience.endDate).toLocaleDateString()}
                                                 </p>
@@ -117,6 +119,7 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                                                 )}
                                             </div>
                                         </div>
+
                                     ))}
                                 </div>
                             </Card.Description>
