@@ -3,8 +3,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Container } from '@/components/Container'
 import {
-  GitHubIcon,
-  LinkedInIcon,
+    GitHubIcon,
+    LinkedInIcon,
 } from '@/components/SocialIcons'
 import { type RecommendationInterface } from '@/lib/recommendations'
 import portraitImage from '@/images/jonas-petrik-portrait.png'
@@ -51,80 +51,78 @@ function Recommendations() {
     )
 }
 
-
-
 function SocialLink({
-  icon: Icon,
-  ...props
-}: React.ComponentPropsWithoutRef<typeof Link> & {
-  icon: React.ComponentType<{ className?: string }>
+                        icon: Icon,
+                        ...props
+                    }: React.ComponentPropsWithoutRef<typeof Link> & {
+    icon: React.ComponentType<{ className?: string }>
 }) {
-  return (
-    <Link className="group -m-1 p-1" {...props}>
-      <Icon className="h-6 w-6 fill-neutral-500 transition group-hover:fill-neutral-600 dark:fill-neutral-400 dark:group-hover:fill-neutral-300" />
-    </Link>
-  )
+    return (
+        <Link className="group -m-1 p-1" {...props}>
+            <Icon className="h-6 w-6 fill-neutral-500 transition group-hover:fill-neutral-600 dark:fill-neutral-400 dark:group-hover:fill-neutral-300" />
+        </Link>
+    )
 }
 
 function Recommendation({ recommendation }: { recommendation: RecommendationInterface }) {
-  return (
-      <div>
-          <Link href={`/recommendations#${recommendation.slug}`} className="block p-4 rounded hover:bg-neutral-100/75 hover:dark:bg-neutral-800/50 shadow hover:shadow-lg transition-transform transform hover:scale-105">
-              <figure>
-                  <blockquote className="text-sm line-clamp-2">
-                      <p>{`“${truncate(recommendation.body, 100)}”`}</p>
-                  </blockquote>
-                  <figcaption className="mt-4 flex items-center gap-4">
-                      <Image
-                          className="h-10 w-10 rounded"
-                          width={40}
-                          height={40}
-                          src={require(`@/images/recommendations/${recommendation.image}`)}
-                          alt={recommendation.fullName}
-                      />
-                      <div>
-                          <div className="font-semibold">{recommendation.fullName}</div>
-                          <div className="text-xs text-neutral-600 dark:text-neutral-400">{recommendation.position}</div>
-                          <div className="text-xs italic text-right">{recommendation.date}</div>
-                      </div>
-                  </figcaption>
-              </figure>
-          </Link>
-      </div>
-  )
+    return (
+        <div>
+            <Link href={`/recommendations#${recommendation.slug}`} className="block p-4 rounded hover:bg-neutral-100/75 hover:dark:bg-neutral-800/50 shadow hover:shadow-lg transition-transform transform hover:scale-105">
+                <figure>
+                    <blockquote className="text-sm line-clamp-2">
+                        <p>{`“${truncate(recommendation.body, 100)}”`}</p>
+                    </blockquote>
+                    <figcaption className="mt-4 flex items-center gap-4">
+                        <Image
+                            className="h-10 w-10 rounded"
+                            width={40}
+                            height={40}
+                            src={require(`@/images/recommendations/${recommendation.image}`).default}
+                            alt={recommendation.fullName}
+                        />
+                        <div>
+                            <div className="font-semibold">{recommendation.fullName}</div>
+                            <div className="text-xs text-neutral-600 dark:text-neutral-400">{recommendation.position}</div>
+                            <div className="text-xs italic text-right">{recommendation.date}</div>
+                        </div>
+                    </figcaption>
+                </figure>
+            </Link>
+        </div>
+    )
 }
 
-export default async function Home() {
-  return (
-    <>
-      <Container className="mt-10">
-        <div className="flex flex-col md:flex-row gap-8 items-center">
-          <div className="flex-1 max-w-xs px-2.5 lg:max-w-52 items-center">
-            <Image
-                src={portraitImage}
-                alt="Jonas Petrik"
-                sizes="(min-width: 1024px) 32rem, 20rem"
-                className="aspect-square rotate-3 rounded-2xl object-cover"
-                priority={false}
-            />
-            <div className="mt-4 flex gap-6">
-                <SocialLink href="mailto:jonas@petrik.dev" icon={MailIcon}  aria-label="Email me" />
-                <SocialLink href="https://www.linkedin.com/in/jonas-petrik/" target="_blank" aria-label="Find me on LinkedIn" icon={LinkedInIcon} />
-                <SocialLink href="https://github.com/wukis" target="_blank" aria-label="Find me on GitHub" icon={GitHubIcon} />
-            </div>
-          </div>
-          <div className="p-8 flex-1 bg-neutral-50/50 dark:bg-neutral-800/25">
-            <h1 className="text-4xl font-bold tracking-tight text-neutral-800 sm:text-5xl dark:text-neutral-100">
-              I&apos;m {linkedin.basics.name} - { linkedin.basics.label }
-            </h1>
-            <p className="mt-6 text-base text-neutral-600 dark:text-neutral-400">
-              { linkedin.basics.summary }
-            </p>
-          </div>
+export default function Home() {
+    return (
+        <>
+            <Container className="mt-10">
+                <div className="flex flex-col md:flex-row gap-8 items-center">
+                    <div className="flex-1 max-w-xs px-2.5 lg:max-w-52 items-center">
+                        <Image
+                            src={portraitImage}
+                            alt="Jonas Petrik"
+                            sizes="(min-width: 1024px) 32rem, 20rem"
+                            className="aspect-square rotate-3 rounded-2xl object-cover"
+                            priority={false}
+                        />
+                        <div className="mt-4 flex gap-6">
+                            <SocialLink href="mailto:jonas@petrik.dev" icon={MailIcon}  aria-label="Email me" />
+                            <SocialLink href="https://www.linkedin.com/in/jonas-petrik/" target="_blank" aria-label="Find me on LinkedIn" icon={LinkedInIcon} />
+                            <SocialLink href="https://github.com/wukis" target="_blank" aria-label="Find me on GitHub" icon={GitHubIcon} />
+                        </div>
+                    </div>
+                    <div className="p-8 flex-1 bg-neutral-50/50 dark:bg-neutral-800/25">
+                        <h1 className="text-4xl font-bold tracking-tight text-neutral-800 sm:text-5xl dark:text-neutral-100">
+                            I&apos;m {linkedin.basics.name} - { linkedin.basics.label }
+                        </h1>
+                        <p className="mt-6 text-base text-neutral-600 dark:text-neutral-400">
+                            { linkedin.basics.summary }
+                        </p>
+                    </div>
 
-        </div>
-      </Container>
-      <Recommendations />
-    </>
-  )
+                </div>
+            </Container>
+            <Recommendations />
+        </>
+    )
 }
