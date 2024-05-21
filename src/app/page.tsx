@@ -74,7 +74,7 @@ function Recommendation({ recommendation }: { recommendation: RecommendationInte
                     </blockquote>
                     <figcaption className="mt-4 flex items-center gap-4">
                         <Image
-                            className="h-10 w-10 rounded"
+                            className="h-18 w-18 rounded"
                             width={40}
                             height={40}
                             src={require(`@/images/recommendations/${recommendation.image}`).default}
