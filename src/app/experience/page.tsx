@@ -250,9 +250,9 @@ export default function Experience() {
                 </h2>
 
                 <div className="flex max-w-3xl flex-col space-y-16">
-                    {/*{linkedIn.education.map((education: EducationInterface) => (*/}
-                    {/*    <Education key={education.institution} education={education} />*/}
-                    {/*))}*/}
+                    {linkedIn.education.map((education: EducationInterface) => (
+                        <Education key={education.institution} education={education} />
+                    ))}
                 </div>
             </Container>
         </div>

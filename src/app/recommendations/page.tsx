@@ -59,9 +59,9 @@ export default async function ArticlesIndex() {
     >
       <div className="md:border-l md:border-neutral-300 md:pl-6 md:dark:border-neutral-300/40">
         <div className="flex max-w-3xl flex-col space-y-16">
-          {/*{recommendations.map((recommendation: RecommendationInterface) => (*/}
-          {/*  <Recommendation key={recommendation.slug} recommendation={recommendation} />*/}
-          {/*))}*/}
+          {recommendations.map((recommendation: RecommendationInterface) => (
+            <Recommendation key={recommendation.slug} recommendation={recommendation} />
+          ))}
         </div>
       </div>
     </SimpleLayout>

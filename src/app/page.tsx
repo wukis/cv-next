@@ -10,6 +10,13 @@ import portraitImage from '@/images/jonas-petrik-portrait.png'
 import recommendations from '@/data/recommendations.json'
 import linkedin from '@/data/linkedin.json'
 
+function truncate(text: string, length: number) {
+    if (text.length <= length) {
+        return text;
+    }
+    return text.slice(0, length) + '...';
+}
+
 function MailIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
     return (
         <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
@@ -25,29 +32,22 @@ function Recommendations() {
     const displayedRecommendations = recommendations.slice(0, 6);
 
     return (
-        <div className="mx-auto mt-16 max-w-5xl">
-            <div className="mx-auto max-w-xl text-center">
-                <h2 className="text-4xl font-bold tracking-tight text-neutral-800 sm:text-5xl dark:text-neutral-100">What others say about me</h2>
+        <Container className="mt-16">
+            <div className="text-center">
+                <h2 className="text-4xl font-bold text-neutral-800 dark:text-neutral-100">What others say about me</h2>
             </div>
-            <div className="mx-auto mt-12 flow-root max-w-2xl lg:mx-0 lg:max-w-none">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {displayedRecommendations.map((recommendation, index) => (
-                        <div key={index} className="pt-4">
-                            <Recommendation recommendation={recommendation} />
-                        </div>
-                    ))}
-                </div>
-                <div className="text-right mt-4">
-                    <a
-                        href={`/recommendations`}
-                        className="text-neutral-600 hover:text-neutral-800 rounded px-3 py-2 text-sm font-medium hover:shadow-lg hover:bg-neutral-100/75 hover:dark:bg-neutral-800/50"
-                    >
-                        {`Show All (${recommendations.length})`}
-                    </a>
-                </div>
+            <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {displayedRecommendations.map((recommendation) => (
+                    <Recommendation key={recommendation.slug} recommendation={recommendation} />
+                ))}
             </div>
-        </div>
-    );
+            <div className="text-right mt-4">
+                <Link href="/recommendations" className="text-neutral-600 hover:text-neutral-800 rounded px-3 py-2 text-sm font-medium hover:shadow-lg hover:bg-neutral-100/75 dark:hover:bg-neutral-200/50">
+                    {`Show All (${recommendations.length})`}
+                </Link>
+            </div>
+        </Container>
+    )
 }
 
 
@@ -67,29 +67,27 @@ function SocialLink({
 
 function Recommendation({ recommendation }: { recommendation: RecommendationInterface }) {
   return (
-      <a href={`/recommendations#${recommendation.slug}`}>
-        <figure className="p-4 text-sm scale-95 hover:scale-100 hover:-100 hover:bg-neutral-100/75 hover:dark:bg-neutral-800/50 rounded hover:shadow-lg">
-          <blockquote>
-            <p className="line-clamp-3">{`“${recommendation.body}”`}</p>
-          </blockquote>
-            <div className="font-light text-xs italic text-right">{recommendation.date}</div>
-
-          <figcaption className="mt-6 flex items-center gap-x-4">
-            <Image
-                className="h-18 w-18 rounded"
-                width={40}
-                height={40}
-                src={require(`@/images/recommendations/${recommendation.image}`).default}
-                alt={recommendation.fullName}
-            />
-            <div>
-              <div className="font-semibold line-clamp-1">{recommendation.fullName}</div>
-              <div className="font-light line-clamp-1">{recommendation.position}</div>
-            </div>
-          </figcaption>
-
-        </figure>
-      </a>
+      <Link href={`/recommendations#${recommendation.slug}`} className="block p-4 rounded hover:bg-neutral-100/75 hover:dark:bg-neutral-800/50 shadow hover:shadow-lg transition-transform transform hover:scale-105">
+          <figure>
+              <blockquote className="text-sm line-clamp-2">
+                  <p>{`“${truncate(recommendation.body, 100)}”`}</p>
+              </blockquote>
+              <figcaption className="mt-4 flex items-center gap-4">
+                  <Image
+                      className="h-10 w-10 rounded"
+                      width={40}
+                      height={40}
+                      src={require(`@/images/recommendations/${recommendation.image}`)}
+                      alt={recommendation.fullName}
+                  />
+                  <div>
+                      <div className="font-semibold">{recommendation.fullName}</div>
+                      <div className="text-xs text-neutral-600 dark:text-neutral-400">{recommendation.position}</div>
+                      <div className="text-xs italic text-right">{recommendation.date}</div>
+                  </div>
+              </figcaption>
+          </figure>
+      </Link>
   )
 }
 
