@@ -68,6 +68,7 @@ function SocialLink({
 
 function Recommendation({ recommendation }: { recommendation: RecommendationInterface }) {
   return (
+      <div>
           <Link href={`/recommendations#${recommendation.slug}`} className="block p-4 rounded hover:bg-neutral-100/75 hover:dark:bg-neutral-800/50 shadow hover:shadow-lg transition-transform transform hover:scale-105">
               <figure>
                   <blockquote className="text-sm line-clamp-2">
@@ -89,6 +90,7 @@ function Recommendation({ recommendation }: { recommendation: RecommendationInte
                   </figcaption>
               </figure>
           </Link>
+      </div>
   )
 }
 
