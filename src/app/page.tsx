@@ -123,7 +123,7 @@ export default async function Home() {
 
         </div>
       </Container>
-      <Recommendations />
+      {/*<Recommendations />*/}
     </>
   )
 }
