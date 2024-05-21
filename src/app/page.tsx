@@ -68,7 +68,7 @@ function SocialLink({
 function Recommendation({ recommendation }: { recommendation: RecommendationInterface }) {
   return (
       <>
-          <Link href={`/recommendations#${recommendation.slug}`} className="block p-4 rounded hover:bg-neutral-100/75 hover:dark:bg-neutral-800/50 shadow hover:shadow-lg transition-transform transform hover:scale-105">
+          {/*<Link href={`/recommendations#${recommendation.slug}`} className="block p-4 rounded hover:bg-neutral-100/75 hover:dark:bg-neutral-800/50 shadow hover:shadow-lg transition-transform transform hover:scale-105">*/}
               <figure>
                   <blockquote className="text-sm line-clamp-2">
                       <p>{`“${truncate(recommendation.body, 100)}”`}</p>
@@ -88,8 +88,7 @@ function Recommendation({ recommendation }: { recommendation: RecommendationInte
                       </div>
                   </figcaption>
               </figure>
-          </Link>
-
+          {/*</Link>*/}
       </>
   )
 }
