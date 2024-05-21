@@ -67,20 +67,19 @@ function SocialLink({
 
 function Recommendation({ recommendation }: { recommendation: RecommendationInterface }) {
   return (
-      <>
-          {/*<Link href={`/recommendations#${recommendation.slug}`} className="block p-4 rounded hover:bg-neutral-100/75 hover:dark:bg-neutral-800/50 shadow hover:shadow-lg transition-transform transform hover:scale-105">*/}
+          <Link href={`/recommendations#${recommendation.slug}`} className="block p-4 rounded hover:bg-neutral-100/75 hover:dark:bg-neutral-800/50 shadow hover:shadow-lg transition-transform transform hover:scale-105">
               <figure>
                   <blockquote className="text-sm line-clamp-2">
                       <p>{`“${truncate(recommendation.body, 100)}”`}</p>
                   </blockquote>
                   <figcaption className="mt-4 flex items-center gap-4">
-                      <Image
-                          className="h-10 w-10 rounded"
-                          width={40}
-                          height={40}
-                          src={require(`@/images/recommendations/${recommendation.image}`)}
-                          alt={recommendation.fullName}
-                      />
+                      {/*<Image*/}
+                      {/*    className="h-10 w-10 rounded"*/}
+                      {/*    width={40}*/}
+                      {/*    height={40}*/}
+                      {/*    src={require(`@/images/recommendations/${recommendation.image}`)}*/}
+                      {/*    alt={recommendation.fullName}*/}
+                      {/*/>*/}
                       <div>
                           <div className="font-semibold">{recommendation.fullName}</div>
                           <div className="text-xs text-neutral-600 dark:text-neutral-400">{recommendation.position}</div>
@@ -88,8 +87,7 @@ function Recommendation({ recommendation }: { recommendation: RecommendationInte
                       </div>
                   </figcaption>
               </figure>
-          {/*</Link>*/}
-      </>
+          </Link>
   )
 }
 
