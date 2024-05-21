@@ -240,7 +240,7 @@ export default function Experience() {
                 </h2>
 
                 <div className="flex max-w-3xl flex-col space-y-16">
-                    {/*<Work groupedWorkExperiences={groupedWorkExperiences} />*/}
+                    <Work groupedWorkExperiences={groupedWorkExperiences} />
                 </div>
             </Container>
 
