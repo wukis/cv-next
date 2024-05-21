@@ -1,7 +1,5 @@
 'use client';
 import React, { useEffect, useMemo, useState, lazy, Suspense } from "react";
-import { Footer } from '@/components/Footer';
-import { Header } from '@/components/Header';
 import { initParticlesEngine } from "@tsparticles/react";
 import { loadAll } from "@tsparticles/all";
 import { type Container, type ISourceOptions } from "@tsparticles/engine";

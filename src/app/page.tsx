@@ -3,9 +3,7 @@ import Link from 'next/link'
 import { Container } from '@/components/Container'
 import {
   GitHubIcon,
-  InstagramIcon,
   LinkedInIcon,
-  XIcon,
 } from '@/components/SocialIcons'
 import { type RecommendationInterface } from '@/lib/recommendations'
 import portraitImage from '@/images/jonas-petrik-portrait.png'
