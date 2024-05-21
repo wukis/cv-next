@@ -36,3 +36,5 @@ next-env.d.ts
 
 # phpstorm
 .idea
+# Sentry Config File
+.env.sentry-build-plugin
