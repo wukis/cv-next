@@ -2,7 +2,10 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Container } from '@/components/Container'
-import { GitHubIcon, LinkedInIcon } from '@/components/SocialIcons'
+import {
+    GitHubIcon,
+    LinkedInIcon,
+} from '@/components/SocialIcons'
 import { type RecommendationInterface } from '@/lib/recommendations'
 import portraitImage from '@/images/jonas-petrik-portrait.png'
 import recommendations from '@/data/recommendations.json'
@@ -71,7 +74,7 @@ function Recommendation({ recommendation }: { recommendation: RecommendationInte
                     </blockquote>
                     <figcaption className="mt-4 flex items-center gap-4">
                         <Image
-                            className="h-18 w-18 rounded"
+                            className="h-10 w-10 rounded"
                             width={40}
                             height={40}
                             src={require(`@/images/recommendations/${recommendation.image}`).default}
@@ -103,19 +106,20 @@ export default function Home() {
                             priority={false}
                         />
                         <div className="mt-4 flex gap-6">
-                            <SocialLink href="mailto:jonas@petrik.dev" icon={MailIcon} aria-label="Email me" />
+                            <SocialLink href="mailto:jonas@petrik.dev" icon={MailIcon}  aria-label="Email me" />
                             <SocialLink href="https://www.linkedin.com/in/jonas-petrik/" target="_blank" aria-label="Find me on LinkedIn" icon={LinkedInIcon} />
                             <SocialLink href="https://github.com/wukis" target="_blank" aria-label="Find me on GitHub" icon={GitHubIcon} />
                         </div>
                     </div>
                     <div className="p-8 flex-1 bg-neutral-50/50 dark:bg-neutral-800/25">
                         <h1 className="text-4xl font-bold tracking-tight text-neutral-800 sm:text-5xl dark:text-neutral-100">
-                            I&apos;m {linkedin.basics.name} - {linkedin.basics.label}
+                            I&apos;m {linkedin.basics.name} - { linkedin.basics.label }
                         </h1>
                         <p className="mt-6 text-base text-neutral-600 dark:text-neutral-400">
-                            {linkedin.basics.summary}
+                            { linkedin.basics.summary }
                         </p>
                     </div>
+
                 </div>
             </Container>
             <Recommendations />
