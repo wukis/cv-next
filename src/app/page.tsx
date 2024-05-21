@@ -1,3 +1,4 @@
+"use client"
 import Image from 'next/image'
 import Link from 'next/link'
 import { Container } from '@/components/Container'
@@ -73,13 +74,13 @@ function Recommendation({ recommendation }: { recommendation: RecommendationInte
                       <p>{`“${truncate(recommendation.body, 100)}”`}</p>
                   </blockquote>
                   <figcaption className="mt-4 flex items-center gap-4">
-                      {/*<Image*/}
-                      {/*    className="h-10 w-10 rounded"*/}
-                      {/*    width={40}*/}
-                      {/*    height={40}*/}
-                      {/*    src={require(`@/images/recommendations/${recommendation.image}`)}*/}
-                      {/*    alt={recommendation.fullName}*/}
-                      {/*/>*/}
+                      <Image
+                          className="h-10 w-10 rounded"
+                          width={40}
+                          height={40}
+                          src={require(`@/images/recommendations/${recommendation.image}`)}
+                          alt={recommendation.fullName}
+                      />
                       <div>
                           <div className="font-semibold">{recommendation.fullName}</div>
                           <div className="text-xs text-neutral-600 dark:text-neutral-400">{recommendation.position}</div>
