@@ -38,9 +38,9 @@ function Recommendations() {
                 <h2 className="text-4xl font-bold text-neutral-800 dark:text-neutral-100">What others say about me</h2>
             </div>
             <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {displayedRecommendations.map((recommendation) => (
-                    <Recommendation key={recommendation.slug} recommendation={recommendation} />
-                ))}
+                {/*{displayedRecommendations.map((recommendation) => (*/}
+                {/*    <Recommendation key={recommendation.slug} recommendation={recommendation} />*/}
+                {/*))}*/}
             </div>
             <div className="text-right mt-4">
                 <Link href="/recommendations" className="text-neutral-600 hover:text-neutral-800 rounded px-3 py-2 text-sm font-medium hover:shadow-lg hover:bg-neutral-100/75 dark:hover:bg-neutral-200/50">
