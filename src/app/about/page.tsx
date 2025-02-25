@@ -6,9 +6,7 @@ import clsx from 'clsx'
 import { Container } from '@/components/Container'
 import {
   GitHubIcon,
-  InstagramIcon,
-  LinkedInIcon,
-  XIcon,
+  LinkedInIcon
 } from '@/components/SocialIcons'
 import portraitImage from '@/images/jonas-petrik-portrait-2.jpg'
 
@@ -73,10 +71,10 @@ export default function About() {
               >
                 jonas@petrik.dev
               </SocialLink>
-              <SocialLink href="#" icon={LinkedInIcon} className="mt-4">
+              <SocialLink href="https://www.linkedin.com/in/jonas-petrik/" target="_blank" icon={LinkedInIcon} className="mt-4">
                 Find me on LinkedIn
               </SocialLink>
-              <SocialLink href="#" icon={GitHubIcon} className="mt-4">
+              <SocialLink href="https://github.com/wukis" target="_blank" icon={GitHubIcon} className="mt-4">
                 Find me on GitHub
               </SocialLink>
             </ul>
