@@ -1,7 +1,13 @@
 import { withSentryConfig } from "@sentry/nextjs";
 
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+      productionBrowserSourceMaps: true,
+      pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
+}
+
 export default withSentryConfig(
-    yourNextConfig,
+    nextConfig,
     {
       // For all available options, see:
       // https://github.com/getsentry/sentry-webpack-plugin#options
