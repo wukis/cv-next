@@ -6,7 +6,7 @@
     "startDate": "2024-01",
     "endDate": "now",
     "highlights": [],
-    "summary": "Job description\n- High Availability\n- High Scalability\n- Checkout / Payments with 6.5B in yearly throughput\n- 3rd party software integration and APIs\n- Quality assurance\n- Testing (Unit/Integration/E2E)\n- Code reviews\n- Continuous integration\n- DevOps\nProjects:\n- \"scayle.com\" -  fastest-growing enterprise commerce platform in the world.\n\nTechnologies used:\n- Laravel / Octane / RR / FrankenPHP / PHP\n- React / Javascript\n- MySQL\n- Amazon Web Services (AWS)\n\nLinks:\n- https://www.scayle.com",
+    "summary": "Job description\n- High Availability\n- High Scalability\n- Checkout / Payments with 6.5B in yearly throughput\n- 3rd party software integration and APIs\n- Quality assurance\n- Testing (Unit/Integration/E2E)\n- Code reviews\n- Continuous integration\n- DevOps\nProjects:\n- \"scayle.com\" -  fastest-growing enterprise commerce platform in the world.\n\nTechnologies used:\n- Laravel / Octane / RR / FrankenPHP / PHP\n- Redis Clusters\n- React / Javascript\n- MySQL\n- Amazon Web Services (AWS)\n\nLinks:\n- https://www.scayle.com",
     "url": "https://www.scayle.com",
     "location": "Hamburg, Germany - Remote",
     "image": "anwalt.jpg"
