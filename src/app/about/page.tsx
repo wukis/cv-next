@@ -13,11 +13,13 @@ import portraitImage from '@/images/jonas-petrik-portrait-2.jpg'
 function SocialLink({
   className,
   href,
+  target,
   children,
   icon: Icon,
 }: {
   className?: string
-  href: string
+  href: string,
+  target?: string,
   icon: React.ComponentType<{ className?: string }>
   children: React.ReactNode
 }) {
@@ -26,6 +28,7 @@ function SocialLink({
       <Link
         href={href}
         className="group flex text-sm font-medium text-neutral-800 transition hover:text-blue-500 dark:text-neutral-200 dark:hover:text-blue-500"
+        target={target}
       >
         <Icon className="h-6 w-6 flex-none fill-neutral-500 transition group-hover:fill-blue-500" />
         <span className="ml-4">{children}</span>
