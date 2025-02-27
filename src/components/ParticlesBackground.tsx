@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, Suspense } from "react";
 import { initParticlesEngine } from "@tsparticles/react";
 import { Particles } from "@tsparticles/react";
 import { loadAll } from "@tsparticles/all";
