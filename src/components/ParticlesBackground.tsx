@@ -1,27 +1,35 @@
 'use client';
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo } from "react";
 import { initParticlesEngine } from "@tsparticles/react";
 import { Particles } from "@tsparticles/react";
 import { loadAll } from "@tsparticles/all";
 import { type Container, type ISourceOptions } from "@tsparticles/engine";
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { useParticles } from './ParticlesContext';
 
 const ParticlesBackground = () => {
-    const initialized = useRef(false);
-    const containerRef = useRef<Container | null>(null);
+    const { container, setContainer } = useParticles();
 
     useEffect(() => {
-        if (!initialized.current) {
-            initialized.current = true;
-            initParticlesEngine(async (engine) => {
-                await loadAll(engine);
-            });
-        }
-    }, []);
+        let mounted = true;
+
+        const init = async () => {
+            if (!container) {
+                await initParticlesEngine(async (engine) => {
+                    await loadAll(engine);
+                });
+            }
+        };
+
+        init();
+        return () => {
+            mounted = false;
+        };
+    }, [container]);
 
     const particlesLoaded = async (container?: Container): Promise<void> => {
         if (container) {
-            containerRef.current = container;
+            setContainer(container);
         }
     };
 
