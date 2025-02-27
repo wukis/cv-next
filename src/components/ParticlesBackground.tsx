@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useState, Suspense } from "react";
 import { initParticlesEngine } from "@tsparticles/react";
 import { Particles } from "@tsparticles/react";
 import { loadAll } from "@tsparticles/all";
@@ -7,23 +7,20 @@ import { type Container, type ISourceOptions } from "@tsparticles/engine";
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 const ParticlesBackground = () => {
-    const initialized = useRef(false);
-    const containerRef = useRef<Container | null>(null);
+    const [init, setInit] = useState(false);
 
     useEffect(() => {
-        if (!initialized.current) {
-            initialized.current = true;
-            initParticlesEngine(async (engine) => {
-                await loadAll(engine);
-            });
-        }
+        // Preload the Particles chunk
+        import("@tsparticles/react");
+
+        initParticlesEngine(async (engine) => {
+            await loadAll(engine);
+        }).then(() => {
+            setInit(true);
+        });
     }, []);
 
-    const particlesLoaded = async (container?: Container): Promise<void> => {
-        if (container) {
-            containerRef.current = container;
-        }
-    };
+    const particlesLoaded = async (container?: Container): Promise<void> => {};
 
     const options: ISourceOptions = useMemo(
         () => ({
@@ -104,14 +101,20 @@ const ParticlesBackground = () => {
     );
 
     return (
-        <ErrorBoundary>
-            <Particles
-                id="tsparticles"
-                options={options}
-                particlesLoaded={particlesLoaded}
-                className="fixed inset-0 z-0"
-            />
-        </ErrorBoundary>
+        <>
+            {init && (
+                <Suspense fallback={<div className="fixed inset-0 z-0"></div>}>
+                    <ErrorBoundary>
+                        <Particles
+                            id="tsparticles"
+                            options={options}
+                            particlesLoaded={particlesLoaded}
+                            className="fixed inset-0 z-0"
+                        />
+                    </ErrorBoundary>
+                </Suspense>
+            )}
+        </>
     );
 }
 
