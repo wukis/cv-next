@@ -1,10 +1,11 @@
 'use client';
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { initParticlesEngine } from "@tsparticles/react";
-import { Particles } from "@tsparticles/react";
 import { loadAll } from "@tsparticles/all";
 import { type Container, type ISourceOptions } from "@tsparticles/engine";
-import ErrorBoundary from '@/components/ErrorBoundary';
+import ErrorBoundary from '@/components/ErrorBoundary';  // Import ErrorBoundary
+
+const Particles = lazy(() => import("@tsparticles/react").then(module => ({ default: module.Particles })));
 
 const ParticlesBackground = () => {
     const [init, setInit] = useState(false);
