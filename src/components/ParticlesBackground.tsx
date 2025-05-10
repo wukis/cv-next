@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import dynamic from 'next/dynamic';
 // import { Particles } from "@tsparticles/react";
 import { initParticlesEngine } from "@tsparticles/react";
@@ -32,9 +32,10 @@ const ParticlesBackground = () => {
         }
     }, []);
 
-    const particlesLoaded = async (container?: Container): Promise<void> => {
+    // Memoize particlesLoaded with useCallback
+    const particlesLoaded = useCallback(async (container?: Container): Promise<void> => {
         console.log("ParticlesBackground particlesLoaded CALLBACK", container);
-    };
+    }, []); // Empty dependency array means this function reference is stable
 
     const options: ISourceOptions = useMemo(() => {
         console.log("ParticlesBackground useMemo FOR OPTIONS CALLED");
