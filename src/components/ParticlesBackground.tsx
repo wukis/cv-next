@@ -44,20 +44,40 @@ const ParticlesBackground = () => {
                 color: { value: "#2563eb", animation: { enable: true, speed: 10 } },
                 effect: { type: "trail", options: { trail: { length: 50, minWidth: 4 } } },
                 move: {
-                    direction: "none", enable: true, outModes: { default: "destroy" },
-                    path: { clamp: false, enable: true, delay: { value: 0 }, generator: "polygonPathGenerator", options: { sides: 6, turnSteps: 120, angle: 120 } },
-                    random: false, speed: 3, straight: false
+                    direction: "none", // Particles will initially move based on emitter settings or attract
+                    enable: true,
+                    outModes: { default: "destroy" },
+                    path: { clamp: false, enable: true, delay: { value: 0 }, generator: "polygonPathGenerator", options: { sides: 6, turnSteps: 120, angle: 120 } }, // Re-enabled path for honeycomb shape
+                    random: false,
+                    speed: 3, // Speed of general movement, can be adjusted
+                    straight: false,
+                    attract: { // Added attract feature
+                        enable: true,
+                        rotateX: 600, // Example values, can be tuned
+                        rotateY: 1200, // Example values, can be tuned
+                        distance: 150, // Attraction distance, particles closer than this will attract
+                    }
                 },
-                number: { value: 0 },
+                number: { value: 0 }, // Emitters will control the number of particles
                 opacity: { value: 0.3 },
                 shape: { type: "circle" },
                 size: { value: 2 }
             },
             fullScreen: { zIndex: -1 },
-            emitters: {
-                direction: "none", rate: { quantity: 1, delay: 0.5 },
-                size: { width: 0, height: 0 }, position: { x: 20, y: 20 }
-            }
+            emitters: [
+                {
+                    direction: "bottom-right", // Aim particles generally towards bottom-right
+                    rate: { quantity: 1, delay: 0.1 }, // Decreased delay to increase particle density
+                    size: { width: 0, height: 0 }, // Point emitter
+                    position: { x: 5, y: 5 } // Slightly offset from the very corner for visibility
+                },
+                {
+                    direction: "top-left", // Aim particles generally towards top-left
+                    rate: { quantity: 1, delay: 0.1 }, // Decreased delay to increase particle density
+                    size: { width: 0, height: 0 }, // Point emitter
+                    position: { x: 95, y: 95 } // Slightly offset from the very corner for visibility
+                }
+            ]
         };
     }, []);
 
