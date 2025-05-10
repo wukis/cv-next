@@ -24,27 +24,21 @@ const DynamicMemoizedParticles = dynamic(() =>
 );
 
 const ParticlesBackground = () => {
-    console.log("ParticlesBackground RENDERED");
     const [init, setInit] = useState(false);
 
     useEffect(() => {
-        console.log("ParticlesBackground EFFECT tsParticlesEngineInit - START");
-        tsParticlesEngineInit(async (engine) => { // Using the renamed import
-            console.log("ParticlesBackground tsParticlesEngineInit - engine CREATED");
+        tsParticlesEngineInit(async (engine) => {
             await loadAll(engine);
-            console.log("ParticlesBackground tsParticlesEngineInit - loadAll COMPLETE");
         }).then(() => {
-            console.log("ParticlesBackground tsParticlesEngineInit - .then() - SETTING INIT TRUE");
             setInit(true);
         });
     }, []);
 
     const particlesLoaded = useCallback(async (container?: Container): Promise<void> => {
-        console.log("ParticlesBackground particlesLoaded CALLBACK", container);
+        // Placeholder for any future logic on particles loaded
     }, []);
 
     const options: ISourceOptions = useMemo(() => {
-        console.log("ParticlesBackground useMemo FOR OPTIONS CALLED");
         return {
             particles: {
                 color: { value: "#2563eb", animation: { enable: true, speed: 10 } },
@@ -66,8 +60,6 @@ const ParticlesBackground = () => {
             }
         };
     }, []);
-
-    console.log("ParticlesBackground rendering, init state:", init);
 
     return (
         <>
