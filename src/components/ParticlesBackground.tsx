@@ -59,7 +59,7 @@ const ParticlesBackground = () => {
                     }
                 },
                 number: { value: 0 }, // Emitters will control the number of particles
-                opacity: { value: 0.3 },
+                opacity: { value: 0.15 },
                 shape: { type: "circle" },
                 size: { value: 2 }
             },
