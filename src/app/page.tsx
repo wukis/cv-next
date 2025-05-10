@@ -33,16 +33,16 @@ function Recommendations() {
     const displayedRecommendations = recommendations.slice(0, 6);
 
     return (
-        <Container className="mt-16">
-            <div className="text-center">
+        <Container className="mt-10">
+            <div className="text-center px-8">
                 <h2 className="text-4xl font-bold text-neutral-800 dark:text-neutral-100">What others say about me</h2>
             </div>
-            <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 px-8">
                 {displayedRecommendations.map((recommendation) => (
                     <Recommendation key={recommendation.slug} recommendation={recommendation} />
                 ))}
             </div>
-            <div className="text-right mt-4">
+            <div className="text-right mt-4 px-8">
                 <Link href="/recommendations" className="text-neutral-600 hover:text-neutral-800 rounded px-3 py-2 text-sm font-medium hover:shadow-lg hover:bg-neutral-100/75 dark:hover:bg-neutral-200/50">
                     {`Show All (${recommendations.length})`}
                 </Link>
@@ -70,7 +70,7 @@ function Recommendation({ recommendation }: { recommendation: RecommendationInte
             <Link href={`/recommendations#${recommendation.slug}`} className="block p-4 rounded hover:bg-neutral-100/75 hover:dark:bg-neutral-800/50 shadow hover:shadow-lg transition-transform transform hover:scale-105">
                 <figure>
                     <blockquote className="text-sm line-clamp-2">
-                        <p>{`“${truncate(recommendation.body, 100)}”`}</p>
+                        <p>{`"${truncate(recommendation.body, 100)}"`}</p>
                     </blockquote>
                     <figcaption className="mt-4 flex items-center gap-4">
                         <Image
