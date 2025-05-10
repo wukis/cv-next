@@ -5,6 +5,7 @@ import { Container } from '@/components/Container'
 import {
     GitHubIcon,
     LinkedInIcon,
+    GitLabIcon,
 } from '@/components/SocialIcons'
 import { type RecommendationInterface } from '@/lib/recommendations'
 import portraitImage from '@/images/jonas-petrik-portrait.png'
@@ -109,6 +110,7 @@ export default function Home() {
                             <SocialLink href="mailto:jonas@petrik.dev" icon={MailIcon}  aria-label="Email me" />
                             <SocialLink href="https://www.linkedin.com/in/jonas-petrik/" target="_blank" aria-label="Find me on LinkedIn" icon={LinkedInIcon} />
                             <SocialLink href="https://github.com/wukis" target="_blank" aria-label="Find me on GitHub" icon={GitHubIcon} />
+                            <SocialLink href="https://gitlab.com/jonas.petrik" target="_blank" aria-label="Find me on GitLab" icon={GitLabIcon} />
                         </div>
                     </div>
                     <div className="p-8 flex-1 bg-neutral-50/50 dark:bg-neutral-800/25">
