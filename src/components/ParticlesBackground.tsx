@@ -1,28 +1,44 @@
 'use client';
-import React, { useEffect, useMemo, useState, Suspense } from "react";
-import { Particles } from "@tsparticles/react";
+import React, { useEffect, useMemo, useState } from "react";
+import dynamic from 'next/dynamic';
+// import { Particles } from "@tsparticles/react";
 import { initParticlesEngine } from "@tsparticles/react";
 import { loadAll } from "@tsparticles/all";
 import { type Container, type ISourceOptions } from "@tsparticles/engine";
 import ErrorBoundary from '@/components/ErrorBoundary';
 
+// Dynamically import Particles component with SSR turned off
+const DynamicParticles = dynamic(() =>
+    import('@tsparticles/react').then((module) => module.Particles),
+    { ssr: false }
+);
+
 const ParticlesBackground = () => {
+    console.log("ParticlesBackground RENDERED");
     const [init, setInit] = useState(false);
 
     useEffect(() => {
-        // Preload the Particles chunk - REMOVED
-
+        console.log("ParticlesBackground EFFECT initParticlesEngine - START");
         initParticlesEngine(async (engine) => {
+            console.log("ParticlesBackground initParticlesEngine - engine CREATED");
             await loadAll(engine);
+            console.log("ParticlesBackground initParticlesEngine - loadAll COMPLETE");
         }).then(() => {
+            console.log("ParticlesBackground initParticlesEngine - .then() - SETTING INIT TRUE");
             setInit(true);
         });
+        return () => {
+            console.log("ParticlesBackground EFFECT CLEANUP");
+        }
     }, []);
 
-    const particlesLoaded = async (container?: Container): Promise<void> => {};
+    const particlesLoaded = async (container?: Container): Promise<void> => {
+        console.log("ParticlesBackground particlesLoaded CALLBACK", container);
+    };
 
-    const options: ISourceOptions = useMemo(
-        () => ({
+    const options: ISourceOptions = useMemo(() => {
+        console.log("ParticlesBackground useMemo FOR OPTIONS CALLED");
+        return {
             particles: {
                 color: {
                     value: "#2563eb",
@@ -94,16 +110,16 @@ const ParticlesBackground = () => {
                     y: 20
                 }
             }
+        };
+    }, []);
 
-        }),
-        []
-    );
+    console.log("ParticlesBackground rendering, init state:", init);
 
     return (
         <>
             {init && (
                 <ErrorBoundary>
-                    <Particles
+                    <DynamicParticles
                         id="tsparticles"
                         options={options}
                         particlesLoaded={particlesLoaded}
