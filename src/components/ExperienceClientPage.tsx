@@ -116,27 +116,8 @@ const totalExperienceYears = totalExperience.years + Math.floor(totalExperience.
 
 function Education({ education }: { education: EducationInterface }) {
     return (
-        <article className="md:grid md:grid-cols-4 md:items-baseline">
-            <Card className="md:col-span-3">
-                <Card.Title>
-                    <div className="flex items-start space-x-4 mb-8">
-                        <Image
-                            className="w-12 h-12 rounded"
-                            width={50}
-                            height={50}
-                            src={require(`@/images/universities/vilniaus-universitetas.png`).default}
-                            alt={education.institution}
-                        />
-                        <div>
-                            <h2 className="text-lg font-semibold">
-                                {education.studyType} in {education.area}
-                            </h2>
-                            <div>
-                                {education.institution}
-                            </div>
-                        </div>
-                    </div>
-                </Card.Title>
+        <article className="md:grid md:grid-cols-4 md:items-start py-4">
+            <Card className="md:col-span-3 w-full">
                 <Card.Eyebrow
                     as="time"
                     dateTime={education.startDate}
@@ -145,11 +126,28 @@ function Education({ education }: { education: EducationInterface }) {
                 >
                     {`${education.startDate} - ${education.endDate}`}
                 </Card.Eyebrow>
+                <div className="flex w-full items-start gap-x-4 mt-2">
+                    <Image
+                        className="h-12 w-12 rounded object-contain flex-shrink-0"
+                        width={48}
+                        height={48}
+                        src={require(`@/images/universities/vilniaus-universitetas.png`).default}
+                        alt={education.institution}
+                    />
+                    <div className="flex-1 min-w-0">
+                        <Card.Title>
+                            {education.studyType} in {education.area}
+                        </Card.Title>
+                        <Card.Description>
+                            <p>{education.institution}</p>
+                        </Card.Description>
+                    </div>
+                </div>
             </Card>
             <Card.Eyebrow
                 as="time"
                 dateTime={education.startDate}
-                className="mt-1 hidden md:block"
+                className="mt-1 hidden md:block text-right md:text-left pl-2"
             >
                 {`${education.startDate} - ${education.endDate}`}
             </Card.Eyebrow>
@@ -165,8 +163,8 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                 const formattedStartDate = `${companyData.startDate.getFullYear()}-${String(companyData.startDate.getMonth() + 1).padStart(2, '0')}`;
                 const formattedEndDate = `${companyData.endDate.getFullYear()}-${String(companyData.endDate.getMonth() + 1).padStart(2, '0')}`;
                 return (
-                    <article key={company} className="md:grid md:grid-cols-4 md:items-baseline">
-                        <Card className="md:col-span-3">
+                    <article key={company} className="md:grid md:grid-cols-4 md:items-start py-4">
+                        <Card className="md:col-span-3 w-full">
                             <Card.Eyebrow
                                 as="time"
                                 dateTime={formattedStartDate}
@@ -175,54 +173,50 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                             >
                                 {`${formattedStartDate} - ${formattedEndDate}`}
                             </Card.Eyebrow>
-                            <Card.Description>
-                                <div className="flex items-start space-x-4 mb-8">
-                                    <Image
-                                        className="w-12 h-12 rounded"
-                                        width={50}
-                                        height={50}
-                                        src={require(`@/images/companies/${companyData.image}`).default}
-                                        alt={companyData.company}
-                                    />
-                                    <div>
-                                        <h2 className="text-lg font-semibold">
-                                            {companyData.company} - Full-time
-                                        </h2>
-                                        <p className="text-sm text-gray-600">
-                                            <span className="text-sm text-gray-600">({formatDuration(companyData.totalDuration)})</span> {companyData.location}
+                            
+                            <div className="flex w-full items-start gap-x-4 mt-2">
+                                <Image
+                                    className="h-12 w-12 rounded object-contain flex-shrink-0"
+                                    width={48}
+                                    height={48}
+                                    src={require(`@/images/companies/${companyData.image}`).default}
+                                    alt={companyData.company}
+                                />
+                                <div className="flex-1 min-w-0">
+                                    <Card.Title>
+                                        {companyData.url ? (
+                                            <a href={companyData.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                                                {companyData.company}
+                                            </a>
+                                        ) : companyData.company}
+                                    </Card.Title>
+                                    <Card.Description>
+                                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                            {formatDuration(companyData.totalDuration)} | {companyData.location}
                                         </p>
+                                    </Card.Description>
+                                </div>
+                            </div>
+
+                            <div className="mt-4 space-y-3 pl-[64px]">
+                                {companyData.experiences.map((experience, index) => (
+                                    <div key={index} className="">
+                                        <h3 className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">
+                                            {experience.position} <span className="text-xs font-normal text-neutral-500 dark:text-neutral-400">({formatDuration(getDuration(experience.startDate, experience.endDate))})</span>
+                                        </h3>
+                                        {experience.summary && (
+                                            <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-300 whitespace-pre-line">
+                                                {experience.summary}
+                                            </p>
+                                        )}
                                     </div>
-                                </div>
-                                <div className="mt-4">
-                                    {companyData.experiences.map((experience, index) => (
-                                        <div key={index} className="mb-4">
-                                            <div className="flex items-center space-x-2">
-                                                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                                                <h3 className="text-base font-semibold">
-                                                    {experience.position} <span className="text-sm text-gray-600">({formatDuration(getDuration(experience.startDate, experience.endDate))})</span>
-                                                </h3>
-                                            </div>
-                                            <div className="pl-4">
-                                                {experience.summary && (
-                                                    <p className="text-sm text-neutral-600 dark:text-neutral-300">
-                                                        {experience.summary.split('\n').map((line, i) => (
-                                                            <React.Fragment key={i}>
-                                                                {line}
-                                                                <br />
-                                                            </React.Fragment>
-                                                        ))}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </Card.Description>
+                                ))}
+                            </div>
                         </Card>
                         <Card.Eyebrow
                             as="time"
                             dateTime={formattedStartDate}
-                            className="mt-1 hidden md:block"
+                            className="mt-1 hidden md:block text-right md:text-left pl-2"
                         >
                             {`${formattedStartDate} - ${formattedEndDate}`}
                         </Card.Eyebrow>

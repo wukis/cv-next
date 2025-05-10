@@ -26,7 +26,15 @@ export function Card<T extends React.ElementType = 'div'>({
 
   return (
     <Component
-      className={clsx(className, 'group relative flex flex-col items-start scale-95 hover:scale-100 hover:-100 hover:bg-neutral-100/75 hover:dark:bg-neutral-800/50 rounded p-4 hover:shadow-lg')}
+      className={clsx(
+        className, 
+        'group relative flex flex-col items-start',
+        'scale-95 hover:scale-100',
+        'hover:bg-neutral-100 dark:hover:bg-neutral-800/75',
+        'p-4 rounded shadow-md hover:shadow-xl',
+        'border border-neutral-200/75 dark:border-neutral-800/50',
+        'transition-all duration-150 ease-in-out'
+      )}
     >
       {children}
     </Component>
