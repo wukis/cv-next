@@ -59,11 +59,20 @@ const ParticlesBackground = () => {
                     }
                 },
                 number: { value: 0 }, // Emitters will control the number of particles
-                opacity: { value: 0.15 },
+                opacity: {
+                    value: 0.15, // Target opacity
+                    animation: {
+                        enable: true,
+                        speed: 0.1, // Lower speed = slower fade-in. Particle takes 0.15/0.1 = 1.5s to reach full opacity.
+                        minimumValue: 0, // Start completely transparent
+                        startValue: "min", // Ensures it starts at minimumValue (0)
+                        destroy: "none" // Opacity animation doesn't destroy the particle
+                    }
+                },
                 shape: { type: "circle" },
                 size: { value: 2 } // Default size
             },
-            fullScreen: { zIndex: -1 },
+            fullScreen: { enable: false, zIndex: -1 }, // Disable tsparticles fullScreen handling globally
             emitters: [
                 {
                     direction: "bottom-right", // Aim particles generally towards bottom-right
@@ -82,6 +91,7 @@ const ParticlesBackground = () => {
                 {
                     maxWidth: 768, // Breakpoint for mobile devices
                     options: {
+                        fullScreen: { enable: false, zIndex: -1 }, // Disable tsparticles fullScreen handling on mobile
                         particles: {
                             size: { value: 1.5 }, // Smaller particle size for mobile
                             move: {
