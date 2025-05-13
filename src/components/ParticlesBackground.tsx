@@ -25,8 +25,14 @@ const DynamicMemoizedParticles = dynamic(() =>
 
 const ParticlesBackground = () => {
     const [init, setInit] = useState(false);
+    const [renderParticles, setRenderParticles] = useState(false);
 
     useEffect(() => {
+        // Check screen width on mount
+        if (window.innerWidth > 768) {
+            setRenderParticles(true);
+        }
+
         tsParticlesEngineInit(async (engine) => {
             await loadAll(engine);
         }).then(() => {
@@ -86,37 +92,13 @@ const ParticlesBackground = () => {
                     size: { width: 0, height: 0 }, // Point emitter
                     position: { x: 95, y: 95 } // Slightly offset from the very corner for visibility
                 }
-            ],
-            responsive: [
-                {
-                    maxWidth: 768, // Breakpoint for mobile devices
-                    options: {
-                        fullScreen: { enable: false, zIndex: -1 }, // Disable tsparticles fullScreen handling on mobile
-                        particles: {
-                            size: { value: 1.5 }, // Smaller particle size for mobile
-                            move: {
-                                attract: {
-                                    distance: 100 // Reduce attraction distance on mobile
-                                }
-                            }
-                        },
-                        emitters: [
-                            {
-                                direction: "top-left",
-                                rate: { quantity: 1, delay: 0.2 }, // Slower emission rate on mobile
-                                size: { width: 0, height: 0 },
-                                position: { x: 95, y: 95 }
-                            }
-                        ]
-                    }
-                }
             ]
         };
     }, []);
 
     return (
         <>
-            {init && (
+            {init && renderParticles && (
                 <ErrorBoundary>
                     <DynamicMemoizedParticles
                         id="tsparticles"
