@@ -61,21 +61,44 @@ const ParticlesBackground = () => {
                 number: { value: 0 }, // Emitters will control the number of particles
                 opacity: { value: 0.15 },
                 shape: { type: "circle" },
-                size: { value: 2 }
+                size: { value: 2 } // Default size
             },
             fullScreen: { zIndex: -1 },
             emitters: [
                 {
                     direction: "bottom-right", // Aim particles generally towards bottom-right
-                    rate: { quantity: 1, delay: 0.1 }, // Decreased delay to increase particle density
+                    rate: { quantity: 1, delay: 0.1 }, // Default rate
                     size: { width: 0, height: 0 }, // Point emitter
                     position: { x: 5, y: 5 } // Slightly offset from the very corner for visibility
                 },
                 {
                     direction: "top-left", // Aim particles generally towards top-left
-                    rate: { quantity: 1, delay: 0.1 }, // Decreased delay to increase particle density
+                    rate: { quantity: 1, delay: 0.1 }, // Default rate
                     size: { width: 0, height: 0 }, // Point emitter
                     position: { x: 95, y: 95 } // Slightly offset from the very corner for visibility
+                }
+            ],
+            responsive: [
+                {
+                    maxWidth: 768, // Breakpoint for mobile devices
+                    options: {
+                        particles: {
+                            size: { value: 1.5 }, // Smaller particle size for mobile
+                            move: {
+                                attract: {
+                                    distance: 100 // Reduce attraction distance on mobile
+                                }
+                            }
+                        },
+                        emitters: [
+                            {
+                                direction: "top-left",
+                                rate: { quantity: 1, delay: 0.2 }, // Slower emission rate on mobile
+                                size: { width: 0, height: 0 },
+                                position: { x: 95, y: 95 }
+                            }
+                        ]
+                    }
                 }
             ]
         };
