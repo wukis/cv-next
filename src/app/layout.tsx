@@ -5,6 +5,7 @@ import { Layout } from '@/components/Layout'
 import linkedin from '@/data/linkedin.json'
 
 import '@/styles/tailwind.css'
+import '@/styles/prism.css'
 import ParticlesBackground from "@/components/ParticlesBackground";
 
 export const metadata: Metadata = {
