@@ -30,6 +30,7 @@ function SocialLink({
         href={href}
         className="group flex items-center text-sm font-medium text-neutral-600 transition-colors hover:text-blue-500 dark:text-neutral-300 dark:hover:text-blue-400"
         target={target}
+        rel={target === '_blank' ? 'noopener noreferrer' : undefined}
       >
         <Icon className="h-5 w-5 flex-none fill-neutral-400 transition-colors group-hover:fill-blue-500 dark:fill-neutral-500" />
         <span className="ml-3">{children}</span>
@@ -52,6 +53,9 @@ function MailIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
 export const metadata: Metadata = {
   title: 'About',
   description: 'Welcome! I\'m Jonas Petrik, a Senior Software Engineer and Team Lead with a profound passion for developing software solutions that not only meet the immediate needs of our clients but are also designed to be scalable and future-proof.',
+  alternates: {
+    canonical: '/about',
+  },
 }
 
 export default function About() {
@@ -62,7 +66,7 @@ export default function About() {
           <div className="max-w-[240px] mx-auto md:mx-0">
             <Image
               src={portraitImage}
-              alt="Jonas Petrik"
+              alt="Jonas Petrik - Senior Software Engineer and Team Lead"
               sizes="(min-width: 1024px) 32rem, 20rem"
               className="aspect-square rotate-3 rounded-2xl object-cover shadow-lg"
               priority={false}

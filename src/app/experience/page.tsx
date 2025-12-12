@@ -6,7 +6,10 @@ import ExperienceClientContent from '@/components/ExperienceClientPage';
 
 export const metadata: Metadata = {
     title: 'Experience',
-    description: 'My experience and education.',
+    description: 'Professional experience and education of Jonas Petrik - Senior Software Engineer and Team Lead with expertise in PHP, JavaScript, Go, and software architecture.',
+    alternates: {
+        canonical: '/experience',
+    },
 };
 
 export default function ExperiencePage() {

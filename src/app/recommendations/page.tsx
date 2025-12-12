@@ -49,7 +49,10 @@ function Recommendation({ recommendation }: { recommendation: RecommendationInte
 export const metadata: Metadata = {
   title: 'Recommendations',
   description:
-    'Recommendations that I\'ve received throughout my carrier.',
+    'Professional recommendations and testimonials for Jonas Petrik from colleagues and industry peers.',
+  alternates: {
+    canonical: '/recommendations',
+  },
 }
 
 export default async function ArticlesIndex() {
