@@ -31,25 +31,6 @@ function MailIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
     )
 }
 
-function SocialLink({
-    icon: Icon,
-    label,
-    ...props
-}: React.ComponentPropsWithoutRef<typeof Link> & {
-    icon: React.ComponentType<{ className?: string }>
-    label: string
-}) {
-    return (
-        <Link 
-            className="group flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-sm font-mono text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100" 
-            {...props}
-        >
-            <Icon className="h-4 w-4 fill-neutral-500 transition-colors group-hover:fill-sky-500 dark:fill-neutral-400" />
-            <span>{label}</span>
-        </Link>
-    )
-}
-
 function Recommendations() {
     const displayedRecommendations = recommendations.slice(0, 6);
 
@@ -191,69 +172,90 @@ export default function HomeClientContent() {
     return (
         <>
             <Container className="mt-10 sm:mt-16">
-                <div className="flex flex-col md:flex-row gap-8 items-start">
-                    {/* Left column - Portrait & Socials */}
-                    <div className="flex-shrink-0 w-full md:w-auto">
-                        <div className="max-w-[200px] lg:max-w-[220px] mx-auto md:mx-0">
-                            {/* Terminal card for portrait */}
-                            <div className="rounded-lg overflow-hidden border border-neutral-200/60 dark:border-neutral-700/50 bg-white/50 dark:bg-neutral-900/50">
-                                <div className="flex items-center gap-2 px-3 h-6 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
-                                    <span className="text-[10px] font-mono text-neutral-400 dark:text-neutral-500">
-                                        ~/profile.png
-                                    </span>
-                                </div>
-                                <div className="p-2">
-                                    <Image
-                                        src={portraitImage}
-                                        alt="Jonas Petrik - Senior Software Engineer Team Lead"
-                                        sizes="(min-width: 1024px) 32rem, 20rem"
-                                        className="aspect-square rounded-lg object-cover"
-                                        priority={true}
-                                    />
-                                </div>
-                            </div>
-                            
-                            {/* Social links */}
-                            <div className="mt-4 space-y-2">
-                                <SocialLink href="mailto:jonas@petrik.dev" icon={MailIcon} aria-label="Send email" label="jonas@petrik.dev" />
-                                <SocialLink href="https://www.linkedin.com/in/jonas-petrik/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" icon={LinkedInIcon} label="linkedin" />
-                                <SocialLink href="https://github.com/wukis" target="_blank" rel="noopener noreferrer" aria-label="GitHub" icon={GitHubIcon} label="github" />
-                                <SocialLink href="https://gitlab.com/jonas.petrik" target="_blank" rel="noopener noreferrer" aria-label="GitLab" icon={GitLabIcon} label="gitlab" />
-                            </div>
+                {/* Main hero card - combines portrait and bio on mobile */}
+                <div className="rounded-lg overflow-hidden border border-emerald-500/30 dark:border-emerald-400/30 bg-white/50 dark:bg-neutral-900/50">
+                    {/* Terminal header */}
+                    <div className="flex items-center justify-between gap-2 px-4 py-2 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
+                        <span className="text-xs font-mono text-neutral-500 dark:text-neutral-400">
+                            ~/README.md
+                        </span>
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 dark:bg-emerald-400/10">
+                            <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+                            available
                         </div>
                     </div>
                     
-                    {/* Right column - Bio */}
-                    <div className="flex-1 min-w-0">
-                        {/* Terminal card for bio */}
-                        <div className="rounded-lg overflow-hidden border border-emerald-500/30 dark:border-emerald-400/30 bg-white/50 dark:bg-neutral-900/50">
-                            <div className="flex items-center justify-between gap-2 px-4 py-2 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
-                                <span className="text-xs font-mono text-neutral-500 dark:text-neutral-400">
-                                    ~/README.md
-                                </span>
-                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 dark:bg-emerald-400/10">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
-                                    available
+                    <div className="p-5 sm:p-6">
+                        {/* Mobile: Portrait centered at top, Desktop: Side by side */}
+                        <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
+                            {/* Portrait - smaller on mobile, side column on desktop */}
+                            <div className="flex-shrink-0">
+                                <div className="w-36 h-36 sm:w-40 sm:h-40 lg:w-48 lg:h-48 rounded-xl overflow-hidden ring-4 ring-white dark:ring-neutral-800 shadow-lg">
+                                    <Image
+                                        src={portraitImage}
+                                        alt="Jonas Petrik - Senior Software Engineer Team Lead"
+                                        sizes="(min-width: 1024px) 12rem, (min-width: 640px) 10rem, 9rem"
+                                        className="w-full h-full object-cover"
+                                        priority={true}
+                                    />
+                                </div>
+                                
+                                {/* Social links - always inline row */}
+                                <div className="mt-3 flex flex-row gap-1.5 justify-center">
+                                    <Link 
+                                        href="mailto:jonas@petrik.dev" 
+                                        className="p-1.5 rounded-md bg-neutral-100 dark:bg-neutral-800 hover:bg-emerald-500/20 dark:hover:bg-emerald-400/20 hover:text-emerald-600 transition-colors"
+                                        aria-label="Email"
+                                    >
+                                        <MailIcon className="w-4 h-4 fill-neutral-500 dark:fill-neutral-400" />
+                                    </Link>
+                                    <Link 
+                                        href="https://www.linkedin.com/in/jonas-petrik/" 
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-1.5 rounded-md bg-neutral-100 dark:bg-neutral-800 hover:bg-sky-500/20 dark:hover:bg-sky-400/20 transition-colors"
+                                        aria-label="LinkedIn"
+                                    >
+                                        <LinkedInIcon className="w-4 h-4 fill-neutral-500 dark:fill-neutral-400" />
+                                    </Link>
+                                    <Link 
+                                        href="https://github.com/wukis" 
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-1.5 rounded-md bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                                        aria-label="GitHub"
+                                    >
+                                        <GitHubIcon className="w-4 h-4 fill-neutral-500 dark:fill-neutral-400" />
+                                    </Link>
+                                    <Link 
+                                        href="https://gitlab.com/jonas.petrik" 
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-1.5 rounded-md bg-neutral-100 dark:bg-neutral-800 hover:bg-orange-500/20 dark:hover:bg-orange-400/20 transition-colors"
+                                        aria-label="GitLab"
+                                    >
+                                        <GitLabIcon className="w-4 h-4 fill-neutral-500 dark:fill-neutral-400" />
+                                    </Link>
                                 </div>
                             </div>
-                            <div className="p-6">
-                                <div className="mb-4">
+                            
+                            {/* Bio content */}
+                            <div className="flex-1 min-w-0 text-center sm:text-left">
+                                <div className="mb-3">
                                     <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 text-xs font-mono text-neutral-600 dark:text-neutral-400">
                                         <span className="w-2 h-2 rounded-full bg-emerald-500" />
                                         {linkedin.basics.label}
                                     </span>
                                 </div>
-                                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-neutral-800 dark:text-neutral-100">
+                                <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold tracking-tight text-neutral-800 dark:text-neutral-100">
                                     <span className="font-mono text-emerald-600 dark:text-emerald-400">&gt;</span> {linkedin.basics.name}
                                 </h1>
-                                <div className="mt-6 prose prose-neutral dark:prose-invert max-w-none">
-                                    <p className="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                        {linkedin.basics.summary}
-                                    </p>
-                                </div>
+                                <p className="mt-4 text-sm sm:text-base text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                                    {linkedin.basics.summary}
+                                </p>
                                 
                                 {/* Quick links */}
-                                <div className="mt-6 flex flex-wrap gap-2">
+                                <div className="mt-5 flex flex-wrap gap-2 justify-center sm:justify-start">
                                     <Link 
                                         href="/experience"
                                         className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sky-500/10 dark:bg-sky-400/10 text-sky-600 dark:text-sky-400 font-mono text-sm hover:bg-sky-500/20 dark:hover:bg-sky-400/20 transition-colors"
@@ -261,7 +263,7 @@ export default function HomeClientContent() {
                                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                         </svg>
-                                        view experience
+                                        experience
                                     </Link>
                                     <Link 
                                         href="/about"
@@ -270,7 +272,16 @@ export default function HomeClientContent() {
                                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                         </svg>
-                                        about me
+                                        about
+                                    </Link>
+                                    <Link 
+                                        href="mailto:jonas@petrik.dev"
+                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 dark:bg-emerald-400/10 text-emerald-600 dark:text-emerald-400 font-mono text-sm hover:bg-emerald-500/20 dark:hover:bg-emerald-400/20 transition-colors"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                        </svg>
+                                        contact
                                     </Link>
                                 </div>
                             </div>
