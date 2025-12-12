@@ -116,58 +116,6 @@ function Recommendation({ recommendation, index }: { recommendation: Recommendat
     )
 }
 
-// Skills section
-function Skills() {
-    const skillCategories = [
-        { name: 'Languages', items: ['PHP', 'JavaScript', 'TypeScript', 'Go', 'SQL'], icon: '💻' },
-        { name: 'Frameworks', items: ['Laravel', 'React', 'Vue.js', 'Next.js'], icon: '🛠️' },
-        { name: 'Infrastructure', items: ['AWS', 'Docker', 'MySQL', 'Redis'], icon: '☁️' },
-        { name: 'Practices', items: ['Architecture', 'Team Lead', 'DevOps', 'Agile'], icon: '📋' },
-    ];
-    
-    return (
-        <Container className="mt-16 sm:mt-24">
-            <div className="mb-10">
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-neutral-800 dark:text-neutral-100">
-                    <span className="font-mono text-sky-600 dark:text-sky-400">&gt;</span> ls <span className="text-neutral-400 dark:text-neutral-500">-la skills/</span>
-                </h2>
-                <p className="mt-3 text-lg text-neutral-600 dark:text-neutral-400 font-mono">
-                    <span className="text-neutral-400 dark:text-neutral-500"># </span>
-                    Technologies and expertise
-                </p>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {skillCategories.map((category) => (
-                    <div 
-                        key={category.name}
-                        className="rounded-lg bg-white/50 dark:bg-neutral-900/50 border border-neutral-200/60 dark:border-neutral-700/50 overflow-hidden"
-                    >
-                        <div className="flex items-center gap-2 px-4 h-6 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
-                            <span className="text-[10px] font-mono text-neutral-400 dark:text-neutral-500">
-                                {category.icon} {category.name.toLowerCase()}/
-                            </span>
-                        </div>
-                        <div className="p-4">
-                            <h3 className="font-semibold text-neutral-800 dark:text-neutral-100 mb-3">{category.name}</h3>
-                            <div className="flex flex-wrap gap-1.5">
-                                {category.items.map((skill) => (
-                                    <span 
-                                        key={skill}
-                                        className="inline-flex items-center px-2 py-1 rounded text-xs font-mono bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700"
-                                    >
-                                        {skill}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </Container>
-    )
-}
-
 export default function HomeClientContent() {
     return (
         <>
@@ -290,7 +238,6 @@ export default function HomeClientContent() {
                 </div>
             </Container>
             
-            <Skills />
             <Recommendations />
         </>
     )
