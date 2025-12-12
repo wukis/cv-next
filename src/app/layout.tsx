@@ -6,7 +6,7 @@ import linkedin from '@/data/linkedin.json'
 
 import '@/styles/tailwind.css'
 import '@/styles/prism.css'
-import ParticlesBackground from "@/components/ParticlesBackground";
+import HexagonServiceNetwork from "@/components/HexagonServiceNetwork";
 
 const siteUrl = 'https://petrik.dev'
 
@@ -88,7 +88,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <body className="flex h-full bg-neutral-50 dark:bg-black">
-        <ParticlesBackground />
+        <HexagonServiceNetwork />
         <Providers>
           <div className="flex w-full">
             <Layout>{children}</Layout>
