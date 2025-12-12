@@ -115,6 +115,152 @@ const getRoleType = (position: string): 'lead' | 'senior' | 'mid' | 'junior' => 
     return 'mid';
 };
 
+// Parse summary into structured sections
+const parseSummary = (summary: string) => {
+    const sections: { type: 'description' | 'projects' | 'technologies' | 'links'; title: string; items: string[] }[] = [];
+    
+    // Split by common section headers
+    const parts = summary.split(/\n(?=Job description|Projects:|Technologies used:|Links:)/i);
+    
+    parts.forEach(part => {
+        const lines = part.trim().split('\n').filter(line => line.trim());
+        if (lines.length === 0) return;
+        
+        const firstLine = lines[0].toLowerCase();
+        
+        if (firstLine.includes('job description')) {
+            const items = lines.slice(1).map(l => l.replace(/^[-•]\s*/, '').trim()).filter(Boolean);
+            if (items.length > 0) {
+                sections.push({ type: 'description', title: 'Responsibilities', items });
+            }
+        } else if (firstLine.includes('projects:')) {
+            const items = lines.slice(1).map(l => l.replace(/^[-•]\s*/, '').trim()).filter(Boolean);
+            if (items.length > 0) {
+                sections.push({ type: 'projects', title: 'Projects', items });
+            }
+        } else if (firstLine.includes('technologies')) {
+            const items = lines.slice(1).map(l => l.replace(/^[-•]\s*/, '').trim()).filter(Boolean);
+            if (items.length > 0) {
+                sections.push({ type: 'technologies', title: 'Tech Stack', items });
+            }
+        } else if (firstLine.includes('links:')) {
+            const items = lines.slice(1).map(l => l.replace(/^[-•]\s*/, '').trim()).filter(Boolean);
+            if (items.length > 0) {
+                sections.push({ type: 'links', title: 'Links', items });
+            }
+        }
+    });
+    
+    return sections;
+};
+
+// Format summary component
+function FormattedSummary({ summary, roleColors }: { summary: string; roleColors: ReturnType<typeof getBranchColors> }) {
+    const sections = parseSummary(summary);
+    
+    if (sections.length === 0) {
+        // Fallback for unstructured content
+        return (
+            <div className="mt-3 text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                <p className="whitespace-pre-wrap">{summary}</p>
+            </div>
+        );
+    }
+    
+    return (
+        <div className="mt-4 space-y-4">
+            {sections.map((section, idx) => (
+                <div key={idx}>
+                    {section.type === 'description' && (
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-xs font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                                </svg>
+                                {section.title}
+                            </div>
+                            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                {section.items.map((item, i) => (
+                                    <li key={i} className="flex items-start gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+                                        <span className={`mt-1.5 w-1 h-1 rounded-full flex-shrink-0 ${roleColors.node}`} />
+                                        <span>{item}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                    
+                    {section.type === 'projects' && (
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-xs font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                </svg>
+                                {section.title}
+                            </div>
+                            <div className="space-y-2">
+                                {section.items.map((item, i) => (
+                                    <div key={i} className={`px-3 py-2 rounded-md text-sm ${roleColors.bg} border ${roleColors.border}`}>
+                                        <span className={`font-medium ${roleColors.text}`}>{item}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    
+                    {section.type === 'technologies' && (
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-xs font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                                </svg>
+                                {section.title}
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                                {section.items.map((item, i) => (
+                                    <span 
+                                        key={i} 
+                                        className="inline-flex items-center px-2 py-1 rounded text-xs font-mono bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700"
+                                    >
+                                        {item}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    
+                    {section.type === 'links' && (
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-xs font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                                </svg>
+                                {section.title}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {section.items.map((item, i) => (
+                                    <a 
+                                        key={i}
+                                        href={item.startsWith('http') ? item : `https://${item}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-mono text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/20 hover:bg-sky-100 dark:hover:bg-sky-900/40 transition-colors"
+                                    >
+                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                        {item.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+                                    </a>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            ))}
+        </div>
+    );
+}
+
 const getBranchColors = (roleType: 'lead' | 'senior' | 'mid' | 'junior') => {
     switch (roleType) {
         case 'lead':
@@ -359,11 +505,9 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                                                             </span>
                                                         </div>
                                                         
-                                                        {/* Summary with code-like formatting */}
+                                                        {/* Formatted summary */}
                                                         {experience.summary && (
-                                                            <div className="mt-3 text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                                                <pre className="whitespace-pre-wrap font-sans">{experience.summary}</pre>
-                                                            </div>
+                                                            <FormattedSummary summary={experience.summary} roleColors={roleColors} />
                                                         )}
                                                     </div>
                                                 </div>
