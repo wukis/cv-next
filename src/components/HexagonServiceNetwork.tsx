@@ -76,7 +76,7 @@ const COLOR_KEYS = Object.keys(COLORS) as (keyof typeof COLORS)[];
 
 const HexagonServiceNetwork: React.FC = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const animationRef = useRef<number>();
+    const animationRef = useRef<number | undefined>(undefined);
     const nodesRef = useRef<ServiceNode[]>([]);
     const connectionsRef = useRef<Connection[]>([]);
     const packetsRef = useRef<DataPacket[]>([]);
