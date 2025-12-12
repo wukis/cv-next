@@ -28,11 +28,11 @@ function SocialLink({
     <li className={clsx(className, 'flex')}>
       <Link
         href={href}
-        className="group flex text-sm font-medium text-neutral-800 transition hover:text-blue-500 dark:text-neutral-200 dark:hover:text-blue-500"
+        className="group flex items-center text-sm font-medium text-neutral-600 transition-colors hover:text-blue-500 dark:text-neutral-300 dark:hover:text-blue-400"
         target={target}
       >
-        <Icon className="h-6 w-6 flex-none fill-neutral-500 transition group-hover:fill-blue-500" />
-        <span className="ml-4">{children}</span>
+        <Icon className="h-5 w-5 flex-none fill-neutral-400 transition-colors group-hover:fill-blue-500 dark:fill-neutral-500" />
+        <span className="ml-3">{children}</span>
       </Link>
     </li>
   )
@@ -56,42 +56,41 @@ export const metadata: Metadata = {
 
 export default function About() {
   return (
-    <Container className="mt-10">
-      <div className="md:grid md:grid-cols-12 gap-y-8 lg:gap-y-8">
-        <div className="md:col-span-4 lg:pl-20 md:order-2 md:mt-32">
-          <div className="flex-1 max-w-xs px-2.5 lg:max-w-64 items-center">
+    <Container className="mt-10 sm:mt-16">
+      <div className="md:grid md:grid-cols-12 gap-8 lg:gap-12">
+        <div className="md:col-span-4 lg:pl-8 md:order-2 md:mt-24">
+          <div className="max-w-[240px] mx-auto md:mx-0">
             <Image
               src={portraitImage}
               alt="Jonas Petrik"
               sizes="(min-width: 1024px) 32rem, 20rem"
-              className="aspect-square rotate-3 rounded-2xl object-cover"
+              className="aspect-square rotate-3 rounded-2xl object-cover shadow-lg"
               priority={false}
             />
-            <ul role="list" className="mt-8 px-6">
+            <ul role="list" className="mt-8 space-y-3">
               <SocialLink
-                  href="mailto:jonas@petrik.dev"
-                  icon={MailIcon}
-                  className="mt-4"
+                href="mailto:jonas@petrik.dev"
+                icon={MailIcon}
               >
                 jonas@petrik.dev
               </SocialLink>
-              <SocialLink href="https://www.linkedin.com/in/jonas-petrik/" target="_blank" icon={LinkedInIcon} className="mt-4">
+              <SocialLink href="https://www.linkedin.com/in/jonas-petrik/" target="_blank" icon={LinkedInIcon}>
                 Find me on LinkedIn
               </SocialLink>
-              <SocialLink href="https://github.com/wukis" target="_blank" icon={GitHubIcon} className="mt-4">
+              <SocialLink href="https://github.com/wukis" target="_blank" icon={GitHubIcon}>
                 Find me on GitHub
               </SocialLink>
-              <SocialLink href="https://gitlab.com/jonas.petrik" target="_blank" icon={GitLabIcon} className="mt-4">
+              <SocialLink href="https://gitlab.com/jonas.petrik" target="_blank" icon={GitLabIcon}>
                 Find me on GitLab
               </SocialLink>
             </ul>
           </div>
         </div>
-        <div className="md:col-span-8 bg-neutral-50/50 dark:bg-neutral-800/25 p-8">
-          <h1 className="text-4xl font-bold tracking-tight text-neutral-800 sm:text-5xl dark:text-neutral-100">
+        <div className="md:col-span-8 mt-8 md:mt-0 p-6 sm:p-8 rounded-xl bg-white/40 dark:bg-neutral-800/30 border border-neutral-200/50 dark:border-neutral-700/30">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-neutral-800 dark:text-neutral-100">
             Hey there, a little bit about me
           </h1>
-          <div className="mt-6 space-y-7 text-base text-neutral-800 dark:text-neutral-200">
+          <div className="mt-6 space-y-5 text-base text-neutral-600 dark:text-neutral-300 leading-relaxed">
             <p>
               Welcome! I&apos;m Jonas Petrik, a Senior Software Engineer and Team Lead with a profound passion for developing software solutions that not only meet the immediate needs of our clients but are also designed to be scalable and future-proof. My professional journey has been defined by a blend of technical expertise and leadership roles, primarily focused on PHP, JavaScript, Go, and various other technologies. Dive into my portfolio at petrik.dev to explore my work and the impact it has had across various industries.
             </p>

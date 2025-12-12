@@ -29,11 +29,12 @@ export function Card<T extends React.ElementType = 'div'>({
       className={clsx(
         className, 
         'group relative flex flex-col items-start',
-        'scale-95 hover:scale-100',
-        'hover:bg-neutral-100 dark:hover:bg-neutral-800/75',
-        'p-4 rounded shadow-md hover:shadow-xl',
-        'border border-neutral-200/75 dark:border-neutral-800/50',
-        'transition-all duration-150 ease-in-out'
+        'p-5 rounded-lg',
+        'bg-white/50 dark:bg-neutral-900/50',
+        'shadow-sm hover:shadow-md',
+        'border border-neutral-200/60 dark:border-neutral-700/50',
+        'hover:-translate-y-0.5',
+        'transition-all duration-200 ease-out'
       )}
     >
       {children}
@@ -46,13 +47,10 @@ Card.Link = function CardLink({
   ...props
 }: React.ComponentPropsWithoutRef<typeof Link>) {
   return (
-    <>
-      <div className="absolute -inset-x-4 -inset-y-6 z-0 scale-95 bg-neutral-50 opacity-0 transition group-hover:scale-100 group-hover:opacity-100 sm:-inset-x-6 sm:rounded dark:bg-neutral-800/50" />
-      <Link {...props}>
-        <span className="absolute -inset-x-4 -inset-y-6 z-20 sm:-inset-x-6 sm:rounded" />
-        <span className="relative z-10">{children}</span>
-      </Link>
-    </>
+    <Link {...props}>
+      <span className="absolute -inset-x-4 -inset-y-6 z-20 sm:-inset-x-6 sm:rounded-lg" />
+      <span className="relative z-10">{children}</span>
+    </Link>
   )
 }
 
