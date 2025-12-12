@@ -33,7 +33,8 @@ function BackToTopButton() {
       onClick={scrollToTop}
       aria-label="Back to top"
       className={`
-        fixed bottom-6 right-6 z-40
+        fixed bottom-6 z-40
+        right-4 sm:right-8 lg:right-[max(2rem,calc((100vw-80rem)/2+5rem))]
         flex items-center justify-center
         w-10 h-10 rounded-lg
         bg-white/80 dark:bg-neutral-800/80

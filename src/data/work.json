@@ -23,6 +23,7 @@
     ],
     "technologies": [
       "Laravel / Octane / RR / FrankenPHP / PHP",
+      "GOlang", 
       "Kubernetes (K8s) clusters",
       "Datadog (monitoring & observability)",
       "Redis Clusters",
@@ -56,6 +57,7 @@
     ],
     "technologies": [
       "Laravel / Octane / RR / FrankenPHP / PHP",
+      "GOlang", 
       "Redis Clusters",
       "React / Javascript",
       "MySQL",
