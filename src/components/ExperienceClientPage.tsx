@@ -307,37 +307,49 @@ const getBranchColors = (roleType: 'lead' | 'senior' | 'mid' | 'junior') => {
 };
 
 function Education({ education, isLast }: { education: EducationInterface; isLast: boolean }) {
+    const colors = getBranchColors('junior'); // Amber colors for education
+    const duration = getDuration(education.startDate, education.endDate);
+    
     return (
         <div className="relative flex gap-6 pb-8 group">
             {/* Timeline column */}
             <div className="relative flex flex-col items-center">
                 {/* Vertical line */}
                 {!isLast && (
-                    <div className="absolute top-6 bottom-0 w-px bg-gradient-to-b from-amber-500/60 to-amber-500/20 dark:from-amber-400/60 dark:to-amber-400/20" />
+                    <div className="absolute top-6 bottom-0 w-px bg-neutral-300 dark:bg-neutral-600" />
                 )}
                 
-                {/* Commit node - restored style with outer glow ring */}
+                {/* Commit node - matching work experience style */}
                 <div className="relative w-6 h-6 flex items-center justify-center flex-shrink-0">
                     {/* Outer glow ring */}
-                    <div className="absolute inset-0 rounded-full ring-4 ring-amber-500/30 dark:ring-amber-400/30 shadow-lg shadow-amber-500/40 dark:shadow-amber-400/40" />
+                    <div className={`absolute inset-0 rounded-full ring-4 ${colors.ring} shadow-lg ${colors.glow}`} />
                     {/* Inner commit node */}
-                    <div className="relative w-4 h-4 rounded-full bg-amber-500 dark:bg-amber-400 ring-2 ring-white dark:ring-neutral-900" />
+                    <div className={`relative w-4 h-4 rounded-full ${colors.node} ring-2 ring-white dark:ring-neutral-900`} />
                 </div>
             </div>
 
             {/* Content */}
-            <div className="flex-1 min-w-0">
-                {/* Terminal-style card */}
-                <div className="rounded-lg border border-neutral-200/60 dark:border-neutral-700/50 bg-white/50 dark:bg-neutral-900/50 overflow-hidden transition-all duration-300 group-hover:border-amber-500/40 dark:group-hover:border-amber-400/40 group-hover:shadow-lg group-hover:shadow-amber-500/5">
-                    {/* Terminal header - h-6 matches commit node height for alignment */}
-                    <div className="flex items-center gap-2 px-4 h-6 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
-                        <span className="ml-2 text-xs font-mono text-neutral-500 dark:text-neutral-400">
-                            ~/education/{education.studyType.toLowerCase().replace(/\s+/g, '-')}
-                        </span>
+            <div className="flex-1 min-w-0 -mt-1">
+                {/* Terminal-style card - matching work experience */}
+                <div className={`rounded-lg border bg-white/50 dark:bg-neutral-900/50 overflow-hidden transition-all duration-300 ${colors.border} group-hover:shadow-lg`}>
+                    {/* Terminal header - matching work experience */}
+                    <div className="flex items-center justify-between gap-2 px-4 py-2 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-mono text-neutral-500 dark:text-neutral-400 truncate">
+                                ~/education/{education.studyType.toLowerCase().replace(/\s+/g, '-')}
+                            </span>
+                        </div>
+                        <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono ${colors.text} ${colors.bg}`}>
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                            </svg>
+                            {education.endDate}
+                        </div>
                     </div>
                     
-                    {/* Card content */}
-                    <div className="p-4">
+                    {/* Institution header - matching company header */}
+                    <div className="p-4 border-b border-neutral-100 dark:border-neutral-800">
                         <div className="flex items-start gap-4">
                             <Image
                                 className="h-12 w-12 rounded-lg object-contain flex-shrink-0 bg-white p-1 ring-1 ring-neutral-200 dark:ring-neutral-700"
@@ -347,17 +359,38 @@ function Education({ education, isLast }: { education: EducationInterface; isLas
                                 alt={education.institution}
                             />
                             <div className="flex-1 min-w-0">
-                                <h3 className="text-base font-semibold text-neutral-800 dark:text-neutral-100">
-                                    {education.studyType} in {education.area}
-                                </h3>
-                                <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+                                <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100">
                                     {education.institution}
-                                </p>
-                                <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded bg-neutral-100 dark:bg-neutral-800 text-xs font-mono text-neutral-500 dark:text-neutral-400">
-                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
-                                    {education.startDate} → {education.endDate}
+                                </h3>
+                                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-neutral-500 dark:text-neutral-400">
+                                    <span className="font-mono">{formatDuration(duration)}</span>
+                                    <span className="text-neutral-300 dark:text-neutral-600">·</span>
+                                    <span className="flex items-center gap-1">
+                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        </svg>
+                                        Vilnius, Lithuania
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Degree details - matching position style */}
+                    <div className="p-4">
+                        <div className="flex items-start gap-3">
+                            {/* Mini commit indicator */}
+                            <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${colors.node}`} />
+                            
+                            <div className="flex-1 min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <h4 className="font-medium text-neutral-800 dark:text-neutral-100">
+                                        {education.studyType} in {education.area}
+                                    </h4>
+                                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono ${colors.text} ${colors.bg}`}>
+                                        {education.startDate} → {education.endDate}
+                                    </span>
                                 </div>
                             </div>
                         </div>
