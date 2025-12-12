@@ -1,12 +1,66 @@
 [
   {
     "name": "SCAYLE",
+    "position": "Staff Engineer / Team Lead",
+    "enrollment": "Full-time",
+    "startDate": "2025-04",
+    "endDate": "now",
+    "responsibilities": [
+      "Team leadership",
+      "High Availability",
+      "High Scalability",
+      "Checkout / Payments with 6.5B in yearly throughput",
+      "3rd party software integration and APIs",
+      "On-call rotations and incident management",
+      "Quality assurance",
+      "Testing (Unit/Integration/E2E)",
+      "Code reviews",
+      "Continuous integration",
+      "DevOps"
+    ],
+    "projects": [
+      "scayle.com - fastest-growing enterprise commerce platform in the world"
+    ],
+    "technologies": [
+      "Laravel / Octane / RR / FrankenPHP / PHP",
+      "Kubernetes (K8s) clusters",
+      "Datadog (monitoring & observability)",
+      "Redis Clusters",
+      "React / Javascript",
+      "MySQL",
+      "Amazon Web Services (AWS)"
+    ],
+    "url": "https://www.scayle.com",
+    "location": "Hamburg, Germany - Remote",
+    "image": "scayle.jpg"
+  },
+  {
+    "name": "SCAYLE",
     "position": "Senior Software Engineer",
     "enrollment": "Full-time",
     "startDate": "2024-01",
-    "endDate": "now",
-    "highlights": [],
-    "summary": "Job description\n- High Availability\n- High Scalability\n- Checkout / Payments with 6.5B in yearly throughput\n- 3rd party software integration and APIs\n- Quality assurance\n- Testing (Unit/Integration/E2E)\n- Code reviews\n- Continuous integration\n- DevOps\nProjects:\n- \"scayle.com\" -  fastest-growing enterprise commerce platform in the world.\n\nTechnologies used:\n- Laravel / Octane / RR / FrankenPHP / PHP\n- Redis Clusters\n- React / Javascript\n- MySQL\n- Amazon Web Services (AWS)\n\nLinks:\n- https://www.scayle.com",
+    "endDate": "2025-04",
+    "responsibilities": [
+      "High Availability",
+      "High Scalability",
+      "Checkout / Payments with 6.5B in yearly throughput",
+      "3rd party software integration and APIs",
+      "Quality assurance",
+      "Testing (Unit/Integration/E2E)",
+      "Code reviews",
+      "Continuous integration",
+      "DevOps"
+    ],
+    "projects": [
+      "scayle.com - fastest-growing enterprise commerce platform in the world"
+    ],
+    "technologies": [
+      "Laravel / Octane / RR / FrankenPHP / PHP",
+      "Redis Clusters",
+      "React / Javascript",
+      "MySQL",
+      "Amazon Web Services (AWS)"
+    ],
     "url": "https://www.scayle.com",
     "location": "Hamburg, Germany - Remote",
     "image": "scayle.jpg"
@@ -17,8 +71,31 @@
     "enrollment": "Full-time",
     "startDate": "2022-12",
     "endDate": "2023-12",
-    "highlights": [],
-    "summary": "Job description\n- Team leadership\n- Software architecture (planning and executing)\n- Scalability\n- Web/Software development (PHP/Javascript)\n- 3rd party software integration and APIs\n- Sprint planning\n- Quality assurance\n- Testing (Unit/Integration/E2E)\n- Code reviews\n- Continuous integration\n- DevOps\n- SaaS\n\nProjects:\n- \"anwalt.de\" - platform for lawyers and their services\n\nTechnologies used:\n- Laminas / PHP\n- GOlang\n- VueJS 2/3 / Javascript\n- MySQL\n- Amazon Web Services (AWS)\n- Elastic Search\n\nLinks:\n- https://www.anwalt.de",
+    "responsibilities": [
+      "Team leadership",
+      "Software architecture (planning and executing)",
+      "Scalability",
+      "Web/Software development (PHP/Javascript)",
+      "3rd party software integration and APIs",
+      "Sprint planning",
+      "Quality assurance",
+      "Testing (Unit/Integration/E2E)",
+      "Code reviews",
+      "Continuous integration",
+      "DevOps",
+      "SaaS"
+    ],
+    "projects": [
+      "anwalt.de - platform for lawyers and their services"
+    ],
+    "technologies": [
+      "Laminas / PHP",
+      "GOlang",
+      "VueJS 2/3 / Javascript",
+      "MySQL",
+      "Amazon Web Services (AWS)",
+      "Elastic Search"
+    ],
     "url": "https://www.linkedin.com/company/anwaltde/",
     "location": "Nuremberg, Bavaria, Germany - Remote",
     "image": "anwalt.jpg"
@@ -29,7 +106,9 @@
     "enrollment": "Full-time",
     "startDate": "2020-12",
     "endDate": "2022-12",
-    "highlights": [],
+    "responsibilities": [],
+    "projects": [],
+    "technologies": [],
     "url": "https://www.linkedin.com/company/anwaltde/",
     "location": "Nuremberg, Bavaria, Germany - Remote",
     "image": "anwalt.jpg"
@@ -40,8 +119,36 @@
     "enrollment": "Full-time",
     "startDate": "2018-01",
     "endDate": "2020-12",
-    "highlights": [],
-    "summary": "Job description\n- Team leadership (10 associates)\n- Software architecture (planning and executing)\n- Scalability\n- Web/Software development (PHP/Javascript)\n- 3rd party software integration and APIs\n- Agile SCRUM\n- Sprint planning\n- Quality assurance\n- Testing (Unit/Integration/E2E)\n- Code reviews\n- Continuous integration\n- Mobile applications (Android/iOS)\n- DevOps\n- Multi-tenancy\n- SaaS\n\nProjects:\n- \"Atobi\" - platform with a gamified execution app for retailers and telcos\n- \"EffectiveRetail\" a tailored all-in-one app for retailers\n\nTechnologies used:\n- Phalcon / PHP\n- Laravel / PHP\n- Lumen / PHP\n- React / Javascript\n- jQuery / Javascript\n- MySQL\n- Amazon Web Services (AWS)\n\nLinks:\n- https://www.atobi.io\n- https://www.effectiveretail.com",
+    "responsibilities": [
+      "Team leadership (10 associates)",
+      "Software architecture (planning and executing)",
+      "Scalability",
+      "Web/Software development (PHP/Javascript)",
+      "3rd party software integration and APIs",
+      "Agile SCRUM",
+      "Sprint planning",
+      "Quality assurance",
+      "Testing (Unit/Integration/E2E)",
+      "Code reviews",
+      "Continuous integration",
+      "Mobile applications (Android/iOS)",
+      "DevOps",
+      "Multi-tenancy",
+      "SaaS"
+    ],
+    "projects": [
+      "Atobi - platform with a gamified execution app for retailers and telcos",
+      "EffectiveRetail - a tailored all-in-one app for retailers"
+    ],
+    "technologies": [
+      "Phalcon / PHP",
+      "Laravel / PHP",
+      "Lumen / PHP",
+      "React / Javascript",
+      "jQuery / Javascript",
+      "MySQL",
+      "Amazon Web Services (AWS)"
+    ],
     "url": "https://www.linkedin.com/company/solutionlab-production/",
     "location": "Lithuania, Vilnius - Remote",
     "image": "solutionlab.jpg"
@@ -52,7 +159,9 @@
     "enrollment": "Full-time",
     "startDate": "2017-11",
     "endDate": "2018-01",
-    "highlights": [],
+    "responsibilities": [],
+    "projects": [],
+    "technologies": [],
     "url": "https://www.linkedin.com/company/solutionlab-production/",
     "location": "Lithuania, Vilnius - Remote",
     "image": "solutionlab.jpg"
@@ -63,8 +172,27 @@
     "enrollment": "Full-time",
     "startDate": "2017-01",
     "endDate": "2017-11",
-    "highlights": [],
-    "summary": "Job description:\n- Web development (PHP/Javascript)\n- Scalability\n- Software testing (Unit/E2E)\n- Test driven development (TDD)\n- 3rd party software integration and APIs\n- Quality assurance\n- Code reviews\n- Continuous integration\n\nProjects:\n- \"Olybet\" - online betting platform\n- \"Orakulas\" - online betting platform\n- Internal system for managing clients, finances and other tools to automate/speed-up workflow\n\nTechnologies used:\n- Laravel / PHP\n- VueJS / Javascript\n- MySQL\n- Rackray\n\nLinks:\n- http://olybet.eu\n- http://orakulas.lt \n- http://www.olympic-casino.com",
+    "responsibilities": [
+      "Web development (PHP/Javascript)",
+      "Scalability",
+      "Software testing (Unit/E2E)",
+      "Test driven development (TDD)",
+      "3rd party software integration and APIs",
+      "Quality assurance",
+      "Code reviews",
+      "Continuous integration"
+    ],
+    "projects": [
+      "Olybet - online betting platform",
+      "Orakulas - online betting platform",
+      "Internal system for managing clients, finances and workflow automation"
+    ],
+    "technologies": [
+      "Laravel / PHP",
+      "VueJS / Javascript",
+      "MySQL",
+      "Rackray"
+    ],
     "url": "",
     "location": "Lithuania, Vilnius",
     "image": "olympic.jpg"
@@ -75,8 +203,34 @@
     "enrollment": "Full-time",
     "startDate": "2016-02",
     "endDate": "2017-01",
-    "highlights": [],
-    "summary": "Job description:\n- International project management\n- Team leadership (10 associates)\n- Software architecture (planned and executed)\n- Quality assurance\n- Code reviews\n- Testing (Unit/Integration/E2E)\n- Project management\n- Web/Software development (PHP/Javascript/C#)\n- Mobile applications (Android/iOS)\n- Desktop applications (Windows/Linux/MacOS)\n- Sprint planning\n- Agile SCRUM\n- DevOps\n\nProjects:\n- \"Columbina\" ERP system (SaaS)\n- \"Olivia\" CRM system (SaaS)\n- \"Smartups\" system for VC investors (Angel like)\n- \"Incrypta\" encrypted cloud storage solution\n\nTechnologies used:\n- .NET / C#\n- Laravel / PHP\n- VueJS / Javascript\n- MySQL\n- MSSQL\n\nLinks:\n- http://www.inlu.net\n- http://columbina.eu\n- http://incrypta.eu",
+    "responsibilities": [
+      "International project management",
+      "Team leadership (10 associates)",
+      "Software architecture (planned and executed)",
+      "Quality assurance",
+      "Code reviews",
+      "Testing (Unit/Integration/E2E)",
+      "Project management",
+      "Web/Software development (PHP/Javascript/C#)",
+      "Mobile applications (Android/iOS)",
+      "Desktop applications (Windows/Linux/MacOS)",
+      "Sprint planning",
+      "Agile SCRUM",
+      "DevOps"
+    ],
+    "projects": [
+      "Columbina - ERP system (SaaS)",
+      "Olivia - CRM system (SaaS)",
+      "Smartups - system for VC investors (Angel like)",
+      "Incrypta - encrypted cloud storage solution"
+    ],
+    "technologies": [
+      ".NET / C#",
+      "Laravel / PHP",
+      "VueJS / Javascript",
+      "MySQL",
+      "MSSQL"
+    ],
     "url": "https://www.linkedin.com/company/inlusionxr/",
     "location": "Lithuania, Vilnius",
     "image": "inlusion.jpg"
@@ -87,7 +241,9 @@
     "enrollment": "Full-time",
     "startDate": "2015-11",
     "endDate": "2016-02",
-    "highlights": [],
+    "responsibilities": [],
+    "projects": [],
+    "technologies": [],
     "url": "https://www.linkedin.com/company/inlusionxr/",
     "location": "Lithuania, Vilnius",
     "image": "inlusion.jpg"
@@ -98,8 +254,21 @@
     "enrollment": "Full-time",
     "startDate": "2014-11",
     "endDate": "2015-11",
-    "highlights": [],
-    "summary": "Job description:\n- Web development (PHP/Javascript)\n- 3rd party software integration and APIs (DPD/DHL/UPS)\n- Quality assurance\n- Testing (Unit/E2E)\n\nProjects:\n- \"Ecu.de\" spare parts platform for cars\n- \"Intranet\" internal management system for employees\n\nTechnologies used:\n- Laravel / PHP\n- jQuery / Javascript\n- MySQL\n\nLinks:\n- http://ecu.de\n- http://integrus.lt/",
+    "responsibilities": [
+      "Web development (PHP/Javascript)",
+      "3rd party software integration and APIs (DPD/DHL/UPS)",
+      "Quality assurance",
+      "Testing (Unit/E2E)"
+    ],
+    "projects": [
+      "Ecu.de - spare parts platform for cars",
+      "Intranet - internal management system for employees"
+    ],
+    "technologies": [
+      "Laravel / PHP",
+      "jQuery / Javascript",
+      "MySQL"
+    ],
     "url": "",
     "location": "Lithuania, Vilnius",
     "image": "integrus.jpg"
@@ -110,8 +279,11 @@
     "enrollment": "Full-time",
     "startDate": "2014-02",
     "endDate": "2014-10",
-    "highlights": [],
+    "responsibilities": [],
+    "projects": [],
+    "technologies": [],
     "url": "https://www.linkedin.com/company/itlogas/",
+    "location": "Lithuania, Vilnius",
     "image": "itlogas.jpg"
   },
   {
@@ -120,8 +292,11 @@
     "enrollment": "Full-time",
     "startDate": "2013-04",
     "endDate": "2014-02",
-    "highlights": [],
+    "responsibilities": [],
+    "projects": [],
+    "technologies": [],
     "url": "https://www.linkedin.com/company/profectus-novus/",
+    "location": "Lithuania, Vilnius",
     "image": "profectus-novus.jpg"
   }
 ]

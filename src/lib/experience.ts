@@ -4,8 +4,9 @@ export interface WorkInterface {
     enrollment?: string;
     startDate: string;
     endDate: string;
-    highlights: string[];
-    summary?: string;
+    responsibilities: string[];
+    projects: string[];
+    technologies: string[];
     url: string;
     location?: string;
     image: string;
