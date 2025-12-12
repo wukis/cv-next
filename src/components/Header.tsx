@@ -72,8 +72,6 @@ function TerminalIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
 
 function AnimatedTerminalIcon({ className }: { className?: string }) {
   const [cursorVisible, setCursorVisible] = useState(true)
-  const [isTyping, setIsTyping] = useState(false)
-  const [cursorPosition, setCursorPosition] = useState(0)
   
   // Blinking cursor effect
   useEffect(() => {
@@ -82,43 +80,6 @@ function AnimatedTerminalIcon({ className }: { className?: string }) {
     }, 530) // Classic terminal blink rate
     
     return () => clearInterval(blinkInterval)
-  }, [])
-  
-  // Occasional typing animation
-  useEffect(() => {
-    const triggerTyping = () => {
-      // Random delay between typing animations (8-20 seconds)
-      const delay = 8000 + Math.random() * 12000
-      
-      setTimeout(() => {
-        setIsTyping(true)
-        setCursorPosition(0)
-        
-        // Animate cursor moving right
-        const typeInterval = setInterval(() => {
-          setCursorPosition(pos => {
-            if (pos >= 3) {
-              clearInterval(typeInterval)
-              // Hold at end briefly, then reset
-              setTimeout(() => {
-                setIsTyping(false)
-                setCursorPosition(0)
-                triggerTyping() // Schedule next typing
-              }, 800)
-              return pos
-            }
-            return pos + 1
-          })
-        }, 150) // Typing speed
-      }, delay)
-    }
-    
-    // Start the cycle after initial delay
-    const initialDelay = setTimeout(() => {
-      triggerTyping()
-    }, 3000)
-    
-    return () => clearTimeout(initialDelay)
   }, [])
   
   return (
@@ -132,19 +93,16 @@ function AnimatedTerminalIcon({ className }: { className?: string }) {
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        {/* Animated cursor _ */}
+        {/* Blinking cursor _ */}
         <path
-          d={isTyping 
-            ? `M${13 + cursorPosition * 1.5} 19h${6 - cursorPosition * 1.5}` 
-            : "M13 19h6"
-          }
+          d="M13 19h6"
           stroke="currentColor"
           strokeWidth="1.5"
           strokeLinecap="round"
           strokeLinejoin="round"
           className={clsx(
             'transition-opacity duration-100',
-            cursorVisible ? 'opacity-100' : 'opacity-30'
+            cursorVisible ? 'opacity-100' : 'opacity-20'
           )}
         />
       </svg>
@@ -245,7 +203,7 @@ function MobileNavigation(
                 {/* Terminal header */}
                 <div className="flex items-center justify-between px-4 py-2 bg-neutral-100 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700">
                   <div className="flex items-center gap-2">
-                    <TerminalIcon className="w-4 h-4 text-emerald-500" />
+                    <AnimatedTerminalIcon />
                     <span className="text-xs font-mono text-neutral-500 dark:text-neutral-400">~/navigation</span>
                   </div>
                   <Popover.Button aria-label="Close menu" className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
