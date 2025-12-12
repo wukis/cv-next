@@ -6,12 +6,12 @@ import recommendations from '@/data/recommendations.json';
 import Image from "next/image";
 
 const colors = [
-  { border: 'border-emerald-500/30 dark:border-emerald-400/30', dot: 'bg-emerald-500 dark:bg-emerald-400', quote: 'text-emerald-600 dark:text-emerald-400' },
-  { border: 'border-sky-500/30 dark:border-sky-400/30', dot: 'bg-sky-500 dark:bg-sky-400', quote: 'text-sky-600 dark:text-sky-400' },
-  { border: 'border-violet-500/30 dark:border-violet-400/30', dot: 'bg-violet-500 dark:bg-violet-400', quote: 'text-violet-600 dark:text-violet-400' },
-  { border: 'border-amber-500/30 dark:border-amber-400/30', dot: 'bg-amber-500 dark:bg-amber-400', quote: 'text-amber-600 dark:text-amber-400' },
-  { border: 'border-rose-500/30 dark:border-rose-400/30', dot: 'bg-rose-500 dark:bg-rose-400', quote: 'text-rose-600 dark:text-rose-400' },
-  { border: 'border-cyan-500/30 dark:border-cyan-400/30', dot: 'bg-cyan-500 dark:bg-cyan-400', quote: 'text-cyan-600 dark:text-cyan-400' },
+  { border: 'border-emerald-500/30 dark:border-emerald-400/30', ring: 'ring-emerald-500/30 dark:ring-emerald-400/30', dot: 'bg-emerald-500 dark:bg-emerald-400', quote: 'text-emerald-600 dark:text-emerald-400' },
+  { border: 'border-sky-500/30 dark:border-sky-400/30', ring: 'ring-sky-500/30 dark:ring-sky-400/30', dot: 'bg-sky-500 dark:bg-sky-400', quote: 'text-sky-600 dark:text-sky-400' },
+  { border: 'border-violet-500/30 dark:border-violet-400/30', ring: 'ring-violet-500/30 dark:ring-violet-400/30', dot: 'bg-violet-500 dark:bg-violet-400', quote: 'text-violet-600 dark:text-violet-400' },
+  { border: 'border-amber-500/30 dark:border-amber-400/30', ring: 'ring-amber-500/30 dark:ring-amber-400/30', dot: 'bg-amber-500 dark:bg-amber-400', quote: 'text-amber-600 dark:text-amber-400' },
+  { border: 'border-rose-500/30 dark:border-rose-400/30', ring: 'ring-rose-500/30 dark:ring-rose-400/30', dot: 'bg-rose-500 dark:bg-rose-400', quote: 'text-rose-600 dark:text-rose-400' },
+  { border: 'border-cyan-500/30 dark:border-cyan-400/30', ring: 'ring-cyan-500/30 dark:ring-cyan-400/30', dot: 'bg-cyan-500 dark:bg-cyan-400', quote: 'text-cyan-600 dark:text-cyan-400' },
 ];
 
 function Recommendation({ recommendation, index }: { recommendation: RecommendationInterface; index: number }) {
@@ -26,7 +26,7 @@ function Recommendation({ recommendation, index }: { recommendation: Recommendat
         
         {/* Commit node */}
         <div className="relative w-6 h-6 flex items-center justify-center flex-shrink-0">
-          <div className={`absolute inset-0 rounded-full ring-4 ring-opacity-30 ${color.border}`} />
+          <div className={`absolute inset-0 rounded-full ring-4 ${color.ring}`} />
           <div className={`relative w-4 h-4 rounded-full ${color.dot} ring-2 ring-white dark:ring-neutral-900`} />
         </div>
       </div>
