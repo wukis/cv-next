@@ -185,7 +185,7 @@ function MobileNavigation(
               leaveFrom="opacity-100"
               leaveTo="opacity-0"
             >
-              <Popover.Overlay className="fixed inset-0 z-50 bg-neutral-900/60 backdrop-blur-sm" />
+              <Popover.Overlay className="fixed inset-0 z-[60] bg-neutral-900/60 backdrop-blur-sm" />
             </Transition.Child>
             <Transition.Child
               as={Fragment}
@@ -198,14 +198,19 @@ function MobileNavigation(
             >
               <Popover.Panel
                 focus
-                className="fixed inset-x-4 top-4 z-50 origin-top rounded-lg bg-white dark:bg-neutral-900 overflow-hidden shadow-2xl ring-1 ring-neutral-200 dark:ring-neutral-700"
+                className="fixed inset-x-4 top-4 z-[70] origin-top rounded-lg bg-white dark:bg-neutral-900 overflow-hidden shadow-2xl ring-1 ring-neutral-200 dark:ring-neutral-700"
               >
                 {/* Terminal header */}
                 <div className="flex items-center justify-between px-4 py-2 bg-neutral-100 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700">
-                  <div className="flex items-center gap-2">
+                  <Link 
+                    href="/" 
+                    onClick={close}
+                    className="flex items-center gap-2 -ml-1 px-1 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all"
+                    aria-label="Go to home"
+                  >
                     <AnimatedTerminalIcon />
                     <span className="text-xs font-mono text-neutral-500 dark:text-neutral-400">~/navigation</span>
-                  </div>
+                  </Link>
                   <Popover.Button aria-label="Close menu" className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
                     <CloseIcon className="h-5 w-5 text-neutral-500 dark:text-neutral-400" />
                   </Popover.Button>
@@ -292,13 +297,18 @@ function DesktopNavigation(props: React.ComponentPropsWithoutRef<'nav'>) {
   return (
     <nav {...props}>
       <div className="flex items-center rounded-lg bg-white/80 dark:bg-neutral-800/80 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 dark:ring-neutral-700/50 backdrop-blur overflow-hidden">
-        {/* Terminal prompt icon */}
-        <div className="flex items-center gap-1.5 px-3 py-2 border-r border-neutral-200/50 dark:border-neutral-700/50">
-          <AnimatedTerminalIcon />
-        </div>
-        
-        {/* Nav items */}
+        {/* Nav items including home terminal icon */}
         <ul className="flex items-center gap-1 px-2 py-1">
+          {/* Terminal prompt icon - links to home (never shows active state) */}
+          <li>
+            <Link 
+              href="/" 
+              className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              aria-label="Go to home"
+            >
+              <AnimatedTerminalIcon />
+            </Link>
+          </li>
           {navItems.map((item) => (
             <NavItem 
               key={item.href} 
@@ -343,9 +353,34 @@ function clamp(number: number, a: number, b: number) {
 
 export function Header() {
   const isHomePage = usePathname() === '/'
-
+  const [isVisible, setIsVisible] = useState(true)
+  const lastScrollY = useRef(0)
   const headerRef = useRef<React.ElementRef<'div'>>(null)
   const isInitial = useRef(true)
+
+  // Handle scroll direction for hide/show animation
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY
+      const scrollThreshold = 100 // Don't hide until scrolled past this point
+      
+      if (currentScrollY < scrollThreshold) {
+        // Always show near the top
+        setIsVisible(true)
+      } else if (currentScrollY > lastScrollY.current + 5) {
+        // Scrolling down (with 5px threshold to avoid jitter)
+        setIsVisible(false)
+      } else if (currentScrollY < lastScrollY.current - 5) {
+        // Scrolling up
+        setIsVisible(true)
+      }
+      
+      lastScrollY.current = currentScrollY
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   useEffect(() => {
     const downDelay = 0
@@ -450,7 +485,14 @@ export function Header() {
                 'var(--header-inner-position)' as React.CSSProperties['position'],
             }}
           >
-            <div className="relative flex gap-4">
+            <div 
+              className={clsx(
+                'relative flex gap-4 transition-all duration-300',
+                isVisible 
+                  ? 'opacity-100 translate-y-0' 
+                  : 'opacity-0 -translate-y-4 pointer-events-none'
+              )}
+            >
               <div className="flex flex-1">
                 <MobileNavigation className="pointer-events-auto md:hidden" />
                 <DesktopNavigation className="pointer-events-auto hidden md:block" />
