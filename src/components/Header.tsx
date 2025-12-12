@@ -24,20 +24,6 @@ function CloseIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   )
 }
 
-function ChevronDownIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
-  return (
-    <svg viewBox="0 0 8 6" aria-hidden="true" {...props}>
-      <path
-        d="M1.75 1.75 4 4.25l2.25-2.5"
-        fill="none"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
-
 function SunIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
     <svg
@@ -70,18 +56,65 @@ function MoonIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   )
 }
 
+function TerminalIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path
+        d="M7 15l5-5-5-5M13 19h6"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+const navItems = [
+  { href: '/', label: 'home', color: 'emerald' },
+  { href: '/about', label: 'about', color: 'sky' },
+  { href: '/experience', label: 'experience', color: 'violet' },
+  { href: '/recommendations', label: 'testimonials', color: 'amber' },
+]
+
 function MobileNavItem({
   href,
-  children,
+  label,
+  color,
+  isActive,
+  close,
 }: {
   href: string
-  children: React.ReactNode
+  label: string
+  color: string
+  isActive: boolean
+  close: () => void
 }) {
+  const colorClasses: Record<string, string> = {
+    emerald: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
+    sky: 'text-sky-600 dark:text-sky-400 bg-sky-500/10',
+    violet: 'text-violet-600 dark:text-violet-400 bg-violet-500/10',
+    amber: 'text-amber-600 dark:text-amber-400 bg-amber-500/10',
+  }
+
   return (
     <li>
-      <Popover.Button as={Link} href={href} className="block py-2">
-        {children}
-      </Popover.Button>
+      <Link 
+        href={href} 
+        onClick={close}
+        className={clsx(
+          'flex items-center gap-3 px-3 py-2.5 rounded-lg font-mono text-sm transition-colors',
+          isActive 
+            ? colorClasses[color]
+            : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+        )}
+      >
+        <span className={clsx(
+          'w-1.5 h-1.5 rounded-full',
+          isActive ? 'bg-current' : 'bg-neutral-300 dark:bg-neutral-600'
+        )} />
+        <span>~/{label}</span>
+      </Link>
     </li>
   )
 }
@@ -89,84 +122,127 @@ function MobileNavItem({
 function MobileNavigation(
   props: React.ComponentPropsWithoutRef<typeof Popover>,
 ) {
+  const pathname = usePathname()
+  
   return (
     <Popover {...props}>
-      <Popover.Button className="group flex items-center rounded bg-white/90 px-4 py-2 text-sm font-medium text-neutral-800 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-900/5 backdrop-blur dark:bg-neutral-800/90 dark:text-neutral-200 dark:ring-white/10 dark:hover:ring-white/20">
-        Menu
-        <ChevronDownIcon className="ml-3 h-auto w-2 stroke-neutral-500 group-hover:stroke-neutral-700 dark:group-hover:stroke-neutral-400" />
-      </Popover.Button>
-      <Transition.Root>
-        <Transition.Child
-          as={Fragment}
-          enter="duration-150 ease-out"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="duration-150 ease-in"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <Popover.Overlay className="fixed inset-0 z-50 bg-neutral-800/40 backdrop-blur-sm dark:bg-black/80" />
-        </Transition.Child>
-        <Transition.Child
-          as={Fragment}
-          enter="duration-150 ease-out"
-          enterFrom="opacity-0 scale-95"
-          enterTo="opacity-100 scale-100"
-          leave="duration-150 ease-in"
-          leaveFrom="opacity-100 scale-100"
-          leaveTo="opacity-0 scale-95"
-        >
-          <Popover.Panel
-            focus
-            className="fixed inset-x-4 top-8 z-50 origin-top rounded-3xl bg-white p-8 ring-1 ring-neutral-900/5 dark:bg-neutral-900 dark:ring-neutral-800"
-          >
-            <div className="flex flex-row-reverse items-center justify-between">
-              <Popover.Button aria-label="Close menu" className="-m-1 p-1">
-                <CloseIcon className="h-6 w-6 text-neutral-500 dark:text-neutral-400" />
-              </Popover.Button>
-              <h2 className="text-sm font-medium text-neutral-600 dark:text-neutral-400">
-                Navigation
-              </h2>
-            </div>
-            <nav className="mt-6">
-              <ul className="-my-2 divide-y divide-neutral-100 text-base text-neutral-800 dark:divide-neutral-100/5 dark:text-neutral-300">
-                <MobileNavItem href="/">Home</MobileNavItem>
-                <MobileNavItem href="/about">About</MobileNavItem>
-                <MobileNavItem href="/experience">Experience</MobileNavItem>
-                <MobileNavItem href="/recommendations">Recommendations</MobileNavItem>
-              </ul>
-            </nav>
-          </Popover.Panel>
-        </Transition.Child>
-      </Transition.Root>
+      {({ close }) => (
+        <>
+          <Popover.Button className="group flex items-center gap-2 rounded-lg bg-white/80 dark:bg-neutral-800/80 px-3 py-2 text-sm font-mono text-neutral-700 dark:text-neutral-300 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 dark:ring-neutral-700/50 backdrop-blur transition hover:ring-neutral-300 dark:hover:ring-neutral-600">
+            <TerminalIcon className="w-4 h-4 text-emerald-500" />
+            <span>menu</span>
+            <svg className="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </Popover.Button>
+          <Transition.Root>
+            <Transition.Child
+              as={Fragment}
+              enter="duration-150 ease-out"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="duration-150 ease-in"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <Popover.Overlay className="fixed inset-0 z-50 bg-neutral-900/60 backdrop-blur-sm" />
+            </Transition.Child>
+            <Transition.Child
+              as={Fragment}
+              enter="duration-200 ease-out"
+              enterFrom="opacity-0 scale-95 -translate-y-2"
+              enterTo="opacity-100 scale-100 translate-y-0"
+              leave="duration-150 ease-in"
+              leaveFrom="opacity-100 scale-100 translate-y-0"
+              leaveTo="opacity-0 scale-95 -translate-y-2"
+            >
+              <Popover.Panel
+                focus
+                className="fixed inset-x-4 top-4 z-50 origin-top rounded-lg bg-white dark:bg-neutral-900 overflow-hidden shadow-2xl ring-1 ring-neutral-200 dark:ring-neutral-700"
+              >
+                {/* Terminal header */}
+                <div className="flex items-center justify-between px-4 py-2 bg-neutral-100 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700">
+                  <div className="flex items-center gap-2">
+                    <TerminalIcon className="w-4 h-4 text-emerald-500" />
+                    <span className="text-xs font-mono text-neutral-500 dark:text-neutral-400">~/navigation</span>
+                  </div>
+                  <Popover.Button aria-label="Close menu" className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
+                    <CloseIcon className="h-5 w-5 text-neutral-500 dark:text-neutral-400" />
+                  </Popover.Button>
+                </div>
+                
+                {/* Navigation items */}
+                <nav className="p-3">
+                  <ul className="space-y-1">
+                    {navItems.map((item) => (
+                      <MobileNavItem 
+                        key={item.href} 
+                        href={item.href} 
+                        label={item.label}
+                        color={item.color}
+                        isActive={pathname === item.href}
+                        close={close}
+                      />
+                    ))}
+                  </ul>
+                </nav>
+              </Popover.Panel>
+            </Transition.Child>
+          </Transition.Root>
+        </>
+      )}
     </Popover>
   )
 }
 
 function NavItem({
   href,
-  children,
+  label,
+  color,
 }: {
   href: string
-  children: React.ReactNode
+  label: string
+  color: string
 }) {
-  let isActive = usePathname() === href
+  const isActive = usePathname() === href
+  
+  const activeColors: Record<string, string> = {
+    emerald: 'text-emerald-600 dark:text-emerald-400',
+    sky: 'text-sky-600 dark:text-sky-400',
+    violet: 'text-violet-600 dark:text-violet-400',
+    amber: 'text-amber-600 dark:text-amber-400',
+  }
+  
+  const hoverColors: Record<string, string> = {
+    emerald: 'hover:text-emerald-600 dark:hover:text-emerald-400',
+    sky: 'hover:text-sky-600 dark:hover:text-sky-400',
+    violet: 'hover:text-violet-600 dark:hover:text-violet-400',
+    amber: 'hover:text-amber-600 dark:hover:text-amber-400',
+  }
+  
+  const bgColors: Record<string, string> = {
+    emerald: 'bg-emerald-500/10',
+    sky: 'bg-sky-500/10',
+    violet: 'bg-violet-500/10',
+    amber: 'bg-amber-500/10',
+  }
 
   return (
     <li>
       <Link
         href={href}
         className={clsx(
-          'relative block px-3 py-2 transition',
+          'relative flex items-center gap-1.5 px-3 py-1.5 rounded-md font-mono text-sm transition-all',
           isActive
-            ? 'text-blue-500 dark:text-blue-400'
-            : 'hover:text-blue-500 dark:hover:text-blue-400',
+            ? `${activeColors[color]} ${bgColors[color]}`
+            : `text-neutral-600 dark:text-neutral-400 ${hoverColors[color]} hover:bg-neutral-100 dark:hover:bg-neutral-800`,
         )}
       >
-        {children}
-        {isActive && (
-          <span className="absolute inset-x-1 -bottom-px h-px bg-gradient-to-r from-blue-500/0 via-blue-500/40 to-blue-500/0 dark:from-blue-400/0 dark:via-blue-400/40 dark:to-blue-400/0" />
-        )}
+        <span className={clsx(
+          'w-1.5 h-1.5 rounded-full transition-colors',
+          isActive ? 'bg-current' : 'bg-neutral-300 dark:bg-neutral-600'
+        )} />
+        {label}
       </Link>
     </li>
   )
@@ -175,20 +251,32 @@ function NavItem({
 function DesktopNavigation(props: React.ComponentPropsWithoutRef<'nav'>) {
   return (
     <nav {...props}>
-      <ul className="flex rounded bg-white/25 px-3 text-sm font-medium text-neutral-800 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-900/5 backdrop-blur dark:bg-neutral-800/25 dark:text-neutral-200 dark:ring-white/10">
-        <NavItem href="/">Home</NavItem>
-        <NavItem href="/about">About</NavItem>
-        <NavItem href="/experience">Experience</NavItem>
-        <NavItem href="/recommendations">Recommendations</NavItem>
-      </ul>
+      <div className="flex items-center rounded-lg bg-white/80 dark:bg-neutral-800/80 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 dark:ring-neutral-700/50 backdrop-blur overflow-hidden">
+        {/* Terminal prompt icon */}
+        <div className="flex items-center gap-1.5 px-3 py-2 border-r border-neutral-200/50 dark:border-neutral-700/50">
+          <TerminalIcon className="w-4 h-4 text-emerald-500" />
+        </div>
+        
+        {/* Nav items */}
+        <ul className="flex items-center px-1 py-1">
+          {navItems.map((item) => (
+            <NavItem 
+              key={item.href} 
+              href={item.href} 
+              label={item.label}
+              color={item.color}
+            />
+          ))}
+        </ul>
+      </div>
     </nav>
   )
 }
 
 function ThemeToggle() {
-  let { resolvedTheme, setTheme } = useTheme()
-  let otherTheme = resolvedTheme === 'dark' ? 'light' : 'dark'
-  let [mounted, setMounted] = useState(false)
+  const { resolvedTheme, setTheme } = useTheme()
+  const otherTheme = resolvedTheme === 'dark' ? 'light' : 'dark'
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -198,30 +286,30 @@ function ThemeToggle() {
     <button
       type="button"
       aria-label={mounted ? `Switch to ${otherTheme} theme` : 'Toggle theme'}
-      className="group rounded bg-white/25 px-3 py-2 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-900/5 backdrop-blur transition dark:bg-neutral-800/25 dark:ring-white/10 dark:hover:ring-white/20"
+      className="group flex items-center justify-center w-10 h-10 rounded-lg bg-white/80 dark:bg-neutral-800/80 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 dark:ring-neutral-700/50 backdrop-blur transition hover:ring-neutral-300 dark:hover:ring-neutral-600"
       onClick={() => setTheme(otherTheme)}
     >
-      <SunIcon className="h-6 w-6 fill-neutral-100 stroke-neutral-500 transition group-hover:fill-neutral-200 group-hover:stroke-neutral-700 dark:hidden [@media(prefers-color-scheme:dark)]:fill-blue-50 [@media(prefers-color-scheme:dark)]:stroke-blue-500 [@media(prefers-color-scheme:dark)]:group-hover:fill-blue-50 [@media(prefers-color-scheme:dark)]:group-hover:stroke-blue-600" />
-      <MoonIcon className="hidden h-6 w-6 fill-neutral-700 stroke-neutral-500 transition dark:block [@media(prefers-color-scheme:dark)]:group-hover:stroke-neutral-400 [@media_not_(prefers-color-scheme:dark)]:fill-blue-400/10 [@media_not_(prefers-color-scheme:dark)]:stroke-blue-500" />
+      <SunIcon className="h-5 w-5 fill-amber-100 stroke-amber-500 transition group-hover:fill-amber-200 group-hover:stroke-amber-600 dark:hidden" />
+      <MoonIcon className="hidden h-5 w-5 fill-sky-100 stroke-sky-500 transition group-hover:fill-sky-200 group-hover:stroke-sky-400 dark:block dark:fill-sky-400/20 dark:stroke-sky-400" />
     </button>
   )
 }
 
 function clamp(number: number, a: number, b: number) {
-  let min = Math.min(a, b)
-  let max = Math.max(a, b)
+  const min = Math.min(a, b)
+  const max = Math.max(a, b)
   return Math.min(Math.max(number, min), max)
 }
 
 export function Header() {
-  let isHomePage = usePathname() === '/'
+  const isHomePage = usePathname() === '/'
 
-  let headerRef = useRef<React.ElementRef<'div'>>(null)
-  let isInitial = useRef(true)
+  const headerRef = useRef<React.ElementRef<'div'>>(null)
+  const isInitial = useRef(true)
 
   useEffect(() => {
-    let downDelay = 0
-    let upDelay = 64
+    const downDelay = 0
+    const upDelay = 64
 
     function setProperty(property: string, value: string) {
       document.documentElement.style.setProperty(property, value)
@@ -236,8 +324,8 @@ export function Header() {
         return
       }
 
-      let { top, height } = headerRef.current.getBoundingClientRect()
-      let scrollY = clamp(
+      const { top, height } = headerRef.current.getBoundingClientRect()
+      const scrollY = clamp(
         window.scrollY,
         0,
         document.body.scrollHeight - window.innerHeight,
@@ -253,7 +341,7 @@ export function Header() {
         setProperty('--header-height', `${downDelay + height}px`)
         setProperty('--header-mb', `${-downDelay}px`)
       } else if (top + height < -upDelay) {
-        let offset = Math.max(height, scrollY - upDelay)
+        const offset = Math.max(height, scrollY - upDelay)
         setProperty('--header-height', `${offset}px`)
         setProperty('--header-mb', `${height - offset}px`)
       } else if (top === 0) {
@@ -322,7 +410,7 @@ export function Header() {
                 'var(--header-inner-position)' as React.CSSProperties['position'],
             }}
           >
-            <div className="relative flex">
+            <div className="relative flex gap-4">
               <div className="flex flex-1">
                 <MobileNavigation className="pointer-events-auto md:hidden" />
                 <DesktopNavigation className="pointer-events-auto hidden md:block" />

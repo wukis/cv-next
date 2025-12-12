@@ -35,12 +35,12 @@ function Recommendation({ recommendation, index }: { recommendation: Recommendat
       <div className="flex-1 min-w-0 -mt-1">
         {/* Terminal-style card */}
         <div className={`rounded-lg border bg-white/50 dark:bg-neutral-900/50 overflow-hidden transition-all duration-300 ${color.border} group-hover:shadow-lg`}>
-          {/* Terminal header */}
+          {/* Terminal header - date only on mobile, full path on desktop */}
           <div className="flex items-center justify-between gap-2 px-4 py-2 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
-            <span className="text-xs font-mono text-neutral-500 dark:text-neutral-400 truncate">
+            <span className="hidden sm:block text-xs font-mono text-neutral-500 dark:text-neutral-400 truncate">
               ~/testimonials/{recommendation.slug}.md
             </span>
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono text-neutral-500 dark:text-neutral-400 bg-neutral-200/50 dark:bg-neutral-700/50">
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono text-neutral-500 dark:text-neutral-400 bg-neutral-200/50 dark:bg-neutral-700/50 sm:ml-auto">
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
@@ -53,15 +53,15 @@ function Recommendation({ recommendation, index }: { recommendation: Recommendat
             {/* Author info */}
             <div className="flex items-center gap-4 mb-4 pb-4 border-b border-neutral-100 dark:border-neutral-800">
               <Image
-                className="h-14 w-14 rounded-full object-cover ring-2 ring-white dark:ring-neutral-800 flex-shrink-0"
-                width={56}
-                height={56}
+                className="h-12 w-12 rounded-lg object-cover ring-2 ring-white dark:ring-neutral-800 flex-shrink-0"
+                width={48}
+                height={48}
                 src={require(`@/images/recommendations/${recommendation.image}`).default}
                 alt={recommendation.fullName}
               />
               <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-lg text-neutral-800 dark:text-neutral-100">{recommendation.fullName}</h3>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400 font-mono">{recommendation.position}</p>
+                <h3 className="font-semibold text-base text-neutral-800 dark:text-neutral-100">{recommendation.fullName}</h3>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 font-mono truncate">{recommendation.position}</p>
               </div>
             </div>
             

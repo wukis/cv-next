@@ -99,9 +99,9 @@ function Recommendation({ recommendation, index }: { recommendation: Recommendat
                     </blockquote>
                     <figcaption className="mt-4 flex items-center gap-3">
                         <Image
-                            className="h-10 w-10 rounded-full object-cover ring-2 ring-white dark:ring-neutral-800"
-                            width={40}
-                            height={40}
+                            className="h-9 w-9 rounded-lg object-cover ring-2 ring-white dark:ring-neutral-800"
+                            width={36}
+                            height={36}
                             src={require(`@/images/recommendations/${recommendation.image}`).default}
                             alt={recommendation.fullName}
                         />
