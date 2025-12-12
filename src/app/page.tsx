@@ -30,8 +30,8 @@ const jsonLd = {
     },
     worksFor: {
         '@type': 'Organization',
-        name: 'anwalt.de',
-        url: 'https://www.anwalt.de',
+        name: 'SCAYLE',
+        url: 'https://www.scayle.com',
     },
     sameAs: [
         'https://www.linkedin.com/in/jonas-petrik/',

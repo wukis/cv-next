@@ -9,6 +9,10 @@ import {
   GitLabIcon
 } from '@/components/SocialIcons'
 import portraitImage from '@/images/jonas-petrik-portrait-2.jpg'
+import { calculateTotalExperienceYears, WorkInterface } from '@/lib/experience'
+import work from '@/data/work.json'
+
+const totalExperienceYears = calculateTotalExperienceYears(work as WorkInterface[])
 
 function MailIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
@@ -23,7 +27,7 @@ function MailIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
 
 export const metadata: Metadata = {
   title: 'About',
-  description: 'Welcome! I\'m Jonas Petrik, a Senior Software Engineer and Team Lead with a profound passion for developing software solutions that not only meet the immediate needs of our clients but are also designed to be scalable and future-proof.',
+  description: 'I\'m Jonas Petrik, a Staff Engineer and Team Lead building web applications. Based in Germany, originally from Lithuania.',
   alternates: {
     canonical: '/about',
   },
@@ -65,9 +69,9 @@ export default function About() {
               {/* Portrait */}
               <div className="flex-shrink-0">
                 <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-xl overflow-hidden ring-4 ring-white dark:ring-neutral-800 shadow-lg">
-                  <Image
+                    <Image
                     src={portraitImage}
-                    alt="Jonas Petrik - Senior Software Engineer and Team Lead"
+                    alt="Jonas Petrik - Staff Engineer and Team Lead"
                     sizes="(min-width: 640px) 9rem, 8rem"
                     className="w-full h-full object-cover"
                     priority={false}
@@ -118,7 +122,7 @@ export default function About() {
                 <div className="mb-3">
                   <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 text-xs font-mono text-neutral-600 dark:text-neutral-400">
                     <span className="w-2 h-2 rounded-full bg-sky-500" />
-                    Senior Software Engineer Team Lead
+                    Staff Engineer / Team Lead
                   </span>
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-800 dark:text-neutral-100">
@@ -126,6 +130,9 @@ export default function About() {
                 </h2>
                 <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-400">
                   Based in Germany · Originally from Lithuania
+                </p>
+                <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+                  {totalExperienceYears}+ years of experience
                 </p>
               </div>
             </div>
@@ -138,7 +145,7 @@ export default function About() {
                   <span className="text-sky-500 font-mono">##</span> Introduction
                 </h3>
                 <p className="text-neutral-600 dark:text-neutral-300 leading-relaxed">
-                  Welcome! I&apos;m Jonas Petrik, a Senior Software Engineer and Team Lead with a profound passion for developing software solutions that not only meet the immediate needs of our clients but are also designed to be scalable and future-proof. My professional journey has been defined by a blend of technical expertise and leadership roles, primarily focused on PHP, JavaScript, Go, and various other technologies.
+                  Hey, I&apos;m Jonas. I&apos;ve been building web applications for over {totalExperienceYears} years, mostly with PHP, JavaScript, and Go. Right now I&apos;m a Staff Engineer and Team Lead at SCAYLE, where I work on checkout and payments - systems that handle billions in transactions each year. I like solving hard problems and making things that actually work.
                 </p>
               </div>
               
@@ -148,27 +155,27 @@ export default function About() {
                   <span className="text-emerald-500 font-mono">##</span> Background
                 </h3>
                 <p className="text-neutral-600 dark:text-neutral-300 leading-relaxed">
-                  Born in Lithuania and currently based in Germany, I&apos;ve had the privilege of leading development teams at renowned tech firms. My role involves deep engagement in all phases of the software development lifecycle, from initial design to deployment, ensuring robustness and high quality of our web platforms.
+                  I grew up in Lithuania and moved to Germany a few years back. I&apos;ve been leading teams since 2016 - helping people grow, planning what we build, and making sure we ship quality code. I&apos;ve worked on everything from e-commerce platforms to betting systems to CRM tools.
                 </p>
               </div>
               
-              {/* Philosophy */}
+              {/* How I Work */}
               <div>
                 <h3 className="flex items-center gap-2 text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-3">
-                  <span className="text-violet-500 font-mono">##</span> Philosophy
+                  <span className="text-violet-500 font-mono">##</span> How I Work
                 </h3>
                 <p className="text-neutral-600 dark:text-neutral-300 leading-relaxed">
-                  Throughout my career, I&apos;ve emphasized the importance of team collaboration and agile project management. These principles have guided me in driving my teams towards achieving excellence and innovation in every project we undertake.
+                  I believe in writing clear code, testing properly, and not overcomplicating things. When leading a team, I try to remove blockers, give honest feedback, and let people own their work. I&apos;d rather ship something solid than chase every new trend.
                 </p>
               </div>
               
-              {/* Continuous Learning */}
+              {/* Always Learning */}
               <div>
                 <h3 className="flex items-center gap-2 text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-3">
-                  <span className="text-amber-500 font-mono">##</span> Continuous Learning
+                  <span className="text-amber-500 font-mono">##</span> Always Learning
                 </h3>
                 <p className="text-neutral-600 dark:text-neutral-300 leading-relaxed">
-                  I am also an avid learner and a mentor. I believe in the continuous exchange of knowledge and experiences to foster a learning environment that benefits both my team members and myself.
+                  Tech keeps changing, and I try to keep up - but I focus on what&apos;s useful, not what&apos;s shiny. I also enjoy helping others learn. Some of my best moments at work have been when someone on my team figures out something tricky and I got to be part of that.
                 </p>
               </div>
               

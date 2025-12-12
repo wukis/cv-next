@@ -9,9 +9,13 @@ import {
     GitLabIcon,
 } from '@/components/SocialIcons'
 import { type RecommendationInterface } from '@/lib/recommendations'
+import { calculateTotalExperienceYears, WorkInterface } from '@/lib/experience'
 import portraitImage from '@/images/jonas-petrik-portrait.png'
 import recommendations from '@/data/recommendations.json'
 import linkedin from '@/data/linkedin.json'
+import work from '@/data/work.json'
+
+const totalExperienceYears = calculateTotalExperienceYears(work as WorkInterface[])
 
 function truncate(text: string, length: number) {
     if (text.length <= length) {
@@ -141,7 +145,7 @@ export default function HomeClientContent() {
                                 <div className="w-36 h-36 sm:w-40 sm:h-40 lg:w-48 lg:h-48 rounded-xl overflow-hidden ring-4 ring-white dark:ring-neutral-800 shadow-lg">
                                     <Image
                                         src={portraitImage}
-                                        alt="Jonas Petrik - Senior Software Engineer Team Lead"
+                                        alt="Jonas Petrik - Staff Engineer and Team Lead"
                                         sizes="(min-width: 1024px) 12rem, (min-width: 640px) 10rem, 9rem"
                                         className="w-full h-full object-cover"
                                         priority={true}
@@ -199,7 +203,7 @@ export default function HomeClientContent() {
                                     <span className="font-mono text-emerald-600 dark:text-emerald-400">&gt;</span> {linkedin.basics.name}
                                 </h1>
                                 <p className="mt-4 text-sm sm:text-base text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                    {linkedin.basics.summary}
+                                    {linkedin.basics.summary.replace(/(\d+)\+ years of experience/, `${totalExperienceYears}+ years of experience`)}
                                 </p>
                                 
                                 {/* Quick links */}
