@@ -120,6 +120,9 @@ const getBranchColors = (roleType: 'lead' | 'senior' | 'mid' | 'junior') => {
         case 'lead':
             return {
                 node: 'bg-emerald-500 dark:bg-emerald-400',
+                ring: 'ring-emerald-500/30 dark:ring-emerald-400/30',
+                glow: 'shadow-emerald-500/40 dark:shadow-emerald-400/40',
+                ping: 'bg-emerald-500/40 dark:bg-emerald-400/40',
                 border: 'border-emerald-500/40 dark:border-emerald-400/40',
                 text: 'text-emerald-600 dark:text-emerald-400',
                 bg: 'bg-emerald-500/10 dark:bg-emerald-400/10',
@@ -127,6 +130,9 @@ const getBranchColors = (roleType: 'lead' | 'senior' | 'mid' | 'junior') => {
         case 'senior':
             return {
                 node: 'bg-sky-500 dark:bg-sky-400',
+                ring: 'ring-sky-500/30 dark:ring-sky-400/30',
+                glow: 'shadow-sky-500/40 dark:shadow-sky-400/40',
+                ping: 'bg-sky-500/40 dark:bg-sky-400/40',
                 border: 'border-sky-500/40 dark:border-sky-400/40',
                 text: 'text-sky-600 dark:text-sky-400',
                 bg: 'bg-sky-500/10 dark:bg-sky-400/10',
@@ -134,6 +140,9 @@ const getBranchColors = (roleType: 'lead' | 'senior' | 'mid' | 'junior') => {
         case 'mid':
             return {
                 node: 'bg-violet-500 dark:bg-violet-400',
+                ring: 'ring-violet-500/30 dark:ring-violet-400/30',
+                glow: 'shadow-violet-500/40 dark:shadow-violet-400/40',
+                ping: 'bg-violet-500/40 dark:bg-violet-400/40',
                 border: 'border-violet-500/40 dark:border-violet-400/40',
                 text: 'text-violet-600 dark:text-violet-400',
                 bg: 'bg-violet-500/10 dark:bg-violet-400/10',
@@ -141,6 +150,9 @@ const getBranchColors = (roleType: 'lead' | 'senior' | 'mid' | 'junior') => {
         case 'junior':
             return {
                 node: 'bg-amber-500 dark:bg-amber-400',
+                ring: 'ring-amber-500/30 dark:ring-amber-400/30',
+                glow: 'shadow-amber-500/40 dark:shadow-amber-400/40',
+                ping: 'bg-amber-500/40 dark:bg-amber-400/40',
                 border: 'border-amber-500/40 dark:border-amber-400/40',
                 text: 'text-amber-600 dark:text-amber-400',
                 bg: 'bg-amber-500/10 dark:bg-amber-400/10',
@@ -155,22 +167,24 @@ function Education({ education, isLast }: { education: EducationInterface; isLas
             <div className="relative flex flex-col items-center">
                 {/* Vertical line */}
                 {!isLast && (
-                    <div className="absolute top-5 bottom-0 w-px bg-gradient-to-b from-amber-500/60 to-amber-500/20 dark:from-amber-400/60 dark:to-amber-400/20" />
+                    <div className="absolute top-6 bottom-0 w-px bg-gradient-to-b from-amber-500/60 to-amber-500/20 dark:from-amber-400/60 dark:to-amber-400/20" />
                 )}
                 
-                {/* Commit node - centered at 20px (h-5 = 20px, so center is 10px from top) */}
-                <div className="relative w-5 h-5 flex items-center justify-center flex-shrink-0">
-                    <div className="absolute inset-0 rounded-full bg-amber-500/20 dark:bg-amber-400/20 animate-ping opacity-20" />
-                    <div className="w-3 h-3 rounded-full bg-amber-500 dark:bg-amber-400 ring-4 ring-white dark:ring-neutral-900" />
+                {/* Commit node - restored style with outer glow ring */}
+                <div className="relative w-6 h-6 flex items-center justify-center flex-shrink-0">
+                    {/* Outer glow ring */}
+                    <div className="absolute inset-0 rounded-full ring-4 ring-amber-500/30 dark:ring-amber-400/30 shadow-lg shadow-amber-500/40 dark:shadow-amber-400/40" />
+                    {/* Inner commit node */}
+                    <div className="relative w-4 h-4 rounded-full bg-amber-500 dark:bg-amber-400 ring-2 ring-white dark:ring-neutral-900" />
                 </div>
             </div>
 
             {/* Content */}
-            <div className="flex-1 min-w-0 pt-px">
+            <div className="flex-1 min-w-0">
                 {/* Terminal-style card */}
                 <div className="rounded-lg border border-neutral-200/60 dark:border-neutral-700/50 bg-white/50 dark:bg-neutral-900/50 overflow-hidden transition-all duration-300 group-hover:border-amber-500/40 dark:group-hover:border-amber-400/40 group-hover:shadow-lg group-hover:shadow-amber-500/5">
-                    {/* Terminal header */}
-                    <div className="flex items-center gap-2 px-4 py-2 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
+                    {/* Terminal header - h-6 matches commit node height for alignment */}
+                    <div className="flex items-center gap-2 px-4 h-6 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
                         <span className="ml-2 text-xs font-mono text-neutral-500 dark:text-neutral-400">
                             ~/education/{education.studyType.toLowerCase().replace(/\s+/g, '-')}
                         </span>
@@ -237,20 +251,24 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                         <div className="relative flex flex-col items-center">
                             {/* Vertical line */}
                             {!isLast && (
-                                <div className="absolute top-5 bottom-0 w-px bg-neutral-300 dark:bg-neutral-600" />
+                                <div className="absolute top-6 bottom-0 w-px bg-neutral-300 dark:bg-neutral-600" />
                             )}
                             
-                            {/* Commit node */}
-                            <div className="relative w-5 h-5 flex items-center justify-center flex-shrink-0">
+                            {/* Commit node - restored previous style with outer glow ring */}
+                            <div className="relative w-6 h-6 flex items-center justify-center flex-shrink-0">
+                                {/* Ping animation for current position */}
                                 {isFirst && (
-                                    <div className="absolute inset-0 rounded-full bg-emerald-500/30 dark:bg-emerald-400/30 animate-ping" />
+                                    <div className={`absolute inset-0 rounded-full ${colors.ping} animate-ping`} />
                                 )}
-                                <div className={`w-3.5 h-3.5 rounded-full ${colors.node} ring-4 ring-white dark:ring-neutral-900`} />
+                                {/* Outer glow ring */}
+                                <div className={`absolute inset-0 rounded-full ring-4 ${colors.ring} shadow-lg ${colors.glow}`} />
+                                {/* Inner commit node */}
+                                <div className={`relative w-4 h-4 rounded-full ${colors.node} ring-2 ring-white dark:ring-neutral-900`} />
                             </div>
                         </div>
 
                         {/* Content */}
-                        <div className="flex-1 min-w-0 pt-px">
+                        <div className="flex-1 min-w-0 -mt-1">
                             {/* Terminal-style card */}
                             <div className={`rounded-lg border bg-white/50 dark:bg-neutral-900/50 overflow-hidden transition-all duration-300 ${colors.border} group-hover:shadow-lg`}>
                                 {/* Terminal header */}
