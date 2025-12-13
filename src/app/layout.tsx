@@ -2,6 +2,7 @@ import { type Metadata } from 'next'
 
 import { Providers } from '@/app/providers'
 import { Layout } from '@/components/Layout'
+import { ConsoleEasterEgg } from '@/components/ConsoleEasterEgg'
 import linkedin from '@/data/linkedin.json'
 
 import '@/styles/tailwind.css'
@@ -88,6 +89,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <body className="flex h-full bg-neutral-50 dark:bg-black">
+        <ConsoleEasterEgg />
         <HexagonServiceNetwork />
         <Providers>
           <div className="flex w-full">
