@@ -24,7 +24,7 @@ interface Packet {
 
 const HexagonNetworkBackground = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const animationRef = useRef<number>();
+    const animationRef = useRef<number | undefined>(undefined);
     const hexagonsRef = useRef<Hexagon[]>([]);
     const packetsRef = useRef<Packet[]>([]);
     const timeRef = useRef(0);
