@@ -1,10 +1,10 @@
 'use client'
 
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
-import { Popover, Transition } from '@headlessui/react'
 import clsx from 'clsx'
 
 import { Container } from '@/components/Container'
@@ -159,84 +159,98 @@ function MobileNavItem({
   )
 }
 
-function MobileNavigation(
-  props: React.ComponentPropsWithoutRef<typeof Popover>,
-) {
+function MobileNavigation({ className }: { className?: string }) {
   const pathname = usePathname()
+  const [isOpen, setIsOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  
+  const close = () => setIsOpen(false)
+  
+  // Track if mounted (for portal)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+  
+  // Close menu on route change
+  useEffect(() => {
+    setIsOpen(false)
+  }, [pathname])
+  
+  // Close on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false)
+    }
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape)
+      return () => document.removeEventListener('keydown', handleEscape)
+    }
+  }, [isOpen])
   
   return (
-    <Popover {...props}>
-      {({ close }) => (
+    <div className={className}>
+      <button 
+        onClick={() => setIsOpen(true)}
+        className="group flex items-center gap-2 rounded-lg bg-white/80 dark:bg-neutral-800/80 px-3 py-2 text-sm font-mono text-neutral-700 dark:text-neutral-300 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 dark:ring-neutral-700/50 backdrop-blur transition hover:ring-neutral-300 dark:hover:ring-neutral-600"
+      >
+        <AnimatedTerminalIcon />
+        <span>menu</span>
+        <svg className="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {mounted && isOpen && createPortal(
         <>
-          <Popover.Button className="group flex items-center gap-2 rounded-lg bg-white/80 dark:bg-neutral-800/80 px-3 py-2 text-sm font-mono text-neutral-700 dark:text-neutral-300 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 dark:ring-neutral-700/50 backdrop-blur transition hover:ring-neutral-300 dark:hover:ring-neutral-600">
-            <AnimatedTerminalIcon />
-            <span>menu</span>
-            <svg className="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </Popover.Button>
-          <Transition.Root>
-            <Transition.Child
-              as={Fragment}
-              enter="duration-150 ease-out"
-              enterFrom="opacity-0"
-              enterTo="opacity-100"
-              leave="duration-150 ease-in"
-              leaveFrom="opacity-100"
-              leaveTo="opacity-0"
-            >
-              <Popover.Overlay className="fixed inset-0 z-[60] bg-neutral-900/60 backdrop-blur-sm" />
-            </Transition.Child>
-            <Transition.Child
-              as={Fragment}
-              enter="duration-200 ease-out"
-              enterFrom="opacity-0 scale-95 -translate-y-2"
-              enterTo="opacity-100 scale-100 translate-y-0"
-              leave="duration-150 ease-in"
-              leaveFrom="opacity-100 scale-100 translate-y-0"
-              leaveTo="opacity-0 scale-95 -translate-y-2"
-            >
-              <Popover.Panel
-                focus
-                className="fixed inset-x-4 top-4 z-[70] origin-top rounded-lg bg-white dark:bg-neutral-900 overflow-hidden shadow-2xl ring-1 ring-neutral-200 dark:ring-neutral-700"
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 z-[60] bg-neutral-900/60 backdrop-blur-sm" 
+            onClick={close} 
+            aria-hidden="true"
+          />
+          {/* Panel */}
+          <div
+            className="fixed inset-x-4 top-4 z-[70] rounded-lg bg-white dark:bg-neutral-900 overflow-hidden shadow-2xl ring-1 ring-neutral-200 dark:ring-neutral-700"
+          >
+            {/* Terminal header */}
+            <div className="flex items-center justify-between px-4 py-2 bg-neutral-100 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700">
+              <Link 
+                href="/" 
+                onClick={close}
+                className="flex items-center gap-2 -ml-1 px-1 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all"
+                aria-label="Go to home"
               >
-                {/* Terminal header */}
-                <div className="flex items-center justify-between px-4 py-2 bg-neutral-100 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700">
-                  <Link 
-                    href="/" 
-                    onClick={close}
-                    className="flex items-center gap-2 -ml-1 px-1 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all"
-                    aria-label="Go to home"
-                  >
-                    <AnimatedTerminalIcon />
-                    <span className="text-xs font-mono text-neutral-500 dark:text-neutral-400">~/navigation</span>
-                  </Link>
-                  <Popover.Button aria-label="Close menu" className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors">
-                    <CloseIcon className="h-5 w-5 text-neutral-500 dark:text-neutral-400" />
-                  </Popover.Button>
-                </div>
-                
-                {/* Navigation items */}
-                <nav className="p-3">
-                  <ul className="space-y-1">
-                    {navItems.map((item) => (
-                      <MobileNavItem 
-                        key={item.href} 
-                        href={item.href} 
-                        label={item.label}
-                        color={item.color}
-                        isActive={pathname === item.href}
-                        close={close}
-                      />
-                    ))}
-                  </ul>
-                </nav>
-              </Popover.Panel>
-            </Transition.Child>
-          </Transition.Root>
-        </>
+                <AnimatedTerminalIcon />
+                <span className="text-xs font-mono text-neutral-500 dark:text-neutral-400">~/navigation</span>
+              </Link>
+              <button 
+                onClick={close}
+                aria-label="Close menu" 
+                className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+              >
+                <CloseIcon className="h-5 w-5 text-neutral-500 dark:text-neutral-400" />
+              </button>
+            </div>
+            
+            {/* Navigation items */}
+            <nav className="p-3">
+              <ul className="space-y-1">
+                {navItems.map((item) => (
+                  <MobileNavItem 
+                    key={item.href} 
+                    href={item.href} 
+                    label={item.label}
+                    color={item.color}
+                    isActive={pathname === item.href}
+                    close={close}
+                  />
+                ))}
+              </ul>
+            </nav>
+          </div>
+        </>,
+        document.body
       )}
-    </Popover>
+    </div>
   )
 }
 
