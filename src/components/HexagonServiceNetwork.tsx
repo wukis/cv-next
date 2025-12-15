@@ -106,6 +106,27 @@ const HexagonServiceNetwork: React.FC = () => {
     const [isDark, setIsDark] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
     const focusTransitionRef = useRef(0); // 0 = normal, 1 = fully focused (for smooth transitions)
+    
+    // Emergency event system
+    const emergencyRef = useRef<{
+        isActive: boolean;
+        isRecovery: boolean;
+        startTime: number;
+        duration: number;
+        recoveryStartTime: number;
+        recoveryDuration: number;
+        lastEmergencyTime: number;
+        nextEmergencyInterval: number;
+    }>({
+        isActive: false,
+        isRecovery: false,
+        startTime: 0,
+        duration: 4, // Emergency lasts 4 seconds
+        recoveryStartTime: 0,
+        recoveryDuration: 2, // Recovery message lasts 2 seconds
+        lastEmergencyTime: 0,
+        nextEmergencyInterval: 30 + Math.random() * 60, // First emergency in 30-90 seconds
+    });
 
     // Configuration
     const BASE_HEX_SIZE = 22;
@@ -857,6 +878,109 @@ const HexagonServiceNetwork: React.FC = () => {
             statusIndicatorsRef.current = statusIndicatorsRef.current.filter(indicator => {
                 return drawStatusIndicator(ctx, indicator, isDark);
             });
+
+            // Emergency event system
+            const emergency = emergencyRef.current;
+            const timeSinceLastEmergency = timeRef.current - emergency.lastEmergencyTime;
+            
+            // Check if it's time for a new emergency
+            if (!emergency.isActive && !emergency.isRecovery && timeSinceLastEmergency > emergency.nextEmergencyInterval) {
+                emergency.isActive = true;
+                emergency.startTime = timeRef.current;
+                emergency.lastEmergencyTime = timeRef.current;
+                emergency.nextEmergencyInterval = 45 + Math.random() * 90; // Next emergency in 45-135 seconds
+                
+                // Dispatch event for MetricWidgets
+                window.dispatchEvent(new CustomEvent('network-emergency', { detail: { type: 'start' } }));
+            }
+            
+            // Handle active emergency
+            if (emergency.isActive) {
+                const emergencyAge = timeRef.current - emergency.startTime;
+                
+                if (emergencyAge < emergency.duration) {
+                    // Draw emergency alert
+                    const blinkRate = 4; // Blinks per second
+                    const blinkOn = Math.sin(emergencyAge * blinkRate * Math.PI * 2) > 0;
+                    
+                    if (blinkOn) {
+                        // Red overlay flash
+                        ctx.fillStyle = 'rgba(255, 0, 0, 0.08)';
+                        ctx.fillRect(0, 0, width, height);
+                    }
+                    
+                    // Draw EMERGENCY text
+                    const textScale = Math.min(1, emergencyAge * 3); // Scale in quickly
+                    const textOpacity = blinkOn ? 1 : 0.3;
+                    
+                    ctx.save();
+                    ctx.font = `bold ${Math.round(48 * textScale)}px ui-monospace, monospace`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    // Glow effect
+                    ctx.shadowColor = 'rgba(255, 0, 0, 0.8)';
+                    ctx.shadowBlur = 20;
+                    ctx.fillStyle = `rgba(255, 50, 50, ${textOpacity})`;
+                    ctx.fillText('⚠ EMERGENCY ⚠', centerX, centerY);
+                    
+                    // Subtitle
+                    ctx.font = `${Math.round(14 * textScale)}px ui-monospace, monospace`;
+                    ctx.shadowBlur = 10;
+                    ctx.fillStyle = `rgba(255, 100, 100, ${textOpacity * 0.8})`;
+                    ctx.fillText('CRITICAL SYSTEM ALERT', centerX, centerY + 35);
+                    
+                    ctx.restore();
+                } else {
+                    // Transition to recovery
+                    emergency.isActive = false;
+                    emergency.isRecovery = true;
+                    emergency.recoveryStartTime = timeRef.current;
+                    
+                    // Dispatch recovery event
+                    window.dispatchEvent(new CustomEvent('network-emergency', { detail: { type: 'recovery' } }));
+                }
+            }
+            
+            // Handle recovery phase
+            if (emergency.isRecovery) {
+                const recoveryAge = timeRef.current - emergency.recoveryStartTime;
+                
+                if (recoveryAge < emergency.recoveryDuration) {
+                    const fadeOut = 1 - (recoveryAge / emergency.recoveryDuration);
+                    const textOpacity = fadeOut;
+                    
+                    // Green overlay
+                    ctx.fillStyle = `rgba(0, 255, 100, ${0.05 * fadeOut})`;
+                    ctx.fillRect(0, 0, width, height);
+                    
+                    // Draw RECOVERY text
+                    ctx.save();
+                    ctx.font = 'bold 48px ui-monospace, monospace';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    // Glow effect
+                    ctx.shadowColor = 'rgba(0, 255, 100, 0.8)';
+                    ctx.shadowBlur = 20;
+                    ctx.fillStyle = `rgba(50, 255, 100, ${textOpacity})`;
+                    ctx.fillText('✓ RECOVERED', centerX, centerY);
+                    
+                    // Subtitle
+                    ctx.font = '14px ui-monospace, monospace';
+                    ctx.shadowBlur = 10;
+                    ctx.fillStyle = `rgba(100, 255, 150, ${textOpacity * 0.8})`;
+                    ctx.fillText('ALL SYSTEMS NOMINAL', centerX, centerY + 35);
+                    
+                    ctx.restore();
+                } else {
+                    // Recovery complete
+                    emergency.isRecovery = false;
+                    
+                    // Dispatch end event
+                    window.dispatchEvent(new CustomEvent('network-emergency', { detail: { type: 'end' } }));
+                }
+            }
 
             animationRef.current = requestAnimationFrame(animate);
         };

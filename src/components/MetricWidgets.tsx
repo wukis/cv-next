@@ -134,6 +134,9 @@ function CircularGauge({ value, color, size = 32, isFocused = false }: {
   );
 }
 
+// Emergency state type
+type EmergencyState = 'normal' | 'emergency' | 'recovery';
+
 // Individual metric widget
 interface MetricWidgetProps {
   type: 'sparkline' | 'bars' | 'gauge' | 'counter' | 'status';
@@ -141,9 +144,13 @@ interface MetricWidgetProps {
   color: string;
   delay?: number;
   isFocused?: boolean;
+  emergencyState?: EmergencyState;
 }
 
-function MetricWidget({ type, label, color, delay = 0, isFocused = false }: MetricWidgetProps) {
+const EMERGENCY_RED = '#ff3333';
+const RECOVERY_GREEN = '#33ff66';
+
+function MetricWidget({ type, label, color, delay = 0, isFocused = false, emergencyState = 'normal' }: MetricWidgetProps) {
   const [data, setData] = useState<number[]>(() => generateSparklineData());
   const [value, setValue] = useState(() => Math.floor(Math.random() * 80) + 10);
   const [visible, setVisible] = useState(false);
@@ -179,84 +186,106 @@ function MetricWidget({ type, label, color, delay = 0, isFocused = false }: Metr
     };
   }, [delay, type]);
 
-  // Muted vs focused styling
-  const containerOpacity = isFocused ? 1 : 0.4;
-  const textOpacity = isFocused ? 0.7 : 0.4;
-  const glowIntensity = isFocused ? 1 : 0.3;
+  // Determine effective color based on emergency state
+  const effectiveColor = emergencyState === 'emergency' ? EMERGENCY_RED : 
+                         emergencyState === 'recovery' ? RECOVERY_GREEN : color;
+
+  // Muted vs focused styling - emergency always shows at full intensity
+  const isActive = isFocused || emergencyState !== 'normal';
+  const containerOpacity = isActive ? 1 : 0.4;
+  const textOpacity = isActive ? 0.7 : 0.4;
+
+  // Emergency border styling
+  const borderColor = emergencyState === 'emergency' ? 'border-red-500/50' : 
+                      emergencyState === 'recovery' ? 'border-green-500/50' : 'border-neutral-700/20';
+  const bgColor = emergencyState === 'emergency' ? 'bg-red-950/40' : 
+                  emergencyState === 'recovery' ? 'bg-green-950/40' : 'bg-neutral-900/30';
 
   return (
     <div 
       className={`
         flex flex-col gap-1 p-2 rounded-md
-        bg-neutral-900/30 backdrop-blur-sm border border-neutral-700/20
-        transition-all duration-500 ease-out
+        backdrop-blur-sm border
+        transition-all duration-300 ease-out
         ${visible ? 'translate-y-0' : 'opacity-0 translate-y-2'}
+        ${borderColor} ${bgColor}
+        ${emergencyState === 'emergency' ? 'animate-pulse' : ''}
       `}
       style={{ 
         minWidth: type === 'sparkline' ? 100 : 70,
         opacity: visible ? containerOpacity : 0,
-        transition: 'opacity 0.5s ease, transform 0.5s ease'
+        transition: 'opacity 0.3s ease, transform 0.5s ease, background-color 0.3s ease, border-color 0.3s ease'
       }}
     >
       <span 
-        className="text-[9px] font-mono text-neutral-500 uppercase tracking-wider truncate"
-        style={{ opacity: textOpacity, transition: 'opacity 0.5s ease' }}
+        className="text-[9px] font-mono uppercase tracking-wider truncate transition-all duration-300"
+        style={{ 
+          opacity: textOpacity,
+          color: emergencyState === 'emergency' ? EMERGENCY_RED : 
+                 emergencyState === 'recovery' ? RECOVERY_GREEN : undefined
+        }}
       >
-        {label}
+        {emergencyState === 'emergency' ? '⚠ ' + label : label}
       </span>
       
       {type === 'sparkline' && (
-        <Sparkline data={data} color={color} width={80} height={20} isFocused={isFocused} />
+        <Sparkline data={data} color={effectiveColor} width={80} height={20} isFocused={isActive} />
       )}
       
       {type === 'bars' && (
-        <MiniBarChart values={data.slice(0, 6)} color={color} width={56} height={18} isFocused={isFocused} />
+        <MiniBarChart values={data.slice(0, 6)} color={effectiveColor} width={56} height={18} isFocused={isActive} />
       )}
       
       {type === 'gauge' && (
         <div className="flex items-center gap-2">
-          <CircularGauge value={value} color={color} size={28} isFocused={isFocused} />
+          <CircularGauge value={value} color={effectiveColor} size={28} isFocused={isActive} />
           <span 
-            className="text-[10px] font-mono transition-all duration-500"
+            className="text-[10px] font-mono transition-all duration-300"
             style={{ 
-              color, 
-              textShadow: isFocused ? `0 0 6px ${color}` : 'none',
-              opacity: isFocused ? 1 : 0.5
+              color: effectiveColor, 
+              textShadow: isActive ? `0 0 6px ${effectiveColor}` : 'none',
+              opacity: isActive ? 1 : 0.5
             }}
           >
-            {Math.round(value)}%
+            {emergencyState === 'emergency' ? 'CRIT' : Math.round(value) + '%'}
           </span>
         </div>
       )}
       
       {type === 'counter' && (
         <span 
-          className="text-sm font-mono font-medium transition-all duration-500"
+          className="text-sm font-mono font-medium transition-all duration-300"
           style={{ 
-            color, 
-            textShadow: isFocused ? `0 0 6px ${color}` : 'none',
-            opacity: isFocused ? 1 : 0.5
+            color: effectiveColor, 
+            textShadow: isActive ? `0 0 6px ${effectiveColor}` : 'none',
+            opacity: isActive ? 1 : 0.5
           }}
         >
-          {value.toFixed(1)}k
+          {emergencyState === 'emergency' ? '!ERR' : value.toFixed(1) + 'k'}
         </span>
       )}
       
       {type === 'status' && (
         <div className="flex items-center gap-1.5">
           <span 
-            className={`w-2 h-2 rounded-full ${isFocused ? 'animate-pulse' : ''} transition-all duration-500`}
+            className={`w-2 h-2 rounded-full transition-all duration-300 ${emergencyState === 'emergency' || isActive ? 'animate-pulse' : ''}`}
             style={{ 
-              backgroundColor: color, 
-              boxShadow: isFocused ? `0 0 8px ${color}` : `0 0 2px ${color}`,
-              opacity: isFocused ? 1 : 0.5
+              backgroundColor: effectiveColor, 
+              boxShadow: isActive ? `0 0 8px ${effectiveColor}` : `0 0 2px ${effectiveColor}`,
+              opacity: isActive ? 1 : 0.5
             }}
           />
           <span 
-            className="text-[10px] font-mono text-neutral-400 transition-opacity duration-500"
-            style={{ opacity: isFocused ? 0.8 : 0.4 }}
+            className="text-[10px] font-mono transition-all duration-300"
+            style={{ 
+              opacity: isActive ? 0.8 : 0.4,
+              color: emergencyState === 'emergency' ? EMERGENCY_RED : 
+                     emergencyState === 'recovery' ? RECOVERY_GREEN : undefined
+            }}
           >
-            {value > 50 ? 'healthy' : 'degraded'}
+            {emergencyState === 'emergency' ? 'ALERT!' : 
+             emergencyState === 'recovery' ? 'OK' : 
+             (value > 50 ? 'healthy' : 'degraded')}
           </span>
         </div>
       )}
@@ -290,6 +319,7 @@ const rightWidgets: MetricWidgetProps[] = [
 export default function MetricWidgets() {
   const [shouldRender, setShouldRender] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [emergencyState, setEmergencyState] = useState<EmergencyState>('normal');
   
   const checkScreenSize = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -324,6 +354,25 @@ export default function MetricWidgets() {
     return () => observer.disconnect();
   }, []);
 
+  // Listen for emergency events from HexagonServiceNetwork
+  useEffect(() => {
+    const handleEmergency = (event: Event) => {
+      const customEvent = event as CustomEvent<{ type: string }>;
+      const eventType = customEvent.detail?.type;
+      
+      if (eventType === 'start') {
+        setEmergencyState('emergency');
+      } else if (eventType === 'recovery') {
+        setEmergencyState('recovery');
+      } else if (eventType === 'end') {
+        setEmergencyState('normal');
+      }
+    };
+    
+    window.addEventListener('network-emergency', handleEmergency);
+    return () => window.removeEventListener('network-emergency', handleEmergency);
+  }, []);
+
   if (!shouldRender) return null;
 
   return (
@@ -336,6 +385,7 @@ export default function MetricWidgets() {
             {...widget}
             delay={index * 150}
             isFocused={isFocused}
+            emergencyState={emergencyState}
           />
         ))}
       </div>
@@ -348,6 +398,7 @@ export default function MetricWidgets() {
             {...widget}
             delay={index * 150 + 100}
             isFocused={isFocused}
+            emergencyState={emergencyState}
           />
         ))}
       </div>
