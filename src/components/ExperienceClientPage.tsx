@@ -42,13 +42,13 @@ const formatDuration = (duration: { years: number, months: number }): string => 
     const { years, months } = duration;
     let formatted = '';
     if (years > 0) {
-        formatted += `${years}y`;
+        formatted += `${years} yr`;
     }
     if (months > 0) {
         if (formatted) formatted += ' ';
-        formatted += `${months}m`;
+        formatted += `${months} mo`;
     }
-    return formatted || '0m';
+    return formatted || '0 mo';
 };
 
 const getCompanyDuration = (experiences: WorkInterface[]) => {
