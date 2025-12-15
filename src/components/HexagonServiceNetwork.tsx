@@ -118,7 +118,9 @@ const HexagonServiceNetwork: React.FC = () => {
         lastEmergencyTime: number;
         nextEmergencyInterval: number;
         hasTriggeredFirstEmergency: boolean;
-        focusStartTime: number;
+        hasEverFocused: boolean;
+        accumulatedFocusTime: number;
+        firstEmergencyDelay: number;
     }>({
         isActive: false,
         isRecovery: false,
@@ -129,7 +131,9 @@ const HexagonServiceNetwork: React.FC = () => {
         lastEmergencyTime: 0,
         nextEmergencyInterval: 30, // Random interval after first emergency
         hasTriggeredFirstEmergency: false,
-        focusStartTime: 0,
+        hasEverFocused: false,
+        accumulatedFocusTime: 0,
+        firstEmergencyDelay: 2 + Math.random(), // 2-3 seconds
     });
 
     // Configuration
@@ -402,9 +406,14 @@ const HexagonServiceNetwork: React.FC = () => {
     }, []);
 
     // Create status indicator when packet arrives
-    const createStatusIndicator = useCallback((x: number, y: number): StatusIndicator => {
-        const rand = Math.random();
-        const type = rand < 0.7 ? 'success' : rand < 0.9 ? 'warning' : 'failure';
+    const createStatusIndicator = useCallback((x: number, y: number, forcedType?: 'success' | 'warning' | 'failure'): StatusIndicator => {
+        let type: 'success' | 'warning' | 'failure';
+        if (forcedType) {
+            type = forcedType;
+        } else {
+            const rand = Math.random();
+            type = rand < 0.7 ? 'success' : rand < 0.9 ? 'warning' : 'failure';
+        }
 
         return {
             id: statusIdRef.current++,
@@ -498,6 +507,26 @@ const HexagonServiceNetwork: React.FC = () => {
         observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
         return () => observer.disconnect();
+    }, []);
+
+    // Listen for manual emergency trigger from click
+    useEffect(() => {
+        const handleTriggerEmergency = () => {
+            const emergency = emergencyRef.current;
+            // Only trigger if not already in emergency or recovery
+            if (!emergency.isActive && !emergency.isRecovery) {
+                emergency.isActive = true;
+                emergency.startTime = timeRef.current;
+                emergency.hasTriggeredFirstEmergency = true;
+                // Note: lastEmergencyTime and nextEmergencyInterval are set when recovery ENDS
+                
+                // Dispatch event for MetricWidgets
+                window.dispatchEvent(new CustomEvent('network-emergency', { detail: { type: 'start' } }));
+            }
+        };
+
+        window.addEventListener('trigger-emergency', handleTriggerEmergency);
+        return () => window.removeEventListener('trigger-emergency', handleTriggerEmergency);
     }, []);
 
     useEffect(() => {
@@ -680,11 +709,21 @@ const HexagonServiceNetwork: React.FC = () => {
                 packet.progress += packet.speed * packetSpeedMultiplier;
 
                 if (packet.progress >= 1) {
-                    // Packet arrived
+                    // Packet arrived - status depends on emergency state
                     const targetNode = packet.direction === 1 ? packet.connection.toNode : packet.connection.fromNode;
                     if (isFinite(targetNode.screenX) && isFinite(targetNode.screenY)) {
+                        // During emergency: all packets fail
+                        // During recovery: all packets succeed
+                        // Normal: random status
+                        const emergency = emergencyRef.current;
+                        let statusType: 'success' | 'warning' | 'failure' | undefined;
+                        if (emergency.isActive) {
+                            statusType = 'failure';
+                        } else if (emergency.isRecovery) {
+                            statusType = 'success';
+                        }
                         statusIndicatorsRef.current.push(
-                            createStatusIndicator(targetNode.screenX, targetNode.screenY)
+                            createStatusIndicator(targetNode.screenX, targetNode.screenY, statusType)
                         );
                     }
                     return false;
@@ -887,20 +926,22 @@ const HexagonServiceNetwork: React.FC = () => {
             const emergency = emergencyRef.current;
             const timeSinceLastEmergency = timeRef.current - emergency.lastEmergencyTime;
             
-            // Track when focus mode starts
-            if (isFocused && emergency.focusStartTime === 0) {
-                emergency.focusStartTime = timeRef.current;
-            } else if (!isFocused) {
-                emergency.focusStartTime = 0; // Reset when unfocused
+            // Track focus state and accumulate focus time
+            if (isFocused) {
+                if (!emergency.hasEverFocused) {
+                    emergency.hasEverFocused = true;
+                }
+                // Accumulate focus time (~0.016 seconds per frame at 60fps)
+                emergency.accumulatedFocusTime += 0.016;
             }
             
             // Determine if we should trigger emergency
             let shouldTriggerEmergency = false;
             
-            if (isFocused && !emergency.hasTriggeredFirstEmergency && !emergency.isActive && !emergency.isRecovery) {
-                // First focus: trigger emergency after 2-3 seconds
-                const timeSinceFocus = timeRef.current - emergency.focusStartTime;
-                if (timeSinceFocus > 2 + Math.random()) {
+            if (emergency.hasEverFocused && !emergency.hasTriggeredFirstEmergency && !emergency.isActive && !emergency.isRecovery) {
+                // First emergency: trigger after accumulated focus time reaches threshold
+                // This persists even if user unfocuses and refocuses
+                if (emergency.accumulatedFocusTime > emergency.firstEmergencyDelay) {
                     shouldTriggerEmergency = true;
                     emergency.hasTriggeredFirstEmergency = true;
                 }
@@ -915,8 +956,7 @@ const HexagonServiceNetwork: React.FC = () => {
             if (shouldTriggerEmergency) {
                 emergency.isActive = true;
                 emergency.startTime = timeRef.current;
-                emergency.lastEmergencyTime = timeRef.current;
-                emergency.nextEmergencyInterval = 25 + Math.random() * 15; // Next emergency in 25-40 seconds
+                // Note: lastEmergencyTime and nextEmergencyInterval are set when recovery ENDS
                 
                 // Dispatch event for MetricWidgets
                 window.dispatchEvent(new CustomEvent('network-emergency', { detail: { type: 'start' } }));
@@ -1002,9 +1042,11 @@ const HexagonServiceNetwork: React.FC = () => {
                     
                     ctx.restore();
                 } else {
-                    // Recovery complete
+                    // Recovery complete - reset timer for next random emergency
                     emergency.isRecovery = false;
-                    
+                    emergency.lastEmergencyTime = timeRef.current; // Reset timer NOW when recovery ends
+                    emergency.nextEmergencyInterval = 25 + Math.random() * 15; // 25-40 seconds until next
+
                     // Dispatch end event
                     window.dispatchEvent(new CustomEvent('network-emergency', { detail: { type: 'end' } }));
                 }

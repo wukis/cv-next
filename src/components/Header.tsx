@@ -410,12 +410,18 @@ function AnimationFocus() {
     }
   }, [isHovering])
 
+  const triggerEmergency = () => {
+    // Dispatch event to trigger emergency animation
+    window.dispatchEvent(new CustomEvent('trigger-emergency'))
+  }
+
   return (
     <div
-      className="group relative flex items-center justify-center w-10 h-10 rounded-lg bg-white/80 dark:bg-neutral-800/80 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 dark:ring-neutral-700/50 backdrop-blur transition-all cursor-default hover:ring-emerald-400/50 dark:hover:ring-emerald-400/50"
+      className="group relative flex items-center justify-center w-10 h-10 rounded-lg bg-white/80 dark:bg-neutral-800/80 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 dark:ring-neutral-700/50 backdrop-blur transition-all cursor-pointer hover:ring-emerald-400/50 dark:hover:ring-emerald-400/50"
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
-      title="Hover to see background animation"
+      onClick={triggerEmergency}
+      title="Hover to see background animation, click to trigger emergency"
     >
       <HexagonNetworkIcon 
         className={clsx(
