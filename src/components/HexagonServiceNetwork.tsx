@@ -58,10 +58,10 @@ interface StatusIndicator {
     duration: number;
 }
 
-// Service names for the hexagon nodes
+// Service names for the hexagon nodes (AWS/Cloud inspired, kept short for display)
 const SERVICE_NAMES = [
-    'API', 'DB', 'Cache', 'Auth', 'Queue', 'CDN', 'Log', 'DNS',
-    'Load', 'Web', 'Mail', 'File', 'Pay', 'Search', 'Sync', 'Proxy'
+    'EC2', 'RDS', 'Redis', 'Lambda', 'SQS', 'S3', 'SNS', 'ECS',
+    'ALB', 'API GW', 'Kafka', 'Nginx', 'K8s', 'Mongo', 'Elastic', 'Docker'
 ];
 
 // Site color palette
@@ -457,7 +457,7 @@ const HexagonServiceNetwork: React.FC = () => {
                 const from = project3D(conn.fromNode.x, conn.fromNode.y, conn.fromNode.z, centerX, centerY, rotX, rotY);
                 const to = project3D(conn.toNode.x, conn.toNode.y, conn.toNode.z, centerX, centerY, rotX, rotY);
 
-                // Draw establishing/established connection line
+                // Draw establishing/established connection line with dashed effect
                 const lineProgress = conn.establishProgress;
                 const currentX = from.screenX + (to.screenX - from.screenX) * lineProgress;
                 const currentY = from.screenY + (to.screenY - from.screenY) * lineProgress;
@@ -467,14 +467,37 @@ const HexagonServiceNetwork: React.FC = () => {
                 const depthFade = Math.max(0.3, Math.min(1, (PERSPECTIVE + avgZ) / (PERSPECTIVE * 2)));
                 const finalOpacity = conn.opacity * depthFade;
 
+                // Main connection line
                 ctx.strokeStyle = isDark
                     ? `rgba(255, 255, 255, ${finalOpacity})`
                     : `rgba(0, 0, 0, ${finalOpacity * 0.7})`;
-                ctx.lineWidth = 0.5;
+                ctx.lineWidth = 0.8;
+                
+                // Dashed line for established connections to show data flow direction
+                if (conn.isEstablished) {
+                    const dashOffset = (timeRef.current * 15) % 20;
+                    ctx.setLineDash([4, 8]);
+                    ctx.lineDashOffset = -dashOffset;
+                }
+                
                 ctx.beginPath();
                 ctx.moveTo(from.screenX, from.screenY);
                 ctx.lineTo(currentX, currentY);
                 ctx.stroke();
+                ctx.setLineDash([]);
+                
+                // Add subtle glow to connection during establishment
+                if (!conn.isEstablished && depthFade > 0.4) {
+                    const glowOpacity = finalOpacity * 0.3 * (1 - lineProgress);
+                    ctx.strokeStyle = isDark
+                        ? `rgba(52, 211, 153, ${glowOpacity})`
+                        : `rgba(16, 185, 129, ${glowOpacity})`;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(from.screenX, from.screenY);
+                    ctx.lineTo(currentX, currentY);
+                    ctx.stroke();
+                }
 
                 // Spawn packets on established connections
                 if (conn.isEstablished && timeRef.current - conn.lastPacketTime > conn.packetInterval) {
@@ -552,12 +575,14 @@ const HexagonServiceNetwork: React.FC = () => {
                 ctx.stroke();
                 ctx.setLineDash([]);
 
-                // Packet head
-                const headOpacity = (isDark ? 0.7 : 0.5) * depthFade;
-                const size = packet.size * depthFade;
+                // Packet head with pulsing effect
+                const pulsePhase = Math.sin(timeRef.current * 8 + packet.progress * Math.PI * 2) * 0.3 + 1;
+                const headOpacity = (isDark ? 0.75 : 0.55) * depthFade;
+                const size = packet.size * depthFade * pulsePhase;
                 ctx.fillStyle = colors.main.replace('VAL', String(headOpacity));
 
                 if (packet.type === 'tcp') {
+                    // Diamond shape for TCP packets
                     ctx.beginPath();
                     ctx.moveTo(x, y - size);
                     ctx.lineTo(x + size, y);
@@ -565,20 +590,33 @@ const HexagonServiceNetwork: React.FC = () => {
                     ctx.lineTo(x - size, y);
                     ctx.closePath();
                     ctx.fill();
+                    
+                    // Inner diamond outline
+                    ctx.strokeStyle = colors.glow.replace('VAL', String(headOpacity * 0.6));
+                    ctx.lineWidth = 0.5;
+                    ctx.beginPath();
+                    ctx.moveTo(x, y - size * 0.5);
+                    ctx.lineTo(x + size * 0.5, y);
+                    ctx.lineTo(x, y + size * 0.5);
+                    ctx.lineTo(x - size * 0.5, y);
+                    ctx.closePath();
+                    ctx.stroke();
                 } else {
+                    // Circle for UDP packets
                     ctx.beginPath();
                     ctx.arc(x, y, size * 0.8, 0, Math.PI * 2);
                     ctx.fill();
                 }
 
-                // Glow
-                const glowOpacity = (isDark ? 0.25 : 0.15) * depthFade;
-                const glow = ctx.createRadialGradient(x, y, 0, x, y, size * 3);
+                // Glow effect
+                const glowOpacity = (isDark ? 0.3 : 0.18) * depthFade * pulsePhase;
+                const glow = ctx.createRadialGradient(x, y, 0, x, y, size * 4);
                 glow.addColorStop(0, colors.glow.replace('VAL', String(glowOpacity)));
+                glow.addColorStop(0.5, colors.glow.replace('VAL', String(glowOpacity * 0.3)));
                 glow.addColorStop(1, 'transparent');
                 ctx.fillStyle = glow;
                 ctx.beginPath();
-                ctx.arc(x, y, size * 3, 0, Math.PI * 2);
+                ctx.arc(x, y, size * 4, 0, Math.PI * 2);
                 ctx.fill();
 
                 return true;
@@ -610,29 +648,53 @@ const HexagonServiceNetwork: React.FC = () => {
                     ctx.fill();
                 }
 
-                // Main hexagon
-                const fillColor = colors.main.replace('VAL', String(pulseOpacity * 0.3));
+                // Main hexagon with subtle double-line effect
+                const fillColor = colors.main.replace('VAL', String(pulseOpacity * 0.25));
                 const strokeColor = colors.main.replace('VAL', String(pulseOpacity));
 
-                drawHexagon(ctx, node.screenX, node.screenY, currentSize, strokeColor, fillColor, 1 * depthFade);
-
-                // Inner hexagon detail
-                if (depthFade > 0.4) {
+                // Outer hexagon (slightly larger, more transparent)
+                if (node.isActive && depthFade > 0.5) {
                     drawHexagon(
                         ctx,
                         node.screenX,
                         node.screenY,
-                        currentSize * 0.5,
-                        colors.main.replace('VAL', String(pulseOpacity * 0.5)),
+                        currentSize * 1.15,
+                        colors.main.replace('VAL', String(pulseOpacity * 0.3)),
                         null,
                         0.5 * depthFade
                     );
                 }
 
+                drawHexagon(ctx, node.screenX, node.screenY, currentSize, strokeColor, fillColor, 1.2 * depthFade);
+
+                // Inner hexagon detail - smaller decorative element
+                if (depthFade > 0.4) {
+                    drawHexagon(
+                        ctx,
+                        node.screenX,
+                        node.screenY,
+                        currentSize * 0.4,
+                        colors.main.replace('VAL', String(pulseOpacity * 0.4)),
+                        null,
+                        0.5 * depthFade
+                    );
+                }
+                
+                // Center dot for active nodes
+                if (node.isActive && depthFade > 0.5) {
+                    const dotSize = 2 * depthFade;
+                    ctx.fillStyle = colors.glow.replace('VAL', String(pulseOpacity * 0.8));
+                    ctx.beginPath();
+                    ctx.arc(node.screenX, node.screenY, dotSize, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
                 // Service label (only for foreground nodes)
                 if (depthFade > 0.6) {
-                    const labelOpacity = (isDark ? 0.35 : 0.25) * depthFade;
-                    ctx.font = `${Math.round(7 * depthFade)}px ui-monospace, monospace`;
+                    const labelOpacity = (isDark ? 0.45 : 0.35) * depthFade;
+                    // Adjust font size based on label length
+                    const baseFontSize = node.label.length > 5 ? 6 : 7;
+                    ctx.font = `bold ${Math.round(baseFontSize * depthFade)}px ui-monospace, monospace`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     ctx.fillStyle = isDark
