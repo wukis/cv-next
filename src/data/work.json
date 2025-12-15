@@ -5,27 +5,39 @@
     "enrollment": "Full-time",
     "startDate": "2025-04",
     "endDate": "now",
+    "highlights": [
+      "Leading backend engineering team responsible for checkout and payments domain",
+      "Architecting high-availability systems processing €6.5B+ annual transaction volume",
+      "Driving Kubernetes migration improving deployment frequency and system reliability"
+    ],
     "responsibilities": [
       "Leading backend engineering team for checkout and payments domain",
       "Architecting high-availability systems processing €6.5B+ annual transactions",
-      "Driving Kubernetes migration and infrastructure modernization initiatives"
+      "Driving Kubernetes migration and infrastructure modernization initiatives",
+      "Designing fault-tolerant microservices for enterprise e-commerce platform",
+      "Collaborating with cross-functional teams on payment provider integrations"
     ],
     "projects": [
       "SCAYLE Commerce Engine - enterprise e-commerce platform powering 100+ global brands"
     ],
     "technologies": [
       "PHP",
-      "Road-Runner",
-      "FrankenPHP",
+      "Go",
       "Laravel",
       "Symfony",
-      "Go",
+      "Road-Runner",
+      "FrankenPHP",
       "Kubernetes",
+      "Docker",
       "Redis",
       "MySQL",
       "AWS",
       "Datadog",
-      "React"
+      "React",
+      "TypeScript",
+      "REST API",
+      "Microservices",
+      "CI/CD"
     ],
     "url": "https://www.scayle.com",
     "location": "Hamburg, Germany - Remote",
@@ -37,15 +49,36 @@
     "enrollment": "Full-time",
     "startDate": "2024-01",
     "endDate": "2025-04",
+    "highlights": [
+      "Built high-throughput checkout systems handling peak traffic during sales events",
+      "Reduced checkout latency through performance optimization initiatives",
+      "Participated in on-call rotation for critical payment infrastructure"
+    ],
     "responsibilities": [
       "Building and maintaining high-throughput checkout and payment systems",
       "On-call and incident response for critical checkout flows",
       "Implementing fault-tolerant microservices architecture",
       "Optimizing for high demand checkout flows",
-      "Developing multi-tenant headlesscheckout solutions"
+      "Developing multi-tenant full-stack headless checkout solutions"
     ],
     "projects": [],
-    "technologies": [],
+    "technologies": [
+      "PHP",
+      "Go",
+      "Laravel",
+      "Symfony",
+      "Road-Runner",
+      "Kubernetes",
+      "Docker",
+      "Redis",
+      "MySQL",
+      "AWS",
+      "Datadog",
+      "React",
+      "TypeScript",
+      "REST API",
+      "Microservices"
+    ],
     "url": "https://www.scayle.com",
     "location": "Hamburg, Germany - Remote",
     "image": "scayle.jpg"
@@ -56,10 +89,17 @@
     "enrollment": "Full-time",
     "startDate": "2022-12",
     "endDate": "2023-12",
+    "highlights": [
+      "Led cross-functional engineering team driving platform innovation",
+      "Designed scalable architecture serving 4 million+ monthly users",
+      "Modernized legacy PHP codebase improving maintainability and performance"
+    ],
     "responsibilities": [
       "Leading cross-functional engineering team for innovative approaches that are taken over by other teams",
       "Designing scalable platform architecture serving 4 million+ monthly users",
-      "Guiding legacy projects to modern PHP standards"
+      "Guiding legacy projects to modern PHP standards",
+      "Implementing CI/CD pipelines and DevOps best practices",
+      "Mentoring developers and conducting code reviews"
     ],
     "projects": [
       "anwalt.de - Germany's largest legal services marketplace"
@@ -69,10 +109,15 @@
       "Laminas",
       "Go",
       "Vue.js",
+      "TypeScript",
       "MySQL",
       "Elasticsearch",
       "AWS",
-      "Docker"
+      "Docker",
+      "Kubernetes",
+      "CI/CD",
+      "REST API",
+      "DevOps"
     ],
     "url": "https://www.linkedin.com/company/anwaltde/",
     "location": "Nuremberg, Germany - Remote",
@@ -84,14 +129,31 @@
     "enrollment": "Full-time",
     "startDate": "2020-12",
     "endDate": "2022-12",
+    "highlights": [
+      "Developed SaaS platform features used by thousands of legal professionals",
+      "Built RESTful APIs powering mobile and web applications",
+      "Implemented Elasticsearch-based advanced search functionality"
+    ],
     "responsibilities": [
       "Developing and maintaining SaaS platform features for legal professionals",
       "Building RESTful APIs and integrating third-party services",
       "Migrating legacy codebase to modern PHP standards",
-      "Implementing advanced search"
+      "Implementing advanced search with Elasticsearch",
+      "Developing interactive UI with Vue.js and JavaScript"
     ],
     "projects": [],
-    "technologies": [],
+    "technologies": [
+      "PHP",
+      "Laminas",
+      "Vue.js",
+      "JavaScript",
+      "MySQL",
+      "Elasticsearch",
+      "AWS",
+      "Docker",
+      "REST API",
+      "Unit Testing"
+    ],
     "url": "https://www.linkedin.com/company/anwaltde/",
     "location": "Nuremberg, Germany - Remote",
     "image": "anwalt.jpg"
@@ -102,11 +164,17 @@
     "enrollment": "Full-time",
     "startDate": "2018-01",
     "endDate": "2020-12",
+    "highlights": [
+      "Managed engineering team of 10 developers across multiple product lines",
+      "Architected multi-tenant SaaS platform serving enterprise retail clients",
+      "Implemented Agile/SCRUM processes improving team velocity and delivery"
+    ],
     "responsibilities": [
       "Managing engineering team of 10 developers across multiple product lines",
       "Architecting multi-tenant SaaS platform serving enterprise retail clients",
       "Building real-time data synchronization systems for mobile and web",
-      "Implementing Agile/SCRUM processes and mentoring junior developers"
+      "Implementing Agile/SCRUM processes and mentoring junior developers",
+      "Conducting code reviews and ensuring quality standards"
     ],
     "projects": [
       "Atobi - gamified retail execution platform for enterprise clients",
@@ -115,13 +183,17 @@
     "technologies": [
       "PHP",
       "Laravel",
+      "Phalcon",
       "React",
       "React Native",
+      "JavaScript",
       "MySQL",
       "Redis",
       "AWS",
       "Docker",
-      "AWS"
+      "REST API",
+      "Agile",
+      "SCRUM"
     ],
     "url": "https://www.linkedin.com/company/solutionlab-production/",
     "location": "Vilnius, Lithuania - Hybrid",
@@ -133,13 +205,27 @@
     "enrollment": "Full-time",
     "startDate": "2017-11",
     "endDate": "2018-01",
+    "highlights": [
+      "Developed backend services powering retail management platforms",
+      "Implemented database optimization reducing query response times"
+    ],
     "responsibilities": [
       "Developing backend services and REST APIs for retail platforms",
       "Implementing database optimization and caching strategies",
-      "Building admin dashboards and reporting tools"
+      "Building admin dashboards and reporting tools",
+      "Developing backwards compatible APIs for the tool integration with other systems"
     ],
     "projects": [],
-    "technologies": [],
+    "technologies": [
+      "PHP",
+      "Laravel",
+      "JavaScript",
+      "jQuery",
+      "MySQL",
+      "Redis",
+      "AWS",
+      "REST API"
+    ],
     "url": "https://www.linkedin.com/company/solutionlab-production/",
     "location": "Vilnius, Lithuania - Remote",
     "image": "solutionlab.jpg"
@@ -150,6 +236,12 @@
     "enrollment": "Full-time",
     "startDate": "2017-01",
     "endDate": "2017-11",
+    "highlights": [
+      "Developing online betting platform",
+      "Processing real-time financial transactions",
+      "Using TDD practices to achieving comprehensive test coverage",
+      "Integrated payment gateways meeting regulatory compliance requirements"
+    ],
     "responsibilities": [
       "Building online betting platforms handling real-time transactions",
       "Implementing TDD practices and comprehensive test coverage",
@@ -164,9 +256,13 @@
       "PHP",
       "Laravel",
       "Vue.js",
+      "JavaScript",
       "MySQL",
       "Redis",
-      "Docker"
+      "Docker",
+      "REST API",
+      "TDD",
+      "Unit Testing"
     ],
     "url": "",
     "location": "Vilnius, Lithuania - On-site",
@@ -178,11 +274,17 @@
     "enrollment": "Full-time",
     "startDate": "2016-02",
     "endDate": "2017-01",
+    "highlights": [
+      "Led distributed team of 10 engineers on international projects",
+      "Architected enterprise ERP and CRM systems from ground up",
+      "Delivered cross-platform applications spanning web, mobile, and desktop"
+    ],
     "responsibilities": [
       "Leading distributed team of 10 engineers on international projects",
       "Architecting enterprise ERP and CRM systems from ground up",
       "Building cross-platform applications (web, mobile, desktop)",
-      "Managing full project lifecycle from requirements to deployment"
+      "Managing full project lifecycle from requirements to deployment",
+      "Implementing Agile methodologies and sprint planning"
     ],
     "projects": [
       "Columbina - enterprise ERP system (SaaS)",
@@ -195,9 +297,13 @@
       "PHP",
       "Laravel",
       "Vue.js",
+      "JavaScript",
       "MySQL",
       "MSSQL",
-      "Xamarin"
+      "Xamarin",
+      "REST API",
+      "Agile",
+      "SCRUM"
     ],
     "url": "https://www.linkedin.com/company/inlusionxr/",
     "location": "Vilnius, Lithuania - On-site",
@@ -209,13 +315,27 @@
     "enrollment": "Full-time",
     "startDate": "2015-11",
     "endDate": "2016-02",
+    "highlights": [
+      "Developed full-stack web applications for enterprise clients",
+      "Built secure authentication and authorization systems"
+    ],
     "responsibilities": [
       "Developing full-stack web applications for enterprise clients",
       "Building REST APIs and database schemas",
       "Implementing authentication and authorization systems"
     ],
     "projects": [],
-    "technologies": [],
+    "technologies": [
+      "C#",
+      ".NET",
+      "PHP",
+      "Laravel",
+      "Vue.js",
+      "JavaScript",
+      "MySQL",
+      "MSSQL",
+      "REST API"
+    ],
     "url": "https://www.linkedin.com/company/inlusionxr/",
     "location": "Vilnius, Lithuania - On-site",
     "image": "inlusion.jpg"
@@ -226,6 +346,10 @@
     "enrollment": "Full-time",
     "startDate": "2014-11",
     "endDate": "2015-11",
+    "highlights": [
+      "Built warehouse platform for automotive parts e-commerce",
+      "Integrated shipping APIs (DPD, DHL, UPS) automating logistics workflows"
+    ],
     "responsibilities": [
       "Building warehouse platform for automotive parts industry",
       "Integrating shipping APIs (DPD, DHL, UPS) for logistics automation",
@@ -239,7 +363,8 @@
       "Laravel",
       "JavaScript",
       "jQuery",
-      "MySQL"
+      "MySQL",
+      "REST API"
     ],
     "url": "",
     "location": "Vilnius, Lithuania - On-site",
@@ -251,6 +376,10 @@
     "enrollment": "Full-time",
     "startDate": "2014-02",
     "endDate": "2014-10",
+    "highlights": [
+      "Built voter registration platform for political campaign management",
+      "Developed full-stack CRUD functionality with Ruby on Rails"
+    ],
     "responsibilities": [
       "Building voter registration platform for political campaign management",
       "Developing full-stack CRUD functionality for voter data management",
@@ -264,7 +393,9 @@
       "Rails",
       "PostgreSQL",
       "JavaScript",
-      "HTML/CSS"
+      "HTML",
+      "CSS",
+      "REST API"
     ],
     "url": "https://www.linkedin.com/company/itlogas/",
     "location": "Vilnius, Lithuania - Remote",
@@ -276,6 +407,10 @@
     "enrollment": "Full-time",
     "startDate": "2013-04",
     "endDate": "2014-02",
+    "highlights": [
+      "Developed government education resource sharing platform",
+      "Integrated PHP applications within SharePoint enterprise framework"
+    ],
     "responsibilities": [
       "Developing government education resource sharing platform",
       "Integrating custom PHP applications within SharePoint framework",
@@ -289,7 +424,8 @@
       "SharePoint",
       "MySQL",
       "JavaScript",
-      "HTML/CSS"
+      "HTML",
+      "CSS"
     ],
     "url": "https://www.linkedin.com/company/profectus-novus/",
     "location": "Vilnius, Lithuania",
