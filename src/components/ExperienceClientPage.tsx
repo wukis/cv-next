@@ -115,84 +115,136 @@ const getRoleType = (position: string): 'lead' | 'senior' | 'mid' | 'junior' => 
     return 'mid';
 };
 
-// Format experience details component
-function ExperienceDetails({ 
-    responsibilities, 
-    projects, 
-    technologies, 
-    roleColors 
-}: { 
-    responsibilities: string[]; 
-    projects: string[]; 
-    technologies: string[]; 
-    roleColors: ReturnType<typeof getBranchColors>;
-}) {
-    const hasContent = responsibilities.length > 0 || projects.length > 0 || technologies.length > 0;
+// Get diff between two arrays (what's new in arr1 compared to arr2)
+const getNewItems = (current: string[], previous: string[]): string[] => {
+    const previousSet = new Set(previous.map(item => item.toLowerCase().trim()));
+    return current.filter(item => !previousSet.has(item.toLowerCase().trim()));
+};
+
+// Get all unique items from multiple arrays
+const getAllUniqueItems = (arrays: string[][]): string[] => {
+    const seen = new Set<string>();
+    const result: string[] = [];
+    arrays.forEach(arr => {
+        arr.forEach(item => {
+            const key = item.toLowerCase().trim();
+            if (!seen.has(key)) {
+                seen.add(key);
+                result.push(item);
+            }
+        });
+    });
+    return result;
+};
+
+// Get what's new in this role compared to previous
+const getPromotionDiff = (current: WorkInterface, previous: WorkInterface | null) => {
+    if (!previous) {
+        return {
+            newResponsibilities: current.responsibilities,
+            inheritedResponsibilities: [],
+        };
+    }
     
-    if (!hasContent) return null;
+    const newResponsibilities = getNewItems(current.responsibilities, previous.responsibilities);
+    const inheritedResponsibilities = current.responsibilities.filter(
+        item => !newResponsibilities.includes(item)
+    );
+    
+    return {
+        newResponsibilities,
+        inheritedResponsibilities,
+    };
+};
+
+// Promotion diff display component
+function PromotionDiff({ 
+    newItems, 
+    roleColors,
+    label 
+}: { 
+    newItems: string[];
+    roleColors: ReturnType<typeof getBranchColors>;
+    label: string;
+}) {
+    if (newItems.length === 0) return null;
     
     return (
-        <div className="mt-4 space-y-4">
-            {/* Responsibilities */}
-            {responsibilities.length > 0 && (
-                <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                        </svg>
-                        Responsibilities
+        <div className="mt-3">
+            <div className="flex items-center gap-2 mb-2">
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                    +{newItems.length} {label}
+                </span>
+            </div>
+            <div className="space-y-1 pl-2 border-l-2 border-emerald-500/30">
+                {newItems.map((item, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm">
+                        <span className="font-mono text-emerald-500 dark:text-emerald-400 flex-shrink-0 select-none">+</span>
+                        <span className="text-neutral-600 dark:text-neutral-400">{item}</span>
                     </div>
-                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                        {responsibilities.map((item, i) => (
-                            <li key={i} className="flex items-start gap-2 text-sm text-neutral-600 dark:text-neutral-400">
-                                <span className={`mt-1.5 w-1 h-1 rounded-full flex-shrink-0 ${roleColors.node}`} />
-                                <span>{item}</span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-            
-            {/* Projects */}
-            {projects.length > 0 && (
-                <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                        </svg>
-                        Projects
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// Company-level tech stack display
+function CompanyTechStack({ 
+    technologies, 
+    colors 
+}: { 
+    technologies: string[];
+    colors: ReturnType<typeof getBranchColors>;
+}) {
+    if (technologies.length === 0) return null;
+    
+    return (
+        <div className="px-4 py-3 bg-neutral-50/50 dark:bg-neutral-800/30 border-t border-neutral-100 dark:border-neutral-800">
+            <div className="flex items-center gap-2 text-xs font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+                Tech Stack
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+                {technologies.map((item, i) => (
+                    <span 
+                        key={i} 
+                        className="inline-flex items-center px-2 py-1 rounded text-xs font-mono bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700"
+                    >
+                        {item}
+                    </span>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// Company-level projects display
+function CompanyProjects({ 
+    projects, 
+    colors 
+}: { 
+    projects: string[];
+    colors: ReturnType<typeof getBranchColors>;
+}) {
+    if (projects.length === 0) return null;
+    
+    return (
+        <div className="px-4 py-3 border-t border-neutral-100 dark:border-neutral-800">
+            <div className="flex items-center gap-2 text-xs font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                Projects
+            </div>
+            <div className="space-y-2">
+                {projects.map((item, i) => (
+                    <div key={i} className={`px-3 py-2 rounded-md text-sm ${colors.bg} border ${colors.border}`}>
+                        <span className={`font-medium ${colors.text}`}>{item}</span>
                     </div>
-                    <div className="space-y-2">
-                        {projects.map((item, i) => (
-                            <div key={i} className={`px-3 py-2 rounded-md text-sm ${roleColors.bg} border ${roleColors.border}`}>
-                                <span className={`font-medium ${roleColors.text}`}>{item}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-            
-            {/* Technologies */}
-            {technologies.length > 0 && (
-                <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                        </svg>
-                        Tech Stack
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                        {technologies.map((item, i) => (
-                            <span 
-                                key={i} 
-                                className="inline-flex items-center px-2 py-1 rounded text-xs font-mono bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700"
-                            >
-                                {item}
-                            </span>
-                        ))}
-                    </div>
-                </div>
-            )}
+                ))}
+            </div>
         </div>
     );
 }
@@ -346,6 +398,11 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                 const formattedEndDate = `${companyData.endDate.getFullYear()}-${String(companyData.endDate.getMonth() + 1).padStart(2, '0')}`;
                 const isFirst = companyIndex === 0;
                 const isLast = companyIndex === companies.length - 1;
+                const hasMultipleRoles = companyData.experiences.length > 1;
+                
+                // Consolidate all technologies and projects from all positions
+                const allTechnologies = getAllUniqueItems(companyData.experiences.map(exp => exp.technologies));
+                const allProjects = getAllUniqueItems(companyData.experiences.map(exp => exp.projects));
                 
                 // Determine primary role type from the most senior position
                 const primaryRole = companyData.experiences.reduce((acc, exp) => {
@@ -442,23 +499,48 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                                                     </svg>
                                                     {companyData.location}
                                                 </span>
+                                                {hasMultipleRoles && (
+                                                    <>
+                                                        <span className="text-neutral-300 dark:text-neutral-600">·</span>
+                                                        <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                                                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                                            </svg>
+                                                            {companyData.experiences.length - 1} promotion{companyData.experiences.length > 2 ? 's' : ''}
+                                                        </span>
+                                                    </>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Positions/Commits list */}
+                                {/* Positions/Commits list - with promotion diff support */}
                                 <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
                                     {companyData.experiences.map((experience, index) => {
                                         const roleType = getRoleType(experience.position);
                                         const roleColors = getBranchColors(roleType);
+                                        const previousExperience = index < companyData.experiences.length - 1 
+                                            ? companyData.experiences[index + 1] 
+                                            : null;
+                                        const isPromoted = hasMultipleRoles && index < companyData.experiences.length - 1;
+                                        const isBaseRole = hasMultipleRoles && index === companyData.experiences.length - 1;
+                                        
+                                        // Get promotion diff for responsibilities
+                                        const diff = getPromotionDiff(experience, previousExperience);
+                                        
+                                        // For single role companies or base role, show all responsibilities
+                                        // For promotions, only show new responsibilities
+                                        const responsibilitiesToShow = isPromoted 
+                                            ? diff.newResponsibilities 
+                                            : experience.responsibilities;
                                         
                                         return (
                                             <div key={index} className="p-4">
                                                 {/* Position header */}
                                                 <div className="flex items-start gap-3">
-                                                    {/* Mini commit indicator */}
-                                                    <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${roleColors.node}`} />
+                                                    {/* Mini commit indicator - aligned with title */}
+                                                    <div className={`mt-[7px] w-2 h-2 rounded-full flex-shrink-0 ${roleColors.node}`} />
                                                     
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex flex-wrap items-center gap-2">
@@ -468,21 +550,67 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                                                             <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono ${roleColors.text} ${roleColors.bg}`}>
                                                                 {formatDuration(getDuration(experience.startDate, experience.endDate))}
                                                             </span>
+                                                            {isPromoted && (
+                                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                                                                    <svg className="w-2.5 h-2.5 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                                                                    </svg>
+                                                                    promoted
+                                                                </span>
+                                                            )}
                                                         </div>
                                                         
-                                                        {/* Experience details */}
-                                                        <ExperienceDetails 
-                                                            responsibilities={experience.responsibilities} 
-                                                            projects={experience.projects} 
-                                                            technologies={experience.technologies} 
-                                                            roleColors={roleColors} 
-                                                        />
+                                                        {/* Show promotion diff or base responsibilities */}
+                                                        {isPromoted && responsibilitiesToShow.length > 0 && (
+                                                            <PromotionDiff 
+                                                                newItems={responsibilitiesToShow}
+                                                                roleColors={roleColors}
+                                                                label="new"
+                                                            />
+                                                        )}
+                                                        
+                                                        {/* For base role with multiple positions, show base responsibilities */}
+                                                        {isBaseRole && responsibilitiesToShow.length > 0 && (
+                                                            <div className="mt-3">
+                                                                <div className="flex items-center gap-2 mb-2">
+                                                                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-400">
+                                                                        base responsibilities
+                                                                    </span>
+                                                                </div>
+                                                                <div className="space-y-1 pl-2 border-l-2 border-neutral-300 dark:border-neutral-600">
+                                                                    {responsibilitiesToShow.map((item, i) => (
+                                                                        <div key={i} className="flex items-center gap-2 text-sm">
+                                                                            <span className="font-mono text-neutral-400 dark:text-neutral-500 flex-shrink-0 select-none">•</span>
+                                                                            <span className="text-neutral-600 dark:text-neutral-400">{item}</span>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        
+                                                        {/* For single role companies, show all responsibilities in original format */}
+                                                        {!hasMultipleRoles && responsibilitiesToShow.length > 0 && (
+                                                            <div className="mt-3">
+                                                                <div className="space-y-1">
+                                                                    {responsibilitiesToShow.map((item, i) => (
+                                                                        <div key={i} className="flex items-center gap-2 text-sm">
+                                                                            <span className={`w-1 h-1 rounded-full flex-shrink-0 ${roleColors.node}`} />
+                                                                            <span className="text-neutral-600 dark:text-neutral-400">{item}</span>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
                                         );
                                     })}
                                 </div>
+                                
+                                {/* Company-level projects and tech stack */}
+                                <CompanyProjects projects={allProjects} colors={colors} />
+                                <CompanyTechStack technologies={allTechnologies} colors={colors} />
                             </div>
                         </div>
                     </div>
