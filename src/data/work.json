@@ -1,14 +1,13 @@
 [
   {
     "name": "SCAYLE",
-    "position": "Staff Engineer / Team Lead",
+    "position": "Staff Engineer / Team Lead (Checkout)",
     "enrollment": "Full-time",
     "startDate": "2025-04",
     "endDate": "now",
     "responsibilities": [
-      "Leading backend engineering team for checkout/payments domain",
+      "Leading backend engineering team for checkout and payments domain",
       "Architecting high-availability systems processing €6.5B+ annual transactions",
-      "Managing on-call rotations and incident response for critical payment infrastructure",
       "Driving Kubernetes migration and infrastructure modernization initiatives"
     ],
     "projects": [
@@ -16,7 +15,10 @@
     ],
     "technologies": [
       "PHP",
+      "Road-Runner",
+      "FrankenPHP",
       "Laravel",
+      "Symfony",
       "Go",
       "Kubernetes",
       "Redis",
@@ -31,15 +33,16 @@
   },
   {
     "name": "SCAYLE",
-    "position": "Senior Software Engineer",
+    "position": "Senior Software Engineer (Checkout)",
     "enrollment": "Full-time",
     "startDate": "2024-01",
     "endDate": "2025-04",
     "responsibilities": [
       "Building and maintaining high-throughput checkout and payment systems",
+      "On-call and incident response for critical checkout flows",
       "Implementing fault-tolerant microservices architecture",
-      "Integrating payment providers (Stripe, Adyen, PayPal) and 3rd party APIs",
-      "Optimizing database queries and caching strategies for peak traffic"
+      "Optimizing for high demand checkout flows",
+      "Developing multi-tenant headlesscheckout solutions"
     ],
     "projects": [],
     "technologies": [],
@@ -54,10 +57,9 @@
     "startDate": "2022-12",
     "endDate": "2023-12",
     "responsibilities": [
-      "Leading cross-functional engineering team of 6 developers",
-      "Designing scalable platform architecture serving 500K+ monthly users",
-      "Implementing search optimization with Elasticsearch improving query performance",
-      "Establishing CI/CD pipelines and automated testing practices"
+      "Leading cross-functional engineering team for innovative approaches that are taken over by other teams",
+      "Designing scalable platform architecture serving 4 million+ monthly users",
+      "Guiding legacy projects to modern PHP standards"
     ],
     "projects": [
       "anwalt.de - Germany's largest legal services marketplace"
@@ -86,7 +88,7 @@
       "Developing and maintaining SaaS platform features for legal professionals",
       "Building RESTful APIs and integrating third-party services",
       "Migrating legacy codebase to modern PHP standards",
-      "Implementing automated testing and code quality tooling"
+      "Implementing advanced search"
     ],
     "projects": [],
     "technologies": [],
@@ -118,10 +120,11 @@
       "MySQL",
       "Redis",
       "AWS",
-      "Docker"
+      "Docker",
+      "AWS"
     ],
     "url": "https://www.linkedin.com/company/solutionlab-production/",
-    "location": "Vilnius, Lithuania - Remote",
+    "location": "Vilnius, Lithuania - Hybrid",
     "image": "solutionlab.jpg"
   },
   {
@@ -163,10 +166,10 @@
       "Vue.js",
       "MySQL",
       "Redis",
-      "REST APIs"
+      "Docker"
     ],
     "url": "",
-    "location": "Vilnius, Lithuania",
+    "location": "Vilnius, Lithuania - On-site",
     "image": "olympic.jpg"
   },
   {
@@ -197,7 +200,7 @@
       "Xamarin"
     ],
     "url": "https://www.linkedin.com/company/inlusionxr/",
-    "location": "Vilnius, Lithuania",
+    "location": "Vilnius, Lithuania - On-site",
     "image": "inlusion.jpg"
   },
   {
@@ -214,7 +217,7 @@
     "projects": [],
     "technologies": [],
     "url": "https://www.linkedin.com/company/inlusionxr/",
-    "location": "Vilnius, Lithuania",
+    "location": "Vilnius, Lithuania - On-site",
     "image": "inlusion.jpg"
   },
   {
@@ -224,12 +227,12 @@
     "startDate": "2014-11",
     "endDate": "2015-11",
     "responsibilities": [
-      "Building e-commerce platform for automotive parts industry",
+      "Building warehouse platform for automotive parts industry",
       "Integrating shipping APIs (DPD, DHL, UPS) for logistics automation",
       "Developing internal tools for inventory and employee management"
     ],
     "projects": [
-      "Ecu.de - automotive spare parts e-commerce platform"
+      "Ecu.de - automotive spare parts e-commerce/warehouse platform"
     ],
     "technologies": [
       "PHP",
@@ -239,7 +242,7 @@
       "MySQL"
     ],
     "url": "",
-    "location": "Vilnius, Lithuania",
+    "location": "Vilnius, Lithuania - On-site",
     "image": "integrus.jpg"
   },
   {
@@ -264,7 +267,7 @@
       "HTML/CSS"
     ],
     "url": "https://www.linkedin.com/company/itlogas/",
-    "location": "Vilnius, Lithuania",
+    "location": "Vilnius, Lithuania - Remote",
     "image": "itlogas.jpg"
   },
   {
