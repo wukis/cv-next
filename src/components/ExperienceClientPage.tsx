@@ -7,6 +7,19 @@ import linkedIn from "@/data/linkedin.json";
 import work from "@/data/work.json";
 import Image from "next/image";
 
+// Tech stack icons from react-icons (Simple Icons for brands)
+import { 
+    SiPhp, SiGo, SiTypescript, SiJavascript, SiRuby, SiSharp, SiHtml5, SiCss3,
+    SiLaravel, SiSymfony, SiReact, SiVuedotjs, SiRubyonrails, SiDotnet,
+    SiMysql, SiPostgresql, SiRedis, SiElasticsearch,
+    SiDocker, SiKubernetes, SiAmazonwebservices, SiDatadog,
+    SiJquery
+} from 'react-icons/si';
+import { 
+    VscCode, VscServerProcess, VscDebugAll, VscChecklist, VscGitMerge, 
+    VscServer, VscSymbolInterface, VscRocket, VscDatabase
+} from 'react-icons/vsc';
+
 const getDuration = (startDate: string, endDate: string): { years: number, months: number } => {
     const start = new Date(startDate);
     const end = endDate === "now" ? new Date() : new Date(endDate);
@@ -188,6 +201,72 @@ function PromotionDiff({
     );
 }
 
+// Technology icon component using react-icons
+function TechIcon({ tech, className = "w-3.5 h-3.5" }: { tech: string; className?: string }) {
+    const normalizedTech = tech.toLowerCase();
+    
+    // Map of technology names to their icons
+    const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+        // Languages
+        'php': SiPhp,
+        'go': SiGo,
+        'typescript': SiTypescript,
+        'javascript': SiJavascript,
+        'ruby': SiRuby,
+        'c#': SiSharp,
+        'html': SiHtml5,
+        'css': SiCss3,
+        // Frameworks
+        'laravel': SiLaravel,
+        'symfony': SiSymfony,
+        'react': SiReact,
+        'react native': SiReact,
+        'vue.js': SiVuedotjs,
+        'rails': SiRubyonrails,
+        '.net': SiDotnet,
+        // Databases
+        'mysql': SiMysql,
+        'postgresql': SiPostgresql,
+        'redis': SiRedis,
+        'elasticsearch': SiElasticsearch,
+        // Infrastructure
+        'docker': SiDocker,
+        'kubernetes': SiKubernetes,
+        'aws': SiAmazonwebservices,
+        'datadog': SiDatadog,
+        // Tools
+        'jquery': SiJquery,
+    };
+    
+    // VSCode icons for concepts/methods (monoline style)
+    const conceptIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+        'rest api': VscSymbolInterface,
+        'microservices': VscServerProcess,
+        'ci/cd': VscGitMerge,
+        'devops': VscServer,
+        'agile': VscRocket,
+        'scrum': VscRocket,
+        'tdd': VscDebugAll,
+        'unit testing': VscChecklist,
+        'road-runner': VscRocket,
+        'frankenphp': VscServerProcess,
+        'laminas': VscCode,
+        'phalcon': VscCode,
+        'xamarin': VscCode,
+        'mssql': VscDatabase,
+        'sharepoint': VscServer,
+    };
+    
+    const IconComponent = iconMap[normalizedTech] || conceptIcons[normalizedTech];
+    
+    if (IconComponent) {
+        return <IconComponent className={className} />;
+    }
+    
+    // Default code icon for unknown technologies
+    return <VscCode className={className} />;
+}
+
 // Company-level tech stack display
 function CompanyTechStack({ 
     technologies, 
@@ -210,8 +289,9 @@ function CompanyTechStack({
                 {technologies.map((item, i) => (
                     <span 
                         key={i} 
-                        className="inline-flex items-center px-2 py-1 rounded text-xs font-mono bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700"
+                        className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-mono bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700"
                     >
+                        <TechIcon tech={item} className="w-3.5 h-3.5 opacity-70" />
                         {item}
                     </span>
                 ))}
