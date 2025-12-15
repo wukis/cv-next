@@ -873,11 +873,14 @@ const HexagonServiceNetwork: React.FC = () => {
 
     if (!mounted) return null;
 
+    // Dynamic opacity: muted when reading content, vivid when animation is focused
+    const canvasOpacity = isFocused ? 0.9 : 0.35;
+
     return (
         <canvas
             ref={canvasRef}
-            className="fixed inset-0 -z-10 pointer-events-none"
-            style={{ opacity: 0.75 }}
+            className="fixed inset-0 -z-10 pointer-events-none transition-opacity duration-500"
+            style={{ opacity: canvasOpacity }}
             aria-hidden="true"
         />
     );
