@@ -359,6 +359,83 @@ function ThemeToggle() {
   )
 }
 
+// Hexagon icon for the animation focus element
+function HexagonNetworkIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      {/* Central hexagon */}
+      <path
+        d="M12 3L17.196 6V12L12 15L6.804 12V6L12 3Z"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
+      {/* Connection dots */}
+      <circle cx="12" cy="3" r="1.2" fill="currentColor" />
+      <circle cx="17.196" cy="6" r="1.2" fill="currentColor" />
+      <circle cx="17.196" cy="12" r="1.2" fill="currentColor" />
+      <circle cx="12" cy="15" r="1.2" fill="currentColor" />
+      <circle cx="6.804" cy="12" r="1.2" fill="currentColor" />
+      <circle cx="6.804" cy="6" r="1.2" fill="currentColor" />
+      {/* Data flow lines */}
+      <path
+        d="M12 15V19M6.804 12L3 14M17.196 12L21 14"
+        stroke="currentColor"
+        strokeWidth="1"
+        strokeLinecap="round"
+        strokeDasharray="2 2"
+        className="opacity-60"
+      />
+      {/* Bottom connection dots */}
+      <circle cx="12" cy="20" r="1" fill="currentColor" className="opacity-60" />
+      <circle cx="2.5" cy="14.5" r="1" fill="currentColor" className="opacity-60" />
+      <circle cx="21.5" cy="14.5" r="1" fill="currentColor" className="opacity-60" />
+    </svg>
+  )
+}
+
+// Animation focus element - makes content transparent on hover to show background
+function AnimationFocus() {
+  const [isHovering, setIsHovering] = useState(false)
+
+  useEffect(() => {
+    if (isHovering) {
+      document.documentElement.classList.add('animation-focus')
+    } else {
+      document.documentElement.classList.remove('animation-focus')
+    }
+    
+    return () => {
+      document.documentElement.classList.remove('animation-focus')
+    }
+  }, [isHovering])
+
+  return (
+    <div
+      className="group relative flex items-center justify-center w-10 h-10 rounded-lg bg-white/80 dark:bg-neutral-800/80 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 dark:ring-neutral-700/50 backdrop-blur transition-all cursor-default hover:ring-emerald-400/50 dark:hover:ring-emerald-400/50"
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+      title="Hover to see background animation"
+    >
+      <HexagonNetworkIcon 
+        className={clsx(
+          "h-5 w-5 transition-all duration-300",
+          isHovering 
+            ? "text-emerald-500 dark:text-emerald-400 scale-110" 
+            : "text-neutral-400 dark:text-neutral-500"
+        )} 
+      />
+      {/* Subtle pulse indicator when hovering */}
+      <span 
+        className={clsx(
+          "absolute inset-0 rounded-lg ring-2 ring-emerald-400/50 transition-all duration-500",
+          isHovering ? "opacity-100 scale-100" : "opacity-0 scale-95"
+        )}
+      />
+    </div>
+  )
+}
+
 function clamp(number: number, a: number, b: number) {
   const min = Math.min(a, b)
   const max = Math.max(a, b)
@@ -512,7 +589,10 @@ export function Header() {
                 <DesktopNavigation className="pointer-events-auto hidden md:block" />
               </div>
               <div className="flex justify-end md:flex-1">
-                <div className="pointer-events-auto">
+                <div className="pointer-events-auto flex items-center gap-2">
+                  <div className="hidden md:block">
+                    <AnimationFocus />
+                  </div>
                   <ThemeToggle />
                 </div>
               </div>

@@ -58,10 +58,26 @@ interface StatusIndicator {
     duration: number;
 }
 
-// Service names for the hexagon nodes (AWS/Cloud inspired, kept short for display)
+// Service names for the hexagon nodes (AWS/Cloud inspired, production-like clusters)
 const SERVICE_NAMES = [
-    'EC2', 'RDS', 'Redis', 'Lambda', 'SQS', 'S3', 'SNS', 'ECS',
-    'ALB', 'API GW', 'Kafka', 'Nginx', 'K8s', 'Mongo', 'Elastic', 'Docker'
+    // Application tier (multiple instances)
+    'App-1', 'App-2', 'App-3',
+    // API layer
+    'API-1', 'API-2', 'API GW',
+    // Data stores
+    'RDS-P', 'RDS-R', 'Redis-1', 'Redis-2',
+    // Message queues
+    'SQS', 'Kafka', 'SNS',
+    // Storage & CDN
+    'S3', 'CloudFront',
+    // Compute
+    'Lambda', 'ECS-1', 'ECS-2',
+    // Infrastructure
+    'ALB', 'Nginx', 'K8s',
+    // Monitoring & Search
+    'Elastic', 'Grafana', 'Logs',
+    // Database replicas
+    'Mongo-P', 'Mongo-R', 'DynamoDB'
 ];
 
 // Site color palette
@@ -88,14 +104,17 @@ const HexagonServiceNetwork: React.FC = () => {
     const rotationRef = useRef({ x: 0, y: 0 });
     const [mounted, setMounted] = useState(false);
     const [isDark, setIsDark] = useState(false);
+    const [isFocused, setIsFocused] = useState(false);
+    const focusTransitionRef = useRef(0); // 0 = normal, 1 = fully focused (for smooth transitions)
 
     // Configuration
-    const BASE_HEX_SIZE = 24;
-    const MIN_NODES = 10;
-    const MAX_NODES = 14;
-    const CLUSTER_RADIUS = 250; // 3D cluster radius
+    const BASE_HEX_SIZE = 22;
+    const CLUSTER_RADIUS = 280; // 3D cluster radius
     const PERSPECTIVE = 800; // Perspective depth
-    const ROTATION_SPEED = 0.0003; // Very slow rotation
+    
+    // Speed multipliers based on focus state
+    const ROTATION_SPEED_NORMAL = 0.00015; // Slower when content is visible
+    const ROTATION_SPEED_FOCUSED = 0.0006; // Faster when animation is focused
 
     // Project 3D point to 2D screen
     const project3D = useCallback((
@@ -164,31 +183,84 @@ const HexagonServiceNetwork: React.FC = () => {
         ctx.stroke();
     }, [getHexPoints]);
 
-    // Initialize service nodes in 3D space
+    // Initialize service nodes in 3D space with even distribution, spread horizontally
     const initNodes = useCallback((width: number, height: number) => {
         const nodes: ServiceNode[] = [];
-        const numNodes = Math.min(MAX_NODES, Math.max(MIN_NODES, Math.floor((width * height) / 100000)));
+        
+        // Calculate aspect ratio to spread nodes horizontally
+        const aspectRatio = width / height;
+        const horizontalSpread = Math.max(1.2, Math.min(2.0, aspectRatio)); // Spread more on wider screens
+        
+        // Responsive node count based on screen width - more nodes to fill sides
+        let numNodes: number;
+        if (width < 640) {
+            // Mobile: fewer nodes
+            numNodes = 10;
+        } else if (width < 1024) {
+            // Tablet: medium nodes
+            numNodes = 16;
+        } else {
+            // Desktop: more nodes to fill horizontal space
+            numNodes = 26;
+        }
+        
         const usedNames = new Set<string>();
+        const minDistance = CLUSTER_RADIUS * 0.35; // Slightly reduced for more nodes
 
-        // Distribute nodes in a 3D sphere/cluster
-        for (let i = 0; i < numNodes; i++) {
-            // Use fibonacci sphere distribution for even spacing
-            const phi = Math.acos(1 - 2 * (i + 0.5) / numNodes);
-            const theta = Math.PI * (1 + Math.sqrt(5)) * (i + 0.5);
+        // Use fibonacci sphere distribution for even spacing, with collision avoidance
+        const placedPositions: { x: number; y: number; z: number }[] = [];
+        let attempts = 0;
+        const maxAttempts = numNodes * 80;
+        
+        for (let i = 0; i < numNodes && attempts < maxAttempts; attempts++) {
+            // Use fibonacci sphere as base distribution
+            const baseIndex = i + attempts * 0.1; // Slight offset on retries
+            const phi = Math.acos(1 - 2 * (baseIndex + 0.5) / numNodes);
+            const theta = Math.PI * (1 + Math.sqrt(5)) * (baseIndex + 0.5);
             
-            // Add some randomness to break perfect symmetry
+            // Add controlled randomness
             const radiusVariation = 0.7 + Math.random() * 0.6;
             const radius = CLUSTER_RADIUS * radiusVariation;
+            
+            // Add slight angular randomness
+            const phiOffset = (Math.random() - 0.5) * 0.4;
+            const thetaOffset = (Math.random() - 0.5) * 0.6;
 
-            const x = radius * Math.sin(phi) * Math.cos(theta);
-            const y = radius * Math.sin(phi) * Math.sin(theta);
-            const z = radius * Math.cos(phi);
+            // Apply horizontal spread to X coordinate
+            let x = radius * Math.sin(phi + phiOffset) * Math.cos(theta + thetaOffset) * horizontalSpread;
+            const y = radius * Math.sin(phi + phiOffset) * Math.sin(theta + thetaOffset) * 0.85; // Slightly compress vertically
+            const z = radius * Math.cos(phi + phiOffset);
 
-            // Get unique label
+            // Check distance from all placed nodes
+            let tooClose = false;
+            for (const pos of placedPositions) {
+                const dx = x - pos.x;
+                const dy = y - pos.y;
+                const dz = z - pos.z;
+                const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                if (dist < minDistance) {
+                    tooClose = true;
+                    break;
+                }
+            }
+            
+            if (tooClose) continue; // Try again with different position
+            
+            placedPositions.push({ x, y, z });
+
+            // Get label - allow duplicates with numbers for "cluster" effect
             let label: string;
-            do {
-                label = SERVICE_NAMES[Math.floor(Math.random() * SERVICE_NAMES.length)];
-            } while (usedNames.has(label) && usedNames.size < SERVICE_NAMES.length);
+            const baseName = SERVICE_NAMES[Math.floor(Math.random() * SERVICE_NAMES.length)];
+            if (usedNames.has(baseName)) {
+                // Add instance number for duplicate services (simulating clusters)
+                let instanceNum = 2;
+                while (usedNames.has(`${baseName}-${instanceNum}`)) {
+                    instanceNum++;
+                }
+                label = `${baseName}-${instanceNum}`;
+            } else {
+                label = baseName;
+            }
             usedNames.add(label);
 
             const colorKey = COLOR_KEYS[i % COLOR_KEYS.length];
@@ -204,31 +276,71 @@ const HexagonServiceNetwork: React.FC = () => {
                 size: BASE_HEX_SIZE + Math.random() * 6,
                 pulse: Math.random() * Math.PI * 2,
                 pulseSpeed: 0.015 + Math.random() * 0.015,
-                isActive: Math.random() > 0.2,
+                isActive: true, // All nodes are active and can participate in connections
                 label,
                 color: colorKey,
             });
+            
+            i++; // Only increment when successfully placed
         }
 
         return nodes;
-    }, []);
+    }, [BASE_HEX_SIZE, CLUSTER_RADIUS]);
 
-    // Try to establish a new connection
+    // Try to establish a new connection, prioritizing nodes with fewer connections
     const tryEstablishConnection = useCallback((nodes: ServiceNode[], connections: Connection[]): Connection | null => {
         const activeNodes = nodes.filter(n => n.isActive);
         if (activeNodes.length < 2) return null;
 
-        // Pick two random nodes
-        const fromNode = activeNodes[Math.floor(Math.random() * activeNodes.length)];
-        let toNode = activeNodes[Math.floor(Math.random() * activeNodes.length)];
+        // Count connections per node
+        const connectionCounts = new Map<number, number>();
+        activeNodes.forEach(n => connectionCounts.set(n.id, 0));
+        connections.forEach(c => {
+            connectionCounts.set(c.fromNode.id, (connectionCounts.get(c.fromNode.id) || 0) + 1);
+            connectionCounts.set(c.toNode.id, (connectionCounts.get(c.toNode.id) || 0) + 1);
+        });
 
-        let attempts = 0;
-        while (toNode.id === fromNode.id && attempts < 10) {
-            toNode = activeNodes[Math.floor(Math.random() * activeNodes.length)];
-            attempts++;
+        // Sort nodes by connection count (least connections first)
+        const sortedNodes = [...activeNodes].sort((a, b) => {
+            const countA = connectionCounts.get(a.id) || 0;
+            const countB = connectionCounts.get(b.id) || 0;
+            return countA - countB;
+        });
+
+        // 70% chance to pick from least-connected nodes, 30% random
+        let fromNode: ServiceNode;
+        if (Math.random() < 0.7 && sortedNodes.length > 0) {
+            // Pick from the least connected third of nodes
+            const leastConnectedCount = Math.max(1, Math.floor(sortedNodes.length / 3));
+            fromNode = sortedNodes[Math.floor(Math.random() * leastConnectedCount)];
+        } else {
+            fromNode = activeNodes[Math.floor(Math.random() * activeNodes.length)];
         }
 
-        if (toNode.id === fromNode.id) return null;
+        // Find potential target nodes (sorted by distance, preferring closer + less connected)
+        const potentialTargets = activeNodes
+            .filter(n => n.id !== fromNode.id)
+            .map(n => {
+                const dx = n.x - fromNode.x;
+                const dy = n.y - fromNode.y;
+                const dz = n.z - fromNode.z;
+                const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                const connCount = connectionCounts.get(n.id) || 0;
+                return { node: n, dist, connCount };
+            })
+            .filter(({ dist }) => dist <= CLUSTER_RADIUS * 2) // Increased distance limit
+            .sort((a, b) => {
+                // Prioritize: less connected + reasonable distance
+                const scoreA = a.connCount * 100 + a.dist;
+                const scoreB = b.connCount * 100 + b.dist;
+                return scoreA - scoreB;
+            });
+
+        if (potentialTargets.length === 0) return null;
+
+        // Pick from top candidates with some randomness
+        const topCount = Math.min(3, potentialTargets.length);
+        const toNode = potentialTargets[Math.floor(Math.random() * topCount)].node;
 
         // Check if connection already exists
         const exists = connections.some(c =>
@@ -238,25 +350,16 @@ const HexagonServiceNetwork: React.FC = () => {
 
         if (exists) return null;
 
-        // Check 3D distance
-        const dx = toNode.x - fromNode.x;
-        const dy = toNode.y - fromNode.y;
-        const dz = toNode.z - fromNode.z;
-        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-        // Only connect relatively close nodes
-        if (dist > CLUSTER_RADIUS * 1.2) return null;
-
         return {
             id: connectionIdRef.current++,
             fromNode,
             toNode,
             establishProgress: 0,
             isEstablished: false,
-            establishSpeed: 0.008 + Math.random() * 0.012, // Slow connection establishment
+            establishSpeed: 0.012 + Math.random() * 0.015, // Faster connection establishment
             opacity: 0,
             lastPacketTime: timeRef.current,
-            packetInterval: 3 + Math.random() * 4, // 3-7 seconds between packets
+            packetInterval: 1.5 + Math.random() * 2.5, // 1.5-4 seconds between packets (more frequent)
         };
     }, []);
 
@@ -266,7 +369,7 @@ const HexagonServiceNetwork: React.FC = () => {
             id: packetIdRef.current++,
             connection,
             progress: 0,
-            speed: 0.003 + Math.random() * 0.004, // Very slow packets
+            speed: 0.005 + Math.random() * 0.006, // Slightly faster packets
             type: Math.random() > 0.3 ? 'tcp' : 'udp',
             size: 2 + Math.random() * 2,
             direction: Math.random() > 0.5 ? 1 : -1,
@@ -360,12 +463,13 @@ const HexagonServiceNetwork: React.FC = () => {
     useEffect(() => {
         setMounted(true);
 
-        const checkDarkMode = () => {
+        const checkClasses = () => {
             setIsDark(document.documentElement.classList.contains('dark'));
+            setIsFocused(document.documentElement.classList.contains('animation-focus'));
         };
-        checkDarkMode();
+        checkClasses();
 
-        const observer = new MutationObserver(checkDarkMode);
+        const observer = new MutationObserver(checkClasses);
         observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
         return () => observer.disconnect();
@@ -408,9 +512,20 @@ const HexagonServiceNetwork: React.FC = () => {
             ctx.clearRect(0, 0, width, height);
 
             timeRef.current += 0.016;
+            
+            // Smoothly transition focus state
+            const targetFocus = isFocused ? 1 : 0;
+            focusTransitionRef.current += (targetFocus - focusTransitionRef.current) * 0.05;
+            const focusLevel = focusTransitionRef.current;
+            
+            // Calculate dynamic speeds based on focus level
+            const rotationSpeed = ROTATION_SPEED_NORMAL + (ROTATION_SPEED_FOCUSED - ROTATION_SPEED_NORMAL) * focusLevel;
+            const connectionChance = 0.015 + focusLevel * 0.03; // More connections when focused
+            const maxConnections = 12 + Math.floor(focusLevel * 12); // More connections to handle more nodes
+            const packetSpeedMultiplier = 0.6 + focusLevel * 0.8; // Slower normally, faster when focused
 
             // Slowly rotate the cluster
-            rotationRef.current.y += ROTATION_SPEED;
+            rotationRef.current.y += rotationSpeed;
             rotationRef.current.x = Math.sin(timeRef.current * 0.1) * 0.15; // Gentle tilt
 
             const rotX = rotationRef.current.x;
@@ -418,7 +533,7 @@ const HexagonServiceNetwork: React.FC = () => {
 
             // Update node screen positions
             nodesRef.current.forEach(node => {
-                node.pulse += node.pulseSpeed;
+                node.pulse += node.pulseSpeed * (0.7 + focusLevel * 0.6); // Slower pulse normally
                 const projected = project3D(node.x, node.y, node.z, centerX, centerY, rotX, rotY);
                 node.screenX = projected.screenX;
                 node.screenY = projected.screenY;
@@ -432,8 +547,8 @@ const HexagonServiceNetwork: React.FC = () => {
                 return projA.z - projB.z; // Back to front
             });
 
-            // Try to establish new connections occasionally
-            if (Math.random() < 0.008 && connectionsRef.current.length < 8) {
+            // Try to establish new connections (frequency based on focus)
+            if (Math.random() < connectionChance && connectionsRef.current.length < maxConnections) {
                 const newConn = tryEstablishConnection(nodesRef.current, connectionsRef.current);
                 if (newConn) {
                     connectionsRef.current.push(newConn);
@@ -441,10 +556,11 @@ const HexagonServiceNetwork: React.FC = () => {
             }
 
             // Update and draw connections
+            const establishSpeedMultiplier = 0.6 + focusLevel * 0.8; // Slower normally, faster when focused
             connectionsRef.current = connectionsRef.current.filter(conn => {
-                // Animate connection establishment
+                // Animate connection establishment (speed based on focus)
                 if (!conn.isEstablished) {
-                    conn.establishProgress += conn.establishSpeed;
+                    conn.establishProgress += conn.establishSpeed * establishSpeedMultiplier;
                     conn.opacity = Math.min(conn.establishProgress, 1) * (isDark ? 0.25 : 0.18);
 
                     if (conn.establishProgress >= 1) {
@@ -453,9 +569,19 @@ const HexagonServiceNetwork: React.FC = () => {
                     }
                 }
 
+                // Validate connection nodes
+                if (!conn.fromNode || !conn.toNode) return false;
+                if (!isFinite(conn.fromNode.x) || !isFinite(conn.fromNode.y) || !isFinite(conn.fromNode.z)) return false;
+                if (!isFinite(conn.toNode.x) || !isFinite(conn.toNode.y) || !isFinite(conn.toNode.z)) return false;
+                
                 // Get projected positions
                 const from = project3D(conn.fromNode.x, conn.fromNode.y, conn.fromNode.z, centerX, centerY, rotX, rotY);
                 const to = project3D(conn.toNode.x, conn.toNode.y, conn.toNode.z, centerX, centerY, rotX, rotY);
+                
+                // Validate projected positions
+                if (!isFinite(from.screenX) || !isFinite(from.screenY) || !isFinite(to.screenX) || !isFinite(to.screenY)) {
+                    return false;
+                }
 
                 // Draw establishing/established connection line with dashed effect
                 const lineProgress = conn.establishProgress;
@@ -499,16 +625,25 @@ const HexagonServiceNetwork: React.FC = () => {
                     ctx.stroke();
                 }
 
-                // Spawn packets on established connections
-                if (conn.isEstablished && timeRef.current - conn.lastPacketTime > conn.packetInterval) {
+                // Spawn packets on established connections (frequency based on focus)
+                const packetIntervalMultiplier = 1.5 - focusLevel * 0.8; // Longer intervals normally, shorter when focused
+                if (conn.isEstablished && timeRef.current - conn.lastPacketTime > conn.packetInterval * packetIntervalMultiplier) {
                     packetsRef.current.push(createPacket(conn));
                     conn.lastPacketTime = timeRef.current;
-                    conn.packetInterval = 4 + Math.random() * 5; // Random next interval
+                    conn.packetInterval = 1.5 + Math.random() * 3;
+                    
+                    // More bidirectional traffic when focused
+                    const bidirectionalChance = 0.2 + focusLevel * 0.3; // 20% normally, up to 50% when focused
+                    if (Math.random() < bidirectionalChance) {
+                        const returnPacket = createPacket(conn);
+                        returnPacket.direction = returnPacket.direction === 1 ? -1 : 1;
+                        packetsRef.current.push(returnPacket);
+                    }
                 }
 
-                // Connection lifetime (fade out after a while)
-                if (conn.isEstablished && timeRef.current - conn.lastPacketTime > 15) {
-                    conn.opacity -= 0.005;
+                // Connection lifetime (fade out after longer period)
+                if (conn.isEstablished && timeRef.current - conn.lastPacketTime > 20) {
+                    conn.opacity -= 0.003;
                     if (conn.opacity <= 0) return false;
                 }
 
@@ -517,20 +652,33 @@ const HexagonServiceNetwork: React.FC = () => {
 
             // Update and draw packets
             packetsRef.current = packetsRef.current.filter(packet => {
-                packet.progress += packet.speed;
+                packet.progress += packet.speed * packetSpeedMultiplier;
 
                 if (packet.progress >= 1) {
                     // Packet arrived
                     const targetNode = packet.direction === 1 ? packet.connection.toNode : packet.connection.fromNode;
-                    statusIndicatorsRef.current.push(
-                        createStatusIndicator(targetNode.screenX, targetNode.screenY)
-                    );
+                    if (isFinite(targetNode.screenX) && isFinite(targetNode.screenY)) {
+                        statusIndicatorsRef.current.push(
+                            createStatusIndicator(targetNode.screenX, targetNode.screenY)
+                        );
+                    }
                     return false;
                 }
 
                 const conn = packet.connection;
+                
+                // Validate connection nodes exist and have valid coordinates
+                if (!conn.fromNode || !conn.toNode) return false;
+                if (!isFinite(conn.fromNode.x) || !isFinite(conn.fromNode.y) || !isFinite(conn.fromNode.z)) return false;
+                if (!isFinite(conn.toNode.x) || !isFinite(conn.toNode.y) || !isFinite(conn.toNode.z)) return false;
+                
                 const from = project3D(conn.fromNode.x, conn.fromNode.y, conn.fromNode.z, centerX, centerY, rotX, rotY);
                 const to = project3D(conn.toNode.x, conn.toNode.y, conn.toNode.z, centerX, centerY, rotX, rotY);
+                
+                // Validate projected positions
+                if (!isFinite(from.screenX) || !isFinite(from.screenY) || !isFinite(to.screenX) || !isFinite(to.screenY)) {
+                    return false;
+                }
 
                 // Calculate position based on direction
                 let startX, startY, endX, endY;
@@ -548,6 +696,7 @@ const HexagonServiceNetwork: React.FC = () => {
                 // Get color from target node
                 const targetNode = packet.direction === 1 ? conn.toNode : conn.fromNode;
                 const colors = COLORS[targetNode.color as keyof typeof COLORS];
+                if (!colors) return false;
 
                 // Depth-based opacity
                 const packetZ = from.z + (to.z - from.z) * packet.progress;
@@ -720,7 +869,7 @@ const HexagonServiceNetwork: React.FC = () => {
                 cancelAnimationFrame(animationRef.current);
             }
         };
-    }, [mounted, isDark, initNodes, project3D, tryEstablishConnection, createPacket, createStatusIndicator, drawHexagon, drawStatusIndicator]);
+    }, [mounted, isDark, isFocused, initNodes, project3D, tryEstablishConnection, createPacket, createStatusIndicator, drawHexagon, drawStatusIndicator, ROTATION_SPEED_NORMAL, ROTATION_SPEED_FOCUSED]);
 
     if (!mounted) return null;
 

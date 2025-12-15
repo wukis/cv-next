@@ -1,3 +1,23 @@
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
+
+/* Animation focus mode - makes content transparent to show background animation */
+@layer utilities {
+  .animation-focus main,
+  .animation-focus footer {
+    opacity: 0.03;
+    transition: opacity 0.5s ease-out;
+    pointer-events: none;
+  }
+  
+  .animation-focus header {
+    /* Keep header visible but slightly faded */
+  }
+  
+  /* Ensure smooth transition back */
+  main,
+  footer {
+    transition: opacity 0.3s ease-in;
+  }
+}
