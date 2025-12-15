@@ -7,7 +7,7 @@ import linkedin from '@/data/linkedin.json'
 
 import '@/styles/tailwind.css'
 import '@/styles/prism.css'
-import HexagonServiceNetwork from "@/components/HexagonServiceNetwork";
+import DeferredBackground from "@/components/DeferredBackground";
 import MetricWidgets from "@/components/MetricWidgets";
 
 const siteUrl = 'https://petrik.dev'
@@ -91,7 +91,7 @@ export default function RootLayout({
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <body className="flex h-full bg-neutral-50 dark:bg-black">
         <ConsoleEasterEgg />
-        <HexagonServiceNetwork />
+        <DeferredBackground />
         <MetricWidgets />
         <Providers>
           <div className="flex w-full">
