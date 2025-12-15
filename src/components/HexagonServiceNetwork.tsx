@@ -117,6 +117,8 @@ const HexagonServiceNetwork: React.FC = () => {
         recoveryDuration: number;
         lastEmergencyTime: number;
         nextEmergencyInterval: number;
+        hasTriggeredFirstEmergency: boolean;
+        focusStartTime: number;
     }>({
         isActive: false,
         isRecovery: false,
@@ -125,7 +127,9 @@ const HexagonServiceNetwork: React.FC = () => {
         recoveryStartTime: 0,
         recoveryDuration: 2, // Recovery message lasts 2 seconds
         lastEmergencyTime: 0,
-        nextEmergencyInterval: 30 + Math.random() * 60, // First emergency in 30-90 seconds
+        nextEmergencyInterval: 30, // Random interval after first emergency
+        hasTriggeredFirstEmergency: false,
+        focusStartTime: 0,
     });
 
     // Configuration
@@ -582,7 +586,7 @@ const HexagonServiceNetwork: React.FC = () => {
                 // Animate connection establishment (speed based on focus)
                 if (!conn.isEstablished) {
                     conn.establishProgress += conn.establishSpeed * establishSpeedMultiplier;
-                    conn.opacity = Math.min(conn.establishProgress, 1) * (isDark ? 0.25 : 0.18);
+                    conn.opacity = Math.min(conn.establishProgress, 1) * (isDark ? 0.25 : 0.45);
 
                     if (conn.establishProgress >= 1) {
                         conn.isEstablished = true;
@@ -617,8 +621,8 @@ const HexagonServiceNetwork: React.FC = () => {
                 // Main connection line
                 ctx.strokeStyle = isDark
                     ? `rgba(255, 255, 255, ${finalOpacity})`
-                    : `rgba(0, 0, 0, ${finalOpacity * 0.7})`;
-                ctx.lineWidth = 0.8;
+                    : `rgba(50, 50, 80, ${finalOpacity * 1.5})`;
+                ctx.lineWidth = isDark ? 0.8 : 1.2;
                 
                 // Dashed line for established connections to show data flow direction
                 if (conn.isEstablished) {
@@ -729,7 +733,7 @@ const HexagonServiceNetwork: React.FC = () => {
                 const trailX = startX + (endX - startX) * trailStart;
                 const trailY = startY + (endY - startY) * trailStart;
 
-                const trailOpacity = (isDark ? 0.2 : 0.12) * depthFade;
+                const trailOpacity = (isDark ? 0.2 : 0.35) * depthFade;
                 const gradient = ctx.createLinearGradient(trailX, trailY, x, y);
                 gradient.addColorStop(0, 'transparent');
                 gradient.addColorStop(1, colors.main.replace('VAL', String(trailOpacity)));
@@ -747,7 +751,7 @@ const HexagonServiceNetwork: React.FC = () => {
 
                 // Packet head with pulsing effect
                 const pulsePhase = Math.sin(timeRef.current * 8 + packet.progress * Math.PI * 2) * 0.3 + 1;
-                const headOpacity = (isDark ? 0.75 : 0.55) * depthFade;
+                const headOpacity = (isDark ? 0.75 : 0.9) * depthFade;
                 const size = packet.size * depthFade * pulsePhase;
                 ctx.fillStyle = colors.main.replace('VAL', String(headOpacity));
 
@@ -779,7 +783,7 @@ const HexagonServiceNetwork: React.FC = () => {
                 }
 
                 // Glow effect
-                const glowOpacity = (isDark ? 0.3 : 0.18) * depthFade * pulsePhase;
+                const glowOpacity = (isDark ? 0.3 : 0.4) * depthFade * pulsePhase;
                 const glow = ctx.createRadialGradient(x, y, 0, x, y, size * 4);
                 glow.addColorStop(0, colors.glow.replace('VAL', String(glowOpacity)));
                 glow.addColorStop(0.5, colors.glow.replace('VAL', String(glowOpacity * 0.3)));
@@ -799,8 +803,8 @@ const HexagonServiceNetwork: React.FC = () => {
                 const depthFade = Math.max(0.3, Math.min(1, scale));
 
                 const colors = COLORS[node.color as keyof typeof COLORS];
-                const baseOpacity = isDark ? 0.15 : 0.1;
-                const activeOpacity = node.isActive ? (isDark ? 0.25 : 0.18) : baseOpacity;
+                const baseOpacity = isDark ? 0.15 : 0.3;
+                const activeOpacity = node.isActive ? (isDark ? 0.25 : 0.5) : baseOpacity;
                 const pulseOpacity = (activeOpacity + Math.sin(node.pulse) * 0.05) * depthFade;
 
                 // Outer glow for active nodes
@@ -810,7 +814,7 @@ const HexagonServiceNetwork: React.FC = () => {
                         node.screenX, node.screenY, currentSize * 0.5,
                         node.screenX, node.screenY, glowSize
                     );
-                    glow.addColorStop(0, colors.glow.replace('VAL', String((isDark ? 0.1 : 0.06) * depthFade)));
+                    glow.addColorStop(0, colors.glow.replace('VAL', String((isDark ? 0.1 : 0.15) * depthFade)));
                     glow.addColorStop(1, 'transparent');
                     ctx.fillStyle = glow;
                     ctx.beginPath();
@@ -861,7 +865,7 @@ const HexagonServiceNetwork: React.FC = () => {
 
                 // Service label (only for foreground nodes)
                 if (depthFade > 0.6) {
-                    const labelOpacity = (isDark ? 0.45 : 0.35) * depthFade;
+                    const labelOpacity = (isDark ? 0.45 : 0.7) * depthFade;
                     // Adjust font size based on label length
                     const baseFontSize = node.label.length > 5 ? 6 : 7;
                     ctx.font = `bold ${Math.round(baseFontSize * depthFade)}px ui-monospace, monospace`;
@@ -883,12 +887,36 @@ const HexagonServiceNetwork: React.FC = () => {
             const emergency = emergencyRef.current;
             const timeSinceLastEmergency = timeRef.current - emergency.lastEmergencyTime;
             
-            // Check if it's time for a new emergency
-            if (!emergency.isActive && !emergency.isRecovery && timeSinceLastEmergency > emergency.nextEmergencyInterval) {
+            // Track when focus mode starts
+            if (isFocused && emergency.focusStartTime === 0) {
+                emergency.focusStartTime = timeRef.current;
+            } else if (!isFocused) {
+                emergency.focusStartTime = 0; // Reset when unfocused
+            }
+            
+            // Determine if we should trigger emergency
+            let shouldTriggerEmergency = false;
+            
+            if (isFocused && !emergency.hasTriggeredFirstEmergency && !emergency.isActive && !emergency.isRecovery) {
+                // First focus: trigger emergency after 2-3 seconds
+                const timeSinceFocus = timeRef.current - emergency.focusStartTime;
+                if (timeSinceFocus > 2 + Math.random()) {
+                    shouldTriggerEmergency = true;
+                    emergency.hasTriggeredFirstEmergency = true;
+                }
+            } else if (emergency.hasTriggeredFirstEmergency && !emergency.isActive && !emergency.isRecovery) {
+                // After first emergency: random intervals (25-40 seconds)
+                if (timeSinceLastEmergency > emergency.nextEmergencyInterval) {
+                    shouldTriggerEmergency = true;
+                }
+            }
+            
+            // Trigger emergency
+            if (shouldTriggerEmergency) {
                 emergency.isActive = true;
                 emergency.startTime = timeRef.current;
                 emergency.lastEmergencyTime = timeRef.current;
-                emergency.nextEmergencyInterval = 45 + Math.random() * 90; // Next emergency in 45-135 seconds
+                emergency.nextEmergencyInterval = 25 + Math.random() * 15; // Next emergency in 25-40 seconds
                 
                 // Dispatch event for MetricWidgets
                 window.dispatchEvent(new CustomEvent('network-emergency', { detail: { type: 'start' } }));

@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 
-// Use same cyberpunk colors as HexagonBloomBackground
-const cyberpunkColors = [
+// Dark mode colors (bright neon for dark backgrounds)
+const darkModeColors = [
   '#00ffff', // Cyan
   '#ff00ff', // Magenta
   '#00ff00', // Green
@@ -12,6 +12,18 @@ const cyberpunkColors = [
   '#0080ff', // Blue
   '#80ff00', // Lime
   '#ff8000', // Orange
+];
+
+// Light mode colors (darker, more saturated for contrast on light backgrounds)
+const lightModeColors = [
+  '#0099aa', // Darker Cyan
+  '#aa0099', // Darker Magenta
+  '#009900', // Darker Green
+  '#aa8800', // Darker Yellow/Gold
+  '#cc0066', // Darker Pink
+  '#0066cc', // Darker Blue
+  '#669900', // Darker Lime
+  '#cc6600', // Darker Orange
 ];
 
 // Generate random sparkline data
@@ -27,12 +39,13 @@ const generateSparklineData = (points: number = 20): number[] => {
 };
 
 // Sparkline chart component
-function Sparkline({ data, color, width = 80, height = 24, isFocused = false }: { 
+function Sparkline({ data, color, width = 80, height = 24, isFocused = false, isDark = true }: { 
   data: number[]; 
   color: string; 
   width?: number; 
   height?: number;
   isFocused?: boolean;
+  isDark?: boolean;
 }) {
   const points = data.map((value, index) => {
     const x = (index / (data.length - 1)) * width;
@@ -40,34 +53,38 @@ function Sparkline({ data, color, width = 80, height = 24, isFocused = false }: 
     return `${x},${y}`;
   }).join(' ');
 
-  const opacity = isFocused ? 0.85 : 0.35;
-  const glowSize = isFocused ? 4 : 1;
+  // More muted when not focused, vivid when focused
+  const opacity = isFocused ? (isDark ? 0.85 : 1) : (isDark ? 0.25 : 0.4);
+  const glowSize = isFocused ? (isDark ? 4 : 2) : 0;
+  const strokeWidth = isDark ? 1.5 : 2;
 
   return (
     <svg width={width} height={height} style={{ opacity, transition: 'opacity 0.5s ease' }}>
       <polyline
         fill="none"
         stroke={color}
-        strokeWidth="1.5"
+        strokeWidth={strokeWidth}
         points={points}
         className="drop-shadow-sm"
-        style={{ filter: `drop-shadow(0 0 ${glowSize}px ${color})`, transition: 'filter 0.5s ease' }}
+        style={{ filter: glowSize > 0 ? `drop-shadow(0 0 ${glowSize}px ${color})` : 'none', transition: 'filter 0.5s ease' }}
       />
     </svg>
   );
 }
 
 // Mini bar chart component
-function MiniBarChart({ values, color, width = 60, height = 20, isFocused = false }: {
+function MiniBarChart({ values, color, width = 60, height = 20, isFocused = false, isDark = true }: {
   values: number[];
   color: string;
   width?: number;
   height?: number;
   isFocused?: boolean;
+  isDark?: boolean;
 }) {
   const barWidth = (width / values.length) - 2;
-  const baseOpacity = isFocused ? 0.85 : 0.35;
-  const glowSize = isFocused ? 4 : 1;
+  // More muted when not focused
+  const baseOpacity = isFocused ? (isDark ? 0.85 : 1) : (isDark ? 0.25 : 0.4);
+  const glowSize = isFocused ? (isDark ? 4 : 2) : 0;
   
   return (
     <svg width={width} height={height} style={{ opacity: baseOpacity, transition: 'opacity 0.5s ease' }}>
@@ -84,7 +101,7 @@ function MiniBarChart({ values, color, width = 60, height = 20, isFocused = fals
             height={barHeight}
             fill={color}
             opacity={0.7 + (value / 100) * 0.3}
-            style={{ filter: `drop-shadow(0 0 ${glowSize}px ${color})`, transition: 'filter 0.5s ease' }}
+            style={{ filter: glowSize > 0 ? `drop-shadow(0 0 ${glowSize}px ${color})` : 'none', transition: 'filter 0.5s ease' }}
           />
         );
       })}
@@ -93,19 +110,21 @@ function MiniBarChart({ values, color, width = 60, height = 20, isFocused = fals
 }
 
 // Circular gauge component
-function CircularGauge({ value, color, size = 32, isFocused = false }: {
+function CircularGauge({ value, color, size = 32, isFocused = false, isDark = true }: {
   value: number;
   color: string;
   size?: number;
   isFocused?: boolean;
+  isDark?: boolean;
 }) {
-  const strokeWidth = 3;
+  const strokeWidth = isDark ? 3 : 3.5;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (value / 100) * circumference;
 
-  const opacity = isFocused ? 0.85 : 0.35;
-  const glowSize = isFocused ? 5 : 1;
+  // More muted when not focused
+  const opacity = isFocused ? (isDark ? 0.85 : 1) : (isDark ? 0.25 : 0.4);
+  const glowSize = isFocused ? (isDark ? 5 : 2) : 0;
 
   return (
     <svg width={size} height={size} className="-rotate-90" style={{ opacity, transition: 'opacity 0.5s ease' }}>
@@ -116,7 +135,7 @@ function CircularGauge({ value, color, size = 32, isFocused = false }: {
         fill="none"
         stroke={color}
         strokeWidth={strokeWidth}
-        opacity={0.2}
+        opacity={isDark ? 0.2 : 0.3}
       />
       <circle
         cx={size / 2}
@@ -128,7 +147,7 @@ function CircularGauge({ value, color, size = 32, isFocused = false }: {
         strokeDasharray={circumference}
         strokeDashoffset={offset}
         strokeLinecap="round"
-        style={{ filter: `drop-shadow(0 0 ${glowSize}px ${color})`, transition: 'filter 0.5s ease' }}
+        style={{ filter: glowSize > 0 ? `drop-shadow(0 0 ${glowSize}px ${color})` : 'none', transition: 'filter 0.5s ease' }}
       />
     </svg>
   );
@@ -141,16 +160,19 @@ type EmergencyState = 'normal' | 'emergency' | 'recovery';
 interface MetricWidgetProps {
   type: 'sparkline' | 'bars' | 'gauge' | 'counter' | 'status';
   label: string;
-  color: string;
+  colorIndex: number; // Index into color arrays
   delay?: number;
   isFocused?: boolean;
   emergencyState?: EmergencyState;
+  isDark?: boolean;
 }
 
-const EMERGENCY_RED = '#ff3333';
-const RECOVERY_GREEN = '#33ff66';
+const EMERGENCY_RED_DARK = '#ff3333';
+const EMERGENCY_RED_LIGHT = '#cc0000';
+const RECOVERY_GREEN_DARK = '#33ff66';
+const RECOVERY_GREEN_LIGHT = '#009933';
 
-function MetricWidget({ type, label, color, delay = 0, isFocused = false, emergencyState = 'normal' }: MetricWidgetProps) {
+function MetricWidget({ type, label, colorIndex, delay = 0, isFocused = false, emergencyState = 'normal', isDark = true }: MetricWidgetProps) {
   const [data, setData] = useState<number[]>(() => generateSparklineData());
   const [value, setValue] = useState(() => Math.floor(Math.random() * 80) + 10);
   const [visible, setVisible] = useState(false);
@@ -186,20 +208,33 @@ function MetricWidget({ type, label, color, delay = 0, isFocused = false, emerge
     };
   }, [delay, type]);
 
+  // Get appropriate color based on theme
+  const baseColor = isDark ? darkModeColors[colorIndex] : lightModeColors[colorIndex];
+  const emergencyRed = isDark ? EMERGENCY_RED_DARK : EMERGENCY_RED_LIGHT;
+  const recoveryGreen = isDark ? RECOVERY_GREEN_DARK : RECOVERY_GREEN_LIGHT;
+  
   // Determine effective color based on emergency state
-  const effectiveColor = emergencyState === 'emergency' ? EMERGENCY_RED : 
-                         emergencyState === 'recovery' ? RECOVERY_GREEN : color;
+  const effectiveColor = emergencyState === 'emergency' ? emergencyRed : 
+                         emergencyState === 'recovery' ? recoveryGreen : baseColor;
 
   // Muted vs focused styling - emergency always shows at full intensity
+  // More muted when not focused to avoid distracting from content
   const isActive = isFocused || emergencyState !== 'normal';
-  const containerOpacity = isActive ? 1 : 0.4;
-  const textOpacity = isActive ? 0.7 : 0.4;
+  const containerOpacity = isActive ? 1 : (isDark ? 0.25 : 0.35);
+  const textOpacity = isActive ? (isDark ? 0.7 : 0.9) : (isDark ? 0.3 : 0.4);
 
-  // Emergency border styling
-  const borderColor = emergencyState === 'emergency' ? 'border-red-500/50' : 
-                      emergencyState === 'recovery' ? 'border-green-500/50' : 'border-neutral-700/20';
-  const bgColor = emergencyState === 'emergency' ? 'bg-red-950/40' : 
-                  emergencyState === 'recovery' ? 'bg-green-950/40' : 'bg-neutral-900/30';
+  // Emergency border styling - theme aware
+  const borderColor = emergencyState === 'emergency' 
+    ? (isDark ? 'border-red-500/50' : 'border-red-600/60')
+    : emergencyState === 'recovery' 
+      ? (isDark ? 'border-green-500/50' : 'border-green-600/60')
+      : (isDark ? 'border-neutral-700/20' : 'border-neutral-400/40');
+  
+  const bgColor = emergencyState === 'emergency' 
+    ? (isDark ? 'bg-red-950/40' : 'bg-red-100/60')
+    : emergencyState === 'recovery' 
+      ? (isDark ? 'bg-green-950/40' : 'bg-green-100/60')
+      : (isDark ? 'bg-neutral-900/30' : 'bg-white/50');
 
   return (
     <div 
@@ -218,33 +253,34 @@ function MetricWidget({ type, label, color, delay = 0, isFocused = false, emerge
       }}
     >
       <span 
-        className="text-[9px] font-mono uppercase tracking-wider truncate transition-all duration-300"
+        className={`text-[9px] font-mono uppercase tracking-wider truncate transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
         style={{ 
           opacity: textOpacity,
-          color: emergencyState === 'emergency' ? EMERGENCY_RED : 
-                 emergencyState === 'recovery' ? RECOVERY_GREEN : undefined
+          color: emergencyState === 'emergency' ? emergencyRed : 
+                 emergencyState === 'recovery' ? recoveryGreen : undefined
         }}
       >
         {emergencyState === 'emergency' ? '⚠ ' + label : label}
       </span>
       
       {type === 'sparkline' && (
-        <Sparkline data={data} color={effectiveColor} width={80} height={20} isFocused={isActive} />
+        <Sparkline data={data} color={effectiveColor} width={80} height={20} isFocused={isActive} isDark={isDark} />
       )}
       
       {type === 'bars' && (
-        <MiniBarChart values={data.slice(0, 6)} color={effectiveColor} width={56} height={18} isFocused={isActive} />
+        <MiniBarChart values={data.slice(0, 6)} color={effectiveColor} width={56} height={18} isFocused={isActive} isDark={isDark} />
       )}
       
       {type === 'gauge' && (
         <div className="flex items-center gap-2">
-          <CircularGauge value={value} color={effectiveColor} size={28} isFocused={isActive} />
+          <CircularGauge value={value} color={effectiveColor} size={28} isFocused={isActive} isDark={isDark} />
           <span 
             className="text-[10px] font-mono transition-all duration-300"
             style={{ 
               color: effectiveColor, 
-              textShadow: isActive ? `0 0 6px ${effectiveColor}` : 'none',
-              opacity: isActive ? 1 : 0.5
+              textShadow: isActive && isDark ? `0 0 6px ${effectiveColor}` : 'none',
+              opacity: isActive ? 1 : (isDark ? 0.3 : 0.45),
+              fontWeight: isDark ? 'normal' : 500
             }}
           >
             {emergencyState === 'emergency' ? 'CRIT' : Math.round(value) + '%'}
@@ -257,8 +293,9 @@ function MetricWidget({ type, label, color, delay = 0, isFocused = false, emerge
           className="text-sm font-mono font-medium transition-all duration-300"
           style={{ 
             color: effectiveColor, 
-            textShadow: isActive ? `0 0 6px ${effectiveColor}` : 'none',
-            opacity: isActive ? 1 : 0.5
+            textShadow: isActive && isDark ? `0 0 6px ${effectiveColor}` : 'none',
+            opacity: isActive ? 1 : (isDark ? 0.3 : 0.45),
+            fontWeight: isDark ? 500 : 600
           }}
         >
           {emergencyState === 'emergency' ? '!ERR' : value.toFixed(1) + 'k'}
@@ -271,16 +308,17 @@ function MetricWidget({ type, label, color, delay = 0, isFocused = false, emerge
             className={`w-2 h-2 rounded-full transition-all duration-300 ${emergencyState === 'emergency' || isActive ? 'animate-pulse' : ''}`}
             style={{ 
               backgroundColor: effectiveColor, 
-              boxShadow: isActive ? `0 0 8px ${effectiveColor}` : `0 0 2px ${effectiveColor}`,
-              opacity: isActive ? 1 : 0.5
+              boxShadow: isActive ? `0 0 ${isDark ? 8 : 4}px ${effectiveColor}` : 'none',
+              opacity: isActive ? 1 : (isDark ? 0.35 : 0.5)
             }}
           />
           <span 
-            className="text-[10px] font-mono transition-all duration-300"
+            className={`text-[10px] font-mono transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
             style={{ 
-              opacity: isActive ? 0.8 : 0.4,
-              color: emergencyState === 'emergency' ? EMERGENCY_RED : 
-                     emergencyState === 'recovery' ? RECOVERY_GREEN : undefined
+              opacity: isActive ? 0.8 : (isDark ? 0.3 : 0.4),
+              color: emergencyState === 'emergency' ? emergencyRed : 
+                     emergencyState === 'recovery' ? recoveryGreen : undefined,
+              fontWeight: isDark ? 'normal' : 500
             }}
           >
             {emergencyState === 'emergency' ? 'ALERT!' : 
@@ -293,33 +331,40 @@ function MetricWidget({ type, label, color, delay = 0, isFocused = false, emerge
   );
 }
 
-// Widget configuration for left and right panels
-const leftWidgets: MetricWidgetProps[] = [
-  { type: 'sparkline', label: 'req/sec', color: cyberpunkColors[0] },
-  { type: 'gauge', label: 'cpu', color: cyberpunkColors[2] },
-  { type: 'bars', label: 'throughput', color: cyberpunkColors[1] },
-  { type: 'status', label: 'api-gw', color: cyberpunkColors[2] },
-  { type: 'counter', label: 'events', color: cyberpunkColors[5] },
-  { type: 'sparkline', label: 'latency', color: cyberpunkColors[4] },
-  { type: 'gauge', label: 'memory', color: cyberpunkColors[6] },
-  { type: 'status', label: 'redis', color: cyberpunkColors[2] },
+// Widget configuration for left and right panels (using color indices)
+type WidgetConfig = {
+  type: 'sparkline' | 'bars' | 'gauge' | 'counter' | 'status';
+  label: string;
+  colorIndex: number;
+};
+
+const leftWidgets: WidgetConfig[] = [
+  { type: 'sparkline', label: 'req/sec', colorIndex: 0 },
+  { type: 'gauge', label: 'cpu', colorIndex: 2 },
+  { type: 'bars', label: 'throughput', colorIndex: 1 },
+  { type: 'status', label: 'api-gw', colorIndex: 2 },
+  { type: 'counter', label: 'events', colorIndex: 5 },
+  { type: 'sparkline', label: 'latency', colorIndex: 4 },
+  { type: 'gauge', label: 'memory', colorIndex: 6 },
+  { type: 'status', label: 'redis', colorIndex: 2 },
 ];
 
-const rightWidgets: MetricWidgetProps[] = [
-  { type: 'gauge', label: 'uptime', color: cyberpunkColors[2] },
-  { type: 'sparkline', label: 'errors', color: cyberpunkColors[4] },
-  { type: 'status', label: 'postgres', color: cyberpunkColors[2] },
-  { type: 'counter', label: 'users', color: cyberpunkColors[0] },
-  { type: 'bars', label: 'queue', color: cyberpunkColors[7] },
-  { type: 'sparkline', label: 'io/sec', color: cyberpunkColors[3] },
-  { type: 'status', label: 'k8s', color: cyberpunkColors[2] },
-  { type: 'gauge', label: 'disk', color: cyberpunkColors[5] },
+const rightWidgets: WidgetConfig[] = [
+  { type: 'gauge', label: 'uptime', colorIndex: 2 },
+  { type: 'sparkline', label: 'errors', colorIndex: 4 },
+  { type: 'status', label: 'postgres', colorIndex: 2 },
+  { type: 'counter', label: 'users', colorIndex: 0 },
+  { type: 'bars', label: 'queue', colorIndex: 7 },
+  { type: 'sparkline', label: 'io/sec', colorIndex: 3 },
+  { type: 'status', label: 'k8s', colorIndex: 2 },
+  { type: 'gauge', label: 'disk', colorIndex: 5 },
 ];
 
 export default function MetricWidgets() {
   const [shouldRender, setShouldRender] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [emergencyState, setEmergencyState] = useState<EmergencyState>('normal');
+  const [isDark, setIsDark] = useState(true);
   
   const checkScreenSize = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -338,6 +383,20 @@ export default function MetricWidgets() {
     window.addEventListener('resize', checkScreenSize);
     return () => window.removeEventListener('resize', checkScreenSize);
   }, [checkScreenSize]);
+
+  // Listen for dark mode changes
+  useEffect(() => {
+    const checkDarkMode = () => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    };
+    
+    checkDarkMode();
+    
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    
+    return () => observer.disconnect();
+  }, []);
 
   // Listen for animation-focus class on document element (same as HexagonServiceNetwork)
   useEffect(() => {
@@ -386,6 +445,7 @@ export default function MetricWidgets() {
             delay={index * 150}
             isFocused={isFocused}
             emergencyState={emergencyState}
+            isDark={isDark}
           />
         ))}
       </div>
@@ -399,6 +459,7 @@ export default function MetricWidgets() {
             delay={index * 150 + 100}
             isFocused={isFocused}
             emergencyState={emergencyState}
+            isDark={isDark}
           />
         ))}
       </div>
