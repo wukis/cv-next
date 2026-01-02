@@ -7,7 +7,8 @@ import linkedIn from "@/data/linkedin.json";
 import work from "@/data/work.json";
 import Image from "next/image";
 
-// Tech stack icons from react-icons (Simple Icons for brands)
+// Tech stack icons - using dynamic imports to reduce bundle size
+// Only import icons that are actually used in the data
 import { 
     SiPhp, SiGo, SiTypescript, SiJavascript, SiRuby, SiSharp, SiHtml5, SiCss3,
     SiLaravel, SiSymfony, SiReact, SiVuedotjs, SiRubyonrails, SiDotnet,

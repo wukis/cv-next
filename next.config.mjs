@@ -22,6 +22,39 @@ const nextConfig = {
           exclude: ['error', 'warn', 'log'], // Keep console.log for easter egg
         } : false,
       },
+      // Optimize bundle splitting
+      webpack: (config, { isServer, webpack }) => {
+        if (!isServer) {
+          // Split chunks more aggressively
+          config.optimization = {
+            ...config.optimization,
+            splitChunks: {
+              chunks: 'all',
+              cacheGroups: {
+                default: false,
+                vendors: false,
+                // Vendor chunk for react-icons
+                reactIcons: {
+                  name: 'react-icons',
+                  chunks: 'all',
+                  test: /[\\/]node_modules[\\/]react-icons[\\/]/,
+                  priority: 20,
+                  reuseExistingChunk: true,
+                },
+                // Common vendor chunk
+                vendor: {
+                  name: 'vendor',
+                  chunks: 'all',
+                  test: /[\\/]node_modules[\\/]/,
+                  priority: 10,
+                  reuseExistingChunk: true,
+                },
+              },
+            },
+          };
+        }
+        return config;
+      },
 }
 
 export default withSentryConfig(
@@ -43,7 +76,8 @@ export default withSentryConfig(
       widenClientFileUpload: true,
 
       // Transpiles SDK to be compatible with IE11 (increases bundle size)
-      transpileClientSDK: true,
+      // Disabled to reduce bundle size - modern browsers don't need IE11 support
+      transpileClientSDK: false,
 
       // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
       // This can increase your server load as well as your hosting bill.
@@ -54,17 +88,19 @@ export default withSentryConfig(
       // Hides source maps from generated client bundles
       hideSourceMaps: true,
 
-      // Webpack configuration
-      webpack: {
-        // Automatically tree-shake Sentry logger statements to reduce bundle size
-        treeshake: {
-          removeDebugLogging: true,
-        },
-        // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
-        // See the following for more information:
-        // https://docs.sentry.io/product/crons/
-        // https://vercel.com/docs/cron-jobs
-        automaticVercelMonitors: true,
+      // Webpack configuration - merged with nextConfig webpack
+      webpack: (config, options) => {
+        // Call the nextConfig webpack function first if it exists
+        if (nextConfig.webpack) {
+          config = nextConfig.webpack(config, options);
+        }
+        // Optimize tree-shaking
+        config.optimization = {
+          ...config.optimization,
+          usedExports: true,
+          sideEffects: false,
+        };
+        return config;
       },
     }
 );

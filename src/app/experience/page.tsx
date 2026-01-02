@@ -1,8 +1,19 @@
 import { type Metadata } from 'next';
-import ExperienceClientContent from '@/components/ExperienceClientPage';
+import dynamic from 'next/dynamic';
 
-// 'use client'; // Removed this line
-// Removed other imports that are now in ExperienceClientPage.tsx
+// Dynamically import the heavy ExperienceClientPage component to improve initial page load
+// This ensures the component is code-split and only loaded when needed
+const ExperienceClientContent = dynamic(
+  () => import('@/components/ExperienceClientPage'),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-neutral-600 dark:text-neutral-400 font-mono">Loading experience...</div>
+      </div>
+    ),
+    ssr: true, // Keep SSR for SEO
+  }
+);
 
 export const metadata: Metadata = {
     title: 'Experience',
