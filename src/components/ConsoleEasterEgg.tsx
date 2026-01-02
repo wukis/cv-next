@@ -1,9 +1,15 @@
 'use client'
 
 import { useEffect } from 'react'
+import { calculateTotalExperienceYears, WorkInterface } from '@/lib/experience'
+import { createBoxLineWithBorders, createEmptyBoxLine } from '@/lib/consoleBox'
+import work from '@/data/work.json'
 
 export function ConsoleEasterEgg() {
   useEffect(() => {
+    // Calculate total years of experience dynamically
+    const totalExperienceYears = calculateTotalExperienceYears(work as WorkInterface[])
+    
     // Only run once on mount
     const asciiArt = `
 %c
@@ -15,32 +21,45 @@ export function ConsoleEasterEgg() {
  ╚════╝  ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝
 `
 
+    // Use helper functions to ensure proper alignment
+    const experienceLine = createBoxLineWithBorders(
+      `${totalExperienceYears}+ years of experience and I still google`
+    )
+    const requestAnimationFrameLine = createBoxLineWithBorders(
+      '+ requestAnimationFrame',
+      { leadingSpaces: 4 }
+    )
+    const consoleLogLine = createBoxLineWithBorders(
+      'but I still console.log() to debug sometimes...',
+      { leadingSpaces: 4 }
+    )
+    
     const welcomeMessage = `
 %c┌─────────────────────────────────────────────────────────────┐
-│                                                             │
-│  👋 Hey there, fellow developer!                            │
-│                                                             │
-│  Since you're poking around in the console, you're          │
-│  clearly my kind of person.                                 │
-│                                                             │
-│  Quick facts:                                               │
-│  • Yes, this site is built with Next.js & React             │
-│  • No, I didn't use a template (much)                       │
-│  • The hexagon animation? Pure CSS sorcery                  │
-│    + requestAnimationFrame                                  │
-│  • I handle €6.5B+ in checkout transactions at work         │
-│    but I still console.log() to debug sometimes... 🤫       │
-│                                                             │
-│  10+ years of experience and I still google                 │
-│  "how to center a div" occasionally.                        │
-│                                                             │
+${createEmptyBoxLine()}
+${createBoxLineWithBorders('Hey there, fellow developer!')}
+${createEmptyBoxLine()}
+${createBoxLineWithBorders("Since you're poking around in the console, you're")}
+${createBoxLineWithBorders('clearly my kind of person.')}
+${createEmptyBoxLine()}
+${createBoxLineWithBorders('Quick facts:')}
+${createBoxLineWithBorders('• Yes, this site is built with Next.js & React')}
+${createBoxLineWithBorders("• No, I didn't use a template (much)")}
+${createBoxLineWithBorders('• The hexagon animation? Canvas API + 3D math')}
+${requestAnimationFrameLine}
+${createBoxLineWithBorders('• I handle €6.5B+ in checkout transactions at work')}
+${consoleLogLine}
+${createEmptyBoxLine()}
+${experienceLine}
+${createBoxLineWithBorders('"how to center a div" occasionally.')}
+${createEmptyBoxLine()}
 └─────────────────────────────────────────────────────────────┘`
 
     const funCommands = `
 %c> Available commands (just kidding, this isn't actually a terminal):
 
   hire jonas    - Send me an email 📧
-  jonas.skills  - ["PHP", "Go", "JS", "Making things work at 3 AM"]
+  jonas.skills  - ["PHP", "Go", "TypeScript", "Kubernetes", "Making things work at 3 AM"]
   jonas.debug() - console.log("It works on my machine ™")
 
 %c💡 Pro tip: If you're here to inspect my code quality,
@@ -77,8 +96,8 @@ export function ConsoleEasterEgg() {
     if (typeof window !== 'undefined') {
       // @ts-expect-error - Adding global easter egg
       window.jonas = {
-        skills: ['PHP', 'Laravel', 'Go', 'JavaScript', 'React', 'Vue', 'MySQL', 'AWS', 'Making deadlines somehow'],
-        yearsOfExperience: new Date().getFullYear() - 2013,
+        skills: ['PHP', 'Laravel', 'Go', 'TypeScript', 'React', 'Kubernetes', 'Docker', 'MySQL', 'AWS', 'Making deadlines somehow'],
+        yearsOfExperience: totalExperienceYears,
         currentMood: () => {
           const moods = [
             '☕ Caffeinated and dangerous',
