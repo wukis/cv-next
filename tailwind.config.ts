@@ -1,8 +1,7 @@
 import typographyPlugin from '@tailwindcss/typography'
 import { type Config } from 'tailwindcss'
 
-// Use require for Turbopack compatibility
-const typographyStyles = require('./typography').default
+import typographyStyles from './src/lib/typography'
 
 export default {
   content: ['./src/**/*.{js,jsx,ts,tsx}'],
