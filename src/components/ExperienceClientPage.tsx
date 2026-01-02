@@ -279,7 +279,7 @@ function CompanyTechStack({
     
     return (
         <div className="px-4 py-3 bg-neutral-50/50 dark:bg-neutral-800/30 border-t border-neutral-100 dark:border-neutral-800">
-            <div className="flex items-center gap-2 text-xs font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2">
+            <div className="flex items-center gap-2 text-xs font-mono text-neutral-600 dark:text-neutral-300 uppercase tracking-wider mb-2">
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                 </svg>
@@ -312,7 +312,7 @@ function CompanyProjects({
     
     return (
         <div className="px-4 py-3 border-t border-neutral-100 dark:border-neutral-800">
-            <div className="flex items-center gap-2 text-xs font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2">
+            <div className="flex items-center gap-2 text-xs font-mono text-neutral-600 dark:text-neutral-300 uppercase tracking-wider mb-2">
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
@@ -339,7 +339,7 @@ const getBranchColors = (roleType: 'lead' | 'senior' | 'mid' | 'junior') => {
                 ping: 'bg-emerald-500/40 dark:bg-emerald-400/40',
                 border: 'border-emerald-500/40 dark:border-emerald-400/40',
                 text: 'text-emerald-600 dark:text-emerald-400',
-                bg: 'bg-emerald-500/10 dark:bg-emerald-400/10',
+                bg: 'bg-emerald-500/20 dark:bg-emerald-400/20',
             };
         case 'senior':
             return {
@@ -349,7 +349,7 @@ const getBranchColors = (roleType: 'lead' | 'senior' | 'mid' | 'junior') => {
                 ping: 'bg-sky-500/40 dark:bg-sky-400/40',
                 border: 'border-sky-500/40 dark:border-sky-400/40',
                 text: 'text-sky-600 dark:text-sky-400',
-                bg: 'bg-sky-500/10 dark:bg-sky-400/10',
+                bg: 'bg-sky-500/20 dark:bg-sky-400/20',
             };
         case 'mid':
             return {
@@ -359,7 +359,7 @@ const getBranchColors = (roleType: 'lead' | 'senior' | 'mid' | 'junior') => {
                 ping: 'bg-violet-500/40 dark:bg-violet-400/40',
                 border: 'border-violet-500/40 dark:border-violet-400/40',
                 text: 'text-violet-600 dark:text-violet-400',
-                bg: 'bg-violet-500/10 dark:bg-violet-400/10',
+                bg: 'bg-violet-500/20 dark:bg-violet-400/20',
             };
         case 'junior':
             return {
@@ -369,7 +369,7 @@ const getBranchColors = (roleType: 'lead' | 'senior' | 'mid' | 'junior') => {
                 ping: 'bg-amber-500/40 dark:bg-amber-400/40',
                 border: 'border-amber-500/40 dark:border-amber-400/40',
                 text: 'text-amber-600 dark:text-amber-400',
-                bg: 'bg-amber-500/10 dark:bg-amber-400/10',
+                bg: 'bg-amber-500/20 dark:bg-amber-400/20',
             };
     }
 };
@@ -402,7 +402,7 @@ function Education({ education, isLast }: { education: EducationInterface; isLas
                 <div className={`rounded-lg border bg-white/50 dark:bg-neutral-900/50 overflow-hidden transition-all duration-300 ${colors.border} group-hover:shadow-lg`}>
                     {/* Terminal header - matching work experience */}
                     <div className="flex items-center justify-between gap-2 px-4 py-2 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
-                        <span className="hidden sm:block text-xs font-mono text-neutral-500 dark:text-neutral-400 truncate">
+                        <span className="hidden sm:block text-xs font-mono text-neutral-600 dark:text-neutral-300 truncate">
                             ~/education/{education.studyType.toLowerCase().replace(/\s+/g, '-')}
                         </span>
                         <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono whitespace-nowrap ${colors.text} ${colors.bg}`}>
@@ -428,7 +428,7 @@ function Education({ education, isLast }: { education: EducationInterface; isLas
                                 <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100">
                                     {education.institution}
                                 </h3>
-                                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-neutral-500 dark:text-neutral-400">
+                                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-neutral-600 dark:text-neutral-300">
                                     <span className="font-mono">{duration.years}y</span>
                                     <span className="text-neutral-300 dark:text-neutral-600">·</span>
                                     <span className="flex items-center gap-1">
@@ -523,7 +523,7 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                             <div className={`rounded-lg border bg-white/50 dark:bg-neutral-900/50 overflow-hidden transition-all duration-300 ${colors.border} group-hover:shadow-lg`}>
                                 {/* Terminal header */}
                                 <div className="flex items-center justify-between gap-2 px-4 py-2 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
-                                    <span className="hidden sm:block text-xs font-mono text-neutral-500 dark:text-neutral-400 truncate">
+                                    <span className="hidden sm:block text-xs font-mono text-neutral-600 dark:text-neutral-300 truncate">
                                         ~/work/{companyData.company.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}
                                     </span>
                                     <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono whitespace-nowrap ${colors.text} ${colors.bg}`}>
@@ -569,7 +569,7 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                                                     </a>
                                                 ) : companyData.company}
                                             </h3>
-                                            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-neutral-500 dark:text-neutral-400">
+                                            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-neutral-600 dark:text-neutral-300">
                                                 <span className="font-mono">{formatDuration(companyData.totalDuration)}</span>
                                                 <span className="text-neutral-300 dark:text-neutral-600">·</span>
                                                 <span className="flex items-center gap-1">
@@ -631,7 +631,7 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                                                                 {formatDuration(getDuration(experience.startDate, experience.endDate))}
                                                             </span>
                                                             {isPromoted && (
-                                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-500/20 dark:bg-amber-400/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 dark:border-amber-400/30">
                                                                     <svg className="w-2.5 h-2.5 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
                                                                     </svg>
@@ -660,7 +660,7 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                                                                 <div className="space-y-1 pl-2 border-l-2 border-neutral-300 dark:border-neutral-600">
                                                                     {responsibilitiesToShow.map((item, i) => (
                                                                         <div key={i} className="flex items-center gap-2 text-sm">
-                                                                            <span className="font-mono text-neutral-400 dark:text-neutral-500 flex-shrink-0 select-none">•</span>
+                                                                            <span className="font-mono text-neutral-500 dark:text-neutral-400 flex-shrink-0 select-none">•</span>
                                                                             <span className="text-neutral-600 dark:text-neutral-400">{item}</span>
                                                                         </div>
                                                                     ))}
@@ -710,10 +710,10 @@ export default function ExperienceClientContent() {
                         currently employed
                     </div>
                     <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-neutral-800 dark:text-neutral-100">
-                        <span className="font-mono text-emerald-600 dark:text-emerald-400">&gt;</span> git log <span className="text-neutral-400 dark:text-neutral-500">--oneline</span>
+                        <span className="font-mono text-emerald-600 dark:text-emerald-400">&gt;</span> git log <span className="text-neutral-500 dark:text-neutral-400">--oneline</span>
                     </h1>
                     <p className="mt-3 text-lg text-neutral-600 dark:text-neutral-400 font-mono">
-                        <span className="text-neutral-400 dark:text-neutral-500"># </span>
+                        <span className="text-neutral-500 dark:text-neutral-400"># </span>
                         {totalExperienceYears}+ years of professional experience
                     </p>
                 </div>
@@ -726,10 +726,10 @@ export default function ExperienceClientContent() {
             <Container className="mt-16 sm:mt-24">
                 <div className="mb-10">
                     <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-neutral-800 dark:text-neutral-100">
-                        <span className="font-mono text-amber-600 dark:text-amber-400">&gt;</span> git checkout <span className="text-neutral-400 dark:text-neutral-500">education</span>
+                        <span className="font-mono text-amber-600 dark:text-amber-400">&gt;</span> git checkout <span className="text-neutral-500 dark:text-neutral-400">education</span>
                     </h2>
                     <p className="mt-3 text-lg text-neutral-600 dark:text-neutral-400 font-mono">
-                        <span className="text-neutral-400 dark:text-neutral-500"># </span>
+                        <span className="text-neutral-500 dark:text-neutral-400"># </span>
                         Academic background
                     </p>
                 </div>

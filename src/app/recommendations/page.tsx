@@ -37,10 +37,10 @@ function Recommendation({ recommendation, index }: { recommendation: Recommendat
         <div className={`rounded-lg border bg-white/50 dark:bg-neutral-900/50 overflow-hidden transition-all duration-300 ${color.border} group-hover:shadow-lg`}>
           {/* Terminal header - date only on mobile, full path on desktop */}
           <div className="flex items-center justify-between gap-2 px-4 py-2 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
-            <span className="hidden sm:block text-xs font-mono text-neutral-500 dark:text-neutral-400 truncate">
+            <span className="hidden sm:block text-xs font-mono text-neutral-600 dark:text-neutral-300 truncate">
               ~/testimonials/{recommendation.slug}.md
             </span>
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono text-neutral-500 dark:text-neutral-400 bg-neutral-200/50 dark:bg-neutral-700/50 sm:ml-auto">
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono text-neutral-600 dark:text-neutral-300 bg-neutral-200/50 dark:bg-neutral-700/50 sm:ml-auto">
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
@@ -99,10 +99,10 @@ export default async function RecommendationsPage() {
           {recommendations.length} testimonials
         </div>
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-neutral-800 dark:text-neutral-100">
-          <span className="font-mono text-violet-600 dark:text-violet-400">&gt;</span> cat <span className="text-neutral-400 dark:text-neutral-500">testimonials/*.md</span>
+          <span className="font-mono text-violet-600 dark:text-violet-400">&gt;</span> cat <span className="text-neutral-500 dark:text-neutral-400">testimonials/*.md</span>
         </h1>
         <p className="mt-3 text-lg text-neutral-600 dark:text-neutral-400 font-mono">
-          <span className="text-neutral-400 dark:text-neutral-500"># </span>
+          <span className="text-neutral-500 dark:text-neutral-400"># </span>
           Recommendations from colleagues throughout my career
         </p>
       </div>
@@ -121,7 +121,7 @@ export default async function RecommendationsPage() {
             </div>
           </div>
           <div className="flex-1 -mt-1">
-            <span className="text-sm font-mono text-neutral-400 dark:text-neutral-500">
+            <span className="text-sm font-mono text-neutral-500 dark:text-neutral-400">
               EOF
             </span>
           </div>

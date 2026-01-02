@@ -131,10 +131,10 @@ function MobileNavItem({
   close: () => void
 }) {
   const colorClasses: Record<string, string> = {
-    emerald: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
-    sky: 'text-sky-600 dark:text-sky-400 bg-sky-500/10',
-    violet: 'text-violet-600 dark:text-violet-400 bg-violet-500/10',
-    amber: 'text-amber-600 dark:text-amber-400 bg-amber-500/10',
+    emerald: 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/20 dark:bg-emerald-400/20',
+    sky: 'text-sky-700 dark:text-sky-300 bg-sky-500/20 dark:bg-sky-400/20',
+    violet: 'text-violet-700 dark:text-violet-300 bg-violet-500/20 dark:bg-violet-400/20',
+    amber: 'text-amber-700 dark:text-amber-300 bg-amber-500/20 dark:bg-amber-400/20',
   }
 
   return (
@@ -146,7 +146,7 @@ function MobileNavItem({
           'flex items-center gap-3 px-3 py-2.5 rounded-lg font-mono text-sm transition-colors',
           isActive 
             ? colorClasses[color]
-            : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+            : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
         )}
       >
         <span className={clsx(
@@ -220,14 +220,14 @@ function MobileNavigation({ className }: { className?: string }) {
                 aria-label="Go to home"
               >
                 <AnimatedTerminalIcon />
-                <span className="text-xs font-mono text-neutral-500 dark:text-neutral-400">~/navigation</span>
+                <span className="text-xs font-mono text-neutral-600 dark:text-neutral-300">~/navigation</span>
               </Link>
               <button 
                 onClick={close}
                 aria-label="Close menu" 
                 className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
               >
-                <CloseIcon className="h-5 w-5 text-neutral-500 dark:text-neutral-400" />
+                <CloseIcon className="h-5 w-5 text-neutral-600 dark:text-neutral-300" />
               </button>
             </div>
             
@@ -280,10 +280,10 @@ function NavItem({
   }
   
   const bgColors: Record<string, string> = {
-    emerald: 'bg-emerald-500/10',
-    sky: 'bg-sky-500/10',
-    violet: 'bg-violet-500/10',
-    amber: 'bg-amber-500/10',
+    emerald: 'bg-emerald-500/20 dark:bg-emerald-400/20',
+    sky: 'bg-sky-500/20 dark:bg-sky-400/20',
+    violet: 'bg-violet-500/20 dark:bg-violet-400/20',
+    amber: 'bg-amber-500/20 dark:bg-amber-400/20',
   }
 
   return (
@@ -294,7 +294,7 @@ function NavItem({
           'relative flex items-center gap-1.5 px-3 py-1.5 rounded-md font-mono text-sm transition-all',
           isActive
             ? `${activeColors[color]} ${bgColors[color]}`
-            : `text-neutral-600 dark:text-neutral-400 ${hoverColors[color]} hover:bg-neutral-100 dark:hover:bg-neutral-800`,
+            : `text-neutral-700 dark:text-neutral-300 ${hoverColors[color]} hover:bg-neutral-100 dark:hover:bg-neutral-800`,
         )}
       >
         <span className={clsx(
@@ -428,7 +428,7 @@ function AnimationFocus() {
           "h-5 w-5 transition-all duration-300",
           isHovering 
             ? "text-emerald-500 dark:text-emerald-400 scale-110" 
-            : "text-neutral-400 dark:text-neutral-500"
+            : "text-neutral-500 dark:text-neutral-400"
         )} 
       />
       {/* Subtle pulse indicator when hovering */}

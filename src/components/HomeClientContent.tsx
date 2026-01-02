@@ -42,10 +42,10 @@ function Recommendations() {
         <Container className="mt-16 sm:mt-24">
             <div className="mb-10">
                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-neutral-800 dark:text-neutral-100">
-                    <span className="font-mono text-violet-600 dark:text-violet-400">&gt;</span> cat <span className="text-neutral-400 dark:text-neutral-500">testimonials.md</span>
+                    <span className="font-mono text-violet-600 dark:text-violet-400">&gt;</span> cat <span className="text-neutral-500 dark:text-neutral-400">testimonials.md</span>
                 </h2>
                 <p className="mt-3 text-lg text-neutral-600 dark:text-neutral-400 font-mono">
-                    <span className="text-neutral-400 dark:text-neutral-500"># </span>
+                    <span className="text-neutral-500 dark:text-neutral-400"># </span>
                     What colleagues say about working with me
                 </p>
             </div>
@@ -59,7 +59,7 @@ function Recommendations() {
             <div className="mt-8 flex justify-end">
                 <Link 
                     href="/recommendations" 
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500/10 dark:bg-amber-400/10 text-amber-600 dark:text-amber-400 font-mono text-sm hover:bg-amber-500/20 dark:hover:bg-amber-400/20 transition-colors"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500/20 dark:bg-amber-400/20 text-amber-700 dark:text-amber-300 font-mono text-sm hover:bg-amber-500/30 dark:hover:bg-amber-400/30 transition-colors"
                 >
                     <span>view all {recommendations.length}</span>
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -89,7 +89,7 @@ function Recommendation({ recommendation, index }: { recommendation: Recommendat
         >
             {/* Terminal header */}
             <div className="flex items-center gap-2 px-4 h-6 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
-                <span className="text-[10px] font-mono text-neutral-400 dark:text-neutral-500 truncate">
+                <span className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400 truncate">
                     ~/testimonials/{recommendation.slug}
                 </span>
             </div>
@@ -128,10 +128,10 @@ export default function HomeClientContent() {
                 <div className="rounded-lg overflow-hidden border border-emerald-500/30 dark:border-emerald-400/30 bg-white/50 dark:bg-neutral-900/50">
                     {/* Terminal header */}
                     <div className="flex items-center justify-between gap-2 px-4 py-2 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
-                        <span className="text-xs font-mono text-neutral-500 dark:text-neutral-400">
+                        <span className="text-xs font-mono text-neutral-600 dark:text-neutral-300">
                             ~/README.md
                         </span>
-                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 dark:bg-emerald-400/10">
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono text-emerald-700 dark:text-emerald-300 bg-emerald-500/20 dark:bg-emerald-400/20">
                             <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
                             available
                         </div>
@@ -210,7 +210,7 @@ export default function HomeClientContent() {
                                 <div className="mt-5 flex flex-wrap gap-2 justify-center sm:justify-start">
                                     <Link 
                                         href="/experience"
-                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-violet-500/10 dark:bg-violet-400/10 text-violet-600 dark:text-violet-400 font-mono text-sm hover:bg-violet-500/20 dark:hover:bg-violet-400/20 transition-colors"
+                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-violet-500/20 dark:bg-violet-400/20 text-violet-700 dark:text-violet-300 font-mono text-sm hover:bg-violet-500/30 dark:hover:bg-violet-400/30 transition-colors"
                                     >
                                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -219,7 +219,7 @@ export default function HomeClientContent() {
                                     </Link>
                                     <Link 
                                         href="/about"
-                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sky-500/10 dark:bg-sky-400/10 text-sky-600 dark:text-sky-400 font-mono text-sm hover:bg-sky-500/20 dark:hover:bg-sky-400/20 transition-colors"
+                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sky-500/20 dark:bg-sky-400/20 text-sky-700 dark:text-sky-300 font-mono text-sm hover:bg-sky-500/30 dark:hover:bg-sky-400/30 transition-colors"
                                     >
                                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -228,7 +228,7 @@ export default function HomeClientContent() {
                                     </Link>
                                     <Link 
                                         href="mailto:jonas@petrik.dev"
-                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 dark:bg-emerald-400/10 text-emerald-600 dark:text-emerald-400 font-mono text-sm hover:bg-emerald-500/20 dark:hover:bg-emerald-400/20 transition-colors"
+                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/20 dark:bg-emerald-400/20 text-emerald-700 dark:text-emerald-300 font-mono text-sm hover:bg-emerald-500/30 dark:hover:bg-emerald-400/30 transition-colors"
                                     >
                                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
