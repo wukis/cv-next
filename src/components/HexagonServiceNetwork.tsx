@@ -127,7 +127,7 @@ const HexagonServiceNetwork: React.FC = () => {
         startTime: 0,
         duration: 4, // Emergency lasts 4 seconds
         recoveryStartTime: 0,
-        recoveryDuration: 2, // Recovery message lasts 2 seconds
+        recoveryDuration: 5, // Recovery message lasts 5 seconds (slower fade)
         lastEmergencyTime: 0,
         nextEmergencyInterval: 30, // Random interval after first emergency
         hasTriggeredFirstEmergency: false,
@@ -970,7 +970,7 @@ const HexagonServiceNetwork: React.FC = () => {
                 
                 if (emergencyAge < emergency.duration) {
                     // Draw emergency alert - slower blinking, not affected by focus
-                    const blinkRate = 2; // Blinks per second (slower than before)
+                    const blinkRate = 0.8; // Blinks per second (slower blinking)
                     const blinkOn = Math.sin(emergencyAge * blinkRate * Math.PI * 2) > 0;
                     
                     if (blinkOn) {
