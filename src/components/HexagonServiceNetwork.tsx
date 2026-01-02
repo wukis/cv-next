@@ -125,7 +125,7 @@ const HexagonServiceNetwork: React.FC = () => {
         isActive: false,
         isRecovery: false,
         startTime: 0,
-        duration: 4, // Emergency lasts 4 seconds
+        duration: 12, // Emergency lasts 12 seconds (3x longer)
         recoveryStartTime: 0,
         recoveryDuration: 5, // Recovery message lasts 5 seconds (slower fade)
         lastEmergencyTime: 0,
