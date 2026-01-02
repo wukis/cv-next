@@ -131,10 +131,10 @@ function MobileNavItem({
   close: () => void
 }) {
   const colorClasses: Record<string, string> = {
-    emerald: 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/20 dark:bg-emerald-400/20',
-    sky: 'text-sky-700 dark:text-sky-300 bg-sky-500/20 dark:bg-sky-400/20',
-    violet: 'text-violet-700 dark:text-violet-300 bg-violet-500/20 dark:bg-violet-400/20',
-    amber: 'text-amber-700 dark:text-amber-300 bg-amber-500/20 dark:bg-amber-400/20',
+    emerald: 'text-emerald-800 dark:text-emerald-200 bg-emerald-500/30 dark:bg-emerald-400/30',
+    sky: 'text-sky-800 dark:text-sky-200 bg-sky-500/30 dark:bg-sky-400/30',
+    violet: 'text-violet-800 dark:text-violet-200 bg-violet-500/30 dark:bg-violet-400/30',
+    amber: 'text-amber-800 dark:text-amber-200 bg-amber-500/30 dark:bg-amber-400/30',
   }
 
   return (
@@ -280,10 +280,10 @@ function NavItem({
   }
   
   const bgColors: Record<string, string> = {
-    emerald: 'bg-emerald-500/20 dark:bg-emerald-400/20',
-    sky: 'bg-sky-500/20 dark:bg-sky-400/20',
-    violet: 'bg-violet-500/20 dark:bg-violet-400/20',
-    amber: 'bg-amber-500/20 dark:bg-amber-400/20',
+    emerald: 'bg-emerald-500/30 dark:bg-emerald-400/30',
+    sky: 'bg-sky-500/30 dark:bg-sky-400/30',
+    violet: 'bg-violet-500/30 dark:bg-violet-400/30',
+    amber: 'bg-amber-500/30 dark:bg-amber-400/30',
   }
 
   return (

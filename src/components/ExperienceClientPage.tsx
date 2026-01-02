@@ -185,7 +185,7 @@ function PromotionDiff({
     return (
         <div className="mt-3">
             <div className="flex items-center gap-2 mb-2">
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/30 dark:bg-emerald-400/30 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 dark:border-emerald-400/40">
                     +{newItems.length} {label}
                 </span>
             </div>
@@ -339,7 +339,7 @@ const getBranchColors = (roleType: 'lead' | 'senior' | 'mid' | 'junior') => {
                 ping: 'bg-emerald-500/40 dark:bg-emerald-400/40',
                 border: 'border-emerald-500/40 dark:border-emerald-400/40',
                 text: 'text-emerald-600 dark:text-emerald-400',
-                bg: 'bg-emerald-500/20 dark:bg-emerald-400/20',
+                bg: 'bg-emerald-500/30 dark:bg-emerald-400/30',
             };
         case 'senior':
             return {
@@ -349,7 +349,7 @@ const getBranchColors = (roleType: 'lead' | 'senior' | 'mid' | 'junior') => {
                 ping: 'bg-sky-500/40 dark:bg-sky-400/40',
                 border: 'border-sky-500/40 dark:border-sky-400/40',
                 text: 'text-sky-600 dark:text-sky-400',
-                bg: 'bg-sky-500/20 dark:bg-sky-400/20',
+                bg: 'bg-sky-500/30 dark:bg-sky-400/30',
             };
         case 'mid':
             return {
@@ -359,7 +359,7 @@ const getBranchColors = (roleType: 'lead' | 'senior' | 'mid' | 'junior') => {
                 ping: 'bg-violet-500/40 dark:bg-violet-400/40',
                 border: 'border-violet-500/40 dark:border-violet-400/40',
                 text: 'text-violet-600 dark:text-violet-400',
-                bg: 'bg-violet-500/20 dark:bg-violet-400/20',
+                bg: 'bg-violet-500/30 dark:bg-violet-400/30',
             };
         case 'junior':
             return {
@@ -369,7 +369,7 @@ const getBranchColors = (roleType: 'lead' | 'senior' | 'mid' | 'junior') => {
                 ping: 'bg-amber-500/40 dark:bg-amber-400/40',
                 border: 'border-amber-500/40 dark:border-amber-400/40',
                 text: 'text-amber-600 dark:text-amber-400',
-                bg: 'bg-amber-500/20 dark:bg-amber-400/20',
+                bg: 'bg-amber-500/30 dark:bg-amber-400/30',
             };
     }
 };
@@ -631,7 +631,7 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                                                                 {formatDuration(getDuration(experience.startDate, experience.endDate))}
                                                             </span>
                                                             {isPromoted && (
-                                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-500/20 dark:bg-amber-400/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 dark:border-amber-400/30">
+                                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-500/30 dark:bg-amber-400/30 text-amber-800 dark:text-amber-200 border border-amber-500/40 dark:border-amber-400/40">
                                                                     <svg className="w-2.5 h-2.5 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
                                                                     </svg>
