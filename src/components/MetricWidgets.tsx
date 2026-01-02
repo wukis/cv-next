@@ -217,9 +217,9 @@ function MetricWidget({ type, label, colorIndex, delay = 0, isFocused = false, e
   const effectiveColor = emergencyState === 'emergency' ? emergencyRed : 
                          emergencyState === 'recovery' ? recoveryGreen : baseColor;
 
-  // Muted vs focused styling - emergency always shows at full intensity
+  // Muted vs focused styling - widgets only fully visible when background is in focus
   // More muted when not focused to avoid distracting from content
-  const isActive = isFocused || emergencyState !== 'normal';
+  const isActive = isFocused;
   const containerOpacity = isActive ? 1 : (isDark ? 0.25 : 0.35);
   const textOpacity = isActive ? (isDark ? 0.7 : 0.9) : (isDark ? 0.3 : 0.4);
 

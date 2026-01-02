@@ -946,7 +946,9 @@ const HexagonServiceNetwork: React.FC = () => {
                     emergency.hasTriggeredFirstEmergency = true;
                 }
             } else if (emergency.hasTriggeredFirstEmergency && !emergency.isActive && !emergency.isRecovery) {
-                // After first emergency: random intervals (25-40 seconds)
+                // After first emergency: check if enough time has passed
+                // The interval is set when recovery ends, but we check dynamically
+                // to handle focus state changes
                 if (timeSinceLastEmergency > emergency.nextEmergencyInterval) {
                     shouldTriggerEmergency = true;
                 }
@@ -967,8 +969,8 @@ const HexagonServiceNetwork: React.FC = () => {
                 const emergencyAge = timeRef.current - emergency.startTime;
                 
                 if (emergencyAge < emergency.duration) {
-                    // Draw emergency alert
-                    const blinkRate = 4; // Blinks per second
+                    // Draw emergency alert - slower blinking, not affected by focus
+                    const blinkRate = 2; // Blinks per second (slower than before)
                     const blinkOn = Math.sin(emergencyAge * blinkRate * Math.PI * 2) > 0;
                     
                     if (blinkOn) {
@@ -1042,10 +1044,13 @@ const HexagonServiceNetwork: React.FC = () => {
                     
                     ctx.restore();
                 } else {
-                    // Recovery complete - reset timer for next random emergency
+                    // Recovery complete - reset timer for next emergency
+                    // Frequency depends on focus state:
+                    // When focused: every 1 minute (60 seconds)
+                    // When not focused: every 1-3 minutes (60-180 seconds)
                     emergency.isRecovery = false;
                     emergency.lastEmergencyTime = timeRef.current; // Reset timer NOW when recovery ends
-                    emergency.nextEmergencyInterval = 25 + Math.random() * 15; // 25-40 seconds until next
+                    emergency.nextEmergencyInterval = isFocused ? 60 : (60 + Math.random() * 120);
 
                     // Dispatch end event
                     window.dispatchEvent(new CustomEvent('network-emergency', { detail: { type: 'end' } }));
