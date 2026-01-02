@@ -6,6 +6,7 @@ import { Header } from '@/components/Header'
 
 function BackToTopButton() {
   const [isVisible, setIsVisible] = useState(false)
+  const [isAnimationHovering, setIsAnimationHovering] = useState(false)
 
   useEffect(() => {
     const toggleVisibility = () => {
@@ -19,6 +20,16 @@ function BackToTopButton() {
 
     window.addEventListener('scroll', toggleVisibility, { passive: true })
     return () => window.removeEventListener('scroll', toggleVisibility)
+  }, [])
+
+  useEffect(() => {
+    const handleAnimationFocusHover = (event: Event) => {
+      const customEvent = event as CustomEvent<{ isHovering: boolean }>
+      setIsAnimationHovering(customEvent.detail.isHovering)
+    }
+
+    window.addEventListener('animation-focus-hover', handleAnimationFocusHover as EventListener)
+    return () => window.removeEventListener('animation-focus-hover', handleAnimationFocusHover as EventListener)
   }, [])
 
   const scrollToTop = () => {
@@ -44,7 +55,7 @@ function BackToTopButton() {
         transition-all duration-300
         hover:ring-emerald-500/50 dark:hover:ring-emerald-400/50
         hover:shadow-emerald-500/10
-        ${isVisible 
+        ${isVisible && !isAnimationHovering
           ? 'opacity-100 translate-y-0 pointer-events-auto' 
           : 'opacity-0 translate-y-4 pointer-events-none'
         }

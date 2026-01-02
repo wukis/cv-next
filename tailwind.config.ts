@@ -1,7 +1,9 @@
 import typographyPlugin from '@tailwindcss/typography'
 import { type Config } from 'tailwindcss'
 
-import typographyStyles from './src/lib/typography'
+// Note: Turbopack shows a warning about this import but the build succeeds
+// This is a known Turbopack limitation with local TypeScript files in config files
+import typographyStyles from './typography'
 
 export default {
   content: ['./src/**/*.{js,jsx,ts,tsx}'],

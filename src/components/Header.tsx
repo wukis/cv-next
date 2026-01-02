@@ -401,12 +401,17 @@ function AnimationFocus() {
   useEffect(() => {
     if (isHovering) {
       document.documentElement.classList.add('animation-focus')
+      // Dispatch event to hide back to top button
+      window.dispatchEvent(new CustomEvent('animation-focus-hover', { detail: { isHovering: true } }))
     } else {
       document.documentElement.classList.remove('animation-focus')
+      // Dispatch event to show back to top button
+      window.dispatchEvent(new CustomEvent('animation-focus-hover', { detail: { isHovering: false } }))
     }
     
     return () => {
       document.documentElement.classList.remove('animation-focus')
+      window.dispatchEvent(new CustomEvent('animation-focus-hover', { detail: { isHovering: false } }))
     }
   }, [isHovering])
 
