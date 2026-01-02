@@ -8,7 +8,7 @@ import linkedin from '@/data/linkedin.json'
 import '@/styles/tailwind.css'
 import '@/styles/prism.css'
 import DeferredBackground from "@/components/DeferredBackground";
-import MetricWidgets from "@/components/MetricWidgets";
+import DeferredMetricWidgets from "@/components/DeferredMetricWidgets";
 
 const siteUrl = 'https://petrik.dev'
 
@@ -92,7 +92,7 @@ export default function RootLayout({
       <body className="flex h-full bg-neutral-50 dark:bg-black">
         <ConsoleEasterEgg />
         <DeferredBackground />
-        <MetricWidgets />
+        <DeferredMetricWidgets />
         <Providers>
           <div className="flex w-full">
             <Layout>{children}</Layout>

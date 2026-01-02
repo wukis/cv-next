@@ -4,6 +4,24 @@ import { withSentryConfig } from "@sentry/nextjs";
 const nextConfig = {
       productionBrowserSourceMaps: true,
       pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
+      // Performance optimizations
+      compress: true,
+      swcMinify: true,
+      // Optimize images
+      images: {
+        formats: ['image/avif', 'image/webp'],
+        minimumCacheTTL: 60,
+      },
+      // Experimental optimizations
+      experimental: {
+        optimizeCss: true,
+      },
+      // Reduce bundle size
+      compiler: {
+        removeConsole: process.env.NODE_ENV === 'production' ? {
+          exclude: ['error', 'warn'],
+        } : false,
+      },
 }
 
 export default withSentryConfig(

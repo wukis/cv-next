@@ -106,6 +106,7 @@ const HexagonServiceNetwork: React.FC = () => {
     const [isDark, setIsDark] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
     const focusTransitionRef = useRef(0); // 0 = normal, 1 = fully focused (for smooth transitions)
+    const frameSkipRef = useRef(0); // Frame skipping counter for performance when not focused
     
     // Emergency event system
     const emergencyRef = useRef<{
@@ -563,6 +564,17 @@ const HexagonServiceNetwork: React.FC = () => {
         window.addEventListener('resize', resize);
 
         const animate = () => {
+            // Throttle rendering when not focused: skip every other frame (30fps instead of 60fps)
+            // This significantly reduces rendering time and improves performance
+            if (!isFocused && frameSkipRef.current % 2 === 0) {
+                frameSkipRef.current++;
+                // Still update time for smooth animations, but skip rendering
+                timeRef.current += 0.016;
+                animationRef.current = requestAnimationFrame(animate);
+                return;
+            }
+            frameSkipRef.current++;
+            
             ctx.clearRect(0, 0, width, height);
 
             timeRef.current += 0.016;
