@@ -11,7 +11,7 @@
       "Promoted to lead after pushing for quality: design documents, proposals, system reliability improvements"
     ],
     "responsibilities": [
-      "Leading checkout team that rewrote legacy system to Laravel/Roadrunner with Redis clusters",
+      "Leading checkout team that deals with order processing 6.5B+ yearly in volume",
       "On-call for checkout domain - cleared error noise, added spans and structured logging",
       "Pipeline architecture for multi-step state mutations (one user action triggers coordinated changes)"
     ],
