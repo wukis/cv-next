@@ -12,7 +12,7 @@
     ],
     "responsibilities": [
       "Leading checkout team that deals with order processing 6.5B+ yearly in volume",
-      "On-call for checkout domain - cleared error noise, added spans and structured logging",
+      "On-call for checkout domain - cleared error noise, improved observability and reliability",
       "Pipeline architecture for multi-step state mutations (one user action triggers coordinated changes)"
     ],
     "projects": [
