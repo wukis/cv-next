@@ -16,13 +16,12 @@ export async function register() {
       debug: false,
     });
   } else {
-    // Client-side Sentry configuration
+    // Client-side Sentry configuration - minimal for portfolio site
     Sentry.init({
       dsn: "https://0bdcdf9a33e935bd8c0b590736dc1940@o4507296284475392.ingest.de.sentry.io/4507296287359056",
-      tracesSampleRate: 1,
+      tracesSampleRate: 0.1,
       debug: false,
-      replaysOnErrorSampleRate: 1.0,
-      replaysSessionSampleRate: 0,
+      integrations: [],
     });
   }
 }

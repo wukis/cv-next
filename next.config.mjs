@@ -87,6 +87,15 @@ export default withSentryConfig(
       // Hides source maps from generated client bundles
       hideSourceMaps: true,
 
+      // Reduce bundle size by excluding unused Sentry features
+      bundleSizeOptimizations: {
+        excludeDebugStatements: true,
+        excludeReplayIframe: true,
+        excludeReplayShadowDom: true,
+        excludeReplayCanvas: true,
+        excludeReplayWorker: true,
+      },
+
       // Webpack configuration - merged with nextConfig webpack
       webpack: (config, options) => {
         // Call the nextConfig webpack function first if it exists
