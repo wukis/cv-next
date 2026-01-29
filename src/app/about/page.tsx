@@ -27,7 +27,7 @@ function MailIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
 
 export const metadata: Metadata = {
   title: 'About',
-  description: 'I\'m Jonas Petrik, a Staff Engineer and Team Lead building web applications. Based in Germany, originally from Lithuania.',
+  description: 'Jonas Petrik - Staff Engineer leading checkout at SCAYLE (Harrods, Deichmann, 100+ brands). Zero downtime Black Friday, ~550 orders/minute. Based in Germany.',
   alternates: {
     canonical: '/about',
   },
@@ -145,37 +145,37 @@ export default function About() {
                   <span className="text-sky-500 font-mono">##</span> Introduction
                 </h3>
                 <p className="text-neutral-600 dark:text-neutral-300 leading-relaxed">
-                  Hey, I&apos;m Jonas. I&apos;ve been building web applications for over {totalExperienceYears} years, mostly with PHP, JavaScript, and Go. Right now I&apos;m a Staff Engineer and Team Lead at SCAYLE, where I work on checkout and payments - systems that handle billions in transactions each year. I like solving hard problems and making things that actually work.
+                  Hey, I&apos;m Jonas. I lead the checkout team at SCAYLE - the platform behind Harrods, Deichmann, and 100+ other brands. Black Friday 2025, we handled ~550 orders/minute with zero downtime. I got promoted to lead after pushing for quality: design documents, proposals, and turning noisy monitoring into alerts I can actually sleep through.
                 </p>
               </div>
-              
+
               {/* Background */}
               <div>
                 <h3 className="flex items-center gap-2 text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-3">
                   <span className="text-emerald-500 font-mono">##</span> Background
                 </h3>
                 <p className="text-neutral-600 dark:text-neutral-300 leading-relaxed">
-                  I grew up in Lithuania and moved to Germany a few years back. I&apos;ve been leading teams since 2016 - helping people grow, planning what we build, and making sure we ship quality code. I&apos;ve worked on everything from e-commerce platforms to betting systems to CRM tools.
+                  Lithuanian, based in Germany. {totalExperienceYears}+ years building things with PHP, JavaScript, and Go. Before SCAYLE, I rebuilt the search at anwalt.de (Germany&apos;s largest legal marketplace - 20k+ lawyers, 4M monthly users). Before that, I was the technical lead at a dev house building Atobi for a Danish startup - scaled the team from 3 to 10 while shipping mobile and web apps for Nike and PVH Nordic.
                 </p>
               </div>
-              
+
               {/* How I Work */}
               <div>
                 <h3 className="flex items-center gap-2 text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-3">
                   <span className="text-violet-500 font-mono">##</span> How I Work
                 </h3>
                 <p className="text-neutral-600 dark:text-neutral-300 leading-relaxed">
-                  I believe in writing clear code, testing properly, and not overcomplicating things. When leading a team, I try to remove blockers, give honest feedback, and let people own their work. I&apos;d rather ship something solid than chase every new trend.
+                  I put functionality, maintainability, and performance first - the trendy stuff is a bonus, not the goal. When something&apos;s not working or is too complicated, I&apos;ll say so. Direct communication saves everyone time. As a lead, I wear multiple hats: dev, devops, team lead, tech lead - whatever moves the project forward.
                 </p>
               </div>
-              
-              {/* Always Learning */}
+
+              {/* What I Care About */}
               <div>
                 <h3 className="flex items-center gap-2 text-lg font-semibold text-neutral-800 dark:text-neutral-100 mb-3">
-                  <span className="text-amber-500 font-mono">##</span> Always Learning
+                  <span className="text-amber-500 font-mono">##</span> What I Care About
                 </h3>
                 <p className="text-neutral-600 dark:text-neutral-300 leading-relaxed">
-                  Tech keeps changing, and I try to keep up - but I focus on what&apos;s useful, not what&apos;s shiny. I also enjoy helping others learn. Some of my best moments at work have been when someone on my team figures out something tricky and I got to be part of that.
+                  Systems that work at 3am without waking anyone up. Code that the next person can actually understand. Teams where people own their work and grow. I&apos;ve mentored developers who went on to lead their own teams - that&apos;s the work I&apos;m most proud of.
                 </p>
               </div>
               

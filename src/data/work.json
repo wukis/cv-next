@@ -6,19 +6,17 @@
     "startDate": "2025-04",
     "endDate": "now",
     "highlights": [
-      "Leading backend engineering team responsible for checkout and payments domain",
-      "Architecting high-availability systems processing €6.5B+ annual transaction volume",
-      "Driving Kubernetes migration improving deployment frequency and system reliability"
+      "Zero downtime during Black Friday 2025 handling ~550 orders/minute on peak tenants",
+      "Turned noisy monitoring into trustworthy alerts - can sleep through on-call nights now",
+      "Promoted to lead after pushing for quality: design documents, proposals, system reliability improvements"
     ],
     "responsibilities": [
-      "Leading backend engineering team for checkout and payments domain",
-      "Architecting high-availability systems processing €6.5B+ annual transactions",
-      "Driving Kubernetes migration and infrastructure modernization initiatives",
-      "Designing fault-tolerant microservices for enterprise e-commerce platform",
-      "Collaborating with cross-functional teams on payment provider integrations"
+      "Leading checkout team that rewrote legacy system to Laravel/Roadrunner with Redis clusters",
+      "On-call for checkout domain - cleared error noise, added spans and structured logging",
+      "Pipeline architecture for multi-step state mutations (one user action triggers coordinated changes)"
     ],
     "projects": [
-      "SCAYLE Commerce Engine - enterprise e-commerce platform powering 100+ global brands"
+      "SCAYLE Commerce Engine - platform powering Harrods, Deichmann, s.Oliver, Manchester United and 100+ brands"
     ],
     "technologies": [
       "PHP",
@@ -50,16 +48,13 @@
     "startDate": "2024-01",
     "endDate": "2025-04",
     "highlights": [
-      "Built high-throughput checkout systems handling peak traffic during sales events",
-      "Reduced checkout latency through performance optimization initiatives",
-      "Participated in on-call rotation for critical payment infrastructure"
+      "Part of team that rebuilt legacy checkout into Laravel/Roadrunner with pipeline architecture",
+      "Started covering on-call, which drove my focus on observability and error reduction"
     ],
     "responsibilities": [
-      "Building and maintaining high-throughput checkout and payment systems",
-      "On-call and incident response for critical checkout flows",
-      "Implementing fault-tolerant microservices architecture",
-      "Optimizing for high demand checkout flows",
-      "Developing multi-tenant full-stack headless checkout solutions"
+      "Building and optimizing high-throughput checkout flows",
+      "On-call and incident response for payment-critical systems",
+      "Developing multi-tenant headless checkout solutions"
     ],
     "projects": [],
     "technologies": [
@@ -90,19 +85,16 @@
     "startDate": "2022-12",
     "endDate": "2023-12",
     "highlights": [
-      "Led cross-functional engineering team driving platform innovation",
-      "Designed scalable architecture serving 4 million+ monthly users",
-      "Modernized legacy PHP codebase improving maintainability and performance"
+      "Led 3-person team (with architect + senior) building foundations other teams adopted",
+      "Modernized legacy: DB migrations, AWS infrastructure, deployable code patterns"
     ],
     "responsibilities": [
-      "Leading cross-functional engineering team for innovative approaches that are taken over by other teams",
-      "Designing scalable platform architecture serving 4 million+ monthly users",
-      "Guiding legacy projects to modern PHP standards",
-      "Implementing CI/CD pipelines and DevOps best practices",
-      "Mentoring developers and conducting code reviews"
+      "Wore multiple hats: dev, devops, team lead, tech lead - driving projects across full stack",
+      "Enhanced CI/CD pipelines in collaboration with DevOps team",
+      "Mentoring developers and establishing code review practices"
     ],
     "projects": [
-      "anwalt.de - Germany's largest legal services marketplace"
+      "anwalt.de - Germany's largest legal marketplace with 20,500+ lawyers and 4M+ monthly users"
     ],
     "technologies": [
       "PHP",
@@ -130,16 +122,13 @@
     "startDate": "2020-12",
     "endDate": "2022-12",
     "highlights": [
-      "Developed SaaS platform features used by thousands of legal professionals",
-      "Built RESTful APIs powering mobile and web applications",
-      "Implemented Elasticsearch-based advanced search functionality"
+      "Rebuilt anwalt.de search: GraphQL API, geo-location for finding lawyers, aggregations and range filters",
+      "Full-stack Laminas/Vue development, promoted to lead after search project"
     ],
     "responsibilities": [
-      "Developing and maintaining SaaS platform features for legal professionals",
-      "Building RESTful APIs and integrating third-party services",
-      "Migrating legacy codebase to modern PHP standards",
-      "Implementing advanced search with Elasticsearch",
-      "Developing interactive UI with Vue.js and JavaScript"
+      "Developing SaaS platform features for legal professionals",
+      "Building REST APIs and migrating legacy code",
+      "Implementing advanced search functionality"
     ],
     "projects": [],
     "technologies": [
@@ -165,19 +154,17 @@
     "startDate": "2018-01",
     "endDate": "2020-12",
     "highlights": [
-      "Managed engineering team of 10 developers across multiple product lines",
-      "Architected multi-tenant SaaS platform serving enterprise retail clients",
-      "Implemented Agile/SCRUM processes improving team velocity and delivery"
+      "Migrated startup prototype from Phalcon to Laravel API + React frontend + Ionic mobile apps",
+      "Designed generic gamification system (XP, points, achievements, calls-to-action) adopted across products",
+      "Filled CTO-like gap for Danish startup client (Atobi) - bridged product vision with technical feasibility"
     ],
     "responsibilities": [
-      "Managing engineering team of 10 developers across multiple product lines",
-      "Architecting multi-tenant SaaS platform serving enterprise retail clients",
-      "Building real-time data synchronization systems for mobile and web",
-      "Implementing Agile/SCRUM processes and mentoring junior developers",
-      "Conducting code reviews and ensuring quality standards"
+      "Led dev house team building product for Danish retail-tech startup (later acquired stake)",
+      "Scaled team from 3 to 10 developers while shipping mobile + web platforms",
+      "Built real-time data sync for offline-first retail apps used by enterprise clients like PVH Nordic"
     ],
     "projects": [
-      "Atobi - gamified retail execution platform for enterprise clients",
+      "Atobi - retail employee platform for brands like Nike and PVH Nordic (client of dev house)",
       "EffectiveRetail - all-in-one retail management solution"
     ],
     "technologies": [
@@ -206,14 +193,10 @@
     "startDate": "2017-11",
     "endDate": "2018-01",
     "highlights": [
-      "Developed backend services powering retail management platforms",
-      "Implemented database optimization reducing query response times"
+      "Joined dev house to build backend for retail startup client, promoted to lead within 2 months"
     ],
     "responsibilities": [
-      "Developing backend services and REST APIs for retail platforms",
-      "Implementing database optimization and caching strategies",
-      "Building admin dashboards and reporting tools",
-      "Developing backwards compatible APIs for the tool integration with other systems"
+      "Developing backend services and REST APIs for retail platforms"
     ],
     "projects": [],
     "technologies": [
@@ -237,20 +220,15 @@
     "startDate": "2017-01",
     "endDate": "2017-11",
     "highlights": [
-      "Developing online betting platform",
-      "Processing real-time financial transactions",
-      "Using TDD practices to achieving comprehensive test coverage",
-      "Integrated payment gateways meeting regulatory compliance requirements"
+      "Built real-time betting systems where correctness matters (financial transactions, regulatory compliance)",
+      "Practiced strict TDD - different discipline than typical web development"
     ],
     "responsibilities": [
-      "Building online betting platforms handling real-time transactions",
-      "Implementing TDD practices and comprehensive test coverage",
-      "Developing internal tools for client management and financial reporting",
-      "Integrating payment gateways and regulatory compliance systems"
+      "Building online betting platform handling real-time financial transactions",
+      "Implementing comprehensive test coverage through TDD practices"
     ],
     "projects": [
-      "Olybet - online sports betting platform",
-      "Internal CRM and financial management system"
+      "Olybet - online sports betting platform"
     ],
     "technologies": [
       "PHP",
@@ -275,21 +253,16 @@
     "startDate": "2016-02",
     "endDate": "2017-01",
     "highlights": [
-      "Led distributed team of 10 engineers on international projects",
-      "Architected enterprise ERP and CRM systems from ground up",
-      "Delivered cross-platform applications spanning web, mobile, and desktop"
+      "Led distributed team of 10 engineers on international ERP/CRM projects",
+      "Built cross-platform applications (web, mobile, desktop) from ground up"
     ],
     "responsibilities": [
-      "Leading distributed team of 10 engineers on international projects",
-      "Architecting enterprise ERP and CRM systems from ground up",
-      "Building cross-platform applications (web, mobile, desktop)",
-      "Managing full project lifecycle from requirements to deployment",
-      "Implementing Agile methodologies and sprint planning"
+      "Leading distributed team and managing full project lifecycle",
+      "Architecting enterprise ERP and CRM systems"
     ],
     "projects": [
       "Columbina - enterprise ERP system (SaaS)",
-      "Olivia - CRM platform for sales teams",
-      "Incrypta - end-to-end encrypted cloud storage"
+      "Olivia - CRM platform for sales teams"
     ],
     "technologies": [
       "C#",
@@ -316,13 +289,10 @@
     "startDate": "2015-11",
     "endDate": "2016-02",
     "highlights": [
-      "Developed full-stack web applications for enterprise clients",
-      "Built secure authentication and authorization systems"
+      "Full-stack development for enterprise clients, promoted to lead within 3 months"
     ],
     "responsibilities": [
-      "Developing full-stack web applications for enterprise clients",
-      "Building REST APIs and database schemas",
-      "Implementing authentication and authorization systems"
+      "Developing full-stack web applications and REST APIs"
     ],
     "projects": [],
     "technologies": [
@@ -347,13 +317,11 @@
     "startDate": "2014-11",
     "endDate": "2015-11",
     "highlights": [
-      "Built warehouse platform for automotive parts e-commerce",
-      "Integrated shipping APIs (DPD, DHL, UPS) automating logistics workflows"
+      "Built warehouse platform for automotive parts e-commerce with shipping integrations (DPD, DHL, UPS)"
     ],
     "responsibilities": [
-      "Building warehouse platform for automotive parts industry",
-      "Integrating shipping APIs (DPD, DHL, UPS) for logistics automation",
-      "Developing internal tools for inventory and employee management"
+      "Building warehouse and logistics automation systems",
+      "Integrating multiple shipping provider APIs"
     ],
     "projects": [
       "Ecu.de - automotive spare parts e-commerce/warehouse platform"
@@ -377,13 +345,10 @@
     "startDate": "2014-02",
     "endDate": "2014-10",
     "highlights": [
-      "Built voter registration platform for political campaign management",
-      "Developed full-stack CRUD functionality with Ruby on Rails"
+      "Built voter registration platform for political campaign management"
     ],
     "responsibilities": [
-      "Building voter registration platform for political campaign management",
-      "Developing full-stack CRUD functionality for voter data management",
-      "Implementing user interfaces and backend API endpoints"
+      "Full-stack Ruby on Rails development"
     ],
     "projects": [
       "Voter registration and campaign management platform"
@@ -408,13 +373,10 @@
     "startDate": "2013-04",
     "endDate": "2014-02",
     "highlights": [
-      "Developed government education resource sharing platform",
-      "Integrated PHP applications within SharePoint enterprise framework"
+      "Built government education resource sharing platform within SharePoint enterprise framework"
     ],
     "responsibilities": [
-      "Developing government education resource sharing platform",
-      "Integrating custom PHP applications within SharePoint framework",
-      "Building backend services for educational content management"
+      "Developing PHP applications integrated with SharePoint"
     ],
     "projects": [
       "Government education resource sharing platform"

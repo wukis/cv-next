@@ -7,7 +7,7 @@
     "email": "jonas@petrik.dev",
     "phone": "+491785119617",
     "url": "https://petrik.dev",
-    "summary": "Full-stack software engineer with 12+ years of experience, mainly in PHP, JavaScript, and Go. I build systems that work well today and can grow tomorrow. Currently leading a team at SCAYLE, handling checkout and payments processing 6.5B+ yearly. I care about clean code, good testing, and helping my team do their best work.",
+    "summary": "Staff Engineer leading checkout at SCAYLE - the platform behind Harrods, Deichmann, and 100+ brands processing €6.5B+ yearly. Zero downtime Black Friday 2025 handling ~550 orders/minute. I put functionality and maintainability first, wear multiple hats (dev, devops, team lead, tech lead), and build systems that work at 3am without waking anyone up.",
     "location": {
       "countryCode": "US",
       "address": "Germany"
