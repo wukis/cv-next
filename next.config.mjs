@@ -6,7 +6,6 @@ const nextConfig = {
       pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
       // Performance optimizations
       compress: true,
-      swcMinify: true,
       // Optimize images
       images: {
         formats: ['image/avif', 'image/webp'],

@@ -28,7 +28,7 @@ export default function DeferredMetricWidgets() {
             return () => cancelIdleCallback(id);
         } else {
             // Fallback for browsers without requestIdleCallback (Safari)
-            const timer = setTimeout(() => setShouldRender(true), 100);
+            const timer = setTimeout(() => setShouldRender(true), 300);
             return () => clearTimeout(timer);
         }
     }, []);

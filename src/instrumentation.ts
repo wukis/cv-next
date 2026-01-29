@@ -22,7 +22,7 @@ export async function register() {
       tracesSampleRate: 1,
       debug: false,
       replaysOnErrorSampleRate: 1.0,
-      replaysSessionSampleRate: 0.1,
+      replaysSessionSampleRate: 0,
     });
   }
 }

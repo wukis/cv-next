@@ -6,7 +6,6 @@ import { ConsoleEasterEgg } from '@/components/ConsoleEasterEgg'
 import linkedin from '@/data/linkedin.json'
 
 import '@/styles/tailwind.css'
-import '@/styles/prism.css'
 import DeferredBackground from "@/components/DeferredBackground";
 import DeferredMetricWidgets from "@/components/DeferredMetricWidgets";
 
