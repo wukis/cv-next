@@ -498,8 +498,8 @@ function CompanyTechStack({
                     isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
                 }`}
             >
-                <div className="px-4 pb-4 space-y-4">
-                    {Object.entries(groupedTechs).map(([category, techs], categoryIndex) => (
+                <div className="px-4 py-4 space-y-4">
+                    {Object.entries(groupedTechs).filter(([, techs]) => techs.length > 0).map(([category, techs], categoryIndex) => (
                         <div
                             key={category}
                             className="transition-all duration-300"
