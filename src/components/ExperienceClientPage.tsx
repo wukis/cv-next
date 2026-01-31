@@ -172,17 +172,17 @@ const getPromotionDiff = (current: WorkInterface, previous: WorkInterface | null
 };
 
 // Promotion diff display component
-function PromotionDiff({ 
-    newItems, 
+function PromotionDiff({
+    newItems,
     roleColors,
-    label 
-}: { 
+    label
+}: {
     newItems: string[];
     roleColors: ReturnType<typeof getBranchColors>;
     label: string;
 }) {
     if (newItems.length === 0) return null;
-    
+
     return (
         <div className="mt-3">
             <div className="flex items-center gap-2 mb-2">
@@ -195,6 +195,36 @@ function PromotionDiff({
                     <div key={i} className="flex items-center gap-2 text-sm">
                         <span className="font-mono text-emerald-500 dark:text-emerald-400 flex-shrink-0 select-none">+</span>
                         <span className="text-neutral-600 dark:text-neutral-400">{item}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// Highlights display component
+function RoleHighlights({
+    highlights
+}: {
+    highlights: string[];
+}) {
+    if (highlights.length === 0) return null;
+
+    return (
+        <div className="mt-3">
+            <div className="flex items-center gap-2 mb-2">
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 dark:bg-amber-400/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 dark:border-amber-400/30">
+                    <svg className="w-2.5 h-2.5 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    highlights
+                </span>
+            </div>
+            <div className="space-y-1.5 pl-2 border-l-2 border-amber-500/30 dark:border-amber-400/30">
+                {highlights.map((item, i) => (
+                    <div key={i} className="flex items-baseline gap-2 text-sm">
+                        <span className="font-mono text-amber-500 dark:text-amber-400 flex-shrink-0 select-none">★</span>
+                        <span className="text-neutral-700 dark:text-neutral-300">{item}</span>
                     </div>
                 ))}
             </div>
@@ -641,9 +671,14 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                                                             )}
                                                         </div>
                                                         
+                                                        {/* Role highlights */}
+                                                        {experience.highlights && experience.highlights.length > 0 && (
+                                                            <RoleHighlights highlights={experience.highlights} />
+                                                        )}
+
                                                         {/* Show promotion diff or base responsibilities */}
                                                         {isPromoted && responsibilitiesToShow.length > 0 && (
-                                                            <PromotionDiff 
+                                                            <PromotionDiff
                                                                 newItems={responsibilitiesToShow}
                                                                 roleColors={roleColors}
                                                                 label="new"
