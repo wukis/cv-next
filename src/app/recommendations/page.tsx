@@ -18,12 +18,12 @@ function Recommendation({ recommendation, index }: { recommendation: Recommendat
   const color = colors[index % colors.length];
   
   return (
-    <article id={recommendation.slug} className="relative flex gap-6 pb-10 group scroll-mt-20">
-      {/* Timeline column */}
-      <div className="relative flex flex-col items-center">
+    <article id={recommendation.slug} className="relative flex gap-4 sm:gap-6 pb-8 sm:pb-10 group scroll-mt-20">
+      {/* Timeline column - hidden on mobile */}
+      <div className="relative hidden sm:flex flex-col items-center">
         {/* Vertical line */}
         <div className="absolute top-6 bottom-0 w-px bg-neutral-300 dark:bg-neutral-600" />
-        
+
         {/* Commit node */}
         <div className="relative w-6 h-6 flex items-center justify-center flex-shrink-0">
           <div className={`absolute inset-0 rounded-full ring-4 ${color.ring}`} />
@@ -32,7 +32,7 @@ function Recommendation({ recommendation, index }: { recommendation: Recommendat
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-w-0 -mt-1">
+      <div className="flex-1 min-w-0 sm:-mt-1">
         {/* Terminal-style card */}
         <div className={`rounded-lg border bg-white/50 dark:bg-neutral-900/50 overflow-hidden transition-all duration-300 ${color.border} group-hover:shadow-lg`}>
           {/* Terminal header - date only on mobile, full path on desktop */}
@@ -113,8 +113,8 @@ export default async function RecommendationsPage() {
           <Recommendation key={recommendation.slug} recommendation={recommendation} index={index} />
         ))}
         
-        {/* End marker */}
-        <div className="relative flex gap-6">
+        {/* End marker - hidden on mobile */}
+        <div className="relative hidden sm:flex gap-6">
           <div className="relative flex flex-col items-center">
             <div className="relative w-6 h-6 flex items-center justify-center flex-shrink-0">
               <div className="w-3 h-3 rounded-full bg-neutral-300 dark:bg-neutral-600 ring-2 ring-white dark:ring-neutral-900" />

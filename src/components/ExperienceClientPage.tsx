@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 
 import { Container } from '@/components/Container';
 import { EducationInterface, WorkInterface } from "@/lib/experience";
@@ -190,9 +190,9 @@ function PromotionDiff({
                     +{newItems.length} {label}
                 </span>
             </div>
-            <div className="space-y-1 pl-2 border-l-2 border-emerald-500/30">
+            <div className="space-y-1.5 pl-2 border-l-2 border-emerald-500/30">
                 {newItems.map((item, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm">
+                    <div key={i} className="flex items-baseline gap-2 text-sm">
                         <span className="font-mono text-emerald-500 dark:text-emerald-400 flex-shrink-0 select-none">+</span>
                         <span className="text-neutral-600 dark:text-neutral-400">{item}</span>
                     </div>
@@ -277,58 +277,10 @@ function groupTechByCategory(technologies: string[]): Record<string, string[]> {
     return sortedGrouped;
 }
 
-// Tooltip component
-function TechTooltip({
-    tech,
-    isVisible,
-    position
-}: {
-    tech: string;
-    isVisible: boolean;
-    position: { top: number; left: number }
-}) {
-    const category = getTechCategory(tech);
-
-    return (
-        <div
-            className={`fixed z-50 pointer-events-none transition-all duration-150 ${
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'
-            }`}
-            style={{
-                top: position.top - 8,
-                left: position.left,
-                transform: 'translate(-50%, -100%)'
-            }}
-        >
-            <div className="px-2.5 py-1.5 rounded-md bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 text-xs shadow-lg">
-                <div className="font-medium">{tech}</div>
-                <div className="text-neutral-400 dark:text-neutral-500 text-[10px]">{category}</div>
-            </div>
-            {/* Tooltip arrow */}
-            <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-neutral-900 dark:border-t-neutral-100" />
-        </div>
-    );
-}
-
 // Technology pill component for expanded view
-function TechPill({
-    tech,
-    onHover,
-    onLeave,
-    onTouch
-}: {
-    tech: string;
-    onHover: (e: React.MouseEvent) => void;
-    onLeave: () => void;
-    onTouch: (e: React.TouchEvent) => void;
-}) {
+function TechPill({ tech }: { tech: string }) {
     return (
-        <span
-            className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-mono bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700 cursor-default hover:bg-neutral-200 dark:hover:bg-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600 transition-colors"
-            onMouseEnter={onHover}
-            onMouseLeave={onLeave}
-            onTouchStart={onTouch}
-        >
+        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-mono bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700">
             <TechIcon tech={tech} className="w-3.5 h-3.5 opacity-70" />
             {tech}
         </span>
@@ -336,28 +288,13 @@ function TechPill({
 }
 
 // Technology icon (collapsed view)
-function TechIconButton({
-    tech,
-    onHover,
-    onLeave,
-    onTouch
-}: {
-    tech: string;
-    onHover: (e: React.MouseEvent) => void;
-    onLeave: () => void;
-    onTouch: (e: React.TouchEvent) => void;
-}) {
+function TechIconButton({ tech }: { tech: string }) {
     return (
         <span
-            className="inline-flex items-center justify-center w-7 h-7 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700 cursor-default hover:bg-neutral-200 dark:hover:bg-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600 transition-colors"
-            onMouseEnter={onHover}
-            onMouseLeave={onLeave}
-            onTouchStart={onTouch}
-            role="button"
-            tabIndex={0}
+            className="inline-flex items-center justify-center w-7 h-7 flex-shrink-0 aspect-square rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700"
             aria-label={tech}
         >
-            <TechIcon tech={tech} className="w-4 h-4" />
+            <TechIcon tech={tech} className="w-4 h-4 flex-shrink-0" />
         </span>
     );
 }
@@ -437,17 +374,6 @@ function CompanyTechStack({
     colors: ReturnType<typeof getBranchColors>;
 }) {
     const [isExpanded, setIsExpanded] = useState(false);
-    const [tooltip, setTooltip] = useState<{ tech: string; position: { top: number; left: number } } | null>(null);
-    const [touchTooltip, setTouchTooltip] = useState<{ tech: string; position: { top: number; left: number } } | null>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
-
-    // Auto-dismiss touch tooltip
-    useEffect(() => {
-        if (touchTooltip) {
-            const timer = setTimeout(() => setTouchTooltip(null), 1500);
-            return () => clearTimeout(timer);
-        }
-    }, [touchTooltip]);
 
     if (technologies.length === 0) return null;
 
@@ -456,38 +382,7 @@ function CompanyTechStack({
     const hiddenCount = technologies.length - VISIBLE_COUNT;
     const groupedTechs = groupTechByCategory(technologies);
 
-    const handleHover = (tech: string) => (e: React.MouseEvent) => {
-        const rect = (e.target as HTMLElement).getBoundingClientRect();
-        setTooltip({
-            tech,
-            position: {
-                top: rect.top,
-                left: rect.left + rect.width / 2
-            }
-        });
-    };
-
-    const handleLeave = () => {
-        setTooltip(null);
-    };
-
-    const handleTouch = (tech: string) => (e: React.TouchEvent) => {
-        e.preventDefault();
-        const rect = (e.target as HTMLElement).getBoundingClientRect();
-        setTouchTooltip({
-            tech,
-            position: {
-                top: rect.top,
-                left: rect.left + rect.width / 2
-            }
-        });
-    };
-
-    const toggleExpand = () => {
-        setIsExpanded(!isExpanded);
-        setTooltip(null);
-        setTouchTooltip(null);
-    };
+    const toggleExpand = () => setIsExpanded(!isExpanded);
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -496,13 +391,8 @@ function CompanyTechStack({
         }
     };
 
-    const activeTooltip = touchTooltip || tooltip;
-
     return (
-        <div
-            ref={containerRef}
-            className="bg-neutral-50/50 dark:bg-neutral-800/30 border-t border-neutral-100 dark:border-neutral-800"
-        >
+        <div className="bg-neutral-50/50 dark:bg-neutral-800/30 border-t border-neutral-100 dark:border-neutral-800">
             {/* Header row - always visible, clickable */}
             <div
                 className="flex items-center justify-between gap-2 px-4 py-3 cursor-pointer select-none hover:bg-neutral-100/50 dark:hover:bg-neutral-700/30 transition-colors"
@@ -514,25 +404,19 @@ function CompanyTechStack({
                 aria-controls="tech-stack-content"
             >
                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                    {/* Title */}
+                    {/* Title - hide text on mobile, keep icon */}
                     <div className="flex items-center gap-2 text-xs font-mono text-neutral-600 dark:text-neutral-300 uppercase tracking-wider flex-shrink-0">
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                         </svg>
-                        Tech Stack
+                        <span className="hidden sm:inline">Tech Stack</span>
                     </div>
 
                     {/* Collapsed preview */}
                     {!isExpanded && (
                         <div className="flex items-center gap-1.5 overflow-hidden">
                             {visibleTechs.map((tech, i) => (
-                                <TechIconButton
-                                    key={i}
-                                    tech={tech}
-                                    onHover={handleHover(tech)}
-                                    onLeave={handleLeave}
-                                    onTouch={handleTouch(tech)}
-                                />
+                                <TechIconButton key={i} tech={tech} />
                             ))}
                             {hiddenCount > 0 && (
                                 <span className="text-xs font-mono text-neutral-500 dark:text-neutral-400 px-1.5 py-0.5 bg-neutral-200/50 dark:bg-neutral-700/50 rounded">
@@ -579,28 +463,13 @@ function CompanyTechStack({
                             </div>
                             <div className="flex flex-wrap gap-1.5">
                                 {techs.map((tech, i) => (
-                                    <TechPill
-                                        key={i}
-                                        tech={tech}
-                                        onHover={handleHover(tech)}
-                                        onLeave={handleLeave}
-                                        onTouch={handleTouch(tech)}
-                                    />
+                                    <TechPill key={i} tech={tech} />
                                 ))}
                             </div>
                         </div>
                     ))}
                 </div>
             </div>
-
-            {/* Tooltip portal */}
-            {activeTooltip && (
-                <TechTooltip
-                    tech={activeTooltip.tech}
-                    isVisible={true}
-                    position={activeTooltip.position}
-                />
-            )}
         </div>
     );
 }
@@ -684,14 +553,14 @@ function Education({ education, isLast }: { education: EducationInterface; isLas
     const duration = getDuration(education.startDate, education.endDate);
     
     return (
-        <div className="relative flex gap-6 pb-8 group">
-            {/* Timeline column */}
-            <div className="relative flex flex-col items-center">
+        <div className="relative flex gap-4 sm:gap-6 pb-6 sm:pb-8 group">
+            {/* Timeline column - hidden on mobile */}
+            <div className="relative hidden sm:flex flex-col items-center">
                 {/* Vertical line */}
                 {!isLast && (
                     <div className="absolute top-6 bottom-0 w-px bg-neutral-300 dark:bg-neutral-600" />
                 )}
-                
+
                 {/* Commit node - matching work experience style */}
                 <div className="relative w-6 h-6 flex items-center justify-center flex-shrink-0">
                     {/* Outer glow ring */}
@@ -702,7 +571,7 @@ function Education({ education, isLast }: { education: EducationInterface; isLas
             </div>
 
             {/* Content */}
-            <div className="flex-1 min-w-0 -mt-1">
+            <div className="flex-1 min-w-0 sm:-mt-1">
                 {/* Terminal-style card - matching work experience */}
                 <div className={`rounded-lg border bg-white/50 dark:bg-neutral-900/50 overflow-hidden transition-all duration-300 ${colors.border} group-hover:shadow-lg`}>
                     {/* Terminal header - matching work experience */}
@@ -801,14 +670,14 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                 const colors = getBranchColors(primaryRole);
                 
                 return (
-                    <div key={company} className="relative flex gap-6 pb-8 group">
-                        {/* Timeline column */}
-                        <div className="relative flex flex-col items-center">
+                    <div key={company} className="relative flex gap-4 sm:gap-6 pb-6 sm:pb-8 group">
+                        {/* Timeline column - hidden on mobile */}
+                        <div className="relative hidden sm:flex flex-col items-center">
                             {/* Vertical line */}
                             {!isLast && (
                                 <div className="absolute top-6 bottom-0 w-px bg-neutral-300 dark:bg-neutral-600" />
                             )}
-                            
+
                             {/* Commit node - restored previous style with outer glow ring */}
                             <div className="relative w-6 h-6 flex items-center justify-center flex-shrink-0">
                                 {/* Ping animation for current position */}
@@ -823,7 +692,7 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                         </div>
 
                         {/* Content */}
-                        <div className="flex-1 min-w-0 -mt-1">
+                        <div className="flex-1 min-w-0 sm:-mt-1">
                             {/* Terminal-style card */}
                             <div className={`rounded-lg border bg-white/50 dark:bg-neutral-900/50 overflow-hidden transition-all duration-300 ${colors.border} group-hover:shadow-lg`}>
                                 {/* Terminal header */}
@@ -967,9 +836,9 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                                                                         base responsibilities
                                                                     </span>
                                                                 </div>
-                                                                <div className="space-y-1 pl-2 border-l-2 border-neutral-300 dark:border-neutral-600">
+                                                                <div className="space-y-1.5 pl-2 border-l-2 border-neutral-300 dark:border-neutral-600">
                                                                     {responsibilitiesToShow.map((item, i) => (
-                                                                        <div key={i} className="flex items-center gap-2 text-sm">
+                                                                        <div key={i} className="flex items-baseline gap-2 text-sm">
                                                                             <span className="font-mono text-neutral-500 dark:text-neutral-400 flex-shrink-0 select-none">•</span>
                                                                             <span className="text-neutral-600 dark:text-neutral-400">{item}</span>
                                                                         </div>
@@ -981,10 +850,10 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                                                         {/* For single role companies, show all responsibilities in original format */}
                                                         {!hasMultipleRoles && responsibilitiesToShow.length > 0 && (
                                                             <div className="mt-3">
-                                                                <div className="space-y-1">
+                                                                <div className="space-y-1.5">
                                                                     {responsibilitiesToShow.map((item, i) => (
-                                                                        <div key={i} className="flex items-center gap-2 text-sm">
-                                                                            <span className={`w-1 h-1 rounded-full flex-shrink-0 ${roleColors.node}`} />
+                                                                        <div key={i} className="flex items-start gap-2 text-sm">
+                                                                            <span className={`w-1 h-1 mt-2 rounded-full flex-shrink-0 ${roleColors.node}`} />
                                                                             <span className="text-neutral-600 dark:text-neutral-400">{item}</span>
                                                                         </div>
                                                                     ))}
