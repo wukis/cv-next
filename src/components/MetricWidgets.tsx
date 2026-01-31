@@ -54,7 +54,7 @@ function Sparkline({ data, color, width = 80, height = 24, isFocused = false, is
   }).join(' ');
 
   // More muted when not focused, vivid when focused
-  const opacity = isFocused ? (isDark ? 0.85 : 1) : (isDark ? 0.25 : 0.4);
+  const opacity = isFocused ? (isDark ? 0.85 : 1) : (isDark ? 0.35 : 0.4);
   const glowSize = isFocused ? (isDark ? 4 : 2) : 0;
   const strokeWidth = isDark ? 1.5 : 2;
 
@@ -83,7 +83,7 @@ function MiniBarChart({ values, color, width = 60, height = 20, isFocused = fals
 }) {
   const barWidth = (width / values.length) - 2;
   // More muted when not focused
-  const baseOpacity = isFocused ? (isDark ? 0.85 : 1) : (isDark ? 0.25 : 0.4);
+  const baseOpacity = isFocused ? (isDark ? 0.85 : 1) : (isDark ? 0.35 : 0.4);
   const glowSize = isFocused ? (isDark ? 4 : 2) : 0;
   
   return (
@@ -123,7 +123,7 @@ function CircularGauge({ value, color, size = 32, isFocused = false, isDark = tr
   const offset = circumference - (value / 100) * circumference;
 
   // More muted when not focused
-  const opacity = isFocused ? (isDark ? 0.85 : 1) : (isDark ? 0.25 : 0.4);
+  const opacity = isFocused ? (isDark ? 0.85 : 1) : (isDark ? 0.35 : 0.4);
   const glowSize = isFocused ? (isDark ? 5 : 2) : 0;
 
   return (

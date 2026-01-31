@@ -627,7 +627,7 @@ const HexagonServiceNetwork: React.FC = () => {
                 // Animate connection establishment (speed based on focus)
                 if (!conn.isEstablished) {
                     conn.establishProgress += conn.establishSpeed * establishSpeedMultiplier;
-                    conn.opacity = Math.min(conn.establishProgress, 1) * (isDark ? 0.25 : 0.45);
+                    conn.opacity = Math.min(conn.establishProgress, 1) * (isDark ? 0.4 : 0.45);
 
                     if (conn.establishProgress >= 1) {
                         conn.isEstablished = true;
@@ -784,7 +784,7 @@ const HexagonServiceNetwork: React.FC = () => {
                 const trailX = startX + (endX - startX) * trailStart;
                 const trailY = startY + (endY - startY) * trailStart;
 
-                const trailOpacity = (isDark ? 0.2 : 0.35) * depthFade;
+                const trailOpacity = (isDark ? 0.3 : 0.35) * depthFade;
                 const gradient = ctx.createLinearGradient(trailX, trailY, x, y);
                 gradient.addColorStop(0, 'transparent');
                 gradient.addColorStop(1, colors.main.replace('VAL', String(trailOpacity)));
@@ -802,7 +802,7 @@ const HexagonServiceNetwork: React.FC = () => {
 
                 // Packet head with pulsing effect
                 const pulsePhase = Math.sin(timeRef.current * 8 + packet.progress * Math.PI * 2) * 0.3 + 1;
-                const headOpacity = (isDark ? 0.75 : 0.9) * depthFade;
+                const headOpacity = (isDark ? 0.85 : 0.9) * depthFade;
                 const size = packet.size * depthFade * pulsePhase;
                 ctx.fillStyle = colors.main.replace('VAL', String(headOpacity));
 
@@ -854,8 +854,8 @@ const HexagonServiceNetwork: React.FC = () => {
                 const depthFade = Math.max(0.3, Math.min(1, scale));
 
                 const colors = COLORS[node.color as keyof typeof COLORS];
-                const baseOpacity = isDark ? 0.15 : 0.3;
-                const activeOpacity = node.isActive ? (isDark ? 0.25 : 0.5) : baseOpacity;
+                const baseOpacity = isDark ? 0.25 : 0.3;
+                const activeOpacity = node.isActive ? (isDark ? 0.4 : 0.5) : baseOpacity;
                 const pulseOpacity = (activeOpacity + Math.sin(node.pulse) * 0.05) * depthFade;
 
                 // Outer glow for active nodes
@@ -865,7 +865,7 @@ const HexagonServiceNetwork: React.FC = () => {
                         node.screenX, node.screenY, currentSize * 0.5,
                         node.screenX, node.screenY, glowSize
                     );
-                    glow.addColorStop(0, colors.glow.replace('VAL', String((isDark ? 0.1 : 0.15) * depthFade)));
+                    glow.addColorStop(0, colors.glow.replace('VAL', String((isDark ? 0.12 : 0.15) * depthFade)));
                     glow.addColorStop(1, 'transparent');
                     ctx.fillStyle = glow;
                     ctx.beginPath();
@@ -916,7 +916,7 @@ const HexagonServiceNetwork: React.FC = () => {
 
                 // Service label (only for foreground nodes)
                 if (depthFade > 0.6) {
-                    const labelOpacity = (isDark ? 0.45 : 0.7) * depthFade;
+                    const labelOpacity = (isDark ? 0.6 : 0.7) * depthFade;
                     // Adjust font size based on label length
                     const baseFontSize = node.label.length > 5 ? 6 : 7;
                     ctx.font = `bold ${Math.round(baseFontSize * depthFade)}px ui-monospace, monospace`;
