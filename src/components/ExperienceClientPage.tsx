@@ -850,10 +850,10 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                                                         {/* For single role companies, show all responsibilities in original format */}
                                                         {!hasMultipleRoles && responsibilitiesToShow.length > 0 && (
                                                             <div className="mt-3">
-                                                                <div className="space-y-1.5">
+                                                                <div className={`space-y-1.5 pl-2 border-l-2 ${roleColors.border}`}>
                                                                     {responsibilitiesToShow.map((item, i) => (
-                                                                        <div key={i} className="flex items-start gap-2 text-sm">
-                                                                            <span className={`w-1 h-1 mt-2 rounded-full flex-shrink-0 ${roleColors.node}`} />
+                                                                        <div key={i} className="flex items-baseline gap-2 text-sm">
+                                                                            <span className={`font-mono ${roleColors.text} flex-shrink-0 select-none`}>•</span>
                                                                             <span className="text-neutral-600 dark:text-neutral-400">{item}</span>
                                                                         </div>
                                                                     ))}
