@@ -2,6 +2,20 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
+/* Log terminal scrolling animation */
+@keyframes scrollLogs {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+
+.animate-scrollLogs {
+  animation: scrollLogs 25s linear infinite;
+}
+
 /* Animation focus mode - makes content transparent to show background animation */
 @layer utilities {
   .animation-focus main,

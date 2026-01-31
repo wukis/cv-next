@@ -7,6 +7,7 @@ import linkedin from '@/data/linkedin.json'
 import '@/styles/tailwind.css'
 import DeferredBackground from "@/components/DeferredBackground";
 import DeferredMetricWidgets from "@/components/DeferredMetricWidgets";
+import DeferredLogTerminal from "@/components/DeferredLogTerminal";
 import DeferredConsoleEasterEgg from "@/components/DeferredConsoleEasterEgg";
 
 const siteUrl = 'https://petrik.dev'
@@ -92,6 +93,7 @@ export default function RootLayout({
         <DeferredConsoleEasterEgg />
         <DeferredBackground />
         <DeferredMetricWidgets />
+        <DeferredLogTerminal />
         <Providers>
           <div className="flex w-full">
             <Layout>{children}</Layout>
