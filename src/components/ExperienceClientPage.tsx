@@ -9,16 +9,20 @@ import Image from "next/image";
 
 // Tech stack icons - using dynamic imports to reduce bundle size
 // Only import icons that are actually used in the data
-import { 
+import {
     SiPhp, SiGo, SiTypescript, SiJavascript, SiRuby, SiSharp, SiHtml5, SiCss3,
     SiLaravel, SiSymfony, SiReact, SiVuedotjs, SiRubyonrails, SiDotnet,
-    SiMysql, SiPostgresql, SiRedis, SiElasticsearch,
+    SiMysql, SiPostgresql, SiRedis, SiElasticsearch, SiSqlite,
     SiDocker, SiKubernetes, SiAmazonwebservices, SiDatadog,
-    SiJquery
+    SiJquery, SiGitlab, SiJest, SiCypress,
+    SiNewrelic, SiGraphql, SiBitbucket, SiTerraform,
+    SiRedux, SiJenkins, SiSentry, SiBootstrap, SiSass, SiGit, SiNginx,
+    SiCakephp, SiAlgolia, SiAwslambda
 } from 'react-icons/si';
-import { 
-    VscCode, VscServerProcess, VscDebugAll, VscChecklist, VscGitMerge, 
-    VscServer, VscSymbolInterface, VscRocket, VscDatabase
+import {
+    VscCode, VscServerProcess, VscDebugAll, VscChecklist, VscGitMerge,
+    VscServer, VscSymbolInterface, VscRocket, VscDatabase, VscBeaker,
+    VscBell, VscKey, VscPackage, VscGraph
 } from 'react-icons/vsc';
 
 const getDuration = (startDate: string, endDate: string): { years: number, months: number } => {
@@ -235,10 +239,10 @@ function RoleHighlights({
 // Tech category mapping
 const TECH_CATEGORIES: Record<string, string[]> = {
     'Languages': ['PHP', 'Go', 'TypeScript', 'JavaScript', 'Ruby', 'C#', 'HTML', 'CSS'],
-    'Frameworks': ['Laravel', 'Symfony', 'React', 'React Native', 'Vue.js', 'Rails', '.NET', 'jQuery', 'Laminas', 'Phalcon', 'Xamarin'],
-    'Databases': ['MySQL', 'PostgreSQL', 'Redis', 'Elasticsearch', 'MSSQL'],
-    'Infrastructure': ['Docker', 'Kubernetes', 'AWS', 'Datadog', 'FrankenPHP', 'Road-Runner', 'SharePoint'],
-    'Practices': ['REST API', 'Microservices', 'CI/CD', 'DevOps', 'Agile', 'SCRUM', 'TDD', 'Unit Testing']
+    'Frameworks': ['Laravel', 'Symfony', 'React', 'React Native', 'Vue.js', 'Rails', '.NET', 'jQuery', 'Laminas', 'Phalcon', 'Xamarin', 'CakePHP', 'Yii2', 'ASP.NET MVC', 'Redux'],
+    'Databases': ['MySQL', 'PostgreSQL', 'Redis', 'Elasticsearch', 'MSSQL', 'SQLite'],
+    'Infrastructure': ['Docker', 'Kubernetes', 'AWS', 'Datadog', 'FrankenPHP', 'Road-Runner', 'SharePoint', 'Nginx', 'SQS', 'SNS', 'GitLab CI', 'Bitbucket Pipelines', 'Jenkins', 'Terraform', 'Capistrano', 'New Relic', 'Sentry', 'k6', 'Laravel Nova', 'Laravel Queues', 'OneSignal', 'AWS Secrets Manager', 'EC2', 'S3', 'RDS', 'Lambda', 'Logstash', 'Kibana', 'Bitbucket', 'Bugsnag', 'Algolia'],
+    'Practices': ['REST API', 'Microservices', 'CI/CD', 'DevOps', 'Agile', 'SCRUM', 'TDD', 'Unit Testing', 'GraphQL', 'gRPC', 'PHPUnit', 'Jest', 'Cypress', 'Playwright', 'RSpec', 'Bootstrap', 'SASS', 'Git']
 };
 
 // Get category for a technology
@@ -322,20 +326,43 @@ function TechIcon({ tech, className = "w-3.5 h-3.5" }: { tech: string; className
         'vue.js': SiVuedotjs,
         'rails': SiRubyonrails,
         '.net': SiDotnet,
+        'redux': SiRedux,
+        'cakephp': SiCakephp,
         // Databases
         'mysql': SiMysql,
         'postgresql': SiPostgresql,
         'redis': SiRedis,
         'elasticsearch': SiElasticsearch,
-        // Infrastructure
+        'sqlite': SiSqlite,
+        // Infrastructure & DevOps
         'docker': SiDocker,
         'kubernetes': SiKubernetes,
         'aws': SiAmazonwebservices,
         'datadog': SiDatadog,
+        'gitlab ci': SiGitlab,
+        'bitbucket': SiBitbucket,
+        'bitbucket pipelines': SiBitbucket,
+        'terraform': SiTerraform,
+        'jenkins': SiJenkins,
+        'nginx': SiNginx,
+        'git': SiGit,
+        // Monitoring
+        'new relic': SiNewrelic,
+        'sentry': SiSentry,
+        'algolia': SiAlgolia,
+        // Testing
+        'jest': SiJest,
+        'cypress': SiCypress,
+        // API & Protocols
+        'graphql': SiGraphql,
+        // CSS
+        'bootstrap': SiBootstrap,
+        'sass': SiSass,
         // Tools
         'jquery': SiJquery,
+        'lambda': SiAwslambda,
     };
-    
+
     // VSCode icons for concepts/methods (monoline style)
     const conceptIcons: Record<string, React.ComponentType<{ className?: string }>> = {
         'rest api': VscSymbolInterface,
@@ -353,6 +380,30 @@ function TechIcon({ tech, className = "w-3.5 h-3.5" }: { tech: string; className
         'xamarin': VscCode,
         'mssql': VscDatabase,
         'sharepoint': VscServer,
+        // AWS Services
+        'sqs': VscPackage,
+        'sns': VscBell,
+        'ec2': VscServer,
+        's3': VscPackage,
+        'rds': VscDatabase,
+        'aws secrets manager': VscKey,
+        // Testing & Quality
+        'phpunit': VscBeaker,
+        'rspec': VscBeaker,
+        'k6': VscGraph,
+        'playwright': VscBeaker,
+        // Other tools
+        'logstash': VscServerProcess,
+        'kibana': VscGraph,
+        'capistrano': VscRocket,
+        'onesignal': VscBell,
+        'laravel nova': VscCode,
+        'laravel queues': VscPackage,
+        'bugsnag': VscDebugAll,
+        'yii2': VscCode,
+        'asp.net mvc': SiDotnet,
+        // API & Protocols
+        'grpc': VscSymbolInterface,
     };
     
     const IconComponent = iconMap[normalizedTech] || conceptIcons[normalizedTech];
