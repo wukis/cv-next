@@ -16,7 +16,7 @@ const SKIP_PATTERNS = [
   /\.map$/,
 ];
 
-// Light obfuscation - protects code without major performance impact
+// Minimal obfuscation - variable mangling only, no runtime overhead
 const OBFUSCATOR_OPTIONS = {
   compact: true,
   controlFlowFlattening: false,
@@ -29,14 +29,7 @@ const OBFUSCATOR_OPTIONS = {
   selfDefending: false,
   simplify: true,
   splitStrings: false,
-  stringArray: true,
-  stringArrayCallsTransform: false,
-  stringArrayEncoding: [],
-  stringArrayIndexShift: false,
-  stringArrayRotate: true,
-  stringArrayShuffle: true,
-  stringArrayWrappersCount: 0,
-  stringArrayThreshold: 0.5,
+  stringArray: false,
   transformObjectKeys: false,
   unicodeEscapeSequence: false,
 };
