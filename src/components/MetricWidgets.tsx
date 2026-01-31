@@ -156,6 +156,9 @@ function CircularGauge({ value, color, size = 32, isFocused = false, isDark = tr
 // Emergency state type
 type EmergencyState = 'normal' | 'emergency' | 'recovery';
 
+// Status state type for status widgets
+type StatusState = 'healthy' | 'degraded' | 'critical';
+
 // Individual metric widget
 interface MetricWidgetProps {
   type: 'sparkline' | 'bars' | 'gauge' | 'counter' | 'status';
@@ -165,6 +168,8 @@ interface MetricWidgetProps {
   isFocused?: boolean;
   emergencyState?: EmergencyState;
   isDark?: boolean;
+  minValue?: number; // For gauges - minimum realistic value
+  maxValue?: number; // For gauges - maximum realistic value
 }
 
 const EMERGENCY_RED_DARK = '#ff3333';
@@ -172,9 +177,23 @@ const EMERGENCY_RED_LIGHT = '#cc0000';
 const RECOVERY_GREEN_DARK = '#33ff66';
 const RECOVERY_GREEN_LIGHT = '#009933';
 
-function MetricWidget({ type, label, colorIndex, delay = 0, isFocused = false, emergencyState = 'normal', isDark = true }: MetricWidgetProps) {
+// Generate random status state with realistic distribution
+// Services are mostly healthy (85%), occasionally degraded (12%), rarely critical (3%)
+const generateStatusState = (): StatusState => {
+  const rand = Math.random();
+  if (rand < 0.85) return 'healthy';
+  if (rand < 0.97) return 'degraded';
+  return 'critical';
+};
+
+function MetricWidget({ type, label, colorIndex, delay = 0, isFocused = false, emergencyState = 'normal', isDark = true, minValue, maxValue }: MetricWidgetProps) {
   const [data, setData] = useState<number[]>(() => generateSparklineData());
-  const [value, setValue] = useState(() => Math.floor(Math.random() * 80) + 10);
+  // Use minValue/maxValue for gauges if provided, otherwise default range
+  const initialValue = minValue !== undefined && maxValue !== undefined
+    ? minValue + Math.random() * (maxValue - minValue)
+    : Math.floor(Math.random() * 80) + 10;
+  const [value, setValue] = useState(initialValue);
+  const [statusState, setStatusState] = useState<StatusState>(() => generateStatusState());
   const [visible, setVisible] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -196,9 +215,20 @@ function MetricWidget({ type, label, colorIndex, delay = 0, isFocused = false, e
         setData(Array.from({ length: 6 }, () => Math.random() * 80 + 10));
       } else if (type === 'gauge' || type === 'counter') {
         setValue(prev => {
+          // For gauges with min/max, stay within bounds
+          if (minValue !== undefined && maxValue !== undefined) {
+            const range = maxValue - minValue;
+            const change = (Math.random() - 0.5) * (range * 0.1);
+            return Math.max(minValue, Math.min(maxValue, prev + change));
+          }
           const change = (Math.random() - 0.5) * 10;
           return Math.max(0, Math.min(100, prev + change));
         });
+      } else if (type === 'status') {
+        // Occasionally update status state (less frequently)
+        if (Math.random() < 0.15) {
+          setStatusState(generateStatusState());
+        }
       }
     }, 1500 + Math.random() * 1000);
 
@@ -206,15 +236,31 @@ function MetricWidget({ type, label, colorIndex, delay = 0, isFocused = false, e
       clearTimeout(appearTimeout);
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [delay, type]);
+  }, [delay, type, minValue, maxValue]);
 
   // Get appropriate color based on theme
   const baseColor = isDark ? darkModeColors[colorIndex] : lightModeColors[colorIndex];
   const emergencyRed = isDark ? EMERGENCY_RED_DARK : EMERGENCY_RED_LIGHT;
   const recoveryGreen = isDark ? RECOVERY_GREEN_DARK : RECOVERY_GREEN_LIGHT;
-  
-  // Determine effective color based on emergency state
-  const effectiveColor = emergencyState === 'emergency' ? emergencyRed : 
+
+  // Status-specific colors
+  const statusHealthyColor = isDark ? '#00ff00' : '#009900';
+  const statusDegradedColor = isDark ? '#ffaa00' : '#cc7700';
+  const statusCriticalColor = isDark ? '#ff4444' : '#cc0000';
+
+  // Get color for status widget based on its state
+  const getStatusColor = (): string => {
+    if (emergencyState === 'emergency') return emergencyRed;
+    if (emergencyState === 'recovery') return recoveryGreen;
+    switch (statusState) {
+      case 'healthy': return statusHealthyColor;
+      case 'degraded': return statusDegradedColor;
+      case 'critical': return statusCriticalColor;
+    }
+  };
+
+  // Determine effective color based on emergency state (for non-status widgets)
+  const effectiveColor = emergencyState === 'emergency' ? emergencyRed :
                          emergencyState === 'recovery' ? recoveryGreen : baseColor;
 
   // Muted vs focused styling - widgets only fully visible when background is in focus
@@ -271,22 +317,30 @@ function MetricWidget({ type, label, colorIndex, delay = 0, isFocused = false, e
         <MiniBarChart values={data.slice(0, 6)} color={effectiveColor} width={56} height={18} isFocused={isActive} isDark={isDark} />
       )}
       
-      {type === 'gauge' && (
-        <div className="flex items-center gap-2">
-          <CircularGauge value={value} color={effectiveColor} size={28} isFocused={isActive} isDark={isDark} />
-          <span 
-            className="text-[10px] font-mono transition-all duration-300"
-            style={{ 
-              color: effectiveColor, 
-              textShadow: isActive && isDark ? `0 0 6px ${effectiveColor}` : 'none',
-              opacity: isActive ? 1 : (isDark ? 0.3 : 0.45),
-              fontWeight: isDark ? 'normal' : 500
-            }}
-          >
-            {emergencyState === 'emergency' ? 'CRIT' : Math.round(value) + '%'}
-          </span>
-        </div>
-      )}
+      {type === 'gauge' && (() => {
+        // Show decimal precision for high-value gauges (like uptime 99.5-99.99)
+        const isHighPrecision = minValue !== undefined && minValue > 90;
+        const displayValue = emergencyState === 'emergency' ? 'CRIT' :
+                            isHighPrecision ? value.toFixed(1) + '%' :
+                            Math.round(value) + '%';
+
+        return (
+          <div className="flex items-center gap-2">
+            <CircularGauge value={value} color={effectiveColor} size={28} isFocused={isActive} isDark={isDark} />
+            <span
+              className="text-[10px] font-mono transition-all duration-300"
+              style={{
+                color: effectiveColor,
+                textShadow: isActive && isDark ? `0 0 6px ${effectiveColor}` : 'none',
+                opacity: isActive ? 1 : (isDark ? 0.3 : 0.45),
+                fontWeight: isDark ? 'normal' : 500
+              }}
+            >
+              {displayValue}
+            </span>
+          </div>
+        );
+      })()}
       
       {type === 'counter' && (
         <span 
@@ -302,31 +356,36 @@ function MetricWidget({ type, label, colorIndex, delay = 0, isFocused = false, e
         </span>
       )}
       
-      {type === 'status' && (
-        <div className="flex items-center gap-1.5">
-          <span 
-            className={`w-2 h-2 rounded-full transition-all duration-300 ${emergencyState === 'emergency' || isActive ? 'animate-pulse' : ''}`}
-            style={{ 
-              backgroundColor: effectiveColor, 
-              boxShadow: isActive ? `0 0 ${isDark ? 8 : 4}px ${effectiveColor}` : 'none',
-              opacity: isActive ? 1 : (isDark ? 0.35 : 0.5)
-            }}
-          />
-          <span 
-            className={`text-[10px] font-mono transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
-            style={{ 
-              opacity: isActive ? 0.8 : (isDark ? 0.3 : 0.4),
-              color: emergencyState === 'emergency' ? emergencyRed : 
-                     emergencyState === 'recovery' ? recoveryGreen : undefined,
-              fontWeight: isDark ? 'normal' : 500
-            }}
-          >
-            {emergencyState === 'emergency' ? 'ALERT!' : 
-             emergencyState === 'recovery' ? 'OK' : 
-             (value > 50 ? 'healthy' : 'degraded')}
-          </span>
-        </div>
-      )}
+      {type === 'status' && (() => {
+        const statusColor = getStatusColor();
+        const statusText = emergencyState === 'emergency' ? 'ALERT!' :
+                          emergencyState === 'recovery' ? 'OK' :
+                          statusState;
+        const shouldPulse = emergencyState === 'emergency' || statusState === 'critical' || isActive;
+
+        return (
+          <div className="flex items-center gap-1.5">
+            <span
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${shouldPulse ? 'animate-pulse' : ''}`}
+              style={{
+                backgroundColor: statusColor,
+                boxShadow: isActive ? `0 0 ${isDark ? 8 : 4}px ${statusColor}` : 'none',
+                opacity: isActive ? 1 : (isDark ? 0.35 : 0.5)
+              }}
+            />
+            <span
+              className={`text-[10px] font-mono transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
+              style={{
+                opacity: isActive ? 0.8 : (isDark ? 0.3 : 0.4),
+                color: statusColor,
+                fontWeight: isDark ? 'normal' : 500
+              }}
+            >
+              {statusText}
+            </span>
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -336,28 +395,31 @@ type WidgetConfig = {
   type: 'sparkline' | 'bars' | 'gauge' | 'counter' | 'status';
   label: string;
   colorIndex: number;
+  // For gauge widgets - realistic value ranges
+  minValue?: number;
+  maxValue?: number;
 };
 
 const leftWidgets: WidgetConfig[] = [
   { type: 'sparkline', label: 'req/sec', colorIndex: 0 },
-  { type: 'gauge', label: 'cpu', colorIndex: 2 },
+  { type: 'gauge', label: 'cpu', colorIndex: 2, minValue: 25, maxValue: 75 },
   { type: 'bars', label: 'throughput', colorIndex: 1 },
   { type: 'status', label: 'api-gw', colorIndex: 2 },
   { type: 'counter', label: 'events', colorIndex: 5 },
   { type: 'sparkline', label: 'latency', colorIndex: 4 },
-  { type: 'gauge', label: 'memory', colorIndex: 6 },
+  { type: 'gauge', label: 'memory', colorIndex: 6, minValue: 45, maxValue: 80 },
   { type: 'status', label: 'redis', colorIndex: 2 },
 ];
 
 const rightWidgets: WidgetConfig[] = [
-  { type: 'gauge', label: 'uptime', colorIndex: 2 },
+  { type: 'gauge', label: 'uptime', colorIndex: 2, minValue: 99.5, maxValue: 99.99 },
   { type: 'sparkline', label: 'errors', colorIndex: 4 },
   { type: 'status', label: 'postgres', colorIndex: 2 },
   { type: 'counter', label: 'users', colorIndex: 0 },
   { type: 'bars', label: 'queue', colorIndex: 7 },
   { type: 'sparkline', label: 'io/sec', colorIndex: 3 },
   { type: 'status', label: 'k8s', colorIndex: 2 },
-  { type: 'gauge', label: 'disk', colorIndex: 5 },
+  { type: 'gauge', label: 'disk', colorIndex: 5, minValue: 55, maxValue: 75 },
 ];
 
 export default function MetricWidgets() {
@@ -441,7 +503,11 @@ export default function MetricWidgets() {
         {leftWidgets.map((widget, index) => (
           <MetricWidget
             key={`left-${index}`}
-            {...widget}
+            type={widget.type}
+            label={widget.label}
+            colorIndex={widget.colorIndex}
+            minValue={widget.minValue}
+            maxValue={widget.maxValue}
             delay={index * 150}
             isFocused={isFocused}
             emergencyState={emergencyState}
@@ -455,7 +521,11 @@ export default function MetricWidgets() {
         {rightWidgets.map((widget, index) => (
           <MetricWidget
             key={`right-${index}`}
-            {...widget}
+            type={widget.type}
+            label={widget.label}
+            colorIndex={widget.colorIndex}
+            minValue={widget.minValue}
+            maxValue={widget.maxValue}
             delay={index * 150 + 100}
             isFocused={isFocused}
             emergencyState={emergencyState}
