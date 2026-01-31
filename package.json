@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && node scripts/obfuscate.mjs",
     "start": "next start",
     "lint": "next lint"
   },
@@ -37,6 +37,7 @@
   "devDependencies": {
     "eslint": "^9.39.2",
     "eslint-config-next": "^16.1.1",
+    "javascript-obfuscator": "^5.2.1",
     "prettier": "^3.7.4",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "sharp": "^0.34.5"
