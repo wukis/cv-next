@@ -1,5 +1,5 @@
 'use client';
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 
 import { Container } from '@/components/Container';
 import { EducationInterface, WorkInterface } from "@/lib/experience";
@@ -232,6 +232,136 @@ function RoleHighlights({
     );
 }
 
+// Tech category mapping
+const TECH_CATEGORIES: Record<string, string[]> = {
+    'Languages': ['PHP', 'Go', 'TypeScript', 'JavaScript', 'Ruby', 'C#', 'HTML', 'CSS'],
+    'Frameworks': ['Laravel', 'Symfony', 'React', 'React Native', 'Vue.js', 'Rails', '.NET', 'jQuery', 'Laminas', 'Phalcon', 'Xamarin'],
+    'Databases': ['MySQL', 'PostgreSQL', 'Redis', 'Elasticsearch', 'MSSQL'],
+    'Infrastructure': ['Docker', 'Kubernetes', 'AWS', 'Datadog', 'FrankenPHP', 'Road-Runner', 'SharePoint'],
+    'Practices': ['REST API', 'Microservices', 'CI/CD', 'DevOps', 'Agile', 'SCRUM', 'TDD', 'Unit Testing']
+};
+
+// Get category for a technology
+function getTechCategory(tech: string): string {
+    const normalizedTech = tech.toLowerCase().trim();
+    for (const [category, techs] of Object.entries(TECH_CATEGORIES)) {
+        if (techs.some(t => t.toLowerCase() === normalizedTech)) {
+            return category;
+        }
+    }
+    return 'Other';
+}
+
+// Group technologies by category
+function groupTechByCategory(technologies: string[]): Record<string, string[]> {
+    const grouped: Record<string, string[]> = {};
+
+    technologies.forEach(tech => {
+        const category = getTechCategory(tech);
+        if (!grouped[category]) {
+            grouped[category] = [];
+        }
+        grouped[category].push(tech);
+    });
+
+    // Sort categories in preferred order
+    const orderedCategories = ['Languages', 'Frameworks', 'Databases', 'Infrastructure', 'Practices', 'Other'];
+    const sortedGrouped: Record<string, string[]> = {};
+
+    orderedCategories.forEach(cat => {
+        if (grouped[cat]) {
+            sortedGrouped[cat] = grouped[cat];
+        }
+    });
+
+    return sortedGrouped;
+}
+
+// Tooltip component
+function TechTooltip({
+    tech,
+    isVisible,
+    position
+}: {
+    tech: string;
+    isVisible: boolean;
+    position: { top: number; left: number }
+}) {
+    const category = getTechCategory(tech);
+
+    return (
+        <div
+            className={`fixed z-50 pointer-events-none transition-all duration-150 ${
+                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'
+            }`}
+            style={{
+                top: position.top - 8,
+                left: position.left,
+                transform: 'translate(-50%, -100%)'
+            }}
+        >
+            <div className="px-2.5 py-1.5 rounded-md bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 text-xs shadow-lg">
+                <div className="font-medium">{tech}</div>
+                <div className="text-neutral-400 dark:text-neutral-500 text-[10px]">{category}</div>
+            </div>
+            {/* Tooltip arrow */}
+            <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-neutral-900 dark:border-t-neutral-100" />
+        </div>
+    );
+}
+
+// Technology pill component for expanded view
+function TechPill({
+    tech,
+    onHover,
+    onLeave,
+    onTouch
+}: {
+    tech: string;
+    onHover: (e: React.MouseEvent) => void;
+    onLeave: () => void;
+    onTouch: (e: React.TouchEvent) => void;
+}) {
+    return (
+        <span
+            className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-mono bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700 cursor-default hover:bg-neutral-200 dark:hover:bg-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600 transition-colors"
+            onMouseEnter={onHover}
+            onMouseLeave={onLeave}
+            onTouchStart={onTouch}
+        >
+            <TechIcon tech={tech} className="w-3.5 h-3.5 opacity-70" />
+            {tech}
+        </span>
+    );
+}
+
+// Technology icon (collapsed view)
+function TechIconButton({
+    tech,
+    onHover,
+    onLeave,
+    onTouch
+}: {
+    tech: string;
+    onHover: (e: React.MouseEvent) => void;
+    onLeave: () => void;
+    onTouch: (e: React.TouchEvent) => void;
+}) {
+    return (
+        <span
+            className="inline-flex items-center justify-center w-7 h-7 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700 cursor-default hover:bg-neutral-200 dark:hover:bg-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600 transition-colors"
+            onMouseEnter={onHover}
+            onMouseLeave={onLeave}
+            onTouchStart={onTouch}
+            role="button"
+            tabIndex={0}
+            aria-label={tech}
+        >
+            <TechIcon tech={tech} className="w-4 h-4" />
+        </span>
+    );
+}
+
 // Technology icon component using react-icons
 function TechIcon({ tech, className = "w-3.5 h-3.5" }: { tech: string; className?: string }) {
     const normalizedTech = tech.toLowerCase();
@@ -298,35 +428,179 @@ function TechIcon({ tech, className = "w-3.5 h-3.5" }: { tech: string; className
     return <VscCode className={className} />;
 }
 
-// Company-level tech stack display
-function CompanyTechStack({ 
-    technologies, 
-    colors 
-}: { 
+// Company-level tech stack display with expand/collapse
+function CompanyTechStack({
+    technologies,
+    colors
+}: {
     technologies: string[];
     colors: ReturnType<typeof getBranchColors>;
 }) {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [tooltip, setTooltip] = useState<{ tech: string; position: { top: number; left: number } } | null>(null);
+    const [touchTooltip, setTouchTooltip] = useState<{ tech: string; position: { top: number; left: number } } | null>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    // Auto-dismiss touch tooltip
+    useEffect(() => {
+        if (touchTooltip) {
+            const timer = setTimeout(() => setTouchTooltip(null), 1500);
+            return () => clearTimeout(timer);
+        }
+    }, [touchTooltip]);
+
     if (technologies.length === 0) return null;
-    
+
+    const VISIBLE_COUNT = 5;
+    const visibleTechs = technologies.slice(0, VISIBLE_COUNT);
+    const hiddenCount = technologies.length - VISIBLE_COUNT;
+    const groupedTechs = groupTechByCategory(technologies);
+
+    const handleHover = (tech: string) => (e: React.MouseEvent) => {
+        const rect = (e.target as HTMLElement).getBoundingClientRect();
+        setTooltip({
+            tech,
+            position: {
+                top: rect.top,
+                left: rect.left + rect.width / 2
+            }
+        });
+    };
+
+    const handleLeave = () => {
+        setTooltip(null);
+    };
+
+    const handleTouch = (tech: string) => (e: React.TouchEvent) => {
+        e.preventDefault();
+        const rect = (e.target as HTMLElement).getBoundingClientRect();
+        setTouchTooltip({
+            tech,
+            position: {
+                top: rect.top,
+                left: rect.left + rect.width / 2
+            }
+        });
+    };
+
+    const toggleExpand = () => {
+        setIsExpanded(!isExpanded);
+        setTooltip(null);
+        setTouchTooltip(null);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleExpand();
+        }
+    };
+
+    const activeTooltip = touchTooltip || tooltip;
+
     return (
-        <div className="px-4 py-3 bg-neutral-50/50 dark:bg-neutral-800/30 border-t border-neutral-100 dark:border-neutral-800">
-            <div className="flex items-center gap-2 text-xs font-mono text-neutral-600 dark:text-neutral-300 uppercase tracking-wider mb-2">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+        <div
+            ref={containerRef}
+            className="bg-neutral-50/50 dark:bg-neutral-800/30 border-t border-neutral-100 dark:border-neutral-800"
+        >
+            {/* Header row - always visible, clickable */}
+            <div
+                className="flex items-center justify-between gap-2 px-4 py-3 cursor-pointer select-none hover:bg-neutral-100/50 dark:hover:bg-neutral-700/30 transition-colors"
+                onClick={toggleExpand}
+                onKeyDown={handleKeyDown}
+                role="button"
+                tabIndex={0}
+                aria-expanded={isExpanded}
+                aria-controls="tech-stack-content"
+            >
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                    {/* Title */}
+                    <div className="flex items-center gap-2 text-xs font-mono text-neutral-600 dark:text-neutral-300 uppercase tracking-wider flex-shrink-0">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                        </svg>
+                        Tech Stack
+                    </div>
+
+                    {/* Collapsed preview */}
+                    {!isExpanded && (
+                        <div className="flex items-center gap-1.5 overflow-hidden">
+                            {visibleTechs.map((tech, i) => (
+                                <TechIconButton
+                                    key={i}
+                                    tech={tech}
+                                    onHover={handleHover(tech)}
+                                    onLeave={handleLeave}
+                                    onTouch={handleTouch(tech)}
+                                />
+                            ))}
+                            {hiddenCount > 0 && (
+                                <span className="text-xs font-mono text-neutral-500 dark:text-neutral-400 px-1.5 py-0.5 bg-neutral-200/50 dark:bg-neutral-700/50 rounded">
+                                    +{hiddenCount} more
+                                </span>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* Expand/collapse chevron */}
+                <svg
+                    className={`w-4 h-4 text-neutral-500 dark:text-neutral-400 transition-transform duration-200 flex-shrink-0 ${
+                        isExpanded ? 'rotate-180' : ''
+                    }`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
-                Tech Stack
             </div>
-            <div className="flex flex-wrap gap-1.5">
-                {technologies.map((item, i) => (
-                    <span 
-                        key={i} 
-                        className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-mono bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700"
-                    >
-                        <TechIcon tech={item} className="w-3.5 h-3.5 opacity-70" />
-                        {item}
-                    </span>
-                ))}
+
+            {/* Expanded content */}
+            <div
+                id="tech-stack-content"
+                className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+                }`}
+            >
+                <div className="px-4 pb-4 space-y-4">
+                    {Object.entries(groupedTechs).map(([category, techs], categoryIndex) => (
+                        <div
+                            key={category}
+                            className="transition-all duration-300"
+                            style={{
+                                transitionDelay: isExpanded ? `${categoryIndex * 50}ms` : '0ms',
+                                opacity: isExpanded ? 1 : 0,
+                                transform: isExpanded ? 'translateY(0)' : 'translateY(-8px)'
+                            }}
+                        >
+                            <div className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2">
+                                {category}
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                                {techs.map((tech, i) => (
+                                    <TechPill
+                                        key={i}
+                                        tech={tech}
+                                        onHover={handleHover(tech)}
+                                        onLeave={handleLeave}
+                                        onTouch={handleTouch(tech)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
+
+            {/* Tooltip portal */}
+            {activeTooltip && (
+                <TechTooltip
+                    tech={activeTooltip.tech}
+                    isVisible={true}
+                    position={activeTooltip.position}
+                />
+            )}
         </div>
     );
 }
