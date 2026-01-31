@@ -114,17 +114,13 @@ export default async function RecommendationsPage() {
         ))}
         
         {/* End marker - hidden on mobile */}
-        <div className="relative hidden sm:flex gap-6">
-          <div className="relative flex flex-col items-center">
-            <div className="relative w-6 h-6 flex items-center justify-center flex-shrink-0">
-              <div className="w-3 h-3 rounded-full bg-neutral-300 dark:bg-neutral-600 ring-2 ring-white dark:ring-neutral-900" />
-            </div>
+        <div className="relative hidden sm:flex items-center gap-6">
+          <div className="relative w-6 h-6 flex items-center justify-center flex-shrink-0">
+            <div className="w-3 h-3 rounded-full bg-neutral-300 dark:bg-neutral-600 ring-2 ring-white dark:ring-neutral-900" />
           </div>
-          <div className="flex-1 -mt-1">
-            <span className="text-sm font-mono text-neutral-500 dark:text-neutral-400">
-              EOF
-            </span>
-          </div>
+          <span className="text-sm font-mono text-neutral-500 dark:text-neutral-400">
+            EOF
+          </span>
         </div>
       </div>
     </Container>

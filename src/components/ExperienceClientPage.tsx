@@ -577,7 +577,7 @@ function Education({ education, isLast }: { education: EducationInterface; isLas
                     {/* Terminal header - matching work experience */}
                     <div className="flex items-center justify-between gap-2 px-4 py-2 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
                         <span className="hidden sm:block text-xs font-mono text-neutral-600 dark:text-neutral-300 truncate">
-                            ~/education/{education.studyType.toLowerCase().replace(/\s+/g, '-')}
+                            ~/education/{education.studyType.toLowerCase().replace(/\s+/g, '-')}.md
                         </span>
                         <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono whitespace-nowrap ${colors.text} ${colors.bg}`}>
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -698,7 +698,7 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                                 {/* Terminal header */}
                                 <div className="flex items-center justify-between gap-2 px-4 py-2 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
                                     <span className="hidden sm:block text-xs font-mono text-neutral-600 dark:text-neutral-300 truncate">
-                                        ~/work/{companyData.company.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}
+                                        ~/work/{companyData.company.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}.md
                                     </span>
                                     <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono whitespace-nowrap ${colors.text} ${colors.bg}`}>
                                         {isFirst ? (
@@ -915,12 +915,22 @@ export default function ExperienceClientContent() {
 
                 <div className="max-w-3xl">
                     {linkedIn.education.map((education: EducationInterface, index: number) => (
-                        <Education 
-                            key={education.institution} 
-                            education={education} 
+                        <Education
+                            key={education.institution}
+                            education={education}
                             isLast={index === linkedIn.education.length - 1}
                         />
                     ))}
+
+                    {/* End marker - hidden on mobile */}
+                    <div className="relative hidden sm:flex items-center gap-6">
+                        <div className="relative w-6 h-6 flex items-center justify-center flex-shrink-0">
+                            <div className="w-3 h-3 rounded-full bg-neutral-300 dark:bg-neutral-600 ring-2 ring-white dark:ring-neutral-900" />
+                        </div>
+                        <span className="text-sm font-mono text-neutral-500 dark:text-neutral-400">
+                            EOF
+                        </span>
+                    </div>
                 </div>
             </Container>
         </div>
