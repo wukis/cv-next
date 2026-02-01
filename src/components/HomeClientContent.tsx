@@ -210,37 +210,6 @@ export default function HomeClientContent() {
                                 <p className="mt-4 text-sm sm:text-base text-neutral-600 dark:text-neutral-400 leading-relaxed">
                                     {linkedin.basics.summary.replace(/(\d+)\+ years of experience/, `${totalExperienceYears}+ years of experience`)}
                                 </p>
-                                
-                                {/* Quick links */}
-                                <div className="mt-5 flex flex-wrap gap-2 justify-center sm:justify-start">
-                                    <Link 
-                                        href="/experience"
-                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-violet-500/30 dark:bg-violet-400/30 text-violet-800 dark:text-violet-200 font-mono text-sm hover:bg-violet-500/40 dark:hover:bg-violet-400/40 transition-colors"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                        </svg>
-                                        experience
-                                    </Link>
-                                    <Link 
-                                        href="/about"
-                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sky-500/30 dark:bg-sky-400/30 text-sky-800 dark:text-sky-200 font-mono text-sm hover:bg-sky-500/40 dark:hover:bg-sky-400/40 transition-colors"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                        </svg>
-                                        about
-                                    </Link>
-                                    <Link 
-                                        href="mailto:jonas@petrik.dev"
-                                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/30 dark:bg-emerald-400/30 text-emerald-800 dark:text-emerald-200 font-mono text-sm hover:bg-emerald-500/40 dark:hover:bg-emerald-400/40 transition-colors"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                        </svg>
-                                        contact
-                                    </Link>
-                                </div>
                             </div>
                         </div>
                     </div>
