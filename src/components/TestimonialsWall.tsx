@@ -72,7 +72,7 @@ function Recommendation({
               <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
                 {recommendation.position}
               </p>
-              <p className="text-[10px] text-neutral-400 dark:text-neutral-500">
+              <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
                 {recommendation.date}
               </p>
             </div>

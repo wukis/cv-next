@@ -112,7 +112,7 @@ function Recommendation({ recommendation, index }: { recommendation: Recommendat
                         <div className="min-w-0 flex-1">
                             <div className="font-semibold text-sm text-neutral-800 dark:text-neutral-100 truncate">{recommendation.fullName}</div>
                             <div className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{recommendation.position}</div>
-                            <div className="text-[10px] text-neutral-400 dark:text-neutral-500">{recommendation.date}</div>
+                            <div className="text-[10px] text-neutral-500 dark:text-neutral-400">{recommendation.date}</div>
                         </div>
                     </figcaption>
                 </figure>
