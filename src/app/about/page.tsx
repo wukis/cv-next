@@ -51,8 +51,8 @@ export default function About() {
       <div className="max-w-3xl">
         <div className="rounded-lg overflow-hidden border border-sky-500/30 dark:border-sky-400/30 bg-white/50 dark:bg-neutral-900/50">
           {/* Terminal header */}
-          <div className="flex items-center gap-2 px-4 py-2 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
-            <span className="text-xs font-mono text-neutral-600 dark:text-neutral-300">
+          <div className="flex items-center gap-2 px-4 h-6 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
+            <span className="text-[10px] font-mono text-neutral-600 dark:text-neutral-300 truncate">
               ~/ABOUT.md
             </span>
           </div>

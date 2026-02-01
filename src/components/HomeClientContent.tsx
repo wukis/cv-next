@@ -127,11 +127,11 @@ export default function HomeClientContent() {
                 {/* Main hero card - combines portrait and bio on mobile */}
                 <div className="rounded-lg overflow-hidden border border-emerald-500/30 dark:border-emerald-400/30 bg-white/50 dark:bg-neutral-900/50">
                     {/* Terminal header */}
-                    <div className="flex items-center justify-between gap-2 px-4 py-2 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
-                        <span className="text-xs font-mono text-neutral-600 dark:text-neutral-300">
+                    <div className="flex items-center justify-between gap-2 px-4 h-6 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
+                        <span className="text-[10px] font-mono text-neutral-600 dark:text-neutral-300 truncate">
                             ~/README.md
                         </span>
-                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono text-emerald-800 dark:text-emerald-200 bg-emerald-500/30 dark:bg-emerald-400/30">
+                        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono text-emerald-800 dark:text-emerald-200 bg-emerald-500/30 dark:bg-emerald-400/30">
                             <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
                             available
                         </div>

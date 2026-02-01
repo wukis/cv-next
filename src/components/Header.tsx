@@ -212,15 +212,15 @@ function MobileNavigation({ className }: { className?: string }) {
             className="fixed inset-x-4 top-4 z-[70] rounded-lg bg-white dark:bg-neutral-900 overflow-hidden shadow-2xl ring-1 ring-neutral-200 dark:ring-neutral-700"
           >
             {/* Terminal header */}
-            <div className="flex items-center justify-between px-4 py-2 bg-neutral-100 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700">
-              <Link 
-                href="/" 
+            <div className="flex items-center justify-between px-4 h-6 bg-neutral-100 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700">
+              <Link
+                href="/"
                 onClick={close}
                 className="flex items-center gap-2 -ml-1 px-1 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all"
                 aria-label="Go to home"
               >
                 <AnimatedTerminalIcon />
-                <span className="text-xs font-mono text-neutral-600 dark:text-neutral-300">~/navigation</span>
+                <span className="text-[10px] font-mono text-neutral-600 dark:text-neutral-300">~/navigation</span>
               </Link>
               <button 
                 onClick={close}

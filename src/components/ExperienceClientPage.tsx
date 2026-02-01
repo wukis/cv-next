@@ -626,11 +626,11 @@ function Education({ education, isLast }: { education: EducationInterface; isLas
                 {/* Terminal-style card - matching work experience */}
                 <div className={`rounded-lg border bg-white/50 dark:bg-neutral-900/50 overflow-hidden transition-all duration-300 ${colors.border} group-hover:shadow-lg`}>
                     {/* Terminal header - matching work experience */}
-                    <div className="flex items-center justify-between gap-2 px-4 py-2 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
-                        <span className="hidden sm:block text-xs font-mono text-neutral-600 dark:text-neutral-300 truncate">
+                    <div className="flex items-center justify-between gap-2 px-4 h-6 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
+                        <span className="hidden sm:block text-[10px] font-mono text-neutral-600 dark:text-neutral-300 truncate">
                             ~/education/{education.studyType.toLowerCase().replace(/\s+/g, '-')}.md
                         </span>
-                        <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono whitespace-nowrap ${colors.text} ${colors.bg}`}>
+                        <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono whitespace-nowrap ${colors.text} ${colors.bg}`}>
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
@@ -747,11 +747,11 @@ function Work({ groupedWorkExperiences }: { groupedWorkExperiences: Record<strin
                             {/* Terminal-style card */}
                             <div className={`rounded-lg border bg-white/50 dark:bg-neutral-900/50 overflow-hidden transition-all duration-300 ${colors.border} group-hover:shadow-lg`}>
                                 {/* Terminal header */}
-                                <div className="flex items-center justify-between gap-2 px-4 py-2 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
-                                    <span className="hidden sm:block text-xs font-mono text-neutral-600 dark:text-neutral-300 truncate">
+                                <div className="flex items-center justify-between gap-2 px-4 h-6 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
+                                    <span className="hidden sm:block text-[10px] font-mono text-neutral-600 dark:text-neutral-300 truncate">
                                         ~/work/{companyData.company.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}.md
                                     </span>
-                                    <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono whitespace-nowrap ${colors.text} ${colors.bg}`}>
+                                    <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono whitespace-nowrap ${colors.text} ${colors.bg}`}>
                                         {isFirst ? (
                                             <>
                                                 <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
