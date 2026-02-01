@@ -1052,7 +1052,7 @@ const HexagonServiceNetwork: React.FC = () => {
                     ctx.shadowColor = 'rgba(0, 255, 100, 0.8)';
                     ctx.shadowBlur = 20;
                     ctx.fillStyle = `rgba(50, 255, 100, ${textOpacity})`;
-                    ctx.fillText('✓ RECOVERED', centerX, centerY);
+                    ctx.fillText('✓ RECOVERED ✓', centerX, centerY);
                     
                     // Subtitle
                     ctx.font = '14px ui-monospace, monospace';
