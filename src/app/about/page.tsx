@@ -3,6 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 import { Container } from '@/components/Container'
+import { TechStack } from '@/components/TechStack'
 import {
   GitHubIcon,
   LinkedInIcon,
@@ -13,6 +14,9 @@ import { calculateTotalExperienceYears, WorkInterface } from '@/lib/experience'
 import work from '@/data/work.json'
 
 const totalExperienceYears = calculateTotalExperienceYears(work as WorkInterface[])
+
+// Get current employment (first entry in work.json)
+const currentEmployment = (work as WorkInterface[])[0]
 
 function MailIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
@@ -186,6 +190,9 @@ export default function About() {
               </div>
             </div>
           </div>
+
+          {/* Tech Stack from current employment */}
+          <TechStack technologies={currentEmployment.technologies} />
         </div>
       </div>
     </Container>
