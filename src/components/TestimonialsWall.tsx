@@ -36,8 +36,12 @@ function Recommendation({
             : ''
         }`}
       >
-        {/* Accent bar */}
-        <div className={`absolute top-0 left-0 right-0 h-0.5 ${color.accent} ${isHighlighted ? 'h-1' : ''} transition-all duration-500`} />
+        {/* Terminal header */}
+        <div className="flex items-center gap-2 px-4 h-6 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
+          <span className="text-[10px] font-mono text-neutral-600 dark:text-neutral-300 truncate">
+            ~/testimonials/{recommendation.slug}.md
+          </span>
+        </div>
 
         <div className="p-5">
           {/* Quote */}
