@@ -105,6 +105,7 @@ const HexagonServiceNetwork: React.FC = () => {
     const [mounted, setMounted] = useState(false);
     const [isDark, setIsDark] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
+    const isFocusedRef = useRef(isFocused); // Ref to track focus state without restarting animation
     const focusTransitionRef = useRef(0); // 0 = normal, 1 = fully focused (for smooth transitions)
     const frameSkipRef = useRef(0); // Frame skipping counter for performance when not focused
     
@@ -510,6 +511,11 @@ const HexagonServiceNetwork: React.FC = () => {
         return () => observer.disconnect();
     }, []);
 
+    // Keep the focus ref in sync with state (without restarting animation)
+    useEffect(() => {
+        isFocusedRef.current = isFocused;
+    }, [isFocused]);
+
     // Listen for manual emergency trigger from click
     useEffect(() => {
         const handleTriggerEmergency = () => {
@@ -566,7 +572,7 @@ const HexagonServiceNetwork: React.FC = () => {
         const animate = () => {
             // Throttle rendering when not focused: skip every other frame (30fps instead of 60fps)
             // This significantly reduces rendering time and improves performance
-            if (!isFocused && frameSkipRef.current % 2 === 0) {
+            if (!isFocusedRef.current && frameSkipRef.current % 2 === 0) {
                 frameSkipRef.current++;
                 // Still update time for smooth animations, but skip rendering
                 timeRef.current += 0.016;
@@ -580,7 +586,7 @@ const HexagonServiceNetwork: React.FC = () => {
             timeRef.current += 0.016;
             
             // Smoothly transition focus state
-            const targetFocus = isFocused ? 1 : 0;
+            const targetFocus = isFocusedRef.current ? 1 : 0;
             focusTransitionRef.current += (targetFocus - focusTransitionRef.current) * 0.05;
             const focusLevel = focusTransitionRef.current;
             
@@ -939,7 +945,7 @@ const HexagonServiceNetwork: React.FC = () => {
             const timeSinceLastEmergency = timeRef.current - emergency.lastEmergencyTime;
             
             // Track focus state and accumulate focus time
-            if (isFocused) {
+            if (isFocusedRef.current) {
                 if (!emergency.hasEverFocused) {
                     emergency.hasEverFocused = true;
                 }
@@ -1062,7 +1068,7 @@ const HexagonServiceNetwork: React.FC = () => {
                     // When not focused: every 1-3 minutes (60-180 seconds)
                     emergency.isRecovery = false;
                     emergency.lastEmergencyTime = timeRef.current; // Reset timer NOW when recovery ends
-                    emergency.nextEmergencyInterval = isFocused ? 60 : (60 + Math.random() * 120);
+                    emergency.nextEmergencyInterval = isFocusedRef.current ? 60 : (60 + Math.random() * 120);
 
                     // Dispatch end event
                     window.dispatchEvent(new CustomEvent('network-emergency', { detail: { type: 'end' } }));
@@ -1080,7 +1086,7 @@ const HexagonServiceNetwork: React.FC = () => {
                 cancelAnimationFrame(animationRef.current);
             }
         };
-    }, [mounted, isDark, isFocused, initNodes, project3D, tryEstablishConnection, createPacket, createStatusIndicator, drawHexagon, drawStatusIndicator, ROTATION_SPEED_NORMAL, ROTATION_SPEED_FOCUSED]);
+    }, [mounted, isDark, initNodes, project3D, tryEstablishConnection, createPacket, createStatusIndicator, drawHexagon, drawStatusIndicator, ROTATION_SPEED_NORMAL, ROTATION_SPEED_FOCUSED]);
 
     if (!mounted) return null;
 

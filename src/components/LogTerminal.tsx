@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 
 type EmergencyState = 'normal' | 'emergency' | 'recovery';
 
-// Normal operational logs - mixed with occasional warnings, errors, and successes
-const normalLogs = [
+// Operational logs - mixed with occasional warnings, errors, and successes
+const logs = [
   'INFO  HttpServer request completed path=/api/health status=200 duration_ms=12',
   'DEBUG ConnectionPool acquired connection pool_size=8 active=3',
   'INFO  CacheManager cache hit key=user_session_abc hit_rate=94.2%',
@@ -34,46 +34,6 @@ const normalLogs = [
   'INFO  LoadBalancer routed request backend=node-2 latency_ms=6',
 ];
 
-// Emergency error logs
-const emergencyLogs = [
-  'ERROR DatabaseConnection connection refused host=db-primary-1 retries=3',
-  'ERROR CircuitBreaker OPEN service=payment-api failures=15 threshold=10',
-  'WARN  HealthCheck degraded service=auth-service latency_ms=2847',
-  'ERROR RequestHandler timeout path=/api/checkout timeout_ms=30000',
-  'ERROR MessageQueue consumer lag critical lag=45000 partition=3',
-  'WARN  MemoryAlert heap usage critical used=94.7% threshold=90%',
-  'ERROR SSLHandshake certificate verification failed host=api.vendor.io',
-  'ERROR DatabaseConnection query timeout query=SELECT duration_ms=30000',
-  'ERROR CircuitBreaker OPEN service=inventory-api failures=12 threshold=10',
-  'WARN  CPUAlert load average critical load=8.7 threshold=4.0',
-  'ERROR RequestHandler connection reset path=/api/orders client=10.0.0.45',
-  'ERROR ReplicationLag primary-replica lag exceeded lag_ms=15000 max=5000',
-  'WARN  DiskAlert usage critical partition=/data used=97.2% threshold=90%',
-  'ERROR ConnectionPool exhausted pool_size=100 waiting=47',
-  'ERROR ServiceMesh endpoint unhealthy service=recommendation failures=8',
-  'WARN  RateLimiter threshold exceeded client=api-key-xyz requests=1500',
-];
-
-// Recovery success logs
-const recoveryLogs = [
-  'INFO  CircuitBreaker CLOSED service=payment-api recovery_time_ms=12400',
-  'INFO  DatabaseConnection reconnected host=db-primary-1 pool_restored=true',
-  'INFO  HealthCheck healthy service=auth-service latency_ms=45',
-  'INFO  RequestHandler backlog cleared pending=0 processed=847',
-  'INFO  MessageQueue consumer caught up lag=0 partition=3',
-  'INFO  MemoryAlert resolved used=67.2% gc_freed_mb=1240',
-  'INFO  ServiceMesh all endpoints healthy count=24 region=us-east-1',
-  'INFO  CircuitBreaker CLOSED service=inventory-api recovery_time_ms=8200',
-  'INFO  CPUAlert resolved load=1.2 processes_terminated=3',
-  'INFO  ReplicationLag resolved lag_ms=120 sync_complete=true',
-  'INFO  DiskAlert resolved partition=/data used=72.1% cleaned_gb=45',
-  'INFO  ConnectionPool restored pool_size=100 active=12',
-  'INFO  SSLHandshake certificate renewed host=api.vendor.io valid_days=365',
-  'INFO  RateLimiter reset client=api-key-xyz quota_restored=true',
-  'INFO  CacheManager warmed key_count=15000 duration_ms=2340',
-  'INFO  LoadBalancer all backends healthy count=5 region=us-east-1',
-];
-
 // Base timestamp computed once at module load - keeps timestamps current without runtime overhead
 const baseTimestamp = Date.now();
 
@@ -92,6 +52,16 @@ export default function LogTerminal() {
   const [isFocused, setIsFocused] = useState(false);
   const [emergencyState, setEmergencyState] = useState<EmergencyState>('normal');
   const [isDark, setIsDark] = useState(true);
+
+  // Refs for JS-based scrolling animation
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const animationRef = useRef<number>(0);
+  const scrollStateRef = useRef({
+    currentOffset: 0,     // Current scroll position in %
+    currentSpeed: 0,      // Current speed (% per frame)
+    targetSpeed: 0,       // Target speed based on state
+    lastTime: 0,          // For consistent timing
+  });
 
   const checkScreenSize = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -157,15 +127,69 @@ export default function LogTerminal() {
     return () => window.removeEventListener('network-emergency', handleEmergency);
   }, []);
 
+  // Calculate target scroll speed based on state (% per millisecond)
+  const getTargetScrollSpeed = useCallback(() => {
+    // Duration in ms for scrolling 50% (one full copy)
+    // These match the original CSS animation durations
+    const durationMs = emergencyState === 'emergency'
+      ? (isFocused ? 12000 : 35000)
+      : (isFocused ? 18000 : 60000);
+
+    // Speed = 50% / duration in ms
+    return 50 / durationMs;
+  }, [emergencyState, isFocused]);
+
+  // Update target speed when state changes (without restarting animation)
+  useEffect(() => {
+    scrollStateRef.current.targetSpeed = getTargetScrollSpeed();
+  }, [getTargetScrollSpeed]);
+
+  // Main animation loop using requestAnimationFrame
+  useEffect(() => {
+    if (!shouldRender) return;
+
+    const state = scrollStateRef.current;
+    state.targetSpeed = getTargetScrollSpeed();
+    state.currentSpeed = state.targetSpeed; // Initialize to target
+    state.lastTime = performance.now();
+
+    const animate = (currentTime: number) => {
+      const deltaTime = currentTime - state.lastTime;
+      state.lastTime = currentTime;
+
+      // Smoothly interpolate speed toward target (lerp factor ~0.02 per 16ms)
+      const lerpFactor = Math.min(1, 0.02 * (deltaTime / 16));
+      state.currentSpeed += (state.targetSpeed - state.currentSpeed) * lerpFactor;
+
+      // Update offset based on current speed
+      state.currentOffset -= state.currentSpeed * deltaTime;
+
+      // Wrap at -50% for seamless infinite loop
+      if (state.currentOffset <= -50) {
+        state.currentOffset += 50;
+      }
+
+      // Apply transform
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.style.transform = `translateY(${state.currentOffset}%)`;
+      }
+
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    animationRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [shouldRender, getTargetScrollSpeed]);
+
   if (!shouldRender) return null;
 
-  // Select logs based on emergency state
-  const logs = emergencyState === 'emergency' ? emergencyLogs :
-               emergencyState === 'recovery' ? recoveryLogs : normalLogs;
-
-  // Duplicate logs for seamless scrolling
+  // Format logs with timestamps - only styling changes based on emergency state
   const formattedLogs = logs.map((log, i) => formatLogEntry(log, i));
-  const duplicatedLogs = [...formattedLogs, ...formattedLogs];
 
   // Color configuration
   const emergencyRedDark = '#ff3333';
@@ -246,13 +270,9 @@ export default function LogTerminal() {
         >
           {/* Scrolling log content */}
           <div
+            ref={scrollContainerRef}
             className="font-mono text-[0.7rem] px-3"
             style={{
-              animation: `scrollLogs ${
-                emergencyState === 'emergency'
-                  ? (isFocused ? '12s' : '35s')
-                  : (isFocused ? '18s' : '60s')
-              } linear infinite`,
               willChange: 'transform',
             }}
           >
