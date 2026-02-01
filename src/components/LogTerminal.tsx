@@ -74,11 +74,12 @@ const recoveryLogs = [
   'INFO  LoadBalancer all backends healthy count=5 region=us-east-1',
 ];
 
-// Generate timestamp for log entries
+// Base timestamp computed once at module load - keeps timestamps current without runtime overhead
+const baseTimestamp = Date.now();
+
+// Generate timestamp for log entries (offsets from base to simulate sequential logs)
 const generateTimestamp = (index: number): string => {
-  const base = new Date('2024-12-20T03:14:22.847Z');
-  base.setMilliseconds(base.getMilliseconds() + index * 54);
-  return base.toISOString();
+  return new Date(baseTimestamp - (30 - index) * 54).toISOString();
 };
 
 // Format log entry with timestamp
