@@ -13,6 +13,9 @@ const SKIP_PATTERNS = [
   /^main-app/,
   /^polyfills/,
   /^turbopack/,
+  /^vendor/,        // Skip vendor chunk
+  /^react-icons/,   // Skip react-icons chunk
+  /^\d+-/,          // Skip numbered vendor chunks (e.g., "123-abc.js")
   /\.map$/,
 ];
 
@@ -22,12 +25,13 @@ const OBFUSCATOR_OPTIONS = {
   controlFlowFlattening: false,
   deadCodeInjection: false,
   disableConsoleOutput: false,
-  identifierNamesGenerator: 'hexadecimal',
+  identifierNamesGenerator: 'mangled',  // Shorter names (a, b, c) vs hexadecimal
+  ignoreImports: true,                   // Skip import statements
   numbersToExpressions: false,
   renameGlobals: false,
   renameProperties: false,
   selfDefending: false,
-  simplify: true,
+  simplify: false,                       // Don't re-simplify (SWC already did)
   splitStrings: false,
   stringArray: false,
   transformObjectKeys: false,
@@ -71,7 +75,7 @@ async function obfuscateFile(filePath) {
     const code = await readFile(filePath, 'utf8');
 
     // Skip very small files (likely just exports)
-    if (code.length < 500) {
+    if (code.length < 1000) {
       console.log(`  Skipping (too small): ${filename}`);
       return false;
     }
