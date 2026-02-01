@@ -285,7 +285,7 @@ function groupTechByCategory(technologies: string[]): Record<string, string[]> {
 function TechPill({ tech }: { tech: string }) {
     return (
         <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-mono bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700">
-            <TechIcon tech={tech} className="w-3.5 h-3.5 opacity-70" />
+            <TechIcon tech={tech} className="w-3.5 h-3.5 opacity-70 flex-shrink-0" />
             {tech}
         </span>
     );
@@ -455,12 +455,12 @@ function CompanyTechStack({
                 aria-controls="tech-stack-content"
             >
                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                    {/* Title - hide text on mobile, keep icon */}
+                    {/* Title - hide text on mobile when collapsed, show when expanded */}
                     <div className="flex items-center gap-2 text-xs font-mono text-neutral-600 dark:text-neutral-300 uppercase tracking-wider flex-shrink-0">
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                         </svg>
-                        <span className="hidden sm:inline">Tech Stack</span>
+                        <span className={`${isExpanded ? 'inline' : 'hidden sm:inline'}`}>Tech Stack</span>
                     </div>
 
                     {/* Collapsed preview */}
@@ -494,15 +494,15 @@ function CompanyTechStack({
             {/* Expanded content */}
             <div
                 id="tech-stack-content"
-                className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                    isExpanded ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+                className={`transition-all duration-300 ease-in-out ${
+                    isExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
                 }`}
             >
-                <div className="px-4 py-4 space-y-4">
+                <div className="px-4 py-4 space-y-4 min-w-0">
                     {Object.entries(groupedTechs).filter(([, techs]) => techs.length > 0).map(([category, techs], categoryIndex) => (
                         <div
                             key={category}
-                            className="transition-all duration-300"
+                            className="transition-all duration-300 min-w-0"
                             style={{
                                 transitionDelay: isExpanded ? `${categoryIndex * 50}ms` : '0ms',
                                 opacity: isExpanded ? 1 : 0,
@@ -512,7 +512,7 @@ function CompanyTechStack({
                             <div className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-wider mb-2">
                                 {category}
                             </div>
-                            <div className="flex flex-wrap gap-1.5">
+                            <div className="flex flex-wrap gap-1.5 min-w-0">
                                 {techs.map((tech, i) => (
                                     <TechPill key={i} tech={tech} />
                                 ))}
