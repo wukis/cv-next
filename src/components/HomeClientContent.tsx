@@ -103,7 +103,7 @@ function Recommendation({ recommendation, index }: { recommendation: Recommendat
                     </blockquote>
                     <figcaption className="mt-4 flex items-center gap-3">
                         <Image
-                            className="h-9 w-9 rounded-lg object-cover ring-2 ring-white dark:ring-neutral-800"
+                            className="h-9 w-9 rounded-lg object-cover ring-2 ring-white dark:ring-neutral-800 flex-shrink-0"
                             width={36}
                             height={36}
                             src={require(`@/images/recommendations/${recommendation.image}`).default}
@@ -111,7 +111,8 @@ function Recommendation({ recommendation, index }: { recommendation: Recommendat
                         />
                         <div className="min-w-0 flex-1">
                             <div className="font-semibold text-sm text-neutral-800 dark:text-neutral-100 truncate">{recommendation.fullName}</div>
-                            <div className="text-xs text-neutral-600 dark:text-neutral-300 truncate font-mono">{recommendation.position}</div>
+                            <div className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{recommendation.position}</div>
+                            <div className="text-[10px] text-neutral-400 dark:text-neutral-500">{recommendation.date}</div>
                         </div>
                     </figcaption>
                 </figure>
