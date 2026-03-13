@@ -111,32 +111,23 @@ function AnimatedTerminalIcon({ className }: { className?: string }) {
 }
 
 const navItems = [
-  { href: '/', label: 'home', color: 'emerald' },
-  { href: '/about', label: 'about', color: 'sky' },
-  { href: '/experience', label: 'experience', color: 'violet' },
-  { href: '/recommendations', label: 'testimonials', color: 'amber' },
+  { href: '/', label: 'home' },
+  { href: '/about', label: 'about' },
+  { href: '/experience', label: 'experience' },
+  { href: '/recommendations', label: 'testimonials' },
 ]
 
 function MobileNavItem({
   href,
   label,
-  color,
   isActive,
   close,
 }: {
   href: string
   label: string
-  color: string
   isActive: boolean
   close: () => void
 }) {
-  const colorClasses: Record<string, string> = {
-    emerald: 'text-emerald-800 dark:text-emerald-200 bg-emerald-500/30 dark:bg-emerald-400/30',
-    sky: 'text-sky-800 dark:text-sky-200 bg-sky-500/30 dark:bg-sky-400/30',
-    violet: 'text-violet-800 dark:text-violet-200 bg-violet-500/30 dark:bg-violet-400/30',
-    amber: 'text-amber-800 dark:text-amber-200 bg-amber-500/30 dark:bg-amber-400/30',
-  }
-
   return (
     <li>
       <Link 
@@ -145,8 +136,8 @@ function MobileNavItem({
         className={clsx(
           'flex items-center gap-3 px-3 py-2.5 rounded-lg font-mono text-sm transition-colors',
           isActive 
-            ? colorClasses[color]
-            : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+            ? 'bg-emerald-500/15 text-emerald-800 dark:bg-emerald-400/20 dark:text-emerald-200'
+            : 'text-neutral-700 hover:bg-neutral-100 hover:text-emerald-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-emerald-300'
         )}
       >
         <span className={clsx(
@@ -191,7 +182,7 @@ function MobileNavigation({ className }: { className?: string }) {
     <div className={className}>
       <button 
         onClick={() => setIsOpen(true)}
-        className="group flex items-center gap-2 rounded-lg bg-white/80 dark:bg-neutral-800/80 px-3 py-2 text-sm font-mono text-neutral-700 dark:text-neutral-300 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 dark:ring-neutral-700/50 backdrop-blur transition hover:ring-neutral-300 dark:hover:ring-neutral-600"
+        className="group flex items-center gap-2 rounded-lg bg-white/80 dark:bg-neutral-800/80 px-3 py-2 text-sm font-mono text-neutral-700 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 backdrop-blur transition hover:text-emerald-700 hover:ring-emerald-400/40 dark:text-neutral-300 dark:ring-neutral-700/50 dark:hover:text-emerald-300 dark:hover:ring-emerald-400/40"
       >
         <AnimatedTerminalIcon />
         <span>menu</span>
@@ -239,7 +230,6 @@ function MobileNavigation({ className }: { className?: string }) {
                     key={item.href} 
                     href={item.href} 
                     label={item.label}
-                    color={item.color}
                     isActive={pathname === item.href}
                     close={close}
                   />
@@ -257,34 +247,11 @@ function MobileNavigation({ className }: { className?: string }) {
 function NavItem({
   href,
   label,
-  color,
 }: {
   href: string
   label: string
-  color: string
 }) {
   const isActive = usePathname() === href
-  
-  const activeColors: Record<string, string> = {
-    emerald: 'text-emerald-600 dark:text-emerald-400',
-    sky: 'text-sky-600 dark:text-sky-400',
-    violet: 'text-violet-600 dark:text-violet-400',
-    amber: 'text-amber-600 dark:text-amber-400',
-  }
-  
-  const hoverColors: Record<string, string> = {
-    emerald: 'hover:text-emerald-600 dark:hover:text-emerald-400',
-    sky: 'hover:text-sky-600 dark:hover:text-sky-400',
-    violet: 'hover:text-violet-600 dark:hover:text-violet-400',
-    amber: 'hover:text-amber-600 dark:hover:text-amber-400',
-  }
-  
-  const bgColors: Record<string, string> = {
-    emerald: 'bg-emerald-500/30 dark:bg-emerald-400/30',
-    sky: 'bg-sky-500/30 dark:bg-sky-400/30',
-    violet: 'bg-violet-500/30 dark:bg-violet-400/30',
-    amber: 'bg-amber-500/30 dark:bg-amber-400/30',
-  }
 
   return (
     <li>
@@ -293,8 +260,8 @@ function NavItem({
         className={clsx(
           'relative flex items-center gap-1.5 px-3 py-1.5 rounded-md font-mono text-sm transition-all',
           isActive
-            ? `${activeColors[color]} ${bgColors[color]}`
-            : `text-neutral-700 dark:text-neutral-300 ${hoverColors[color]} hover:bg-neutral-100 dark:hover:bg-neutral-800`,
+            ? 'bg-emerald-500/15 text-emerald-700 dark:bg-emerald-400/20 dark:text-emerald-300'
+            : 'text-neutral-700 hover:bg-neutral-100 hover:text-emerald-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-emerald-300',
         )}
       >
         <span className={clsx(
@@ -328,7 +295,6 @@ function DesktopNavigation(props: React.ComponentPropsWithoutRef<'nav'>) {
               key={item.href} 
               href={item.href} 
               label={item.label}
-              color={item.color}
             />
           ))}
         </ul>
@@ -350,7 +316,7 @@ function ThemeToggle() {
     <button
       type="button"
       aria-label={mounted ? `Switch to ${otherTheme} theme` : 'Toggle theme'}
-      className="group flex items-center justify-center w-10 h-10 rounded-lg bg-white/80 dark:bg-neutral-800/80 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 dark:ring-neutral-700/50 backdrop-blur transition hover:ring-neutral-300 dark:hover:ring-neutral-600"
+      className="group flex h-10 w-10 items-center justify-center rounded-lg bg-white/80 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 backdrop-blur transition hover:ring-emerald-400/40 dark:bg-neutral-800/80 dark:ring-neutral-700/50 dark:hover:ring-emerald-400/40"
       onClick={() => setTheme(otherTheme)}
     >
       <SunIcon className="h-5 w-5 fill-amber-100 stroke-amber-500 transition group-hover:fill-amber-200 group-hover:stroke-amber-600 dark:hidden" />

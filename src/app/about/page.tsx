@@ -3,8 +3,9 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 import { Container } from '@/components/Container'
+import { ProfileSocialLinks } from '@/components/ProfileSocialLinks'
+import { TerminalPageHeader } from '@/components/TerminalHeader'
 import { TechStack } from '@/components/TechStack'
-import { GitHubIcon, LinkedInIcon, GitLabIcon } from '@/components/SocialIcons'
 import portraitImage from '@/images/jonas-petrik-portrait-2.jpg'
 import { calculateTotalExperienceYears, WorkInterface } from '@/lib/experience'
 import work from '@/data/work.json'
@@ -15,17 +16,6 @@ const totalExperienceYears = calculateTotalExperienceYears(
 
 // Get current employment (first entry in work.json)
 const currentEmployment = (work as WorkInterface[])[0]
-
-function MailIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
-      <path
-        fillRule="evenodd"
-        d="M6 5a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3H6Zm.245 2.187a.75.75 0 0 0-.99 1.126l6.25 5.5a.75.75 0 0 0 .99 0l6.25-5.5a.75.75 0 0 0-.99-1.126L12 12.251 6.245 7.187Z"
-      />
-    </svg>
-  )
-}
 
 export const metadata: Metadata = {
   title: 'About',
@@ -39,28 +29,19 @@ export const metadata: Metadata = {
 export default function About() {
   return (
     <Container className="mt-10 sm:mt-16">
-      {/* Page header */}
-      <div className="mb-10">
-        <h1 className="text-3xl font-bold tracking-tight text-neutral-800 sm:text-4xl lg:text-5xl dark:text-neutral-100">
-          <span className="font-mono text-sky-600 dark:text-sky-400">&gt;</span>{' '}
-          cat{' '}
-          <span className="text-neutral-500 dark:text-neutral-400">
-            ABOUT.md
-          </span>
-        </h1>
-        <p className="mt-3 font-mono text-lg text-neutral-600 dark:text-neutral-400">
-          <span className="text-neutral-500 dark:text-neutral-400"># </span>A
-          deeper look into who I am
-        </p>
-      </div>
+      <TerminalPageHeader
+        command="cat"
+        argument="about.md"
+        description="A deeper look into who I am"
+      />
 
       {/* Main card */}
       <div className="max-w-3xl">
-        <div className="overflow-hidden rounded-lg border border-sky-300 bg-white/90 dark:border-sky-700 dark:bg-neutral-900/90">
+        <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white/90 dark:border-neutral-700 dark:bg-neutral-900/90">
           {/* Terminal header */}
           <div className="flex h-6 items-center gap-2 border-b border-neutral-300 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
             <span className="truncate font-mono text-[10px] text-neutral-700 dark:text-neutral-100">
-              ~/ABOUT.md
+              ~/about.md
             </span>
           </div>
 
@@ -79,50 +60,14 @@ export default function About() {
                   />
                 </div>
 
-                {/* Social icons */}
-                <div className="mt-3 flex flex-row justify-center gap-1.5">
-                  <Link
-                    href="mailto:jonas@petrik.dev"
-                    className="rounded-md border border-neutral-300 bg-neutral-100 p-1.5 transition-colors hover:bg-emerald-100 hover:text-emerald-900 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:bg-emerald-950/70 dark:hover:text-emerald-100"
-                    aria-label="Email"
-                  >
-                    <MailIcon className="h-4 w-4 fill-neutral-700 dark:fill-neutral-200" />
-                  </Link>
-                  <Link
-                    href="https://www.linkedin.com/in/jonas-petrik/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-md border border-neutral-300 bg-neutral-100 p-1.5 transition-colors hover:bg-sky-100 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:bg-sky-950/70"
-                    aria-label="LinkedIn"
-                  >
-                    <LinkedInIcon className="h-4 w-4 fill-neutral-700 dark:fill-neutral-200" />
-                  </Link>
-                  <Link
-                    href="https://github.com/wukis"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-md border border-neutral-300 bg-neutral-100 p-1.5 transition-colors hover:bg-neutral-200 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:bg-neutral-700"
-                    aria-label="GitHub"
-                  >
-                    <GitHubIcon className="h-4 w-4 fill-neutral-700 dark:fill-neutral-200" />
-                  </Link>
-                  <Link
-                    href="https://gitlab.com/jonas.petrik"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-md border border-neutral-300 bg-neutral-100 p-1.5 transition-colors hover:bg-orange-100 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:bg-orange-950/70"
-                    aria-label="GitLab"
-                  >
-                    <GitLabIcon className="h-4 w-4 fill-neutral-700 dark:fill-neutral-200" />
-                  </Link>
-                </div>
+                <ProfileSocialLinks />
               </div>
 
               {/* Name and title */}
               <div className="min-w-0 flex-1 text-center sm:text-left">
                 <div className="mb-3">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-neutral-100 px-3 py-1 font-mono text-xs text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100">
-                    <span className="h-2 w-2 rounded-full bg-sky-500" />
+                  <span className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
                     Staff Engineer / Team Lead
                   </span>
                 </div>
@@ -186,7 +131,7 @@ export default function About() {
               <div className="flex flex-wrap gap-2">
                 <Link
                   href="mailto:jonas@petrik.dev"
-                  className="inline-flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-100 px-3 py-1.5 font-mono text-sm text-emerald-950 transition-colors hover:bg-emerald-200 dark:border-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-100 dark:hover:bg-emerald-900/80"
+                  className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-neutral-100 px-3 py-1.5 font-mono text-sm text-neutral-800 transition-colors hover:border-emerald-300 hover:text-emerald-800 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:border-emerald-700 dark:hover:text-emerald-200"
                 >
                   <svg
                     className="h-4 w-4"

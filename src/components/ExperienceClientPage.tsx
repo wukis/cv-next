@@ -3,6 +3,7 @@ import React from 'react'
 
 import { Container } from '@/components/Container'
 import { TechStack } from '@/components/TechStack'
+import { TerminalPageHeader } from '@/components/TerminalHeader'
 import { EducationInterface, WorkInterface } from '@/lib/experience'
 import linkedIn from '@/data/linkedin.json'
 import work from '@/data/work.json'
@@ -853,25 +854,12 @@ export default function ExperienceClientContent() {
   return (
     <div>
       <Container className="mt-10 sm:mt-16">
-        <div className="mb-10">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/70 px-3 py-1.5 font-mono text-sm uppercase tracking-wider text-emerald-800 dark:border-emerald-900/70 dark:bg-emerald-950/30 dark:text-emerald-200">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            currently employed
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight text-neutral-800 sm:text-4xl lg:text-5xl dark:text-neutral-100">
-            <span className="font-mono text-emerald-600 dark:text-emerald-400">
-              &gt;
-            </span>{' '}
-            git log{' '}
-            <span className="text-neutral-500 dark:text-neutral-400">
-              --oneline
-            </span>
-          </h1>
-          <p className="mt-3 font-mono text-lg text-neutral-600 dark:text-neutral-400">
-            <span className="text-neutral-500 dark:text-neutral-400"># </span>
-            {totalExperienceYears}+ years of professional experience
-          </p>
-        </div>
+        <TerminalPageHeader
+          eyebrow="currently employed"
+          command="git log"
+          argument="--oneline"
+          description={`${totalExperienceYears}+ years of professional experience`}
+        />
 
         <div className="max-w-3xl">
           <Work groupedWorkExperiences={groupedWorkExperiences} />
@@ -879,21 +867,12 @@ export default function ExperienceClientContent() {
       </Container>
 
       <Container className="mt-16 sm:mt-24">
-        <div className="mb-10">
-          <h2 className="text-3xl font-bold tracking-tight text-neutral-800 sm:text-4xl lg:text-5xl dark:text-neutral-100">
-            <span className="font-mono text-amber-600 dark:text-amber-400">
-              &gt;
-            </span>{' '}
-            git checkout{' '}
-            <span className="text-neutral-500 dark:text-neutral-400">
-              education
-            </span>
-          </h2>
-          <p className="mt-3 font-mono text-lg text-neutral-600 dark:text-neutral-400">
-            <span className="text-neutral-500 dark:text-neutral-400"># </span>
-            Academic background
-          </p>
-        </div>
+        <TerminalPageHeader
+          as="h2"
+          command="cat"
+          argument="education.md"
+          description="Academic background"
+        />
 
         <div className="max-w-3xl">
           {linkedIn.education.map(

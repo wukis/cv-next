@@ -3,8 +3,9 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Container } from '@/components/Container'
+import { ProfileSocialLinks } from '@/components/ProfileSocialLinks'
+import { TerminalPageHeader } from '@/components/TerminalHeader'
 import { TechStack } from '@/components/TechStack'
-import { GitHubIcon, LinkedInIcon, GitLabIcon } from '@/components/SocialIcons'
 import { type RecommendationInterface } from '@/lib/recommendations'
 import { calculateTotalExperienceYears, WorkInterface } from '@/lib/experience'
 import portraitImage from '@/images/jonas-petrik-portrait.png'
@@ -26,44 +27,23 @@ function truncate(text: string, length: number) {
   return text.slice(0, length) + '...'
 }
 
-function MailIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
-      <path
-        fillRule="evenodd"
-        d="M6 5a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3H6Zm.245 2.187a.75.75 0 0 0-.99 1.126l6.25 5.5a.75.75 0 0 0 .99 0l6.25-5.5a.75.75 0 0 0-.99-1.126L12 12.251 6.245 7.187Z"
-      />
-    </svg>
-  )
-}
-
 function Recommendations() {
   const displayedRecommendations = recommendations.slice(0, 6)
 
   return (
     <Container className="mt-16 sm:mt-24">
-      <div className="mb-10">
-        <h2 className="text-3xl font-bold tracking-tight text-neutral-800 sm:text-4xl lg:text-5xl dark:text-neutral-100">
-          <span className="font-mono text-violet-600 dark:text-violet-400">
-            &gt;
-          </span>{' '}
-          cat{' '}
-          <span className="text-neutral-500 dark:text-neutral-400">
-            testimonials.md
-          </span>
-        </h2>
-        <p className="mt-3 font-mono text-lg text-neutral-600 dark:text-neutral-400">
-          <span className="text-neutral-500 dark:text-neutral-400"># </span>
-          What colleagues say about working with me
-        </p>
-      </div>
+      <TerminalPageHeader
+        as="h2"
+        command="cat"
+        argument="testimonials.md"
+        description="What colleagues say about working with me"
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {displayedRecommendations.map((recommendation, index) => (
+        {displayedRecommendations.map((recommendation) => (
           <Recommendation
             key={recommendation.slug}
             recommendation={recommendation}
-            index={index}
           />
         ))}
       </div>
@@ -71,7 +51,7 @@ function Recommendations() {
       <div className="mt-8 flex justify-end">
         <Link
           href="/recommendations"
-          className="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-100 px-4 py-2 font-mono text-sm text-amber-950 transition-colors hover:bg-amber-200 dark:border-amber-700 dark:bg-amber-950/60 dark:text-amber-100 dark:hover:bg-amber-900/80"
+          className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-neutral-100 px-4 py-2 font-mono text-sm text-neutral-800 transition-colors hover:border-emerald-300 hover:text-emerald-800 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:border-emerald-700 dark:hover:text-emerald-200"
         >
           <span>view all {recommendations.length}</span>
           <svg
@@ -96,49 +76,13 @@ function Recommendations() {
 
 function Recommendation({
   recommendation,
-  index,
 }: {
   recommendation: RecommendationInterface
-  index: number
 }) {
-  const colors = [
-    {
-      border: 'border-emerald-500/30 dark:border-emerald-400/30',
-      hover: 'hover:border-emerald-500/50 dark:hover:border-emerald-400/50',
-      quote: 'text-emerald-600 dark:text-emerald-400',
-    },
-    {
-      border: 'border-sky-500/30 dark:border-sky-400/30',
-      hover: 'hover:border-sky-500/50 dark:hover:border-sky-400/50',
-      quote: 'text-sky-600 dark:text-sky-400',
-    },
-    {
-      border: 'border-violet-500/30 dark:border-violet-400/30',
-      hover: 'hover:border-violet-500/50 dark:hover:border-violet-400/50',
-      quote: 'text-violet-600 dark:text-violet-400',
-    },
-    {
-      border: 'border-amber-500/30 dark:border-amber-400/30',
-      hover: 'hover:border-amber-500/50 dark:hover:border-amber-400/50',
-      quote: 'text-amber-600 dark:text-amber-400',
-    },
-    {
-      border: 'border-rose-500/30 dark:border-rose-400/30',
-      hover: 'hover:border-rose-500/50 dark:hover:border-rose-400/50',
-      quote: 'text-rose-600 dark:text-rose-400',
-    },
-    {
-      border: 'border-cyan-500/30 dark:border-cyan-400/30',
-      hover: 'hover:border-cyan-500/50 dark:hover:border-cyan-400/50',
-      quote: 'text-cyan-600 dark:text-cyan-400',
-    },
-  ]
-  const color = colors[index % colors.length]
-
   return (
     <Link
       href={`/recommendations#${recommendation.slug}`}
-      className={`group block overflow-hidden rounded-lg border bg-white/85 dark:bg-neutral-900/85 ${color.border} ${color.hover} transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg`}
+      className="group block overflow-hidden rounded-lg border border-neutral-200 bg-white/85 transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-900/85 dark:hover:border-emerald-700"
     >
       {/* Terminal header */}
       <div className="flex h-6 items-center gap-2 border-b border-neutral-300 bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-800">
@@ -150,9 +94,13 @@ function Recommendation({
       <div className="p-4">
         <figure>
           <blockquote className="line-clamp-3 text-sm text-neutral-700 dark:text-neutral-200">
-            <span className={`${color.quote} font-serif text-lg`}>&ldquo;</span>
+            <span className="font-serif text-lg text-amber-600 dark:text-amber-400">
+              &ldquo;
+            </span>
             {truncate(recommendation.body, 120)}
-            <span className={`${color.quote} font-serif text-lg`}>&rdquo;</span>
+            <span className="font-serif text-lg text-amber-600 dark:text-amber-400">
+              &rdquo;
+            </span>
           </blockquote>
           <figcaption className="mt-4 flex items-center gap-3">
             <Image
@@ -188,14 +136,14 @@ export default function HomeClientContent() {
     <>
       <Container className="mt-10 sm:mt-16">
         {/* Main hero card - combines portrait and bio on mobile */}
-        <div className="overflow-hidden rounded-lg border border-emerald-300 bg-white/90 dark:border-emerald-700 dark:bg-neutral-900/90">
+        <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white/90 dark:border-neutral-700 dark:bg-neutral-900/90">
           {/* Terminal header */}
           <div className="flex h-6 items-center justify-between gap-2 border-b border-neutral-300 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
             <span className="truncate font-mono text-[10px] text-neutral-700 dark:text-neutral-100">
               ~/README.md
             </span>
-            <div className="flex items-center gap-1 rounded border border-emerald-300 bg-emerald-100 px-1.5 py-0.5 font-mono text-[10px] text-emerald-950 dark:border-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-100">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current" />
+            <div className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
               available
             </div>
           </div>
@@ -215,57 +163,18 @@ export default function HomeClientContent() {
                   />
                 </div>
 
-                {/* Social links - always inline row */}
-                <div className="mt-3 flex flex-row justify-center gap-1.5">
-                  <Link
-                    href="mailto:jonas@petrik.dev"
-                    className="rounded-md border border-neutral-300 bg-neutral-100 p-1.5 transition-colors hover:bg-emerald-100 hover:text-emerald-900 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:bg-emerald-950/70 dark:hover:text-emerald-100"
-                    aria-label="Email"
-                  >
-                    <MailIcon className="h-4 w-4 fill-neutral-700 dark:fill-neutral-200" />
-                  </Link>
-                  <Link
-                    href="https://www.linkedin.com/in/jonas-petrik/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-md border border-neutral-300 bg-neutral-100 p-1.5 transition-colors hover:bg-sky-100 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:bg-sky-950/70"
-                    aria-label="LinkedIn"
-                  >
-                    <LinkedInIcon className="h-4 w-4 fill-neutral-700 dark:fill-neutral-200" />
-                  </Link>
-                  <Link
-                    href="https://github.com/wukis"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-md border border-neutral-300 bg-neutral-100 p-1.5 transition-colors hover:bg-neutral-200 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:bg-neutral-700"
-                    aria-label="GitHub"
-                  >
-                    <GitHubIcon className="h-4 w-4 fill-neutral-700 dark:fill-neutral-200" />
-                  </Link>
-                  <Link
-                    href="https://gitlab.com/jonas.petrik"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-md border border-neutral-300 bg-neutral-100 p-1.5 transition-colors hover:bg-orange-100 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:bg-orange-950/70"
-                    aria-label="GitLab"
-                  >
-                    <GitLabIcon className="h-4 w-4 fill-neutral-700 dark:fill-neutral-200" />
-                  </Link>
-                </div>
+                <ProfileSocialLinks />
               </div>
 
               {/* Bio content */}
               <div className="min-w-0 flex-1 text-center sm:text-left">
                 <div className="mb-3">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-neutral-100 px-3 py-1 font-mono text-xs text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                  <span className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
                     {linkedin.basics.label}
                   </span>
                 </div>
                 <h1 className="text-2xl font-bold tracking-tight text-neutral-800 sm:text-3xl lg:text-4xl xl:text-5xl dark:text-neutral-100">
-                  <span className="font-mono text-emerald-600 dark:text-emerald-400">
-                    &gt;
-                  </span>{' '}
                   {linkedin.basics.name}
                 </h1>
                 <p className="mt-4 text-sm leading-relaxed text-neutral-700 sm:text-base dark:text-neutral-200">

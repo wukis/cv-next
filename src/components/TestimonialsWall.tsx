@@ -4,67 +4,24 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { RecommendationInterface } from '@/lib/recommendations'
 
-const colors = [
-  {
-    border: 'border-emerald-500/30 dark:border-emerald-400/30',
-    hover: 'hover:border-emerald-500/50 dark:hover:border-emerald-400/50',
-    accent: 'bg-emerald-500 dark:bg-emerald-400',
-    quote: 'text-emerald-600 dark:text-emerald-400',
-    ring: 'ring-emerald-500/50 dark:ring-emerald-400/50',
-  },
-  {
-    border: 'border-sky-500/30 dark:border-sky-400/30',
-    hover: 'hover:border-sky-500/50 dark:hover:border-sky-400/50',
-    accent: 'bg-sky-500 dark:bg-sky-400',
-    quote: 'text-sky-600 dark:text-sky-400',
-    ring: 'ring-sky-500/50 dark:ring-sky-400/50',
-  },
-  {
-    border: 'border-violet-500/30 dark:border-violet-400/30',
-    hover: 'hover:border-violet-500/50 dark:hover:border-violet-400/50',
-    accent: 'bg-violet-500 dark:bg-violet-400',
-    quote: 'text-violet-600 dark:text-violet-400',
-    ring: 'ring-violet-500/50 dark:ring-violet-400/50',
-  },
-  {
-    border: 'border-amber-500/30 dark:border-amber-400/30',
-    hover: 'hover:border-amber-500/50 dark:hover:border-amber-400/50',
-    accent: 'bg-amber-500 dark:bg-amber-400',
-    quote: 'text-amber-600 dark:text-amber-400',
-    ring: 'ring-amber-500/50 dark:ring-amber-400/50',
-  },
-  {
-    border: 'border-rose-500/30 dark:border-rose-400/30',
-    hover: 'hover:border-rose-500/50 dark:hover:border-rose-400/50',
-    accent: 'bg-rose-500 dark:bg-rose-400',
-    quote: 'text-rose-600 dark:text-rose-400',
-    ring: 'ring-rose-500/50 dark:ring-rose-400/50',
-  },
-  {
-    border: 'border-cyan-500/30 dark:border-cyan-400/30',
-    hover: 'hover:border-cyan-500/50 dark:hover:border-cyan-400/50',
-    accent: 'bg-cyan-500 dark:bg-cyan-400',
-    quote: 'text-cyan-600 dark:text-cyan-400',
-    ring: 'ring-cyan-500/50 dark:ring-cyan-400/50',
-  },
-]
+const testimonialAccent = {
+  hoverBorder: 'hover:border-emerald-300 dark:hover:border-emerald-700',
+  quote: 'text-amber-600 dark:text-amber-400',
+  ring: 'ring-emerald-500/40 dark:ring-emerald-400/40',
+}
 
 function Recommendation({
   recommendation,
-  index,
   isHighlighted,
 }: {
   recommendation: RecommendationInterface
-  index: number
   isHighlighted: boolean
 }) {
-  const color = colors[index % colors.length]
-
   return (
     <article id={recommendation.slug} className="scroll-mt-20">
       <div
-        className={`relative overflow-hidden rounded-xl border bg-white/85 backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:bg-neutral-900/85 ${color.border} ${color.hover} ${
-          isHighlighted ? `ring-2 ${color.ring} scale-[1.02] shadow-lg` : ''
+        className={`relative overflow-hidden rounded-xl border border-neutral-200 bg-white/85 backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-900/85 ${testimonialAccent.hoverBorder} ${
+          isHighlighted ? `ring-2 ${testimonialAccent.ring} scale-[1.02] shadow-lg` : ''
         }`}
       >
         {/* Terminal header */}
@@ -78,7 +35,7 @@ function Recommendation({
           {/* Quote */}
           <blockquote className="relative mb-4">
             <span
-              className={`absolute -left-1 -top-1 font-serif text-3xl ${color.quote} opacity-40`}
+              className={`absolute -left-1 -top-1 font-serif text-3xl ${testimonialAccent.quote} opacity-40`}
             >
               &ldquo;
             </span>
@@ -197,9 +154,6 @@ export function TestimonialsWall({
         <Recommendation
           key={recommendation.slug}
           recommendation={recommendation}
-          index={recommendations.findIndex(
-            (r) => r.slug === recommendation.slug,
-          )}
           isHighlighted={highlightedSlug === recommendation.slug}
         />
       ))}
@@ -211,9 +165,6 @@ export function TestimonialsWall({
             <Recommendation
               key={recommendation.slug}
               recommendation={recommendation}
-              index={recommendations.findIndex(
-                (r) => r.slug === recommendation.slug,
-              )}
               isHighlighted={highlightedSlug === recommendation.slug}
             />
           ))}
@@ -227,9 +178,6 @@ export function TestimonialsWall({
             <div key={recommendation.slug} className="mb-4 break-inside-avoid">
               <Recommendation
                 recommendation={recommendation}
-                index={recommendations.findIndex(
-                  (r) => r.slug === recommendation.slug,
-                )}
                 isHighlighted={highlightedSlug === recommendation.slug}
               />
             </div>
