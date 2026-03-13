@@ -1,5 +1,6 @@
 'use client'
 import React, { useId, useState } from 'react'
+import { surfaceHoverMotionClassName } from '@/components/interactionStyles'
 
 // Tech stack icons
 import {
@@ -392,7 +393,7 @@ export function TechStack({
     <div className="border-t border-neutral-200 bg-neutral-100/90 dark:border-neutral-700 dark:bg-neutral-800/70">
       <button
         type="button"
-        className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-black ${
+        className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-black ${surfaceHoverMotionClassName} ${
           tone === 'plain'
             ? 'hover:bg-neutral-100/50 focus-visible:ring-neutral-400 focus-visible:ring-offset-white dark:hover:bg-neutral-800/20'
             : 'hover:bg-neutral-200/80 focus-visible:ring-emerald-500 focus-visible:ring-offset-white dark:hover:bg-neutral-700/60'

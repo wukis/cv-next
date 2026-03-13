@@ -8,6 +8,7 @@ import { useTheme } from 'next-themes'
 import clsx from 'clsx'
 
 import { Container } from '@/components/Container'
+import { surfaceHoverMotionClassName } from '@/components/interactionStyles'
 
 function CloseIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
@@ -182,7 +183,7 @@ function MobileNavigation({ className }: { className?: string }) {
     <div className={className}>
       <button 
         onClick={() => setIsOpen(true)}
-        className="group flex items-center gap-2 rounded-lg bg-white/80 dark:bg-neutral-800/80 px-3 py-2 text-sm font-mono text-neutral-700 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 backdrop-blur transition hover:text-emerald-700 hover:ring-emerald-400/40 dark:text-neutral-300 dark:ring-neutral-700/50 dark:hover:text-emerald-300 dark:hover:ring-emerald-400/40"
+        className={`group flex items-center gap-2 rounded-lg bg-white/80 px-3 py-2 text-sm font-mono text-neutral-700 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 backdrop-blur hover:text-emerald-700 hover:ring-emerald-400/40 dark:bg-neutral-800/80 dark:text-neutral-300 dark:ring-neutral-700/50 dark:hover:text-emerald-300 dark:hover:ring-emerald-400/40 ${surfaceHoverMotionClassName}`}
       >
         <AnimatedTerminalIcon />
         <span>menu</span>
@@ -316,7 +317,7 @@ function ThemeToggle() {
     <button
       type="button"
       aria-label={mounted ? `Switch to ${otherTheme} theme` : 'Toggle theme'}
-      className="group flex h-10 w-10 items-center justify-center rounded-lg bg-white/80 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 backdrop-blur transition hover:ring-emerald-400/40 dark:bg-neutral-800/80 dark:ring-neutral-700/50 dark:hover:ring-emerald-400/40"
+      className={`group flex h-10 w-10 items-center justify-center rounded-lg bg-white/80 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 backdrop-blur hover:ring-emerald-400/40 dark:bg-neutral-800/80 dark:ring-neutral-700/50 dark:hover:ring-emerald-400/40 ${surfaceHoverMotionClassName}`}
       onClick={() => setTheme(otherTheme)}
     >
       <SunIcon className="h-5 w-5 fill-amber-100 stroke-amber-500 transition group-hover:fill-amber-200 group-hover:stroke-amber-600 dark:hidden" />
@@ -388,7 +389,7 @@ function AnimationFocus() {
 
   return (
     <div
-      className="group relative flex items-center justify-center w-10 h-10 rounded-lg bg-white/80 dark:bg-neutral-800/80 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 dark:ring-neutral-700/50 backdrop-blur transition-all cursor-pointer hover:ring-emerald-400/50 dark:hover:ring-emerald-400/50"
+      className={`group relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg bg-white/80 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 backdrop-blur hover:ring-emerald-400/50 dark:bg-neutral-800/80 dark:ring-neutral-700/50 dark:hover:ring-emerald-400/50 ${surfaceHoverMotionClassName}`}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
       onClick={triggerEmergency}

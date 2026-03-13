@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Container } from '@/components/Container'
+import { surfaceHoverMotionClassName } from '@/components/interactionStyles'
 import { ProfileSocialLinks } from '@/components/ProfileSocialLinks'
 import { TerminalPageHeader } from '@/components/TerminalHeader'
 import { TechStack } from '@/components/TechStack'
@@ -51,7 +52,7 @@ function Recommendations() {
       <div className="mt-8 flex justify-end">
         <Link
           href="/recommendations"
-          className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-neutral-100 px-4 py-2 font-mono text-sm text-neutral-800 transition-colors hover:border-emerald-300 hover:text-emerald-800 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:border-emerald-700 dark:hover:text-emerald-200"
+          className={`inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-neutral-100 px-4 py-2 font-mono text-sm text-neutral-800 hover:border-emerald-300 hover:text-emerald-800 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:border-emerald-700 dark:hover:text-emerald-200 ${surfaceHoverMotionClassName}`}
         >
           <span>view all {recommendations.length}</span>
           <svg
