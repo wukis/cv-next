@@ -5,12 +5,12 @@ import Image from 'next/image'
 import { RecommendationInterface } from '@/lib/recommendations'
 
 const colors = [
-  { border: 'border-emerald-500/20 dark:border-emerald-400/20', hover: 'hover:border-emerald-500/50 dark:hover:border-emerald-400/50', accent: 'bg-emerald-500 dark:bg-emerald-400', quote: 'text-emerald-600 dark:text-emerald-400', ring: 'ring-emerald-500/50 dark:ring-emerald-400/50' },
-  { border: 'border-sky-500/20 dark:border-sky-400/20', hover: 'hover:border-sky-500/50 dark:hover:border-sky-400/50', accent: 'bg-sky-500 dark:bg-sky-400', quote: 'text-sky-600 dark:text-sky-400', ring: 'ring-sky-500/50 dark:ring-sky-400/50' },
-  { border: 'border-violet-500/20 dark:border-violet-400/20', hover: 'hover:border-violet-500/50 dark:hover:border-violet-400/50', accent: 'bg-violet-500 dark:bg-violet-400', quote: 'text-violet-600 dark:text-violet-400', ring: 'ring-violet-500/50 dark:ring-violet-400/50' },
-  { border: 'border-amber-500/20 dark:border-amber-400/20', hover: 'hover:border-amber-500/50 dark:hover:border-amber-400/50', accent: 'bg-amber-500 dark:bg-amber-400', quote: 'text-amber-600 dark:text-amber-400', ring: 'ring-amber-500/50 dark:ring-amber-400/50' },
-  { border: 'border-rose-500/20 dark:border-rose-400/20', hover: 'hover:border-rose-500/50 dark:hover:border-rose-400/50', accent: 'bg-rose-500 dark:bg-rose-400', quote: 'text-rose-600 dark:text-rose-400', ring: 'ring-rose-500/50 dark:ring-rose-400/50' },
-  { border: 'border-cyan-500/20 dark:border-cyan-400/20', hover: 'hover:border-cyan-500/50 dark:hover:border-cyan-400/50', accent: 'bg-cyan-500 dark:bg-cyan-400', quote: 'text-cyan-600 dark:text-cyan-400', ring: 'ring-cyan-500/50 dark:ring-cyan-400/50' },
+  { border: 'border-emerald-500/30 dark:border-emerald-400/30', hover: 'hover:border-emerald-500/50 dark:hover:border-emerald-400/50', accent: 'bg-emerald-500 dark:bg-emerald-400', quote: 'text-emerald-600 dark:text-emerald-400', ring: 'ring-emerald-500/50 dark:ring-emerald-400/50' },
+  { border: 'border-sky-500/30 dark:border-sky-400/30', hover: 'hover:border-sky-500/50 dark:hover:border-sky-400/50', accent: 'bg-sky-500 dark:bg-sky-400', quote: 'text-sky-600 dark:text-sky-400', ring: 'ring-sky-500/50 dark:ring-sky-400/50' },
+  { border: 'border-violet-500/30 dark:border-violet-400/30', hover: 'hover:border-violet-500/50 dark:hover:border-violet-400/50', accent: 'bg-violet-500 dark:bg-violet-400', quote: 'text-violet-600 dark:text-violet-400', ring: 'ring-violet-500/50 dark:ring-violet-400/50' },
+  { border: 'border-amber-500/30 dark:border-amber-400/30', hover: 'hover:border-amber-500/50 dark:hover:border-amber-400/50', accent: 'bg-amber-500 dark:bg-amber-400', quote: 'text-amber-600 dark:text-amber-400', ring: 'ring-amber-500/50 dark:ring-amber-400/50' },
+  { border: 'border-rose-500/30 dark:border-rose-400/30', hover: 'hover:border-rose-500/50 dark:hover:border-rose-400/50', accent: 'bg-rose-500 dark:bg-rose-400', quote: 'text-rose-600 dark:text-rose-400', ring: 'ring-rose-500/50 dark:ring-rose-400/50' },
+  { border: 'border-cyan-500/30 dark:border-cyan-400/30', hover: 'hover:border-cyan-500/50 dark:hover:border-cyan-400/50', accent: 'bg-cyan-500 dark:bg-cyan-400', quote: 'text-cyan-600 dark:text-cyan-400', ring: 'ring-cyan-500/50 dark:ring-cyan-400/50' },
 ]
 
 function Recommendation({
@@ -30,15 +30,15 @@ function Recommendation({
       className="scroll-mt-20"
     >
       <div
-        className={`relative rounded-xl border bg-white/60 dark:bg-neutral-900/60 backdrop-blur-sm overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${color.border} ${color.hover} ${
+        className={`relative overflow-hidden rounded-xl border bg-white/85 backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:bg-neutral-900/85 ${color.border} ${color.hover} ${
           isHighlighted
             ? `ring-2 ${color.ring} shadow-lg scale-[1.02]`
             : ''
         }`}
       >
         {/* Terminal header */}
-        <div className="flex items-center gap-2 px-4 h-6 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
-          <span className="text-[10px] font-mono text-neutral-600 dark:text-neutral-300 truncate">
+        <div className="flex h-6 items-center gap-2 border-b border-neutral-300 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
+          <span className="truncate text-[10px] font-mono text-neutral-700 dark:text-neutral-100">
             ~/testimonials/{recommendation.slug}.md
           </span>
         </div>
@@ -51,13 +51,13 @@ function Recommendation({
             >
               &ldquo;
             </span>
-            <p className="text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed pl-4 pr-2">
+            <p className="pl-4 pr-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
               {recommendation.body}
             </p>
           </blockquote>
 
           {/* Author info */}
-          <div className="flex items-center gap-3 pt-4 border-t border-neutral-100 dark:border-neutral-800">
+          <div className="flex items-center gap-3 border-t border-neutral-200 pt-4 dark:border-neutral-700">
             <Image
               className="h-10 w-10 rounded-lg object-cover ring-2 ring-white dark:ring-neutral-800 flex-shrink-0"
               width={40}
@@ -69,10 +69,10 @@ function Recommendation({
               <h3 className="font-semibold text-sm text-neutral-800 dark:text-neutral-100">
                 {recommendation.fullName}
               </h3>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+              <p className="truncate text-xs text-neutral-700 dark:text-neutral-200">
                 {recommendation.position}
               </p>
-              <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
+              <p className="text-[10px] text-neutral-600 dark:text-neutral-300">
                 {recommendation.date}
               </p>
             </div>

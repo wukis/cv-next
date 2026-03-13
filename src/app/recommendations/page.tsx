@@ -18,7 +18,7 @@ export default async function RecommendationsPage() {
     <Container className="mt-10 sm:mt-16">
       {/* Page header */}
       <div className="mb-10">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-sm font-mono text-neutral-600 dark:text-neutral-400 mb-4">
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-neutral-100 px-3 py-1.5 text-sm font-mono text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100">
           <span className="w-2 h-2 rounded-full bg-violet-500" />
           {recommendations.length} testimonials
         </div>

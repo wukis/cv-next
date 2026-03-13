@@ -53,10 +53,10 @@ export default function About() {
 
       {/* Main card */}
       <div className="max-w-3xl">
-        <div className="rounded-lg overflow-hidden border border-sky-500/30 dark:border-sky-400/30 bg-white/50 dark:bg-neutral-900/50">
+        <div className="overflow-hidden rounded-lg border border-sky-300 bg-white/90 dark:border-sky-700 dark:bg-neutral-900/90">
           {/* Terminal header */}
-          <div className="flex items-center gap-2 px-4 h-6 bg-neutral-100/80 dark:bg-neutral-800/80 border-b border-neutral-200/60 dark:border-neutral-700/50">
-            <span className="text-[10px] font-mono text-neutral-600 dark:text-neutral-300 truncate">
+          <div className="flex h-6 items-center gap-2 border-b border-neutral-300 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
+            <span className="truncate text-[10px] font-mono text-neutral-700 dark:text-neutral-100">
               ~/ABOUT.md
             </span>
           </div>
@@ -80,37 +80,37 @@ export default function About() {
                 <div className="mt-3 flex flex-row gap-1.5 justify-center">
                   <Link
                     href="mailto:jonas@petrik.dev"
-                    className="p-1.5 rounded-md bg-neutral-100 dark:bg-neutral-800 hover:bg-emerald-500/30 dark:hover:bg-emerald-400/30 transition-colors"
+                    className="rounded-md border border-neutral-300 bg-neutral-100 p-1.5 transition-colors hover:bg-emerald-100 hover:text-emerald-900 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:bg-emerald-950/70 dark:hover:text-emerald-100"
                     aria-label="Email"
                   >
-                    <MailIcon className="w-4 h-4 fill-neutral-500 dark:fill-neutral-400" />
+                    <MailIcon className="h-4 w-4 fill-neutral-700 dark:fill-neutral-200" />
                   </Link>
                   <Link
                     href="https://www.linkedin.com/in/jonas-petrik/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-1.5 rounded-md bg-neutral-100 dark:bg-neutral-800 hover:bg-sky-500/30 dark:hover:bg-sky-400/30 transition-colors"
+                    className="rounded-md border border-neutral-300 bg-neutral-100 p-1.5 transition-colors hover:bg-sky-100 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:bg-sky-950/70"
                     aria-label="LinkedIn"
                   >
-                    <LinkedInIcon className="w-4 h-4 fill-neutral-500 dark:fill-neutral-400" />
+                    <LinkedInIcon className="h-4 w-4 fill-neutral-700 dark:fill-neutral-200" />
                   </Link>
                   <Link
                     href="https://github.com/wukis"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-1.5 rounded-md bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                    className="rounded-md border border-neutral-300 bg-neutral-100 p-1.5 transition-colors hover:bg-neutral-200 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:bg-neutral-700"
                     aria-label="GitHub"
                   >
-                    <GitHubIcon className="w-4 h-4 fill-neutral-500 dark:fill-neutral-400" />
+                    <GitHubIcon className="h-4 w-4 fill-neutral-700 dark:fill-neutral-200" />
                   </Link>
                   <Link
                     href="https://gitlab.com/jonas.petrik"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-1.5 rounded-md bg-neutral-100 dark:bg-neutral-800 hover:bg-orange-500/20 dark:hover:bg-orange-400/20 transition-colors"
+                    className="rounded-md border border-neutral-300 bg-neutral-100 p-1.5 transition-colors hover:bg-orange-100 dark:border-neutral-700 dark:bg-neutral-800 dark:hover:bg-orange-950/70"
                     aria-label="GitLab"
                   >
-                    <GitLabIcon className="w-4 h-4 fill-neutral-500 dark:fill-neutral-400" />
+                    <GitLabIcon className="h-4 w-4 fill-neutral-700 dark:fill-neutral-200" />
                   </Link>
                 </div>
               </div>
@@ -118,7 +118,7 @@ export default function About() {
               {/* Name and title */}
               <div className="flex-1 min-w-0 text-center sm:text-left">
                 <div className="mb-3">
-                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 text-xs font-mono text-neutral-600 dark:text-neutral-400">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-neutral-100 px-3 py-1 text-xs font-mono text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100">
                     <span className="w-2 h-2 rounded-full bg-sky-500" />
                     Staff Engineer / Team Lead
                   </span>
@@ -126,10 +126,10 @@ export default function About() {
                 <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-800 dark:text-neutral-100">
                   Jonas Petrik
                 </h2>
-                <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-400">
+                <p className="mt-3 text-sm text-neutral-700 dark:text-neutral-200">
                   Based in Germany · Originally from Lithuania
                 </p>
-                <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+                <p className="mt-1 text-sm text-neutral-700 dark:text-neutral-200">
                   {totalExperienceYears}+ years of experience
                 </p>
               </div>
@@ -156,15 +156,15 @@ export default function About() {
 
             {/* Connect CTA */}
             <div className="mt-8 pt-6 border-t border-neutral-200 dark:border-neutral-700">
-              <p className="text-neutral-600 dark:text-neutral-400 text-sm mb-4">
+              <p className="mb-4 text-sm text-neutral-700 dark:text-neutral-200">
                 Whether you&apos;re interested in potential collaborations or wish to exchange ideas, feel free to reach out!
               </p>
               <div className="flex flex-wrap gap-2">
                 <Link
                   href="mailto:jonas@petrik.dev"
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/30 dark:bg-emerald-400/30 text-emerald-800 dark:text-emerald-200 font-mono text-sm hover:bg-emerald-500/40 dark:hover:bg-emerald-400/40 transition-colors"
+                  className="inline-flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-100 px-3 py-1.5 font-mono text-sm text-emerald-950 transition-colors hover:bg-emerald-200 dark:border-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-100 dark:hover:bg-emerald-900/80"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                   contact

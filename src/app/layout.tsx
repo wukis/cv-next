@@ -5,10 +5,7 @@ import { Layout } from '@/components/Layout'
 import linkedin from '@/data/linkedin.json'
 
 import '@/styles/tailwind.css'
-import DeferredBackground from "@/components/DeferredBackground";
-import DeferredMetricWidgets from "@/components/DeferredMetricWidgets";
-import DeferredLogTerminal from "@/components/DeferredLogTerminal";
-import DeferredConsoleEasterEgg from "@/components/DeferredConsoleEasterEgg";
+import AmbientDecorations from '@/components/AmbientDecorations'
 
 const siteUrl = 'https://petrik.dev'
 
@@ -90,10 +87,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <body className="flex h-full bg-neutral-50 dark:bg-black">
-        <DeferredConsoleEasterEgg />
-        <DeferredBackground />
-        <DeferredMetricWidgets />
-        <DeferredLogTerminal />
+        <AmbientDecorations />
         <Providers>
           <div className="flex w-full">
             <Layout>{children}</Layout>
