@@ -18,14 +18,17 @@ export default async function RecommendationsPage() {
   return (
     <Container className="mt-10 sm:mt-16">
       <TerminalPageHeader
-        eyebrow={`${recommendations.length} testimonials`}
         command="cat"
         argument="testimonials.md"
         description="Recommendations from colleagues throughout my career"
       />
 
       {/* Testimonials wall */}
-      <TestimonialsWall recommendations={recommendations} />
+      <TestimonialsWall
+        recommendations={recommendations}
+        allowSorting
+        headerLabel={`${recommendations.length} testimonials`}
+      />
     </Container>
   )
 }

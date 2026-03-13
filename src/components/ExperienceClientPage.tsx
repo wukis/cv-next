@@ -584,8 +584,10 @@ function Work({
                   <div className="flex items-center gap-1 whitespace-nowrap font-mono text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                     {isFirst ? (
                       <>
-                        <span className="h-1.5 w-1.5 rounded-full bg-neutral-500 dark:bg-neutral-400" />
-                        HEAD
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
+                        <span className="text-emerald-700 dark:text-emerald-300">
+                          HEAD
+                        </span>
                       </>
                     ) : (
                       <>
@@ -855,7 +857,6 @@ export default function ExperienceClientContent() {
     <div>
       <Container className="mt-10 sm:mt-16">
         <TerminalPageHeader
-          eyebrow="currently employed"
           command="git log"
           argument="--oneline"
           description={`${totalExperienceYears}+ years of professional experience`}

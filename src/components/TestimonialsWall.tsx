@@ -76,10 +76,15 @@ function Recommendation({
 
 export function TestimonialsWall({
   recommendations,
+  allowSorting = false,
+  headerLabel,
 }: {
   recommendations: RecommendationInterface[]
+  allowSorting?: boolean
+  headerLabel?: string
 }) {
   const [highlightedSlug, setHighlightedSlug] = useState<string | null>(null)
+  const [sortMode, setSortMode] = useState<'natural' | 'recent'>('natural')
 
   useEffect(() => {
     const hash = window.location.hash.slice(1)
@@ -129,12 +134,19 @@ export function TestimonialsWall({
     return () => window.removeEventListener('hashchange', handleHashChange)
   }, [])
 
+  const displayedRecommendations =
+    sortMode === 'recent'
+      ? [...recommendations].sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+        )
+      : recommendations
+
   // Categorize testimonials by length
   const featured: RecommendationInterface[] = [] // >1500 chars - full width
   const long: RecommendationInterface[] = [] // 700-1500 chars - span 2 columns
   const regular: RecommendationInterface[] = [] // <700 chars - single column masonry
 
-  recommendations.forEach((rec) => {
+  displayedRecommendations.forEach((rec) => {
     if (rec.body.length > 1500) {
       featured.push(rec)
     } else if (rec.body.length > 700) {
@@ -149,19 +161,35 @@ export function TestimonialsWall({
 
   return (
     <div className="space-y-6">
-      {/* Featured testimonials - full width */}
-      {featured.map((recommendation) => (
-        <Recommendation
-          key={recommendation.slug}
-          recommendation={recommendation}
-          isHighlighted={highlightedSlug === recommendation.slug}
-        />
-      ))}
+      {allowSorting || headerLabel ? (
+        <div className="flex items-center justify-between gap-3">
+          <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+            {headerLabel}
+          </div>
+          {allowSorting ? (
+            <button
+              type="button"
+              onClick={() => {
+                setSortMode((current) =>
+                  current === 'recent' ? 'natural' : 'recent',
+                )
+              }}
+              className={`font-mono text-xs transition-colors ${
+                sortMode === 'recent'
+                  ? 'text-emerald-700 dark:text-emerald-300'
+                  : 'text-neutral-500 hover:text-emerald-700 dark:text-neutral-400 dark:hover:text-emerald-300'
+              }`}
+              aria-pressed={sortMode === 'recent'}
+            >
+              most recent
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
-      {/* Long testimonials - simple 2-column layout */}
-      {long.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {long.map((recommendation) => (
+      {sortMode === 'recent' ? (
+        <div className="space-y-4">
+          {displayedRecommendations.map((recommendation) => (
             <Recommendation
               key={recommendation.slug}
               recommendation={recommendation}
@@ -169,20 +197,47 @@ export function TestimonialsWall({
             />
           ))}
         </div>
-      )}
-
-      {/* Regular testimonials - true CSS columns masonry */}
-      {regular.length > 0 && (
-        <div className="columns-1 gap-4 sm:columns-2 lg:columns-3">
-          {regular.map((recommendation) => (
-            <div key={recommendation.slug} className="mb-4 break-inside-avoid">
-              <Recommendation
-                recommendation={recommendation}
-                isHighlighted={highlightedSlug === recommendation.slug}
-              />
-            </div>
+      ) : (
+        <>
+      {/* Featured testimonials - full width */}
+          {featured.map((recommendation) => (
+            <Recommendation
+              key={recommendation.slug}
+              recommendation={recommendation}
+              isHighlighted={highlightedSlug === recommendation.slug}
+            />
           ))}
-        </div>
+
+          {/* Long testimonials - simple 2-column layout */}
+          {long.length > 0 && (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {long.map((recommendation) => (
+                <Recommendation
+                  key={recommendation.slug}
+                  recommendation={recommendation}
+                  isHighlighted={highlightedSlug === recommendation.slug}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Regular testimonials - true CSS columns masonry */}
+          {regular.length > 0 && (
+            <div className="columns-1 gap-4 sm:columns-2 lg:columns-3">
+              {regular.map((recommendation) => (
+                <div
+                  key={recommendation.slug}
+                  className="mb-4 break-inside-avoid"
+                >
+                  <Recommendation
+                    recommendation={recommendation}
+                    isHighlighted={highlightedSlug === recommendation.slug}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   )
