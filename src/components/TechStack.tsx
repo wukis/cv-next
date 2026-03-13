@@ -324,9 +324,21 @@ export function TechIcon({
 }
 
 // Technology pill component for expanded view
-export function TechPill({ tech }: { tech: string }) {
+export function TechPill({
+  tech,
+  tone = 'default',
+}: {
+  tech: string
+  tone?: 'default' | 'plain'
+}) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded border border-neutral-300 bg-neutral-100 px-2 py-1 font-mono text-xs text-neutral-800 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100">
+    <span
+      className={`inline-flex items-center gap-1.5 rounded border px-2 py-1 font-mono text-xs ${
+        tone === 'plain'
+          ? 'border-neutral-200 bg-transparent text-neutral-600 dark:border-neutral-700 dark:text-neutral-300'
+          : 'border-neutral-300 bg-neutral-100 text-neutral-800 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100'
+      }`}
+    >
       <TechIcon tech={tech} className="h-3.5 w-3.5 flex-shrink-0 opacity-80" />
       {tech}
     </span>
@@ -334,10 +346,20 @@ export function TechPill({ tech }: { tech: string }) {
 }
 
 // Technology icon (collapsed view)
-export function TechIconButton({ tech }: { tech: string }) {
+export function TechIconButton({
+  tech,
+  tone = 'default',
+}: {
+  tech: string
+  tone?: 'default' | 'plain'
+}) {
   return (
     <span
-      className="inline-flex aspect-square h-7 w-7 flex-shrink-0 items-center justify-center rounded border border-neutral-300 bg-neutral-100 text-neutral-700 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200"
+      className={`inline-flex aspect-square h-7 w-7 flex-shrink-0 items-center justify-center rounded border ${
+        tone === 'plain'
+          ? 'border-neutral-200 bg-transparent text-neutral-600 dark:border-neutral-700 dark:text-neutral-300'
+          : 'border-neutral-300 bg-neutral-100 text-neutral-700 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200'
+      }`}
       role="img"
       aria-label={tech}
     >
@@ -347,7 +369,13 @@ export function TechIconButton({ tech }: { tech: string }) {
 }
 
 // Company-level tech stack display with expand/collapse
-export function TechStack({ technologies }: { technologies: string[] }) {
+export function TechStack({
+  technologies,
+  tone = 'default',
+}: {
+  technologies: string[]
+  tone?: 'default' | 'plain'
+}) {
   const [isExpanded, setIsExpanded] = useState(false)
   const contentId = useId()
 
@@ -362,17 +390,25 @@ export function TechStack({ technologies }: { technologies: string[] }) {
 
   return (
     <div className="border-t border-neutral-200 bg-neutral-100/90 dark:border-neutral-700 dark:bg-neutral-800/70">
-      {/* Header row - always visible, clickable */}
       <button
         type="button"
-        className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left transition-colors hover:bg-neutral-200/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:hover:bg-neutral-700/60 dark:focus-visible:ring-offset-black"
+        className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-black ${
+          tone === 'plain'
+            ? 'hover:bg-neutral-100/50 focus-visible:ring-neutral-400 focus-visible:ring-offset-white dark:hover:bg-neutral-800/20'
+            : 'hover:bg-neutral-200/80 focus-visible:ring-emerald-500 focus-visible:ring-offset-white dark:hover:bg-neutral-700/60'
+        }`}
         onClick={toggleExpand}
         aria-expanded={isExpanded}
         aria-controls={contentId}
       >
         <div className="flex min-w-0 flex-1 items-center gap-3">
-          {/* Title - hide text on mobile when collapsed, show when expanded */}
-          <div className="flex flex-shrink-0 items-center gap-2 font-mono text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-100">
+          <div
+            className={`flex flex-shrink-0 items-center gap-2 ${
+              tone === 'plain'
+                ? 'text-[11px] text-neutral-500 dark:text-neutral-400'
+                : 'font-mono text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-100'
+            }`}
+          >
             <svg
               className="h-3.5 w-3.5"
               fill="none"
@@ -392,14 +428,19 @@ export function TechStack({ technologies }: { technologies: string[] }) {
             </span>
           </div>
 
-          {/* Collapsed preview */}
           {!isExpanded && (
             <div className="flex items-center gap-1.5 overflow-hidden">
               {visibleTechs.map((tech, i) => (
-                <TechIconButton key={i} tech={tech} />
+                <TechIconButton key={i} tech={tech} tone={tone} />
               ))}
               {hiddenCount > 0 && (
-                <span className="rounded bg-neutral-200 px-1.5 py-0.5 font-mono text-xs text-neutral-700 dark:bg-neutral-700 dark:text-neutral-100">
+                <span
+                  className={`font-mono text-xs ${
+                    tone === 'plain'
+                      ? 'text-neutral-500 dark:text-neutral-400'
+                      : 'rounded bg-neutral-200 px-1.5 py-0.5 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-100'
+                  }`}
+                >
                   +{hiddenCount} more
                 </span>
               )}
@@ -407,7 +448,6 @@ export function TechStack({ technologies }: { technologies: string[] }) {
           )}
         </div>
 
-        {/* Expand/collapse chevron */}
         <svg
           className={`h-4 w-4 flex-shrink-0 text-neutral-600 transition-transform duration-200 dark:text-neutral-200 ${
             isExpanded ? 'rotate-180' : ''
@@ -426,7 +466,6 @@ export function TechStack({ technologies }: { technologies: string[] }) {
         </svg>
       </button>
 
-      {/* Expanded content */}
       <div
         id={contentId}
         className={`transition-all duration-300 ease-in-out ${
@@ -450,12 +489,18 @@ export function TechStack({ technologies }: { technologies: string[] }) {
                   transform: isExpanded ? 'translateY(0)' : 'translateY(-8px)',
                 }}
               >
-                <div className="mb-2 font-mono text-[10px] uppercase tracking-wider text-neutral-700 dark:text-neutral-200">
+                <div
+                  className={`mb-2 ${
+                    tone === 'plain'
+                      ? 'text-[11px] text-neutral-500 dark:text-neutral-400'
+                      : 'font-mono text-[10px] uppercase tracking-wider text-neutral-700 dark:text-neutral-200'
+                  }`}
+                >
                   {category}
                 </div>
                 <div className="flex min-w-0 flex-wrap gap-1.5">
                   {techs.map((tech, i) => (
-                    <TechPill key={i} tech={tech} />
+                    <TechPill key={i} tech={tech} tone={tone} />
                   ))}
                 </div>
               </div>

@@ -209,7 +209,7 @@ export default function About() {
           </div>
 
           {/* Tech Stack from current employment */}
-          <TechStack technologies={currentEmployment.technologies} />
+          <TechStack technologies={currentEmployment.technologies} tone="plain" />
         </div>
       </div>
     </Container>

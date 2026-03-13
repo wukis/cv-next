@@ -1,15 +1,8 @@
 'use client'
-import React, { useState } from 'react'
+import React from 'react'
 
 import { Container } from '@/components/Container'
-import {
-  TechStack,
-  TechPill,
-  TechIcon,
-  groupTechByCategory,
-  TECH_CATEGORIES,
-  getTechCategory,
-} from '@/components/TechStack'
+import { TechStack } from '@/components/TechStack'
 import { EducationInterface, WorkInterface } from '@/lib/experience'
 import linkedIn from '@/data/linkedin.json'
 import work from '@/data/work.json'
@@ -208,11 +201,9 @@ const getPromotionDiff = (
 // Promotion diff display component
 function PromotionDiff({
   newItems,
-  roleColors,
   label,
 }: {
   newItems: string[]
-  roleColors: ReturnType<typeof getBranchColors>
   label: string
 }) {
   if (newItems.length === 0) return null
@@ -220,14 +211,14 @@ function PromotionDiff({
   return (
     <div className="mt-3">
       <div className="mb-2 flex items-center gap-2">
-        <span className="rounded border border-emerald-300 bg-emerald-100 px-1.5 py-0.5 font-mono text-[10px] text-emerald-950 dark:border-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-100">
+        <span className="font-mono text-[10px] uppercase tracking-wider text-sky-700 dark:text-sky-300">
           +{newItems.length} {label}
         </span>
       </div>
-      <div className="space-y-1.5 border-l-2 border-emerald-500/30 pl-2">
+      <div className="space-y-1.5 border-l-2 border-sky-200 pl-2 dark:border-sky-900/70">
         {newItems.map((item, i) => (
           <div key={i} className="flex items-baseline gap-2 text-sm">
-            <span className="flex-shrink-0 select-none font-mono text-emerald-500 dark:text-emerald-400">
+            <span className="flex-shrink-0 select-none font-mono text-sky-600 dark:text-sky-400">
               +
             </span>
             <span className="text-neutral-700 dark:text-neutral-200">
@@ -247,7 +238,7 @@ function RoleHighlights({ highlights }: { highlights: string[] }) {
   return (
     <div className="mt-3">
       <div className="mb-2 flex items-center gap-2">
-        <span className="rounded border border-amber-300 bg-amber-100 px-1.5 py-0.5 font-mono text-[10px] text-amber-950 dark:border-amber-700 dark:bg-amber-950/60 dark:text-amber-100">
+        <span className="font-mono text-[10px] uppercase tracking-wider text-amber-700 dark:text-amber-300">
           <svg
             className="mr-1 inline h-2.5 w-2.5"
             fill="currentColor"
@@ -258,10 +249,10 @@ function RoleHighlights({ highlights }: { highlights: string[] }) {
           highlights
         </span>
       </div>
-      <div className="space-y-1.5 border-l-2 border-amber-500/30 pl-2 dark:border-amber-400/30">
+      <div className="space-y-1.5 border-l-2 border-amber-200 pl-2 dark:border-amber-900/70">
         {highlights.map((item, i) => (
           <div key={i} className="flex items-baseline gap-2 text-sm">
-            <span className="flex-shrink-0 select-none font-mono text-amber-500 dark:text-amber-400">
+            <span className="flex-shrink-0 select-none font-mono text-amber-600 dark:text-amber-400">
               ★
             </span>
             <span className="text-neutral-700 dark:text-neutral-300">
@@ -277,16 +268,14 @@ function RoleHighlights({ highlights }: { highlights: string[] }) {
 // Company-level projects display
 function CompanyProjects({
   projects,
-  colors,
 }: {
   projects: string[]
-  colors: ReturnType<typeof getBranchColors>
 }) {
   if (projects.length === 0) return null
 
   return (
     <div className="border-t border-neutral-200 px-4 py-3 dark:border-neutral-700">
-      <div className="mb-2 flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-100">
+      <div className="mb-2 flex items-center gap-2 text-[11px] text-neutral-500 dark:text-neutral-400">
         <svg
           className="h-3.5 w-3.5"
           fill="none"
@@ -303,13 +292,15 @@ function CompanyProjects({
         </svg>
         Projects
       </div>
-      <div className="space-y-2">
+      <div className="space-y-1.5 border-l border-neutral-200 pl-3 dark:border-neutral-700">
         {projects.map((item, i) => (
-          <div
-            key={i}
-            className={`rounded-md border px-3 py-2 text-sm ${colors.bg} ${colors.border}`}
-          >
-            <span className={`font-medium ${colors.text}`}>{item}</span>
+          <div key={i} className="flex items-baseline gap-2 text-sm">
+            <span className="flex-shrink-0 select-none font-mono text-neutral-400 dark:text-neutral-500">
+              -
+            </span>
+            <span className="text-neutral-700 dark:text-neutral-200">
+              {item}
+            </span>
           </div>
         ))}
       </div>
@@ -369,7 +360,7 @@ function Education({
   education: EducationInterface
   isLast: boolean
 }) {
-  const colors = getBranchColors('junior') // Amber colors for education
+  const colors = getBranchColors('junior')
   const duration = getDuration(education.startDate, education.endDate)
 
   return (
@@ -381,34 +372,24 @@ function Education({
           <div className="absolute bottom-0 top-6 w-px bg-neutral-300 dark:bg-neutral-600" />
         )}
 
-        {/* Commit node - matching work experience style */}
         <div className="relative flex h-6 w-6 flex-shrink-0 items-center justify-center">
-          {/* Outer glow ring */}
+          <div className="absolute inset-0 rounded-full ring-2 ring-neutral-300 dark:ring-neutral-700" />
           <div
-            className={`absolute inset-0 rounded-full ring-4 ${colors.ring} shadow-lg ${colors.glow}`}
-          />
-          {/* Inner commit node */}
-          <div
-            className={`relative h-4 w-4 rounded-full ${colors.node} ring-2 ring-white dark:ring-neutral-900`}
+            className="relative h-4 w-4 rounded-full bg-neutral-400 ring-2 ring-white dark:bg-neutral-500 dark:ring-neutral-900"
           />
         </div>
       </div>
 
-      {/* Content */}
       <div className="min-w-0 flex-1 sm:-mt-1">
-        {/* Terminal-style card - matching work experience */}
         <div
-          className={`overflow-hidden rounded-lg border bg-white/90 transition-all duration-300 dark:bg-neutral-900/90 ${colors.border} group-hover:shadow-lg`}
+          className="overflow-hidden rounded-lg border border-neutral-200 bg-white/90 transition-all duration-300 dark:border-neutral-700 dark:bg-neutral-900/90 group-hover:shadow-lg"
         >
-          {/* Terminal header - matching work experience */}
           <div className="flex h-6 items-center justify-between gap-2 border-b border-neutral-300 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
             <span className="hidden truncate font-mono text-[10px] text-neutral-700 sm:block dark:text-neutral-100">
               ~/education/
               {education.studyType.toLowerCase().replace(/\s+/g, '-')}.md
             </span>
-            <div
-              className={`flex items-center gap-1 whitespace-nowrap rounded border px-1.5 py-0.5 font-mono text-[10px] ${colors.text} ${colors.bg} ${colors.border}`}
-            >
+            <div className="flex items-center gap-1 whitespace-nowrap font-mono text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
               <svg
                 className="h-3 w-3"
                 fill="none"
@@ -433,7 +414,6 @@ function Education({
             </div>
           </div>
 
-          {/* Institution header - matching company header */}
           <div className="border-b border-neutral-200 p-4 dark:border-neutral-700">
             <div className="flex items-start gap-4">
               <Image
@@ -451,7 +431,9 @@ function Education({
                   {education.institution}
                 </h3>
                 <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-neutral-700 dark:text-neutral-200">
-                  <span className="font-mono">{duration.years}y</span>
+                  <span className="font-mono text-neutral-500 dark:text-neutral-400">
+                    {duration.years}y
+                  </span>
                   <span className="text-neutral-300 dark:text-neutral-600">
                     ·
                   </span>
@@ -482,22 +464,16 @@ function Education({
             </div>
           </div>
 
-          {/* Degree details - matching position style */}
           <div className="p-4">
             <div className="flex items-start gap-3">
-              {/* Mini commit indicator */}
-              <div
-                className={`mt-1.5 h-2 w-2 flex-shrink-0 rounded-full ${colors.node}`}
-              />
+              <div className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-neutral-400 dark:bg-neutral-500" />
 
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h4 className="font-medium text-neutral-800 dark:text-neutral-100">
                     {education.studyType} in {education.area}
                   </h4>
-                  <span
-                    className={`inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-[10px] ${colors.text} ${colors.bg} ${colors.border}`}
-                  >
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                     {education.startDate} → {education.endDate}
                   </span>
                 </div>
@@ -533,7 +509,6 @@ function Work({
     <div className="relative">
       {companies.map((company, companyIndex) => {
         const companyData = groupedWorkExperiences[company]
-        const formattedStartDate = `${companyData.startDate.getFullYear()}-${String(companyData.startDate.getMonth() + 1).padStart(2, '0')}`
         const formattedEndDate = `${companyData.endDate.getFullYear()}-${String(companyData.endDate.getMonth() + 1).padStart(2, '0')}`
         const isFirst = companyIndex === 0
         const isLast = companyIndex === companies.length - 1
@@ -574,32 +549,28 @@ function Work({
                 <div className="absolute bottom-0 top-6 w-px bg-neutral-300 dark:bg-neutral-600" />
               )}
 
-              {/* Commit node - restored previous style with outer glow ring */}
               <div className="relative flex h-6 w-6 flex-shrink-0 items-center justify-center">
-                {/* Ping animation for current position */}
-                {isFirst && (
-                  <div
-                    className={`absolute inset-0 rounded-full ${colors.ping} animate-ping`}
-                  />
-                )}
-                {/* Outer glow ring */}
                 <div
-                  className={`absolute inset-0 rounded-full ring-4 ${colors.ring} shadow-lg ${colors.glow}`}
+                  className={`absolute inset-0 rounded-full ${
+                    isFirst
+                      ? `ring-4 ${colors.ring}`
+                      : 'ring-2 ring-neutral-300 dark:ring-neutral-700'
+                  }`}
                 />
-                {/* Inner commit node */}
                 <div
-                  className={`relative h-4 w-4 rounded-full ${colors.node} ring-2 ring-white dark:ring-neutral-900`}
+                  className={`relative h-4 w-4 rounded-full ring-2 ring-white dark:ring-neutral-900 ${
+                    isFirst
+                      ? colors.node
+                      : 'bg-neutral-400 dark:bg-neutral-500'
+                  }`}
                 />
               </div>
             </div>
 
-            {/* Content */}
             <div className="min-w-0 flex-1 sm:-mt-1">
-              {/* Terminal-style card */}
               <div
-                className={`overflow-hidden rounded-lg border bg-white/90 transition-all duration-300 dark:bg-neutral-900/90 ${colors.border} group-hover:shadow-lg`}
+                className="overflow-hidden rounded-lg border border-neutral-200 bg-white/90 transition-all duration-300 dark:border-neutral-700 dark:bg-neutral-900/90 group-hover:shadow-lg"
               >
-                {/* Terminal header */}
                 <div className="flex h-6 items-center justify-between gap-2 border-b border-neutral-300 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
                   <span className="hidden truncate font-mono text-[10px] text-neutral-700 sm:block dark:text-neutral-100">
                     ~/work/
@@ -609,12 +580,10 @@ function Work({
                       .replace(/[^a-z0-9-]/g, '')}
                     .md
                   </span>
-                  <div
-                    className={`flex items-center gap-1 whitespace-nowrap rounded border px-1.5 py-0.5 font-mono text-[10px] ${colors.text} ${colors.bg} ${colors.border}`}
-                  >
+                  <div className="flex items-center gap-1 whitespace-nowrap font-mono text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                     {isFirst ? (
                       <>
-                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-current" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-neutral-500 dark:bg-neutral-400" />
                         HEAD
                       </>
                     ) : (
@@ -639,7 +608,6 @@ function Work({
                   </div>
                 </div>
 
-                {/* Company header */}
                 <div className="border-b border-neutral-200 p-4 dark:border-neutral-700">
                   <div className="flex items-start gap-4">
                     <Image
@@ -681,7 +649,7 @@ function Work({
                         )}
                       </h3>
                       <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-neutral-700 dark:text-neutral-200">
-                        <span className="font-mono">
+                        <span className="font-mono text-neutral-500 dark:text-neutral-400">
                           {formatDuration(companyData.totalDuration)}
                         </span>
                         <span className="text-neutral-300 dark:text-neutral-600">
@@ -707,14 +675,16 @@ function Work({
                               d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                             />
                           </svg>
-                          {companyData.location}
+                          <span className="text-neutral-500 dark:text-neutral-400">
+                            {companyData.location}
+                          </span>
                         </span>
                         {hasMultipleRoles && (
                           <>
                             <span className="text-neutral-300 dark:text-neutral-600">
                               ·
                             </span>
-                            <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-300">
+                            <span className="inline-flex items-center gap-1 text-neutral-500 dark:text-neutral-400">
                               <svg
                                 className="h-3.5 w-3.5"
                                 fill="none"
@@ -738,7 +708,6 @@ function Work({
                   </div>
                 </div>
 
-                {/* Positions/Commits list - with promotion diff support */}
                 <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
                   {companyData.experiences.map((experience, index) => {
                     const roleType = getRoleType(experience.position)
@@ -754,35 +723,26 @@ function Work({
                       hasMultipleRoles &&
                       index === companyData.experiences.length - 1
 
-                    // Get promotion diff for responsibilities
                     const diff = getPromotionDiff(
                       experience,
                       previousExperience,
                     )
 
-                    // For single role companies or base role, show all responsibilities
-                    // For promotions, only show new responsibilities
                     const responsibilitiesToShow = isPromoted
                       ? diff.newResponsibilities
                       : experience.responsibilities
 
                     return (
                       <div key={index} className="p-4">
-                        {/* Position header */}
                         <div className="flex items-start gap-3">
-                          {/* Mini commit indicator - aligned with title */}
-                          <div
-                            className={`mt-[7px] h-2 w-2 flex-shrink-0 rounded-full ${roleColors.node}`}
-                          />
+                          <div className="mt-[7px] h-2 w-2 flex-shrink-0 rounded-full bg-neutral-400 dark:bg-neutral-500" />
 
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2">
-                              <h4 className="font-medium text-neutral-800 dark:text-neutral-100">
+                              <h4 className="font-medium text-neutral-900 dark:text-neutral-100">
                                 {experience.position}
                               </h4>
-                              <span
-                                className={`inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-[10px] ${roleColors.text} ${roleColors.bg} ${roleColors.border}`}
-                              >
+                              <span className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                                 {formatDuration(
                                   getDuration(
                                     experience.startDate,
@@ -791,9 +751,9 @@ function Work({
                                 )}
                               </span>
                               {isPromoted && (
-                                <span className="inline-flex items-center rounded border border-amber-300 bg-amber-100 px-1.5 py-0.5 font-mono text-[10px] text-amber-950 dark:border-amber-700 dark:bg-amber-950/60 dark:text-amber-100">
+                                <span className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                                   <svg
-                                    className="mr-0.5 h-2.5 w-2.5"
+                                    className="h-2.5 w-2.5"
                                     fill="none"
                                     viewBox="0 0 24 24"
                                     stroke="currentColor"
@@ -810,7 +770,6 @@ function Work({
                               )}
                             </div>
 
-                            {/* Role highlights */}
                             {experience.highlights &&
                               experience.highlights.length > 0 && (
                                 <RoleHighlights
@@ -818,22 +777,19 @@ function Work({
                                 />
                               )}
 
-                            {/* Show promotion diff or base responsibilities */}
                             {isPromoted &&
                               responsibilitiesToShow.length > 0 && (
                                 <PromotionDiff
                                   newItems={responsibilitiesToShow}
-                                  roleColors={roleColors}
                                   label="new"
                                 />
                               )}
 
-                            {/* For base role with multiple positions, show base responsibilities */}
                             {isBaseRole &&
                               responsibilitiesToShow.length > 0 && (
                                 <div className="mt-3">
                                   <div className="mb-2 flex items-center gap-2">
-                                    <span className="rounded border border-neutral-300 bg-neutral-100 px-1.5 py-0.5 font-mono text-[10px] text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100">
+                                    <span className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                                       base responsibilities
                                     </span>
                                   </div>
@@ -855,21 +811,16 @@ function Work({
                                 </div>
                               )}
 
-                            {/* For single role companies, show all responsibilities in original format */}
                             {!hasMultipleRoles &&
                               responsibilitiesToShow.length > 0 && (
                                 <div className="mt-3">
-                                  <div
-                                    className={`space-y-1.5 border-l-2 pl-2 ${roleColors.border}`}
-                                  >
+                                  <div className="space-y-1.5 border-l-2 border-neutral-300 pl-2 dark:border-neutral-600">
                                     {responsibilitiesToShow.map((item, i) => (
                                       <div
                                         key={i}
                                         className="flex items-baseline gap-2 text-sm"
                                       >
-                                        <span
-                                          className={`font-mono ${roleColors.text} flex-shrink-0 select-none`}
-                                        >
+                                        <span className="flex-shrink-0 select-none font-mono text-neutral-500 dark:text-neutral-400">
                                           •
                                         </span>
                                         <span className="text-neutral-700 dark:text-neutral-200">
@@ -887,9 +838,8 @@ function Work({
                   })}
                 </div>
 
-                {/* Company-level projects and tech stack */}
-                <CompanyProjects projects={allProjects} colors={colors} />
-                <TechStack technologies={allTechnologies} />
+                <CompanyProjects projects={allProjects} />
+                <TechStack technologies={allTechnologies} tone="plain" />
               </div>
             </div>
           </div>
@@ -904,8 +854,8 @@ export default function ExperienceClientContent() {
     <div>
       <Container className="mt-10 sm:mt-16">
         <div className="mb-10">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-neutral-100 px-3 py-1.5 font-mono text-sm text-neutral-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/70 px-3 py-1.5 font-mono text-sm uppercase tracking-wider text-emerald-800 dark:border-emerald-900/70 dark:bg-emerald-950/30 dark:text-emerald-200">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
             currently employed
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-neutral-800 sm:text-4xl lg:text-5xl dark:text-neutral-100">

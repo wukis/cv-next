@@ -279,7 +279,7 @@ export default function HomeClientContent() {
           </div>
 
           {/* Tech Stack from current employment */}
-          <TechStack technologies={currentEmployment.technologies} />
+          <TechStack technologies={currentEmployment.technologies} tone="plain" />
         </div>
       </Container>
 
