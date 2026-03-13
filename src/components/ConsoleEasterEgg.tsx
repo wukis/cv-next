@@ -25,48 +25,53 @@ type JonasEmergencyApi = {
   hire: () => string
 }
 
+const BOX_WIDTH = 78
+
 const INCIDENT_SCENARIOS: IncidentScenario[] = [
   {
     service: 'checkout-api',
     severity: 'SEV-2',
-    alert: 'p95 latency climbed high enough to develop opinions',
-    likelyCause: 'someone taught the happy path about edge cases',
+    alert: 'p95 latency left the SLO and kept walking',
+    likelyCause: 'the happy path collected three extra conditionals overnight',
     metric: 'p95 4.8s',
   },
   {
     service: 'payment-router',
     severity: 'SEV-1',
     alert: 'retry storm detected near the card authorization path',
-    likelyCause: 'an upstream gateway is having a character-building day',
+    likelyCause:
+      'an upstream gateway is answering every request with “interesting”',
     metric: 'retry rate 37%',
   },
   {
     service: 'cart-pipeline',
     severity: 'SEV-2',
-    alert: 'queue backlog reached the “this feels personal” threshold',
-    likelyCause: 'one worker discovered synchronous I/O and got attached',
+    alert: 'queue backlog exceeded the “who merged on Friday” threshold',
+    likelyCause:
+      'one worker found blocking I/O in a place that promised not to',
     metric: 'queue depth 18,240',
   },
   {
     service: 'promo-engine',
     severity: 'SEV-2',
-    alert: 'discount logic is free-styling in production',
-    likelyCause: 'a coupon path escaped unit-test containment',
+    alert: 'discount logic is now interpreting requirements creatively',
+    likelyCause:
+      'a coupon edge case slipped past review with a confident description',
     metric: 'error rate 12.4%',
   },
 ]
 
 const OPENING_LINES = [
-  'bridge opened: senior engineers pretending this is fine',
-  'incident room established: vibes low, observability high',
-  'war room online: someone already asked who touched prod',
-  'emergency comms active: caffeine levels rising normally',
+  'bridge opened: first message was “is this actually prod?”',
+  'incident room established: someone already asked for a timeline',
+  'war room online: one engineer is typing “looking” with purpose',
+  'emergency comms active: coffee brewed, blame deferred',
 ]
 
 const JONAS_LINES = [
   'jonas: give me traces, not vibes.',
   'jonas: if we need three dashboards to explain it, we need fewer dashboards.',
-  'jonas: okay, who taught the queue to grow feelings?',
+  'jonas: okay, which “small refactor” is about to become a postmortem?',
   'jonas: let me guess, the hot path got “just one more condition”.',
 ]
 
@@ -74,39 +79,96 @@ const ENGINEER_LINES = [
   'ops: I have logs, metrics, and one deeply unhelpful screenshot.',
   'backend: I can reproduce it locally, which feels threatening.',
   'on-call: status page drafted, dignity still pending.',
-  'payments: gateway says everything is healthy, which is suspicious.',
+  'payments: gateway says everything is healthy, which helps nobody.',
+  'frontend: I am here to confirm the button did not cause this one.',
+  'platform: checking infra now, and yes we already looked at Redis.',
+]
+
+const FOLLOWUP_LINES = [
+  'sre: correlating deploy time with graph shape and suspicious optimism.',
+  'backend: I found the branch name and it is not helping the defense.',
+  'ops: the logs are clear, concise, and devastating.',
+  'incident-bot: reminder that “maybe cache?” is not a mitigation.',
+  'db: query plan says hello and also absolutely not.',
+  'platform: can confirm the node is healthy and disappointed in all of us.',
+]
+
+const DIAGNOSIS_LINES = [
+  'tracing: one request path now does enough work for three microservices.',
+  'metrics: the deploy marker lines up a little too perfectly here.',
+  'profiling: hottest function is exactly the one described as “tiny helper”.',
+  'logs: same stack trace, different ways of ruining the afternoon.',
+  'alerts: noise floor reached, but at least it is consistently noisy.',
+]
+
+const INCIDENT_BOT_LINES = [
+  'incident-bot: 1 person is blaming DNS out of muscle memory.',
+  'incident-bot: somebody typed “rolling back” before saying hello.',
+  'incident-bot: bridge participants now pretending this is routine.',
+  'incident-bot: postmortem title suggestions already appearing in chat.',
+]
+
+const PM_LINES = [
+  'pm: do we have a customer-safe summary that uses fewer than three acronyms?',
+  'pm: checking impact now, also asking very politely about ETA.',
+  'pm: can I say “degraded” or are we still in the “investigating” phase?',
 ]
 
 const RESOLUTION_LINES = [
   'resolution: rate limited the noisy path, added guardrails, everyone exhaled.',
   'resolution: reverted the spicy code path and the graphs stopped screaming.',
   'resolution: cut alert noise, fixed the bottleneck, preserved weekend plans.',
-  'resolution: one tiny config change, twelve minutes of dramatic storytelling.',
+  'resolution: one tiny config change, twelve minutes of very senior nodding.',
 ]
 
 const FIX_RESPONSES = [
-  'Applied calm, traces, and one annoyingly effective config tweak.',
-  'Reduced alert noise by 80% and everyone suddenly remembered how to breathe.',
-  'Fixed. Root cause: optimism in the hot path.',
-  'Patched the pipeline. The queue has returned to being just a queue.',
+  'Applied traces, diffed the last deploy, and used one annoyingly effective config tweak.',
+  'Reduced alert noise by 80% and replaced panic with a checklist.',
+  'Fixed. Root cause: too much confidence too close to the hot path.',
+  'Patched the pipeline. CI now agrees with the apology in Slack.',
 ]
 
 const BLAME_RESPONSES = [
-  'Officially: shared responsibility. Emotionally: one “small refactor”.',
-  'Blame points to edge cases, timing, and human confidence.',
-  'Root cause analysis says “systems are social creatures”.',
-  'No single villain. Just a committee of bad timing.',
+  'Officially: shared responsibility. Unofficially: one “small refactor”.',
+  'Blame points to edge cases, timing, and a suspiciously cheerful pull request.',
+  'Postmortem draft says “regression introduced during harmless cleanup”.',
+  'No single villain. Just bad timing and a passing test suite.',
 ]
 
 const ROLLBACK_RESPONSES = [
-  'Rollback complete. Production has stopped exploring new emotions.',
-  'Reverted safely. Graphs are boring again, as they should be.',
+  'Rollback complete. Production is boring again, as intended.',
+  'Reverted safely. Graphs are flat and nobody is screen-sharing.',
   'Rollback executed. Pager volume now back to polite levels.',
-  'We have returned to the last known good reality.',
+  'We have returned to the last known good commit and a healthier branch policy.',
 ]
 
-function pickRandom<T>(items: T[]): T {
-  return items[Math.floor(Math.random() * items.length)]
+const HIRE_RESPONSES = [
+  'Email client opened. Incident morale improved.',
+  'Email draft opened. This is the calmest escalation path available.',
+  'Message queued for the engineer least likely to panic in Slack.',
+  'Email opened. Consider this a proactive postmortem action item.',
+]
+
+function pickRandomIndex(length: number): number {
+  return Math.floor(Math.random() * length)
+}
+
+function createNonRepeatingPicker<T>(items: T[]) {
+  let lastIndex = -1
+
+  return () => {
+    if (items.length === 1) {
+      return items[0]
+    }
+
+    let nextIndex = pickRandomIndex(items.length)
+    while (nextIndex === lastIndex) {
+      nextIndex = pickRandomIndex(items.length)
+    }
+
+    lastIndex = nextIndex
+    return items[nextIndex]
+  }
 }
 
 function randomInt(min: number, max: number): number {
@@ -118,50 +180,64 @@ function formatLogTime(baseDate: Date, minutesOffset: number): string {
   return date.toTimeString().slice(0, 8)
 }
 
+function createBoxBorder(char: string): string {
+  return char.repeat(BOX_WIDTH)
+}
+
+function createIncidentBoxLine(content: string): string {
+  return createBoxLineWithBorders(content, { width: BOX_WIDTH })
+}
+
 export function ConsoleEasterEgg() {
   useEffect(() => {
-    const incident = pickRandom(INCIDENT_SCENARIOS)
+    const incident = createNonRepeatingPicker(INCIDENT_SCENARIOS)()
     const baseDate = new Date()
     baseDate.setMinutes(baseDate.getMinutes() - randomInt(12, 28))
     baseDate.setSeconds(randomInt(0, 59))
 
     const channel = `#incident-${incident.service}`
     const participants = randomInt(4, 8)
-    const openingLine = pickRandom(OPENING_LINES)
-    const jonasLine = pickRandom(JONAS_LINES)
-    const engineerLine = pickRandom(ENGINEER_LINES)
-    const resolutionLine = pickRandom(RESOLUTION_LINES)
+    const openingLine = createNonRepeatingPicker(OPENING_LINES)()
+    const jonasLine = createNonRepeatingPicker(JONAS_LINES)()
+    const engineerLine = createNonRepeatingPicker(ENGINEER_LINES)()
+    const followupLine = createNonRepeatingPicker(FOLLOWUP_LINES)()
+    const diagnosisLine = createNonRepeatingPicker(DIAGNOSIS_LINES)()
+    const incidentBotLine = createNonRepeatingPicker(INCIDENT_BOT_LINES)()
+    const pmLine = createNonRepeatingPicker(PM_LINES)()
+    const resolutionLine = createNonRepeatingPicker(RESOLUTION_LINES)()
 
     const incidentCard = `
-%c┌─────────────────────────────────────────────────────────────┐
-${createEmptyBoxLine()}
-${createBoxLineWithBorders(`incident-room://${incident.service}`)}
-${createBoxLineWithBorders(`${incident.severity} · ${incident.alert}`)}
-${createBoxLineWithBorders(`metric: ${incident.metric}`)}
-${createBoxLineWithBorders(`cause?: ${incident.likelyCause}`)}
-${createEmptyBoxLine()}
-${createBoxLineWithBorders(openingLine)}
-${createEmptyBoxLine()}
-└─────────────────────────────────────────────────────────────┘`
+%c┌${createBoxBorder('─')}┐
+${createEmptyBoxLine(BOX_WIDTH)}
+${createIncidentBoxLine(`incident-room://${incident.service}`)}
+${createIncidentBoxLine(`${incident.severity} · ${incident.alert}`)}
+${createIncidentBoxLine(`metric: ${incident.metric}`)}
+${createIncidentBoxLine(`cause?: ${incident.likelyCause}`)}
+${createEmptyBoxLine(BOX_WIDTH)}
+${createIncidentBoxLine(openingLine)}
+${createEmptyBoxLine(BOX_WIDTH)}
+└${createBoxBorder('─')}┘`
 
     const transcript = [
       `${formatLogTime(baseDate, 0)} pagerduty: ${incident.severity} triggered for ${incident.service}`,
       `${formatLogTime(baseDate, 1)} ops: ${engineerLine.replace(/^ops: /, '')}`,
       `${formatLogTime(baseDate, 2)} ${jonasLine}`,
-      `${formatLogTime(baseDate, 4)} tracing: found one request path doing way too much “just in case”`,
-      `${formatLogTime(baseDate, 6)} metrics: ${incident.metric}, but emotionally worse`,
-      `${formatLogTime(baseDate, 8)} incident-bot: ${participants} engineers in ${channel}, 1 blaming DNS out of habit`,
-      `${formatLogTime(baseDate, 11)} ${resolutionLine}`,
+      `${formatLogTime(baseDate, 3)} ${followupLine}`,
+      `${formatLogTime(baseDate, 5)} ${diagnosisLine}`,
+      `${formatLogTime(baseDate, 7)} metrics: ${incident.metric} after the deploy, which narrows things down nicely`,
+      `${formatLogTime(baseDate, 9)} incident-bot: ${participants} engineers in ${channel}; ${incidentBotLine.replace(/^incident-bot: /, '')}`,
+      `${formatLogTime(baseDate, 10)} ${pmLine}`,
+      `${formatLogTime(baseDate, 12)} ${resolutionLine}`,
     ].join('\n')
 
     const commandMenu = `
 %cEmergency comms tools:
 
-  jonas.status()   -> incident snapshot
-  jonas.fixProd()  -> pretend remediation
-  jonas.blame()    -> tasteful root-cause theater
-  jonas.rollback() -> restore temporal stability
-  jonas.hire()     -> contact the calm person in the bridge
+  jonas.status()   -> current bridge snapshot
+  jonas.fixProd()  -> optimistic remediation message
+  jonas.blame()    -> postmortem-compatible blame
+  jonas.rollback() -> approved rollback comms
+  jonas.hire()     -> page the calm engineer
 
 %cIf you opened DevTools, you are now legally part of the incident review.
 `
@@ -184,6 +260,11 @@ ${createEmptyBoxLine()}
 
     if (typeof window !== 'undefined') {
       const windowWithJonas = window as Window & { jonas?: JonasEmergencyApi }
+      const nextFixResponse = createNonRepeatingPicker(FIX_RESPONSES)
+      const nextBlameResponse = createNonRepeatingPicker(BLAME_RESPONSES)
+      const nextRollbackResponse = createNonRepeatingPicker(ROLLBACK_RESPONSES)
+      const nextHireResponse = createNonRepeatingPicker(HIRE_RESPONSES)
+
       const jonasApi: JonasEmergencyApi = {
         status: () => {
           const snapshot = {
@@ -198,7 +279,7 @@ ${createEmptyBoxLine()}
           return snapshot
         },
         fixProd: () => {
-          const response = pickRandom(FIX_RESPONSES)
+          const response = nextFixResponse()
           console.log(
             '%c' + response,
             'color: #22c55e; font-family: monospace;',
@@ -206,7 +287,7 @@ ${createEmptyBoxLine()}
           return response
         },
         blame: () => {
-          const response = pickRandom(BLAME_RESPONSES)
+          const response = nextBlameResponse()
           console.log(
             '%c' + response,
             'color: #f59e0b; font-family: monospace;',
@@ -214,7 +295,7 @@ ${createEmptyBoxLine()}
           return response
         },
         rollback: () => {
-          const response = pickRandom(ROLLBACK_RESPONSES)
+          const response = nextRollbackResponse()
           console.log(
             '%c' + response,
             'color: #38bdf8; font-family: monospace;',
@@ -222,6 +303,7 @@ ${createEmptyBoxLine()}
           return response
         },
         hire: () => {
+          const response = nextHireResponse()
           console.log(
             '%cOpening email... hopefully before the next alert.',
             'color: #0ea5e9; font-family: monospace;',
@@ -230,7 +312,7 @@ ${createEmptyBoxLine()}
             'mailto:jonas@petrik.dev?subject=Found your emergency comms easter egg!',
             '_blank',
           )
-          return 'Email client opened. Incident morale improved.'
+          return response
         },
       }
 
