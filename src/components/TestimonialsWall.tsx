@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { RecommendationInterface } from '@/lib/recommendations'
+import { recommendationsCopy } from '@/lib/recommendationsCopy'
 
 const testimonialAccent = {
   hoverBorder: 'hover:border-emerald-300 dark:hover:border-emerald-700',
@@ -21,13 +22,15 @@ function Recommendation({
     <article id={recommendation.slug} className="scroll-mt-20">
       <div
         className={`relative overflow-hidden rounded-xl border border-neutral-200 bg-white/85 backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-900/85 ${testimonialAccent.hoverBorder} ${
-          isHighlighted ? `ring-2 ${testimonialAccent.ring} scale-[1.02] shadow-lg` : ''
+          isHighlighted
+            ? `ring-2 ${testimonialAccent.ring} scale-[1.02] shadow-lg`
+            : ''
         }`}
       >
         {/* Terminal header */}
         <div className="flex h-6 items-center gap-2 border-b border-neutral-300 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
           <span className="truncate font-mono text-[10px] text-neutral-700 dark:text-neutral-100">
-            ~/testimonials/{recommendation.slug}.md
+            ~/{recommendationsCopy.directoryName}/{recommendation.slug}.md
           </span>
         </div>
 
@@ -141,7 +144,7 @@ export function TestimonialsWall({
         )
       : recommendations
 
-  // Categorize testimonials by length
+  // Categorize recommendations by length
   const featured: RecommendationInterface[] = [] // >1500 chars - full width
   const long: RecommendationInterface[] = [] // 700-1500 chars - span 2 columns
   const regular: RecommendationInterface[] = [] // <700 chars - single column masonry
@@ -199,7 +202,7 @@ export function TestimonialsWall({
         </div>
       ) : (
         <>
-      {/* Featured testimonials - full width */}
+          {/* Featured recommendations - full width */}
           {featured.map((recommendation) => (
             <Recommendation
               key={recommendation.slug}
@@ -208,7 +211,7 @@ export function TestimonialsWall({
             />
           ))}
 
-          {/* Long testimonials - simple 2-column layout */}
+          {/* Long recommendations - simple 2-column layout */}
           {long.length > 0 && (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {long.map((recommendation) => (
@@ -221,7 +224,7 @@ export function TestimonialsWall({
             </div>
           )}
 
-          {/* Regular testimonials - true CSS columns masonry */}
+          {/* Regular recommendations - true CSS columns masonry */}
           {regular.length > 0 && (
             <div className="columns-1 gap-4 sm:columns-2 lg:columns-3">
               {regular.map((recommendation) => (

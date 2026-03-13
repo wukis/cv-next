@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import { ContainerInner, ContainerOuter } from '@/components/Container'
+import { recommendationsCopy } from '@/lib/recommendationsCopy'
 
 function NavLink({
   href,
@@ -21,7 +22,7 @@ function NavLink({
 
 export function Footer() {
   return (
-    <footer className="mt-16 sm:mt-24 flex-none">
+    <footer className="mt-16 flex-none sm:mt-24">
       <ContainerOuter>
         <div className="border-t border-neutral-200/80 pb-12 pt-8 dark:border-neutral-700/50">
           <ContainerInner>
@@ -30,10 +31,13 @@ export function Footer() {
                 <NavLink href="/">Home</NavLink>
                 <NavLink href="/about">About</NavLink>
                 <NavLink href="/experience">Experience</NavLink>
-                <NavLink href="/recommendations">Recommendations</NavLink>
+                <NavLink href="/recommendations">
+                  {recommendationsCopy.label}
+                </NavLink>
               </nav>
               <p className="text-sm text-neutral-500 dark:text-neutral-500">
-                &copy; {new Date().getFullYear()} Jonas Petrik. All rights reserved.
+                &copy; {new Date().getFullYear()} Jonas Petrik. All rights
+                reserved.
               </p>
             </div>
           </ContainerInner>

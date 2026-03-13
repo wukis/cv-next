@@ -9,6 +9,7 @@ import clsx from 'clsx'
 
 import { Container } from '@/components/Container'
 import { surfaceHoverMotionClassName } from '@/components/interactionStyles'
+import { recommendationsCopy } from '@/lib/recommendationsCopy'
 
 function CloseIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
@@ -73,19 +74,24 @@ function TerminalIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
 
 function AnimatedTerminalIcon({ className }: { className?: string }) {
   const [cursorVisible, setCursorVisible] = useState(true)
-  
+
   // Blinking cursor effect
   useEffect(() => {
     const blinkInterval = setInterval(() => {
-      setCursorVisible(v => !v)
+      setCursorVisible((v) => !v)
     }, 530) // Classic terminal blink rate
-    
+
     return () => clearInterval(blinkInterval)
   }, [])
-  
+
   return (
     <div className={clsx('relative flex items-center', className)}>
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="w-4 h-4 text-emerald-500">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+        className="h-4 w-4 text-emerald-500"
+      >
         {/* Chevron > */}
         <path
           d="M7 15l5-5-5-5"
@@ -103,7 +109,7 @@ function AnimatedTerminalIcon({ className }: { className?: string }) {
           strokeLinejoin="round"
           className={clsx(
             'transition-opacity duration-100',
-            cursorVisible ? 'opacity-100' : 'opacity-20'
+            cursorVisible ? 'opacity-100' : 'opacity-20',
           )}
         />
       </svg>
@@ -115,7 +121,7 @@ const navItems = [
   { href: '/', label: 'home' },
   { href: '/about', label: 'about' },
   { href: '/experience', label: 'experience' },
-  { href: '/recommendations', label: 'testimonials' },
+  { href: '/recommendations', label: recommendationsCopy.navLabel },
 ]
 
 function MobileNavItem({
@@ -131,20 +137,22 @@ function MobileNavItem({
 }) {
   return (
     <li>
-      <Link 
-        href={href} 
+      <Link
+        href={href}
         onClick={close}
         className={clsx(
-          'flex items-center gap-3 px-3 py-2.5 rounded-lg font-mono text-sm transition-colors',
-          isActive 
+          'flex items-center gap-3 rounded-lg px-3 py-2.5 font-mono text-sm transition-colors',
+          isActive
             ? 'bg-emerald-500/15 text-emerald-800 dark:bg-emerald-400/20 dark:text-emerald-200'
-            : 'text-neutral-700 hover:bg-neutral-100 hover:text-emerald-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-emerald-300'
+            : 'text-neutral-700 hover:bg-neutral-100 hover:text-emerald-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-emerald-300',
         )}
       >
-        <span className={clsx(
-          'w-1.5 h-1.5 rounded-full',
-          isActive ? 'bg-current' : 'bg-neutral-300 dark:bg-neutral-600'
-        )} />
+        <span
+          className={clsx(
+            'h-1.5 w-1.5 rounded-full',
+            isActive ? 'bg-current' : 'bg-neutral-300 dark:bg-neutral-600',
+          )}
+        />
         <span>~/{label}</span>
       </Link>
     </li>
@@ -155,19 +163,19 @@ function MobileNavigation({ className }: { className?: string }) {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
-  
+
   const close = () => setIsOpen(false)
-  
+
   // Track if mounted (for portal)
   useEffect(() => {
     setMounted(true)
   }, [])
-  
+
   // Close menu on route change
   useEffect(() => {
     setIsOpen(false)
   }, [pathname])
-  
+
   // Close on escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -178,80 +186,86 @@ function MobileNavigation({ className }: { className?: string }) {
       return () => document.removeEventListener('keydown', handleEscape)
     }
   }, [isOpen])
-  
+
   return (
     <div className={className}>
-      <button 
+      <button
         onClick={() => setIsOpen(true)}
-        className={`group flex items-center gap-2 rounded-lg bg-white/80 px-3 py-2 text-sm font-mono text-neutral-700 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 backdrop-blur hover:text-emerald-700 hover:ring-emerald-400/40 dark:bg-neutral-800/80 dark:text-neutral-300 dark:ring-neutral-700/50 dark:hover:text-emerald-300 dark:hover:ring-emerald-400/40 ${surfaceHoverMotionClassName}`}
+        className={`group flex items-center gap-2 rounded-lg bg-white/80 px-3 py-2 font-mono text-sm text-neutral-700 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 backdrop-blur hover:text-emerald-700 hover:ring-emerald-400/40 dark:bg-neutral-800/80 dark:text-neutral-300 dark:ring-neutral-700/50 dark:hover:text-emerald-300 dark:hover:ring-emerald-400/40 ${surfaceHoverMotionClassName}`}
       >
         <AnimatedTerminalIcon />
         <span>menu</span>
-        <svg className="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        <svg
+          className="h-3 w-3 text-neutral-400"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 9l-7 7-7-7"
+          />
         </svg>
       </button>
-      {mounted && isOpen && createPortal(
-        <>
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 z-[60] bg-neutral-900/60 backdrop-blur-sm" 
-            onClick={close} 
-            aria-hidden="true"
-          />
-          {/* Panel */}
-          <div
-            className="fixed inset-x-4 top-4 z-[70] rounded-lg bg-white dark:bg-neutral-900 overflow-hidden shadow-2xl ring-1 ring-neutral-200 dark:ring-neutral-700"
-          >
-            {/* Terminal header */}
-            <div className="flex items-center justify-between px-4 h-6 bg-neutral-100 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700">
-              <Link
-                href="/"
-                onClick={close}
-                className="flex items-center gap-2 -ml-1 px-1 py-0.5 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all"
-                aria-label="Go to home"
-              >
-                <AnimatedTerminalIcon />
-                <span className="text-[10px] font-mono text-neutral-600 dark:text-neutral-300">~/navigation</span>
-              </Link>
-              <button 
-                onClick={close}
-                aria-label="Close menu" 
-                className="p-1 rounded hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
-              >
-                <CloseIcon className="h-5 w-5 text-neutral-600 dark:text-neutral-300" />
-              </button>
+      {mounted &&
+        isOpen &&
+        createPortal(
+          <>
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 z-[60] bg-neutral-900/60 backdrop-blur-sm"
+              onClick={close}
+              aria-hidden="true"
+            />
+            {/* Panel */}
+            <div className="fixed inset-x-4 top-4 z-[70] overflow-hidden rounded-lg bg-white shadow-2xl ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-700">
+              {/* Terminal header */}
+              <div className="flex h-6 items-center justify-between border-b border-neutral-200 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
+                <Link
+                  href="/"
+                  onClick={close}
+                  className="-ml-1 flex items-center gap-2 rounded px-1 py-0.5 transition-all hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                  aria-label="Go to home"
+                >
+                  <AnimatedTerminalIcon />
+                  <span className="font-mono text-[10px] text-neutral-600 dark:text-neutral-300">
+                    ~/navigation
+                  </span>
+                </Link>
+                <button
+                  onClick={close}
+                  aria-label="Close menu"
+                  className="rounded p-1 transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                >
+                  <CloseIcon className="h-5 w-5 text-neutral-600 dark:text-neutral-300" />
+                </button>
+              </div>
+
+              {/* Navigation items */}
+              <nav className="p-3">
+                <ul className="space-y-1">
+                  {navItems.map((item) => (
+                    <MobileNavItem
+                      key={item.href}
+                      href={item.href}
+                      label={item.label}
+                      isActive={pathname === item.href}
+                      close={close}
+                    />
+                  ))}
+                </ul>
+              </nav>
             </div>
-            
-            {/* Navigation items */}
-            <nav className="p-3">
-              <ul className="space-y-1">
-                {navItems.map((item) => (
-                  <MobileNavItem 
-                    key={item.href} 
-                    href={item.href} 
-                    label={item.label}
-                    isActive={pathname === item.href}
-                    close={close}
-                  />
-                ))}
-              </ul>
-            </nav>
-          </div>
-        </>,
-        document.body
-      )}
+          </>,
+          document.body,
+        )}
     </div>
   )
 }
 
-function NavItem({
-  href,
-  label,
-}: {
-  href: string
-  label: string
-}) {
+function NavItem({ href, label }: { href: string; label: string }) {
   const isActive = usePathname() === href
 
   return (
@@ -259,16 +273,18 @@ function NavItem({
       <Link
         href={href}
         className={clsx(
-          'relative flex items-center gap-1.5 px-3 py-1.5 rounded-md font-mono text-sm transition-all',
+          'relative flex items-center gap-1.5 rounded-md px-3 py-1.5 font-mono text-sm transition-all',
           isActive
             ? 'bg-emerald-500/15 text-emerald-700 dark:bg-emerald-400/20 dark:text-emerald-300'
             : 'text-neutral-700 hover:bg-neutral-100 hover:text-emerald-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-emerald-300',
         )}
       >
-        <span className={clsx(
-          'w-1.5 h-1.5 rounded-full transition-colors',
-          isActive ? 'bg-current' : 'bg-neutral-300 dark:bg-neutral-600'
-        )} />
+        <span
+          className={clsx(
+            'h-1.5 w-1.5 rounded-full transition-colors',
+            isActive ? 'bg-current' : 'bg-neutral-300 dark:bg-neutral-600',
+          )}
+        />
         {label}
       </Link>
     </li>
@@ -278,25 +294,21 @@ function NavItem({
 function DesktopNavigation(props: React.ComponentPropsWithoutRef<'nav'>) {
   return (
     <nav {...props}>
-      <div className="flex items-center rounded-lg bg-white/80 dark:bg-neutral-800/80 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 dark:ring-neutral-700/50 backdrop-blur overflow-hidden">
+      <div className="flex items-center overflow-hidden rounded-lg bg-white/80 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 backdrop-blur dark:bg-neutral-800/80 dark:ring-neutral-700/50">
         {/* Nav items including home terminal icon */}
         <ul className="flex items-center gap-1 px-2 py-1">
           {/* Terminal prompt icon - links to home (never shows active state) */}
           <li>
-            <Link 
-              href="/" 
-              className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all hover:bg-neutral-100 dark:hover:bg-neutral-800"
+            <Link
+              href="/"
+              className="relative flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-all hover:bg-neutral-100 dark:hover:bg-neutral-800"
               aria-label="Go to home"
             >
               <AnimatedTerminalIcon />
             </Link>
           </li>
           {navItems.map((item) => (
-            <NavItem 
-              key={item.href} 
-              href={item.href} 
-              label={item.label}
-            />
+            <NavItem key={item.href} href={item.href} label={item.label} />
           ))}
         </ul>
       </div>
@@ -354,9 +366,27 @@ function HexagonNetworkIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
         className="opacity-60"
       />
       {/* Bottom connection dots */}
-      <circle cx="12" cy="20" r="1" fill="currentColor" className="opacity-60" />
-      <circle cx="2.5" cy="14.5" r="1" fill="currentColor" className="opacity-60" />
-      <circle cx="21.5" cy="14.5" r="1" fill="currentColor" className="opacity-60" />
+      <circle
+        cx="12"
+        cy="20"
+        r="1"
+        fill="currentColor"
+        className="opacity-60"
+      />
+      <circle
+        cx="2.5"
+        cy="14.5"
+        r="1"
+        fill="currentColor"
+        className="opacity-60"
+      />
+      <circle
+        cx="21.5"
+        cy="14.5"
+        r="1"
+        fill="currentColor"
+        className="opacity-60"
+      />
     </svg>
   )
 }
@@ -369,16 +399,28 @@ function AnimationFocus() {
     if (isHovering) {
       document.documentElement.classList.add('animation-focus')
       // Dispatch event to hide back to top button
-      window.dispatchEvent(new CustomEvent('animation-focus-hover', { detail: { isHovering: true } }))
+      window.dispatchEvent(
+        new CustomEvent('animation-focus-hover', {
+          detail: { isHovering: true },
+        }),
+      )
     } else {
       document.documentElement.classList.remove('animation-focus')
       // Dispatch event to show back to top button
-      window.dispatchEvent(new CustomEvent('animation-focus-hover', { detail: { isHovering: false } }))
+      window.dispatchEvent(
+        new CustomEvent('animation-focus-hover', {
+          detail: { isHovering: false },
+        }),
+      )
     }
-    
+
     return () => {
       document.documentElement.classList.remove('animation-focus')
-      window.dispatchEvent(new CustomEvent('animation-focus-hover', { detail: { isHovering: false } }))
+      window.dispatchEvent(
+        new CustomEvent('animation-focus-hover', {
+          detail: { isHovering: false },
+        }),
+      )
     }
   }, [isHovering])
 
@@ -395,19 +437,19 @@ function AnimationFocus() {
       onClick={triggerEmergency}
       title="Hover to see background animation, click to trigger emergency"
     >
-      <HexagonNetworkIcon 
+      <HexagonNetworkIcon
         className={clsx(
-          "h-5 w-5 transition-all duration-300",
-          isHovering 
-            ? "text-emerald-500 dark:text-emerald-400 scale-110" 
-            : "text-neutral-500 dark:text-neutral-400"
-        )} 
+          'h-5 w-5 transition-all duration-300',
+          isHovering
+            ? 'scale-110 text-emerald-500 dark:text-emerald-400'
+            : 'text-neutral-500 dark:text-neutral-400',
+        )}
       />
       {/* Subtle pulse indicator when hovering */}
-      <span 
+      <span
         className={clsx(
-          "absolute inset-0 rounded-lg ring-2 ring-emerald-400/50 transition-all duration-500",
-          isHovering ? "opacity-100 scale-100" : "opacity-0 scale-95"
+          'absolute inset-0 rounded-lg ring-2 ring-emerald-400/50 transition-all duration-500',
+          isHovering ? 'scale-100 opacity-100' : 'scale-95 opacity-0',
         )}
       />
     </div>
@@ -432,7 +474,7 @@ export function Header() {
     const handleScroll = () => {
       const currentScrollY = window.scrollY
       const scrollThreshold = 100 // Don't hide until scrolled past this point
-      
+
       if (currentScrollY < scrollThreshold) {
         // Always show near the top
         setIsVisible(true)
@@ -443,7 +485,7 @@ export function Header() {
         // Scrolling up
         setIsVisible(true)
       }
-      
+
       lastScrollY.current = currentScrollY
     }
 
@@ -502,7 +544,6 @@ export function Header() {
       }
     }
 
-
     function updateStyles() {
       updateHeaderStyles()
       isInitial.current = false
@@ -535,8 +576,7 @@ export function Header() {
                 position:
                   'var(--header-position)' as React.CSSProperties['position'],
               }}
-            >
-            </Container>
+            ></Container>
           </>
         )}
         <div
@@ -554,12 +594,12 @@ export function Header() {
                 'var(--header-inner-position)' as React.CSSProperties['position'],
             }}
           >
-            <div 
+            <div
               className={clsx(
                 'relative flex gap-4 transition-all duration-300',
-                isVisible 
-                  ? 'opacity-100 translate-y-0' 
-                  : 'opacity-0 -translate-y-4 pointer-events-none'
+                isVisible
+                  ? 'translate-y-0 opacity-100'
+                  : 'pointer-events-none -translate-y-4 opacity-0',
               )}
             >
               <div className="flex flex-1">
