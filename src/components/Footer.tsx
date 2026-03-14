@@ -31,6 +31,7 @@ export function Footer() {
                 <NavLink href="/">Home</NavLink>
                 <NavLink href="/about">About</NavLink>
                 <NavLink href="/experience">Experience</NavLink>
+                <NavLink href="/cv">CV</NavLink>
                 <NavLink href="/recommendations">
                   {recommendationsCopy.label}
                 </NavLink>

@@ -76,3 +76,34 @@ export function TerminalPageHeader({
     </div>
   )
 }
+
+type TerminalSectionHeaderProps = {
+  command: string
+  argument?: string
+  description?: string
+  as?: 'h2' | 'h3'
+}
+
+export function TerminalSectionHeader({
+  command,
+  argument,
+  description,
+  as = 'h2',
+}: TerminalSectionHeaderProps) {
+  return (
+    <div className="mb-6">
+      <TerminalPrompt
+        as={as}
+        command={command}
+        argument={argument}
+        className="text-lg font-bold tracking-tight sm:text-xl"
+      />
+      {description ? (
+        <p className="mt-2 font-mono text-xs text-neutral-600 dark:text-neutral-400 sm:text-sm">
+          <span className="text-neutral-500 dark:text-neutral-400"># </span>
+          {description}
+        </p>
+      ) : null}
+    </div>
+  )
+}

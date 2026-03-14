@@ -9,7 +9,7 @@ import { recommendationsCopy } from '@/lib/recommendationsCopy'
 export const metadata: Metadata = {
   title: recommendationsCopy.label,
   description:
-    'Professional recommendations for Jonas Petrik from colleagues and industry peers.',
+    'Professional recommendations for Jonas Petrik, with emphasis on backend, platform, leadership, and reliability work.',
   alternates: {
     canonical: '/recommendations',
   },

@@ -5,18 +5,19 @@
     "enrollment": "Full-time",
     "startDate": "2025-04",
     "endDate": "now",
+    "scope": "Leading checkout with a backend and platform focus inside a commerce platform processing more than EUR 6.5B yearly.",
     "highlights": [
-      "Zero downtime during Black Friday 2025 handling ~550 orders/minute on peak tenants",
-      "Turned noisy monitoring into trustworthy alerts - can sleep through on-call nights now",
-      "Promoted to lead after pushing for quality: design documents, proposals, system reliability improvements"
+      "Led checkout through Black Friday 2025 peak tenants at roughly 550 orders per minute with zero downtime in the domain I was responsible for.",
+      "Owned the cleanup of noisy monitoring and on-call signal so incidents became easier to trust, triage, and sleep through.",
+      "Promoted into the lead role after pushing design docs, proposals, and reliability improvements that changed how the team operated."
     ],
     "responsibilities": [
-      "Leading checkout team that deals with order processing 6.5B+ yearly in volume",
-      "On-call for checkout domain - cleared error noise, improved observability and reliability",
-      "Pipeline architecture for multi-step state mutations (one user action triggers coordinated changes)"
+      "Leading checkout execution across architecture, delivery, and operational quality.",
+      "Owning on-call quality and observability for payment-critical flows.",
+      "Designing pipeline-based state changes for complex checkout mutations triggered by a single user action."
     ],
     "projects": [
-      "SCAYLE Commerce Engine - platform powering Harrods, Deichmann, s.Oliver, Manchester United and 100+ brands"
+      "SCAYLE Commerce Engine - platform powering Harrods, Deichmann, s.Oliver, Manchester United, and 100+ brands"
     ],
     "technologies": [
       "PHP",
@@ -55,14 +56,15 @@
     "enrollment": "Full-time",
     "startDate": "2024-01",
     "endDate": "2025-04",
+    "scope": "Hands-on backend engineer on checkout, working on throughput, reliability, and multi-tenant commerce behavior.",
     "highlights": [
-      "Part of team that rebuilt legacy checkout into Laravel/Roadrunner with pipeline architecture",
-      "Started covering on-call, which drove my focus on observability and error reduction"
+      "Helped rebuild checkout from a legacy implementation into a Laravel and RoadRunner architecture with clearer flow control.",
+      "Took on checkout on-call, which pushed me deep into observability, error reduction, and production debugging."
     ],
     "responsibilities": [
-      "Building and optimizing high-throughput checkout flows",
-      "On-call and incident response for payment-critical systems",
-      "Developing multi-tenant headless checkout solutions"
+      "Building and tuning high-throughput checkout flows for multi-tenant commerce.",
+      "Handling incidents and runtime behavior in payment-critical systems.",
+      "Contributing to headless checkout capabilities used across multiple brands."
     ],
     "projects": [],
     "technologies": [
@@ -101,14 +103,15 @@
     "enrollment": "Full-time",
     "startDate": "2022-12",
     "endDate": "2023-12",
+    "scope": "Leading a small platform-oriented team while staying hands-on across backend, DevOps, and architecture for Germany's largest legal marketplace.",
     "highlights": [
-      "Led 3-person team (with architect + senior) building foundations other teams adopted",
-      "Modernized legacy: DB migrations, AWS infrastructure, deployable code patterns"
+      "Led a 3-person team that built foundations other teams adopted for delivery and platform consistency.",
+      "Drove modernization work across database migrations, AWS infrastructure, and deployable code patterns in a legacy-heavy environment."
     ],
     "responsibilities": [
-      "Wore multiple hats: dev, devops, team lead, tech lead - driving projects across full stack",
-      "Enhanced CI/CD pipelines in collaboration with DevOps team",
-      "Mentoring developers and establishing code review practices"
+      "Owning delivery across backend, DevOps, and technical direction.",
+      "Improving CI/CD and deployment safety with the DevOps team.",
+      "Mentoring engineers and raising the quality bar through code review and shared engineering practices."
     ],
     "projects": [
       "anwalt.de - Germany's largest legal marketplace with 20,500+ lawyers and 4M+ monthly users"
@@ -151,14 +154,15 @@
     "enrollment": "Full-time",
     "startDate": "2020-12",
     "endDate": "2022-12",
+    "scope": "Senior backend and full-stack engineer on search and marketplace capabilities for a high-traffic legal platform.",
     "highlights": [
-      "Rebuilt anwalt.de search: GraphQL API, geo-location for finding lawyers, aggregations and range filters",
-      "Full-stack Laminas/Vue development, promoted to lead after search project"
+      "Rebuilt anwalt.de search around GraphQL, geolocation, aggregations, and range filters for a marketplace serving millions of users.",
+      "Earned promotion into the lead role after owning one of the clearest technical improvement tracks in the product."
     ],
     "responsibilities": [
-      "Developing SaaS platform features for legal professionals",
-      "Building REST APIs and migrating legacy code",
-      "Implementing advanced search functionality"
+      "Building platform features and APIs used by legal professionals and consumers.",
+      "Migrating legacy code into more maintainable services and flows.",
+      "Implementing advanced search behavior on top of Elasticsearch."
     ],
     "projects": [],
     "technologies": [
@@ -195,18 +199,19 @@
     "enrollment": "Full-time",
     "startDate": "2018-01",
     "endDate": "2020-12",
+    "scope": "Team lead and hands-on engineer for Atobi and other retail products delivered by a dev house for startup and enterprise clients.",
     "highlights": [
-      "Migrated startup prototype from Phalcon to Laravel API + React frontend + Ionic mobile apps",
-      "Designed generic gamification system (XP, points, achievements, calls-to-action) adopted across products",
-      "Filled CTO-like gap for Danish startup client (Atobi) - bridged product vision with technical feasibility"
+      "Led the migration of Atobi from a prototype stack into a Laravel API, React frontend, and mobile delivery architecture.",
+      "Designed a reusable gamification system that became part of how multiple products approached engagement and calls to action.",
+      "Scaled the team from 3 to 10 engineers while bridging client product vision with technical feasibility."
     ],
     "responsibilities": [
-      "Led dev house team building product for Danish retail-tech startup (later acquired stake)",
-      "Scaled team from 3 to 10 developers while shipping mobile + web platforms",
-      "Built real-time data sync for offline-first retail apps used by enterprise clients like PVH Nordic"
+      "Leading the delivery team while staying hands-on with architecture and implementation.",
+      "Building offline-first and real-time retail app behavior for enterprise client rollouts.",
+      "Acting as the technical counterpart for a startup client that needed both execution and product-level translation."
     ],
     "projects": [
-      "Atobi - retail employee platform for brands like Nike and PVH Nordic (client of dev house)",
+      "Atobi - retail employee platform for brands like Nike and PVH Nordic",
       "EffectiveRetail - all-in-one retail management solution"
     ],
     "technologies": [
@@ -242,11 +247,12 @@
     "enrollment": "Full-time",
     "startDate": "2017-11",
     "endDate": "2018-01",
+    "scope": "Senior backend engineer on a fast-moving retail startup account inside a dev house setup.",
     "highlights": [
-      "Joined dev house to build backend for retail startup client, promoted to lead within 2 months"
+      "Joined to build backend services for a retail startup and moved into the lead role within two months."
     ],
     "responsibilities": [
-      "Developing backend services and REST APIs for retail platforms"
+      "Developing backend services and APIs for retail platform features."
     ],
     "projects": [],
     "technologies": [
@@ -272,13 +278,14 @@
     "enrollment": "Full-time",
     "startDate": "2017-01",
     "endDate": "2017-11",
+    "scope": "Full-stack engineer on betting systems where correctness, latency, and transaction handling mattered more than brochure features.",
     "highlights": [
-      "Built real-time betting systems where correctness matters (financial transactions, regulatory compliance)",
-      "Practiced strict TDD - different discipline than typical web development"
+      "Built features for real-time betting products where financial correctness and operational discipline were non-negotiable.",
+      "Worked under a stricter TDD culture than most web teams, which sharpened how I approached safety and regression risk."
     ],
     "responsibilities": [
-      "Building online betting platform handling real-time financial transactions",
-      "Implementing comprehensive test coverage through TDD practices"
+      "Building and maintaining online betting product flows.",
+      "Writing test-heavy code for real-time financial and account behavior."
     ],
     "projects": [
       "Olybet - online sports betting platform"
@@ -308,16 +315,17 @@
     "enrollment": "Full-time",
     "startDate": "2016-02",
     "endDate": "2017-01",
+    "scope": "Team lead for distributed delivery across ERP, CRM, and cross-platform product work for international clients.",
     "highlights": [
-      "Led distributed team of 10 engineers on international ERP/CRM projects",
-      "Built cross-platform applications (web, mobile, desktop) from ground up"
+      "Led a distributed team of 10 engineers across ERP and CRM projects with web, mobile, and desktop delivery.",
+      "Owned architecture and delivery for enterprise products that mixed product strategy, project leadership, and implementation."
     ],
     "responsibilities": [
-      "Leading distributed team and managing full project lifecycle",
-      "Architecting enterprise ERP and CRM systems"
+      "Leading distributed engineering execution across the full project lifecycle.",
+      "Architecting ERP and CRM systems while staying involved in implementation detail."
     ],
     "projects": [
-      "Columbina - enterprise ERP system (SaaS)",
+      "Columbina - enterprise ERP system",
       "Olivia - CRM platform for sales teams"
     ],
     "technologies": [
@@ -346,11 +354,12 @@
     "enrollment": "Full-time",
     "startDate": "2015-11",
     "endDate": "2016-02",
+    "scope": "Senior engineer across full-stack product work for enterprise clients.",
     "highlights": [
-      "Full-stack development for enterprise clients, promoted to lead within 3 months"
+      "Moved from senior engineer into the lead role within roughly three months."
     ],
     "responsibilities": [
-      "Developing full-stack web applications and REST APIs"
+      "Developing full-stack web applications and APIs for enterprise client work."
     ],
     "projects": [],
     "technologies": [
@@ -376,15 +385,16 @@
     "enrollment": "Full-time",
     "startDate": "2014-11",
     "endDate": "2015-11",
+    "scope": "Full-stack engineer on warehouse and logistics systems for automotive e-commerce.",
     "highlights": [
-      "Built warehouse platform for automotive parts e-commerce with shipping integrations (DPD, DHL, UPS)"
+      "Built warehouse workflow and shipping integrations for an automotive spare-parts commerce platform."
     ],
     "responsibilities": [
-      "Building warehouse and logistics automation systems",
-      "Integrating multiple shipping provider APIs"
+      "Developing logistics automation and internal workflow systems.",
+      "Integrating external shipping providers such as DPD, DHL, and UPS."
     ],
     "projects": [
-      "Ecu.de - automotive spare parts e-commerce/warehouse platform"
+      "Ecu.de - automotive spare-parts e-commerce and warehouse platform"
     ],
     "technologies": [
       "PHP",
@@ -406,11 +416,12 @@
     "enrollment": "Full-time",
     "startDate": "2014-02",
     "endDate": "2014-10",
+    "scope": "Rails developer on a campaign and voter-registration platform.",
     "highlights": [
-      "Built voter registration platform for political campaign management"
+      "Delivered full-stack Rails work for a voter registration and campaign management system."
     ],
     "responsibilities": [
-      "Full-stack Ruby on Rails development"
+      "Building and maintaining Rails product features end to end."
     ],
     "projects": [
       "Voter registration and campaign management platform"
@@ -434,14 +445,15 @@
     "enrollment": "Full-time",
     "startDate": "2013-04",
     "endDate": "2014-02",
+    "scope": "Early-career PHP engineer working inside SharePoint-heavy enterprise and government environments.",
     "highlights": [
-      "Built government education resource sharing platform within SharePoint enterprise framework"
+      "Built a government education resource-sharing platform inside a SharePoint enterprise setup."
     ],
     "responsibilities": [
-      "Developing PHP applications integrated with SharePoint"
+      "Developing PHP applications integrated with SharePoint workflows and data."
     ],
     "projects": [
-      "Government education resource sharing platform"
+      "Government education resource-sharing platform"
     ],
     "technologies": [
       "PHP",

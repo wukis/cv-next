@@ -4,6 +4,7 @@ export interface WorkInterface {
     enrollment?: string;
     startDate: string;
     endDate: string;
+    scope?: string;
     highlights: string[];
     responsibilities: string[];
     projects: string[];

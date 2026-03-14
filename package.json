@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build && node scripts/obfuscate.mjs",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint ."
   },
   "browserslist": "defaults, not ie <= 11",
   "dependencies": {

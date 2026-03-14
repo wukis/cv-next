@@ -2,17 +2,24 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
+import { Button, DocumentIcon, MailIcon } from '@/components/Button'
 import { Container } from '@/components/Container'
-import { surfaceHoverMotionClassName } from '@/components/interactionStyles'
 import { recommendationsCopy } from '@/lib/recommendationsCopy'
 import { ProfileSocialLinks } from '@/components/ProfileSocialLinks'
+import { TerminalSectionHeader } from '@/components/TerminalHeader'
 import { TechStack } from '@/components/TechStack'
 import { type RecommendationInterface } from '@/lib/recommendations'
 import { calculateTotalExperienceYears, WorkInterface } from '@/lib/experience'
 import portraitImage from '@/images/jonas-petrik-portrait.png'
-import recommendations from '@/data/recommendations.json'
 import linkedin from '@/data/linkedin.json'
 import work from '@/data/work.json'
+import {
+  getHomepageRecommendations,
+  heroIntro,
+  homeImpactCards,
+  publicEmail,
+  selectedImpactStories,
+} from '@/lib/siteProfile'
 
 const totalExperienceYears = calculateTotalExperienceYears(
   work as WorkInterface[],
@@ -21,29 +28,6 @@ const totalExperienceYears = calculateTotalExperienceYears(
 // Get current employment (first entry in work.json)
 const currentEmployment = (work as WorkInterface[])[0]
 
-const achievementHighlights = [
-  {
-    value: '~550/min',
-    label: 'peak order rate',
-    detail: 'Built for high-traffic, payment-critical checkout load.',
-  },
-  {
-    value: '€6.5B+',
-    label: 'annual platform volume',
-    detail: 'Engineering work operating at meaningful business scale.',
-  },
-  {
-    value: '100+ brands',
-    label: 'platform reach',
-    detail: 'Systems reused across a large multi-tenant commerce product.',
-  },
-  {
-    value: '3 -> 10',
-    label: 'team growth',
-    detail: 'Helped scale teams while keeping execution pragmatic.',
-  },
-] as const
-
 function truncate(text: string, length: number) {
   if (text.length <= length) {
     return text
@@ -51,64 +35,106 @@ function truncate(text: string, length: number) {
   return text.slice(0, length) + '...'
 }
 
-function MailIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path
-        d="M4 7.5 12 13l8-5.5"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M5.5 6h13A1.5 1.5 0 0 1 20 7.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 16.5v-9A1.5 1.5 0 0 1 5.5 6Z"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
-
 function Highlights() {
+  const featuredStory = selectedImpactStories[0]
+
   return (
     <Container className="mt-8">
       <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white/90 dark:border-neutral-700 dark:bg-neutral-900/90">
         <div className="flex h-6 items-center gap-2 border-b border-neutral-300 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
           <span className="truncate font-mono text-[10px] text-neutral-700 dark:text-neutral-100">
-            ~/impact.log
+            ~/impact-report.md
           </span>
         </div>
 
         <div className="p-5 sm:p-6">
-          <div className="max-w-2xl">
+          <div className="max-w-3xl">
             <h2 className="text-xl font-bold tracking-tight text-neutral-800 sm:text-2xl dark:text-neutral-100">
-              Engineering impact at a glance
+              What I worked on and what changed
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
-              A quick scan of load, impact, and team growth.
+              A quick view of the systems I worked on, the scale they ran at,
+              and a few concrete examples of the work behind them.
             </p>
           </div>
 
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {achievementHighlights.map((highlight) => (
-              <article
-                key={highlight.label}
-                className="rounded-lg border border-neutral-200/80 bg-neutral-50/80 p-4 dark:border-neutral-700/80 dark:bg-neutral-950/60"
-              >
-                <p className="font-mono text-lg font-semibold text-emerald-700 dark:text-emerald-300">
-                  {highlight.value}
-                </p>
-                <h3 className="mt-2 text-sm font-semibold uppercase tracking-[0.14em] text-neutral-700 dark:text-neutral-200">
-                  {highlight.label}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-300">
-                  {highlight.detail}
-                </p>
-              </article>
-            ))}
+          <div className="mt-8 grid grid-cols-1 gap-10 xl:grid-cols-[18rem_minmax(0,1fr)]">
+            <aside>
+              <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+                impact at a glance
+              </h3>
+              <dl className="mt-4 border-t border-neutral-200 dark:border-neutral-700">
+                {homeImpactCards.map((highlight) => (
+                  <div
+                    key={highlight.label}
+                    className="border-b border-neutral-200 py-4 last:border-b-0 last:pb-0 dark:border-neutral-700"
+                  >
+                    <dt className="font-mono text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
+                      {highlight.value}
+                    </dt>
+                    <dd className="mt-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-600 dark:text-neutral-300">
+                      {highlight.label}
+                    </dd>
+                    <dd className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-300">
+                      {highlight.detail}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </aside>
+
+            <section>
+              <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+                selected impact
+              </h3>
+
+              <div className="mt-4 border-t border-neutral-200 pt-5 dark:border-neutral-700">
+                <article className="grid grid-cols-1 gap-4 md:grid-cols-[2.75rem_minmax(0,1fr)]">
+                  <div className="font-mono text-2xl text-neutral-300 dark:text-neutral-700">
+                    01
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                      {featuredStory.title}
+                    </h3>
+                    <div className="mt-4 space-y-3 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
+                      <p>{featuredStory.context}</p>
+                      <p>{featuredStory.role}</p>
+                      <p>{featuredStory.impact}</p>
+                    </div>
+                    <p className="mt-4 font-mono text-xs leading-relaxed text-neutral-600 dark:text-neutral-300">
+                      Evidence: {featuredStory.evidence}
+                    </p>
+                  </div>
+                </article>
+              </div>
+
+              <ol className="mt-8 border-t border-neutral-200 dark:border-neutral-700">
+                {selectedImpactStories.slice(1).map((story, index) => (
+                  <li
+                    key={story.title}
+                    className="grid grid-cols-1 gap-4 border-b border-neutral-200 py-5 last:border-b-0 last:pb-0 md:grid-cols-[2.75rem_minmax(0,1fr)] dark:border-neutral-700"
+                  >
+                    <div className="font-mono text-2xl text-neutral-300 dark:text-neutral-700">
+                      {String(index + 2).padStart(2, '0')}
+                    </div>
+                    <article>
+                      <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                        {story.title}
+                      </h3>
+                      <div className="mt-3 space-y-3 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
+                        <p>{story.context}</p>
+                        <p>{story.role}</p>
+                        <p>{story.impact}</p>
+                      </div>
+                      <p className="mt-4 font-mono text-xs leading-relaxed text-neutral-600 dark:text-neutral-300">
+                        Evidence: {story.evidence}
+                      </p>
+                    </article>
+                  </li>
+                ))}
+              </ol>
+            </section>
           </div>
         </div>
       </div>
@@ -117,10 +143,18 @@ function Highlights() {
 }
 
 function RecommendationsPreview() {
-  const displayedRecommendations = recommendations.slice(0, 6)
+  const displayedRecommendations = getHomepageRecommendations()
 
   return (
     <Container className="mt-10 sm:mt-12">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <TerminalSectionHeader
+          command="cat"
+          argument="testimonials --limit 6 --short"
+          description="A quick scan of selected recommendations."
+        />
+      </div>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {displayedRecommendations.map((recommendation) => (
           <Recommendation
@@ -133,9 +167,9 @@ function RecommendationsPreview() {
       <div className="mt-8 flex justify-end">
         <Link
           href="/recommendations"
-          className={`inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-neutral-100 px-4 py-2 font-mono text-sm text-neutral-800 hover:border-emerald-300 hover:text-emerald-800 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:border-emerald-700 dark:hover:text-emerald-200 ${surfaceHoverMotionClassName}`}
+          className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-neutral-100 px-4 py-2 font-mono text-sm text-neutral-800 transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:text-emerald-800 hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:border-emerald-700 dark:hover:text-emerald-200"
         >
-          <span>view all {recommendations.length}</span>
+          <span>view all recommendations</span>
           <svg
             className="h-4 w-4"
             fill="none"
@@ -220,14 +254,10 @@ export default function HomeClientContent() {
         {/* Main hero card - combines portrait and bio on mobile */}
         <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white/90 dark:border-neutral-700 dark:bg-neutral-900/90">
           {/* Terminal header */}
-          <div className="flex h-6 items-center justify-between gap-2 border-b border-neutral-300 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
+          <div className="flex h-6 items-center gap-2 border-b border-neutral-300 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
             <span className="truncate font-mono text-[10px] text-neutral-700 dark:text-neutral-100">
               ~/README.md
             </span>
-            <div className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
-              available
-            </div>
           </div>
 
           <div className="p-5 sm:p-6">
@@ -260,15 +290,9 @@ export default function HomeClientContent() {
                   {linkedin.basics.name}
                 </h1>
                 <div className="mt-4 space-y-3 text-sm leading-relaxed text-neutral-700 sm:text-base dark:text-neutral-200">
-                  <p>
-                    Leading checkout at SCAYLE, the platform behind Harrods,
-                    Deichmann, and 100+ brands.
-                  </p>
-                  <p>
-                    I build high-availability commerce systems, pragmatic
-                    architecture, and calmer on-call rotations so teams can ship
-                    fast without creating 3am problems.
-                  </p>
+                  {heroIntro.map((paragraph) => (
+                    <p key={paragraph}>{paragraph}</p>
+                  ))}
                 </div>
                 <div className="mt-4 flex justify-center sm:justify-start">
                   <p className="inline-flex items-center rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 font-mono text-[11px] text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800/80 dark:text-neutral-300">
@@ -278,13 +302,22 @@ export default function HomeClientContent() {
                 </div>
 
                 <div className="mt-5 flex flex-col items-center gap-3 sm:flex-row sm:items-center">
-                  <Link
-                    href="mailto:jonas@petrik.dev"
-                    className={`inline-flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2 font-mono text-sm text-emerald-900 hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/70 ${surfaceHoverMotionClassName}`}
+                  <Button
+                    href="/cv"
+                    variant="secondary"
+                    className="rounded-lg border border-neutral-300 bg-neutral-100 font-mono text-neutral-900 hover:border-emerald-300 hover:text-emerald-800 dark:border-neutral-700 dark:bg-neutral-800/50 dark:text-neutral-100 dark:hover:border-emerald-700 dark:hover:text-emerald-200"
+                  >
+                    <DocumentIcon className="h-4 w-4" />
+                    <span>view CV</span>
+                  </Button>
+                  <Button
+                    href={`mailto:${publicEmail}`}
+                    variant="secondary"
+                    className="rounded-lg border border-emerald-300 bg-emerald-50 font-mono text-emerald-900 hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/70"
                   >
                     <MailIcon className="h-4 w-4" />
-                    <span>email contact</span>
-                  </Link>
+                    <span>email</span>
+                  </Button>
                 </div>
               </div>
             </div>

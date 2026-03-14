@@ -7,9 +7,9 @@
     "email": "jonas@petrik.dev",
     "phone": "+491785119617",
     "url": "https://petrik.dev",
-    "summary": "Staff Engineer leading checkout at SCAYLE - the platform behind Harrods, Deichmann, and 100+ brands processing €6.5B+ yearly. Zero downtime Black Friday 2025 handling ~550 orders/minute. I put functionality and maintainability first, wear multiple hats (dev, devops, team lead, tech lead), and build systems that work at 3am without waking anyone up.",
+    "summary": "Staff engineer leading checkout at SCAYLE, focused on backend, platform reliability, and high-availability commerce systems. I build systems that stay calm during peak traffic, reduce on-call noise, and keep teams shipping.",
     "location": {
-      "countryCode": "US",
+      "countryCode": "DE",
       "address": "Germany"
     },
     "profiles": [

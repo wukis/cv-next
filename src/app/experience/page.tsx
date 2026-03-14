@@ -17,7 +17,8 @@ const ExperienceClientContent = dynamic(
 
 export const metadata: Metadata = {
     title: 'Experience',
-    description: 'Professional experience and education of Jonas Petrik - Senior Software Engineer and Team Lead with expertise in PHP, JavaScript, Go, and software architecture.',
+    description:
+      'Professional experience of Jonas Petrik across checkout, backend systems, platform reliability, search, and engineering leadership.',
     alternates: {
         canonical: '/experience',
     },

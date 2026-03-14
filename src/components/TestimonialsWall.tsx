@@ -86,17 +86,16 @@ export function TestimonialsWall({
   allowSorting?: boolean
   headerLabel?: string
 }) {
-  const [highlightedSlug, setHighlightedSlug] = useState<string | null>(null)
+  const [highlightedSlug, setHighlightedSlug] = useState<string | null>(() =>
+    typeof window === 'undefined' ? null : window.location.hash.slice(1) || null,
+  )
   const [sortMode, setSortMode] = useState<'natural' | 'recent'>('natural')
 
   useEffect(() => {
-    const hash = window.location.hash.slice(1)
-    if (hash) {
-      setHighlightedSlug(hash)
-
+    if (highlightedSlug) {
       // Scroll to the element after a brief delay to ensure render
       setTimeout(() => {
-        const element = document.getElementById(hash)
+        const element = document.getElementById(highlightedSlug)
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' })
         }
@@ -109,28 +108,12 @@ export function TestimonialsWall({
 
       return () => clearTimeout(timer)
     }
-  }, [])
+  }, [highlightedSlug])
 
   // Listen for hash changes
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.slice(1)
-      if (hash) {
-        setHighlightedSlug(hash)
-
-        setTimeout(() => {
-          const element = document.getElementById(hash)
-          if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' })
-          }
-        }, 100)
-
-        const timer = setTimeout(() => {
-          setHighlightedSlug(null)
-        }, 3000)
-
-        return () => clearTimeout(timer)
-      }
+      setHighlightedSlug(window.location.hash.slice(1) || null)
     }
 
     window.addEventListener('hashchange', handleHashChange)
@@ -144,23 +127,19 @@ export function TestimonialsWall({
         )
       : recommendations
 
-  // Categorize recommendations by length
-  const featured: RecommendationInterface[] = [] // >1500 chars - full width
-  const long: RecommendationInterface[] = [] // 700-1500 chars - span 2 columns
-  const regular: RecommendationInterface[] = [] // <700 chars - single column masonry
+  const featured: RecommendationInterface[] = []
+  const long: RecommendationInterface[] = []
+  const regular: RecommendationInterface[] = []
 
-  displayedRecommendations.forEach((rec) => {
-    if (rec.body.length > 1500) {
-      featured.push(rec)
-    } else if (rec.body.length > 700) {
-      long.push(rec)
+  displayedRecommendations.forEach((recommendation) => {
+    if (recommendation.body.length > 1500) {
+      featured.push(recommendation)
+    } else if (recommendation.body.length > 700) {
+      long.push(recommendation)
     } else {
-      regular.push(rec)
+      regular.push(recommendation)
     }
   })
-
-  // Sort featured by length (longest first)
-  featured.sort((a, b) => b.body.length - a.body.length)
 
   return (
     <div className="space-y-6">
@@ -202,7 +181,6 @@ export function TestimonialsWall({
         </div>
       ) : (
         <>
-          {/* Featured recommendations - full width */}
           {featured.map((recommendation) => (
             <Recommendation
               key={recommendation.slug}
@@ -210,9 +188,7 @@ export function TestimonialsWall({
               isHighlighted={highlightedSlug === recommendation.slug}
             />
           ))}
-
-          {/* Long recommendations - simple 2-column layout */}
-          {long.length > 0 && (
+          {long.length > 0 ? (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {long.map((recommendation) => (
                 <Recommendation
@@ -222,10 +198,8 @@ export function TestimonialsWall({
                 />
               ))}
             </div>
-          )}
-
-          {/* Regular recommendations - true CSS columns masonry */}
-          {regular.length > 0 && (
+          ) : null}
+          {regular.length > 0 ? (
             <div className="columns-1 gap-4 sm:columns-2 lg:columns-3">
               {regular.map((recommendation) => (
                 <div
@@ -239,7 +213,7 @@ export function TestimonialsWall({
                 </div>
               ))}
             </div>
-          )}
+          ) : null}
         </>
       )}
     </div>

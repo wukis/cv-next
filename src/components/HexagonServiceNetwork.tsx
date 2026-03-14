@@ -102,7 +102,7 @@ const HexagonServiceNetwork: React.FC = () => {
     const connectionIdRef = useRef(0);
     const statusIdRef = useRef(0);
     const rotationRef = useRef({ x: 0, y: 0 });
-    const [mounted, setMounted] = useState(false);
+    const mounted = typeof document !== 'undefined';
     const [isDark, setIsDark] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
     const isFocusedRef = useRef(isFocused); // Ref to track focus state without restarting animation
@@ -110,6 +110,20 @@ const HexagonServiceNetwork: React.FC = () => {
     const frameSkipRef = useRef(0); // Frame skipping counter for performance when not focused
     
     // Emergency event system
+    const [initialEmergencyState] = useState(() => ({
+        isActive: false,
+        isRecovery: false,
+        startTime: 0,
+        duration: 12,
+        recoveryStartTime: 0,
+        recoveryDuration: 5,
+        lastEmergencyTime: 0,
+        nextEmergencyInterval: 30,
+        hasTriggeredFirstEmergency: false,
+        hasEverFocused: false,
+        accumulatedFocusTime: 0,
+        firstEmergencyDelay: 2 + Math.random(),
+    }));
     const emergencyRef = useRef<{
         isActive: boolean;
         isRecovery: boolean;
@@ -123,20 +137,7 @@ const HexagonServiceNetwork: React.FC = () => {
         hasEverFocused: boolean;
         accumulatedFocusTime: number;
         firstEmergencyDelay: number;
-    }>({
-        isActive: false,
-        isRecovery: false,
-        startTime: 0,
-        duration: 12, // Emergency lasts 12 seconds (3x longer)
-        recoveryStartTime: 0,
-        recoveryDuration: 5, // Recovery message lasts 5 seconds (slower fade)
-        lastEmergencyTime: 0,
-        nextEmergencyInterval: 30, // Random interval after first emergency
-        hasTriggeredFirstEmergency: false,
-        hasEverFocused: false,
-        accumulatedFocusTime: 0,
-        firstEmergencyDelay: 2 + Math.random(), // 2-3 seconds
-    });
+    }>(initialEmergencyState);
 
     // Configuration
     const BASE_HEX_SIZE = 22;
@@ -497,8 +498,6 @@ const HexagonServiceNetwork: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        setMounted(true);
-
         const checkClasses = () => {
             setIsDark(document.documentElement.classList.contains('dark'));
             setIsFocused(document.documentElement.classList.contains('animation-focus'));

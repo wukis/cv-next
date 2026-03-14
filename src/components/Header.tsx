@@ -162,19 +162,9 @@ function MobileNavItem({
 function MobileNavigation({ className }: { className?: string }) {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
+  const mounted = typeof document !== 'undefined'
 
   const close = () => setIsOpen(false)
-
-  // Track if mounted (for portal)
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  // Close menu on route change
-  useEffect(() => {
-    setIsOpen(false)
-  }, [pathname])
 
   // Close on escape key
   useEffect(() => {
@@ -319,16 +309,11 @@ function DesktopNavigation(props: React.ComponentPropsWithoutRef<'nav'>) {
 function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme()
   const otherTheme = resolvedTheme === 'dark' ? 'light' : 'dark'
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   return (
     <button
       type="button"
-      aria-label={mounted ? `Switch to ${otherTheme} theme` : 'Toggle theme'}
+      aria-label="Toggle theme"
       className={`group flex h-10 w-10 items-center justify-center rounded-lg bg-white/80 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 backdrop-blur hover:ring-emerald-400/40 dark:bg-neutral-800/80 dark:ring-neutral-700/50 dark:hover:ring-emerald-400/40 ${surfaceHoverMotionClassName}`}
       onClick={() => setTheme(otherTheme)}
     >

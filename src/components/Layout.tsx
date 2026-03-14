@@ -6,11 +6,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <div className="relative flex w-full flex-col">
-        <Header />
+        <div className="print:hidden">
+          <Header />
+        </div>
         <main className="flex-auto">{children}</main>
-        <Footer />
+        <div className="print:hidden">
+          <Footer />
+        </div>
       </div>
-      <BackToTopButton />
+      <div className="print:hidden">
+        <BackToTopButton />
+      </div>
     </>
   )
 }

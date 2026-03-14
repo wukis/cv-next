@@ -47,8 +47,16 @@ const formatLogEntry = (log: string, index: number): string => {
   return `${generateTimestamp(index)} ${log}`;
 };
 
+const getShouldRenderLogTerminal = () => {
+  if (typeof window === 'undefined') return false;
+
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  return width > 1200 && (width / height) > 1.4;
+};
+
 export default function LogTerminal() {
-  const [shouldRender, setShouldRender] = useState(false);
+  const [shouldRender, setShouldRender] = useState(getShouldRenderLogTerminal);
   const [isFocused, setIsFocused] = useState(false);
   const [emergencyState, setEmergencyState] = useState<EmergencyState>('normal');
   const [isDark, setIsDark] = useState(true);
@@ -64,18 +72,10 @@ export default function LogTerminal() {
   });
 
   const checkScreenSize = useCallback(() => {
-    if (typeof window === 'undefined') return;
-
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-
-    // Only render on wide screens (same as MetricWidgets)
-    const isWideScreen = width > 1200 && (width / height) > 1.4;
-    setShouldRender(isWideScreen);
+    setShouldRender(getShouldRenderLogTerminal());
   }, []);
 
   useEffect(() => {
-    checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
     return () => window.removeEventListener('resize', checkScreenSize);
   }, [checkScreenSize]);

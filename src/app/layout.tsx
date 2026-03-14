@@ -3,11 +3,10 @@ import { type Metadata } from 'next'
 import { Providers } from '@/app/providers'
 import { Layout } from '@/components/Layout'
 import linkedin from '@/data/linkedin.json'
+import { seoDescription, seoKeywords, siteUrl } from '@/lib/siteProfile'
 
 import '@/styles/tailwind.css'
 import AmbientDecorations from '@/components/AmbientDecorations'
-
-const siteUrl = 'https://petrik.dev'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -15,19 +14,8 @@ export const metadata: Metadata = {
     template: '%s | ' + linkedin.basics.name,
     default: linkedin.basics.name + ' - ' + linkedin.basics.label,
   },
-  description: linkedin.basics.summary,
-  keywords: [
-    'Jonas Petrik',
-    'Senior Software Engineer',
-    'Team Lead',
-    'PHP Developer',
-    'JavaScript Developer',
-    'Go Developer',
-    'Full Stack Developer',
-    'Software Architect',
-    'Germany',
-    'Lithuania',
-  ],
+  description: seoDescription,
+  keywords: seoKeywords,
   authors: [{ name: linkedin.basics.name, url: siteUrl }],
   creator: linkedin.basics.name,
   publisher: linkedin.basics.name,
@@ -45,7 +33,7 @@ export const metadata: Metadata = {
     url: siteUrl,
     siteName: linkedin.basics.name,
     title: linkedin.basics.name + ' - ' + linkedin.basics.label,
-    description: linkedin.basics.summary,
+    description: seoDescription,
     images: [
       {
         url: '/jonas-petrik-portrait.png',
@@ -58,7 +46,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: linkedin.basics.name + ' - ' + linkedin.basics.label,
-    description: linkedin.basics.summary,
+    description: seoDescription,
     images: ['/jonas-petrik-portrait.png'],
     creator: '@jonaspetrik',
   },
@@ -86,8 +74,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
-      <body className="flex h-full bg-neutral-50 dark:bg-black">
-        <AmbientDecorations />
+      <body className="flex h-full bg-neutral-50 print:bg-white dark:bg-black">
+        <div className="print:hidden">
+          <AmbientDecorations />
+        </div>
         <Providers>
           <div className="flex w-full">
             <Layout>{children}</Layout>

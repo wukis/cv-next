@@ -1,10 +1,11 @@
 import { type Metadata } from 'next'
 import HomeClientContent from '@/components/HomeClientContent'
 import linkedin from '@/data/linkedin.json'
+import { personKnowsAbout, seoDescription, siteUrl } from '@/lib/siteProfile'
 
 export const metadata: Metadata = {
     title: linkedin.basics.name + ' - ' + linkedin.basics.label,
-    description: linkedin.basics.summary,
+    description: seoDescription,
     alternates: {
         canonical: '/',
     },
@@ -15,11 +16,11 @@ const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Person',
     name: linkedin.basics.name,
-    url: 'https://petrik.dev',
-    image: 'https://petrik.dev/jonas-petrik-portrait.png',
+    url: siteUrl,
+    image: `${siteUrl}/jonas-petrik-portrait.png`,
     email: linkedin.basics.email,
     jobTitle: linkedin.basics.label,
-    description: linkedin.basics.summary,
+    description: seoDescription,
     address: {
         '@type': 'PostalAddress',
         addressCountry: 'Germany',
@@ -38,18 +39,7 @@ const jsonLd = {
         'https://github.com/wukis',
         'https://gitlab.com/jonas.petrik',
     ],
-    knowsAbout: [
-        'PHP',
-        'JavaScript',
-        'Go',
-        'Vue.js',
-        'React',
-        'MySQL',
-        'Software Architecture',
-        'Team Leadership',
-        'DevOps',
-        'AWS',
-    ],
+    knowsAbout: personKnowsAbout,
 }
 
 export default function Home() {

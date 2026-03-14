@@ -773,6 +773,12 @@ function Work({
                               )}
                             </div>
 
+                            {experience.scope ? (
+                              <p className="mt-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
+                                {experience.scope}
+                              </p>
+                            ) : null}
+
                             {experience.highlights &&
                               experience.highlights.length > 0 && (
                                 <RoleHighlights
@@ -784,7 +790,7 @@ function Work({
                               responsibilitiesToShow.length > 0 && (
                                 <PromotionDiff
                                   newItems={responsibilitiesToShow}
-                                  label="new"
+                                  label="expanded scope"
                                 />
                               )}
 
@@ -793,7 +799,7 @@ function Work({
                                 <div className="mt-3">
                                   <div className="mb-2 flex items-center gap-2">
                                     <span className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                                      base responsibilities
+                                      core scope
                                     </span>
                                   </div>
                                   <div className="space-y-1.5 border-l-2 border-neutral-300 pl-2 dark:border-neutral-600">

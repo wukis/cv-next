@@ -186,13 +186,25 @@ const generateStatusState = (): StatusState => {
   return 'critical';
 };
 
+const getInitialMetricValue = (minValue?: number, maxValue?: number) => {
+  if (minValue !== undefined && maxValue !== undefined) {
+    return minValue + Math.random() * (maxValue - minValue);
+  }
+
+  return Math.floor(Math.random() * 80) + 10;
+};
+
+const getShouldRenderMetricWidgets = () => {
+  if (typeof window === 'undefined') return false;
+
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  return width > 1200 && (width / height) > 1.4;
+};
+
 function MetricWidget({ type, label, colorIndex, delay = 0, isFocused = false, emergencyState = 'normal', isDark = true, minValue, maxValue }: MetricWidgetProps) {
   const [data, setData] = useState<number[]>(() => generateSparklineData());
-  // Use minValue/maxValue for gauges if provided, otherwise default range
-  const initialValue = minValue !== undefined && maxValue !== undefined
-    ? minValue + Math.random() * (maxValue - minValue)
-    : Math.floor(Math.random() * 80) + 10;
-  const [value, setValue] = useState(initialValue);
+  const [value, setValue] = useState(() => getInitialMetricValue(minValue, maxValue));
   const [statusState, setStatusState] = useState<StatusState>(() => generateStatusState());
   const [visible, setVisible] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -423,25 +435,16 @@ const rightWidgets: WidgetConfig[] = [
 ];
 
 export default function MetricWidgets() {
-  const [shouldRender, setShouldRender] = useState(false);
+  const [shouldRender, setShouldRender] = useState(getShouldRenderMetricWidgets);
   const [isFocused, setIsFocused] = useState(false);
   const [emergencyState, setEmergencyState] = useState<EmergencyState>('normal');
   const [isDark, setIsDark] = useState(true);
   
   const checkScreenSize = useCallback(() => {
-    if (typeof window === 'undefined') return;
-    
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    
-    // Only render on wide screens (aspect ratio > 1.4 and width > 1200px)
-    // This excludes mobile, tablets, and square-ish monitors
-    const isWideScreen = width > 1200 && (width / height) > 1.4;
-    setShouldRender(isWideScreen);
+    setShouldRender(getShouldRenderMetricWidgets());
   }, []);
 
   useEffect(() => {
-    checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
     return () => window.removeEventListener('resize', checkScreenSize);
   }, [checkScreenSize]);
