@@ -1,130 +1,209 @@
-'use client';
+'use client'
 
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react'
 
-// Dark mode colors (bright neon for dark backgrounds)
+import {
+  DEFAULT_CLUSTER_SNAPSHOT,
+  NETWORK_CLUSTER_STATE_EVENT,
+  type ClusterSnapshot,
+  type EmergencyState,
+} from '@/lib/ambientCluster'
+
 const darkModeColors = [
-  '#00ffff', // Cyan
-  '#ff00ff', // Magenta
-  '#00ff00', // Green
-  '#ffff00', // Yellow
-  '#ff0080', // Pink
-  '#0080ff', // Blue
-  '#80ff00', // Lime
-  '#ff8000', // Orange
-];
+  '#00ffff',
+  '#ff00ff',
+  '#00ff99',
+  '#ffff00',
+  '#ff6699',
+  '#00aaff',
+  '#80ff00',
+  '#ff9900',
+]
 
-// Light mode colors (darker, more saturated for contrast on light backgrounds)
 const lightModeColors = [
-  '#0099aa', // Darker Cyan
-  '#aa0099', // Darker Magenta
-  '#009900', // Darker Green
-  '#aa8800', // Darker Yellow/Gold
-  '#cc0066', // Darker Pink
-  '#0066cc', // Darker Blue
-  '#669900', // Darker Lime
-  '#cc6600', // Darker Orange
-];
+  '#008c99',
+  '#9b147f',
+  '#009966',
+  '#9d8200',
+  '#c2185b',
+  '#0066cc',
+  '#669900',
+  '#c26200',
+]
 
-// Generate random sparkline data
-const generateSparklineData = (points: number = 20): number[] => {
-  const data: number[] = [];
-  let value = Math.random() * 50 + 25;
-  for (let i = 0; i < points; i++) {
-    value += (Math.random() - 0.5) * 15;
-    value = Math.max(5, Math.min(95, value));
-    data.push(value);
-  }
-  return data;
-};
+type WidgetType = 'sparkline' | 'bars' | 'gauge' | 'counter' | 'status'
+type WidgetId =
+  | 'req_rate'
+  | 'lb'
+  | 'queue'
+  | 'pods'
+  | 'latency'
+  | 'cpu'
+  | 'memory'
+  | 'k8s'
+  | 'uptime'
+  | 'errors'
+  | 'postgres'
+  | 'redis'
+  | 'traffic'
+  | 'targets'
 
-// Sparkline chart component
-function Sparkline({ data, color, width = 80, height = 24, isFocused = false, isDark = true }: { 
-  data: number[]; 
-  color: string; 
-  width?: number; 
-  height?: number;
-  isFocused?: boolean;
-  isDark?: boolean;
+interface WidgetConfig {
+  id: WidgetId
+  type: WidgetType
+  label: string
+  colorIndex: number
+  delay?: number
+}
+
+interface MetricWidgetProps extends WidgetConfig {
+  isFocused: boolean
+  cluster: ClusterSnapshot
+  isDark: boolean
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value))
+}
+
+function Sparkline({
+  data,
+  color,
+  width = 112,
+  height = 34,
+  isFocused = false,
+  isDark = true,
+}: {
+  data: number[]
+  color: string
+  width?: number
+  height?: number
+  isFocused?: boolean
+  isDark?: boolean
 }) {
-  const points = data.map((value, index) => {
-    const x = (index / (data.length - 1)) * width;
-    const y = height - (value / 100) * height;
-    return `${x},${y}`;
-  }).join(' ');
+  const normalizedData = data.length > 1 ? data : [0, 0]
+  const points = normalizedData
+    .map((value, index) => {
+      const x = (index / (normalizedData.length - 1)) * width
+      const y = height - (value / 100) * height
+      return `${x},${y}`
+    })
+    .join(' ')
+  const areaPoints = `${points} ${width},${height} 0,${height}`
 
-  // More muted when not focused, vivid when focused
-  const opacity = isFocused ? (isDark ? 0.85 : 1) : (isDark ? 0.35 : 0.4);
-  const glowSize = isFocused ? (isDark ? 4 : 2) : 0;
-  const strokeWidth = isDark ? 1.5 : 2;
+  const opacity = isFocused ? (isDark ? 0.85 : 1) : isDark ? 0.35 : 0.4
+  const glowSize = isFocused ? (isDark ? 4 : 2) : 0
+  const strokeWidth = isDark ? 1.5 : 2
 
   return (
-    <svg width={width} height={height} style={{ opacity, transition: 'opacity 0.5s ease' }}>
+    <svg
+      width="100%"
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
+      style={{ opacity, transition: 'opacity 0.5s ease' }}
+    >
+      <polygon
+        fill={color}
+        opacity={isDark ? 0.14 : 0.11}
+        stroke="none"
+        points={areaPoints}
+      />
       <polyline
         fill="none"
         stroke={color}
         strokeWidth={strokeWidth}
         points={points}
-        className="drop-shadow-sm"
-        style={{ filter: glowSize > 0 ? `drop-shadow(0 0 ${glowSize}px ${color})` : 'none', transition: 'filter 0.5s ease' }}
+        style={{
+          filter: glowSize > 0 ? `drop-shadow(0 0 ${glowSize}px ${color})` : 'none',
+          transition: 'filter 0.5s ease',
+        }}
       />
     </svg>
-  );
+  )
 }
 
-// Mini bar chart component
-function MiniBarChart({ values, color, width = 60, height = 20, isFocused = false, isDark = true }: {
-  values: number[];
-  color: string;
-  width?: number;
-  height?: number;
-  isFocused?: boolean;
-  isDark?: boolean;
+function MiniBarChart({
+  values,
+  color,
+  width = 112,
+  height = 42,
+  isFocused = false,
+  isDark = true,
+}: {
+  values: number[]
+  color: string
+  width?: number
+  height?: number
+  isFocused?: boolean
+  isDark?: boolean
 }) {
-  const barWidth = (width / values.length) - 2;
-  // More muted when not focused
-  const baseOpacity = isFocused ? (isDark ? 0.85 : 1) : (isDark ? 0.35 : 0.4);
-  const glowSize = isFocused ? (isDark ? 4 : 2) : 0;
-  
+  const gap = 5
+  const barWidth = (width - gap * (values.length - 1)) / values.length
+  const baseOpacity = isFocused ? (isDark ? 0.85 : 1) : isDark ? 0.35 : 0.4
+  const glowSize = isFocused ? (isDark ? 4 : 2) : 0
+
   return (
-    <svg width={width} height={height} style={{ opacity: baseOpacity, transition: 'opacity 0.5s ease' }}>
+    <svg
+      width="100%"
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
+      style={{ opacity: baseOpacity, transition: 'opacity 0.5s ease' }}
+    >
       {values.map((value, index) => {
-        const barHeight = (value / 100) * height;
-        const x = index * (barWidth + 2);
-        const y = height - barHeight;
+        const barHeight = (value / 100) * height
+        const x = index * (barWidth + gap)
+        const y = height - barHeight
         return (
-          <rect
-            key={index}
-            x={x}
-            y={y}
-            width={barWidth}
-            height={barHeight}
-            fill={color}
-            opacity={0.7 + (value / 100) * 0.3}
-            style={{ filter: glowSize > 0 ? `drop-shadow(0 0 ${glowSize}px ${color})` : 'none', transition: 'filter 0.5s ease' }}
-          />
-        );
+          <g key={index}>
+            <rect
+              x={x}
+              y={0}
+              width={barWidth}
+              height={height}
+              rx={barWidth * 0.3}
+              fill={isDark ? 'rgba(31, 41, 55, 0.48)' : 'rgba(203, 213, 225, 0.62)'}
+            />
+            <rect
+              x={x}
+              y={y}
+              width={barWidth}
+              height={barHeight}
+              rx={barWidth * 0.3}
+              fill={color}
+              opacity={0.72 + (value / 100) * 0.28}
+              style={{
+                filter: glowSize > 0 ? `drop-shadow(0 0 ${glowSize}px ${color})` : 'none',
+                transition: 'filter 0.5s ease',
+              }}
+            />
+          </g>
+        )
       })}
     </svg>
-  );
+  )
 }
 
-// Circular gauge component
-function CircularGauge({ value, color, size = 32, isFocused = false, isDark = true }: {
-  value: number;
-  color: string;
-  size?: number;
-  isFocused?: boolean;
-  isDark?: boolean;
+function CircularGauge({
+  value,
+  color,
+  size = 32,
+  isFocused = false,
+  isDark = true,
+}: {
+  value: number
+  color: string
+  size?: number
+  isFocused?: boolean
+  isDark?: boolean
 }) {
-  const strokeWidth = isDark ? 3 : 3.5;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (value / 100) * circumference;
-
-  // More muted when not focused
-  const opacity = isFocused ? (isDark ? 0.85 : 1) : (isDark ? 0.35 : 0.4);
-  const glowSize = isFocused ? (isDark ? 5 : 2) : 0;
+  const strokeWidth = isDark ? 3 : 3.5
+  const radius = (size - strokeWidth) / 2
+  const circumference = 2 * Math.PI * radius
+  const offset = circumference - (value / 100) * circumference
+  const opacity = isFocused ? (isDark ? 0.85 : 1) : isDark ? 0.35 : 0.4
+  const glowSize = isFocused ? (isDark ? 5 : 2) : 0
 
   return (
     <svg width={size} height={size} className="-rotate-90" style={{ opacity, transition: 'opacity 0.5s ease' }}>
@@ -147,395 +226,479 @@ function CircularGauge({ value, color, size = 32, isFocused = false, isDark = tr
         strokeDasharray={circumference}
         strokeDashoffset={offset}
         strokeLinecap="round"
-        style={{ filter: glowSize > 0 ? `drop-shadow(0 0 ${glowSize}px ${color})` : 'none', transition: 'filter 0.5s ease' }}
+        style={{
+          filter: glowSize > 0 ? `drop-shadow(0 0 ${glowSize}px ${color})` : 'none',
+          transition: 'filter 0.5s ease',
+        }}
       />
     </svg>
-  );
+  )
 }
 
-// Emergency state type
-type EmergencyState = 'normal' | 'emergency' | 'recovery';
-
-// Status state type for status widgets
-type StatusState = 'healthy' | 'degraded' | 'critical';
-
-// Individual metric widget
-interface MetricWidgetProps {
-  type: 'sparkline' | 'bars' | 'gauge' | 'counter' | 'status';
-  label: string;
-  colorIndex: number; // Index into color arrays
-  delay?: number;
-  isFocused?: boolean;
-  emergencyState?: EmergencyState;
-  isDark?: boolean;
-  minValue?: number; // For gauges - minimum realistic value
-  maxValue?: number; // For gauges - maximum realistic value
+function getTargetValue(widgetId: WidgetId, cluster: ClusterSnapshot) {
+  switch (widgetId) {
+    case 'req_rate':
+      return clamp(
+        cluster.requestRate / 24 +
+          (cluster.emergencyState === 'emergency' ? 8 : 0),
+        16,
+        98,
+      )
+    case 'latency':
+      return clamp(
+        cluster.latencyMs * 1.35 +
+          (cluster.emergencyState === 'emergency' ? 18 : 0),
+        12,
+        99,
+      )
+    case 'errors':
+      return clamp(
+        cluster.errorRate * 9 +
+          cluster.unhealthyReplicas * 8 +
+          cluster.drainingReplicas * 5 +
+          (cluster.emergencyState === 'emergency' ? 34 : 0) +
+          (cluster.emergencyState === 'recovery' ? 8 : 0),
+        3,
+        100,
+      )
+    case 'cpu':
+      return clamp(
+        36 +
+          cluster.trafficIntensity * 26 +
+          cluster.drainingReplicas * 5 +
+          cluster.unhealthyReplicas * 7 +
+          (cluster.emergencyState === 'emergency' ? 10 : 0),
+        20,
+        96,
+      )
+    case 'memory':
+      return clamp(
+        48 +
+          cluster.startingReplicas * 8 +
+          cluster.unhealthyReplicas * 4 +
+          cluster.trafficIntensity * 16 +
+          (cluster.emergencyState === 'emergency' ? 6 : 0),
+        35,
+        94,
+      )
+    case 'uptime':
+      return clamp(
+        99.9 -
+          cluster.errorRate * 0.08 -
+          cluster.unhealthyReplicas * 0.12 -
+          cluster.drainingReplicas * 0.04,
+        98.6,
+        99.99,
+      )
+    default:
+      return clamp(cluster.trafficIntensity * 100, 10, 90)
+  }
 }
 
-const EMERGENCY_RED_DARK = '#ff3333';
-const EMERGENCY_RED_LIGHT = '#cc0000';
-const RECOVERY_GREEN_DARK = '#33ff66';
-const RECOVERY_GREEN_LIGHT = '#009933';
-
-// Generate random status state with realistic distribution
-// Services are mostly healthy (85%), occasionally degraded (12%), rarely critical (3%)
-const generateStatusState = (): StatusState => {
-  const rand = Math.random();
-  if (rand < 0.85) return 'healthy';
-  if (rand < 0.97) return 'degraded';
-  return 'critical';
-};
-
-const getInitialMetricValue = (minValue?: number, maxValue?: number) => {
-  if (minValue !== undefined && maxValue !== undefined) {
-    return minValue + Math.random() * (maxValue - minValue);
+function getBarValues(widgetId: WidgetId, cluster: ClusterSnapshot) {
+  if (widgetId !== 'queue') {
+    return Array.from({ length: 6 }, () => 40)
   }
 
-  return Math.floor(Math.random() * 80) + 10;
-};
+  const incidentBoost =
+    cluster.emergencyState === 'emergency'
+      ? 24
+      : cluster.emergencyState === 'recovery'
+        ? 8
+        : 0
+  const base = clamp(cluster.queueDepth * 1.45 + incidentBoost, 12, 96)
+  return Array.from({ length: 6 }, (_, index) =>
+    clamp(
+      base +
+        Math.sin(Date.now() / 350 + index * 0.75) * 10 +
+        index * 4 +
+        (cluster.emergencyState === 'emergency' ? index * 2.5 : 0),
+      8,
+      100,
+    ),
+  )
+}
 
-const getShouldRenderMetricWidgets = () => {
-  if (typeof window === 'undefined') return false;
+function getStatusDisplay(widgetId: WidgetId, cluster: ClusterSnapshot) {
+  if (cluster.emergencyState === 'emergency') {
+    return { text: 'ALERT', tone: 'critical' as const }
+  }
 
-  const width = window.innerWidth;
-  const height = window.innerHeight;
-  return width > 1200 && (width / height) > 1.4;
-};
+  if (cluster.emergencyState === 'recovery') {
+    return { text: 'HEAL', tone: 'healthy' as const }
+  }
 
-function MetricWidget({ type, label, colorIndex, delay = 0, isFocused = false, emergencyState = 'normal', isDark = true, minValue, maxValue }: MetricWidgetProps) {
-  const [data, setData] = useState<number[]>(() => generateSparklineData());
-  const [value, setValue] = useState(() => getInitialMetricValue(minValue, maxValue));
-  const [statusState, setStatusState] = useState<StatusState>(() => generateStatusState());
-  const [visible, setVisible] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  switch (widgetId) {
+    case 'lb':
+      if (cluster.readyReplicas < Math.max(2, cluster.replicaTarget - 1)) {
+        return { text: 'REROUTE', tone: 'degraded' as const }
+      }
+      return { text: 'OK', tone: 'healthy' as const }
+    case 'k8s':
+      if (cluster.startingReplicas > 0 || cluster.drainingReplicas > 0) {
+        return { text: 'SELFHL', tone: 'degraded' as const }
+      }
+      return { text: 'READY', tone: 'healthy' as const }
+    case 'postgres':
+      if (cluster.errorRate > 6) {
+        return { text: 'LAG', tone: 'degraded' as const }
+      }
+      return { text: 'SYNC', tone: 'healthy' as const }
+    case 'redis':
+      if (cluster.queueDepth > 40) {
+        return { text: 'HOT', tone: 'degraded' as const }
+      }
+      return { text: 'HIT', tone: 'healthy' as const }
+    default:
+      return { text: 'OK', tone: 'healthy' as const }
+  }
+}
+
+function getCounterDisplay(widgetId: WidgetId, cluster: ClusterSnapshot, emergencyState: EmergencyState) {
+  switch (widgetId) {
+    case 'pods':
+      return `${cluster.readyReplicas}/${cluster.replicaTarget}`
+    case 'traffic':
+      return `${(cluster.requestRate / 1000).toFixed(1)}k`
+    case 'targets':
+      return emergencyState === 'emergency'
+        ? `${cluster.loadBalancerTargets.length} live`
+        : String(cluster.loadBalancerTargets.length)
+    default:
+      return emergencyState === 'emergency' ? '!ERR' : `${cluster.liveReplicas}`
+  }
+}
+
+function getShouldRenderMetricWidgets() {
+  if (typeof window === 'undefined') {
+    return false
+  }
+
+  const width = window.innerWidth
+  const height = window.innerHeight
+  return width > 1200 && width / height > 1.4
+}
+
+function MetricWidget({
+  id,
+  type,
+  label,
+  colorIndex,
+  delay = 0,
+  isFocused = false,
+  cluster,
+  isDark = true,
+}: MetricWidgetProps) {
+  const [data, setData] = useState<number[]>(() => Array.from({ length: 20 }, () => 40))
+  const [bars, setBars] = useState<number[]>(() => Array.from({ length: 6 }, () => 28))
+  const [value, setValue] = useState(() => getTargetValue(id, cluster))
+  const [visible, setVisible] = useState(false)
+  const clusterRef = useRef(cluster)
 
   useEffect(() => {
-    // Stagger appearance
-    const appearTimeout = setTimeout(() => setVisible(true), delay);
+    clusterRef.current = cluster
+  }, [cluster])
 
-    // Update data periodically
-    intervalRef.current = setInterval(() => {
+  useEffect(() => {
+    const appearTimeout = setTimeout(() => setVisible(true), delay)
+    const interval = setInterval(() => {
+      const snapshot = clusterRef.current
+      const targetValue = getTargetValue(id, snapshot)
+
       if (type === 'sparkline') {
-        setData(prev => {
-          const newData = [...prev.slice(1)];
-          let newValue = prev[prev.length - 1] + (Math.random() - 0.5) * 20;
-          newValue = Math.max(5, Math.min(95, newValue));
-          newData.push(newValue);
-          return newData;
-        });
-      } else if (type === 'bars') {
-        setData(Array.from({ length: 6 }, () => Math.random() * 80 + 10));
-      } else if (type === 'gauge' || type === 'counter') {
-        setValue(prev => {
-          // For gauges with min/max, stay within bounds
-          if (minValue !== undefined && maxValue !== undefined) {
-            const range = maxValue - minValue;
-            const change = (Math.random() - 0.5) * (range * 0.1);
-            return Math.max(minValue, Math.min(maxValue, prev + change));
-          }
-          const change = (Math.random() - 0.5) * 10;
-          return Math.max(0, Math.min(100, prev + change));
-        });
-      } else if (type === 'status') {
-        // Occasionally update status state (less frequently)
-        if (Math.random() < 0.15) {
-          setStatusState(generateStatusState());
-        }
+        setData((previous) => {
+          const next = [...previous.slice(1)]
+          const current = previous[previous.length - 1]
+          const drift = (targetValue - current) * 0.32 + (Math.random() - 0.5) * 5
+          next.push(clamp(current + drift, 4, 98))
+          return next
+        })
       }
-    }, 1500 + Math.random() * 1000);
+
+      if (type === 'bars') {
+        setBars(getBarValues(id, snapshot))
+      }
+
+      if (type === 'gauge') {
+        setValue((previous) => previous + (targetValue - previous) * 0.28)
+      }
+    }, 1200)
 
     return () => {
-      clearTimeout(appearTimeout);
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [delay, type, minValue, maxValue]);
-
-  // Get appropriate color based on theme
-  const baseColor = isDark ? darkModeColors[colorIndex] : lightModeColors[colorIndex];
-  const emergencyRed = isDark ? EMERGENCY_RED_DARK : EMERGENCY_RED_LIGHT;
-  const recoveryGreen = isDark ? RECOVERY_GREEN_DARK : RECOVERY_GREEN_LIGHT;
-
-  // Status-specific colors
-  const statusHealthyColor = isDark ? '#00ff00' : '#009900';
-  const statusDegradedColor = isDark ? '#ffaa00' : '#cc7700';
-  const statusCriticalColor = isDark ? '#ff4444' : '#cc0000';
-
-  // Get color for status widget based on its state
-  const getStatusColor = (): string => {
-    if (emergencyState === 'emergency') return emergencyRed;
-    if (emergencyState === 'recovery') return recoveryGreen;
-    switch (statusState) {
-      case 'healthy': return statusHealthyColor;
-      case 'degraded': return statusDegradedColor;
-      case 'critical': return statusCriticalColor;
+      clearTimeout(appearTimeout)
+      clearInterval(interval)
     }
-  };
+  }, [delay, id, type])
 
-  // Determine effective color based on emergency state (for non-status widgets)
-  const effectiveColor = emergencyState === 'emergency' ? emergencyRed :
-                         emergencyState === 'recovery' ? recoveryGreen : baseColor;
+  const emergencyState = cluster.emergencyState
+  const baseColor = isDark ? darkModeColors[colorIndex] : lightModeColors[colorIndex]
+  const emergencyRed = isDark ? '#ff3333' : '#cc0000'
+  const recoveryGreen = isDark ? '#33ff66' : '#009933'
+  const effectiveColor =
+    emergencyState === 'emergency'
+      ? emergencyRed
+      : emergencyState === 'recovery'
+        ? recoveryGreen
+        : baseColor
 
-  // Muted vs focused styling - widgets only fully visible when background is in focus
-  // More muted when not focused to avoid distracting from content
-  const isActive = isFocused;
-  const containerOpacity = isActive ? 1 : (isDark ? 0.25 : 0.35);
-  const textOpacity = isActive ? (isDark ? 0.7 : 0.9) : (isDark ? 0.3 : 0.4);
+  const statusHealthyColor = isDark ? '#00ff88' : '#009955'
+  const statusDegradedColor = isDark ? '#ffaa00' : '#cc7700'
+  const statusCriticalColor = isDark ? '#ff5555' : '#c62828'
+  const isActive = isFocused
+  const containerOpacity = isActive ? 1 : isDark ? 0.32 : 0.44
+  const textOpacity = isActive ? (isDark ? 0.72 : 0.9) : isDark ? 0.3 : 0.42
+  const borderColor =
+    emergencyState === 'emergency'
+      ? isDark
+        ? 'border-red-500/50'
+        : 'border-red-600/60'
+      : emergencyState === 'recovery'
+        ? isDark
+          ? 'border-green-500/50'
+          : 'border-green-600/60'
+        : isDark
+          ? 'border-neutral-700/20'
+          : 'border-neutral-400/40'
+  const bgColor =
+    emergencyState === 'emergency'
+      ? isDark
+        ? 'bg-red-950/40'
+        : 'bg-red-100/60'
+      : emergencyState === 'recovery'
+        ? isDark
+          ? 'bg-green-950/40'
+          : 'bg-green-100/60'
+        : isDark
+          ? 'bg-neutral-900/30'
+          : 'bg-white/55'
 
-  // Emergency border styling - theme aware
-  const borderColor = emergencyState === 'emergency' 
-    ? (isDark ? 'border-red-500/50' : 'border-red-600/60')
-    : emergencyState === 'recovery' 
-      ? (isDark ? 'border-green-500/50' : 'border-green-600/60')
-      : (isDark ? 'border-neutral-700/20' : 'border-neutral-400/40');
-  
-  const bgColor = emergencyState === 'emergency' 
-    ? (isDark ? 'bg-red-950/40' : 'bg-red-100/60')
-    : emergencyState === 'recovery' 
-      ? (isDark ? 'bg-green-950/40' : 'bg-green-100/60')
-      : (isDark ? 'bg-neutral-900/30' : 'bg-white/50');
+  const statusDisplay = getStatusDisplay(id, cluster)
+  const statusColor =
+    statusDisplay.tone === 'healthy'
+      ? statusHealthyColor
+      : statusDisplay.tone === 'degraded'
+        ? statusDegradedColor
+        : statusCriticalColor
+  const counterText = getCounterDisplay(id, cluster, emergencyState)
+  const uptimeDisplay = `${value.toFixed(2)}%`
 
   return (
-    <div 
+    <div
       className={`
-        flex flex-col gap-1 p-2 rounded-md
-        backdrop-blur-sm border
-        transition-all duration-300 ease-out
-        ${visible ? 'translate-y-0' : 'opacity-0 translate-y-2'}
+        flex w-[128px] flex-col gap-1.5 rounded-xl border px-3 py-2.5
+        backdrop-blur-sm transition-all duration-300 ease-out
+        ${visible ? 'translate-y-0' : 'translate-y-2 opacity-0'}
         ${borderColor} ${bgColor}
         ${emergencyState === 'emergency' ? 'animate-pulse' : ''}
       `}
-      style={{ 
-        minWidth: type === 'sparkline' ? 100 : 70,
+      style={{
+        boxShadow: isDark
+          ? 'inset 0 1px 0 rgba(148, 163, 184, 0.08)'
+          : 'inset 0 1px 0 rgba(255, 255, 255, 0.45)',
         opacity: visible ? containerOpacity : 0,
-        transition: 'opacity 0.3s ease, transform 0.5s ease, background-color 0.3s ease, border-color 0.3s ease'
+        transition:
+          'opacity 0.3s ease, transform 0.5s ease, background-color 0.3s ease, border-color 0.3s ease',
       }}
     >
-      <span 
-        className={`text-[9px] font-mono uppercase tracking-wider truncate transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
-        style={{ 
+      <span
+        className={`truncate font-mono text-[9px] uppercase tracking-wider transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
+        style={{
           opacity: textOpacity,
-          color: emergencyState === 'emergency' ? emergencyRed : 
-                 emergencyState === 'recovery' ? recoveryGreen : undefined
+          color:
+            emergencyState === 'emergency'
+              ? emergencyRed
+              : emergencyState === 'recovery'
+                ? recoveryGreen
+                : undefined,
         }}
       >
-        {emergencyState === 'emergency' ? '⚠ ' + label : label}
+        {label}
       </span>
-      
-      {type === 'sparkline' && (
-        <Sparkline data={data} color={effectiveColor} width={80} height={20} isFocused={isActive} isDark={isDark} />
-      )}
-      
-      {type === 'bars' && (
-        <MiniBarChart values={data.slice(0, 6)} color={effectiveColor} width={56} height={18} isFocused={isActive} isDark={isDark} />
-      )}
-      
-      {type === 'gauge' && (() => {
-        // Show decimal precision for high-value gauges (like uptime 99.5-99.99)
-        const isHighPrecision = minValue !== undefined && minValue > 90;
-        const displayValue = emergencyState === 'emergency' ? 'CRIT' :
-                            isHighPrecision ? value.toFixed(1) + '%' :
-                            Math.round(value) + '%';
 
-        return (
-          <div className="flex items-center gap-2">
-            <CircularGauge value={value} color={effectiveColor} size={28} isFocused={isActive} isDark={isDark} />
-            <span
-              className="text-[10px] font-mono transition-all duration-300"
-              style={{
-                color: effectiveColor,
-                textShadow: isActive && isDark ? `0 0 6px ${effectiveColor}` : 'none',
-                opacity: isActive ? 1 : (isDark ? 0.3 : 0.45),
-                fontWeight: isDark ? 'normal' : 500
-              }}
-            >
-              {displayValue}
-            </span>
-          </div>
-        );
-      })()}
-      
-      {type === 'counter' && (
-        <span 
+      {type === 'sparkline' ? (
+        <div className="w-full">
+          <Sparkline data={data} color={effectiveColor} width={112} height={34} isFocused={isActive} isDark={isDark} />
+        </div>
+      ) : null}
+
+      {type === 'bars' ? (
+        <div className="w-full">
+          <MiniBarChart values={bars} color={effectiveColor} width={112} height={42} isFocused={isActive} isDark={isDark} />
+        </div>
+      ) : null}
+
+      {type === 'gauge' ? (
+        <div className="flex items-center justify-between gap-2">
+          <CircularGauge
+            value={id === 'uptime' ? clamp(value, 0, 100) : clamp(value, 0, 100)}
+            color={effectiveColor}
+            size={30}
+            isFocused={isActive}
+            isDark={isDark}
+          />
+          <span
+            className="font-mono text-[10px] transition-all duration-300"
+            style={{
+              color: effectiveColor,
+              opacity: isActive ? 1 : isDark ? 0.34 : 0.48,
+              textShadow: isActive && isDark ? `0 0 6px ${effectiveColor}` : 'none',
+              fontWeight: isDark ? 500 : 600,
+            }}
+          >
+            {id === 'uptime' ? uptimeDisplay : `${Math.round(value)}%`}
+          </span>
+        </div>
+      ) : null}
+
+      {type === 'counter' ? (
+        <span
           className="text-sm font-mono font-medium transition-all duration-300"
-          style={{ 
-            color: effectiveColor, 
+          style={{
+            color: effectiveColor,
+            opacity: isActive ? 1 : isDark ? 0.34 : 0.48,
             textShadow: isActive && isDark ? `0 0 6px ${effectiveColor}` : 'none',
-            opacity: isActive ? 1 : (isDark ? 0.3 : 0.45),
-            fontWeight: isDark ? 500 : 600
           }}
         >
-          {emergencyState === 'emergency' ? '!ERR' : value.toFixed(1) + 'k'}
+          {counterText}
         </span>
-      )}
-      
-      {type === 'status' && (() => {
-        const statusColor = getStatusColor();
-        const statusText = emergencyState === 'emergency' ? 'ALERT!' :
-                          emergencyState === 'recovery' ? 'OK' :
-                          statusState;
-        const shouldPulse = emergencyState === 'emergency' || statusState === 'critical' || isActive;
+      ) : null}
 
-        return (
-          <div className="flex items-center gap-1.5">
-            <span
-              className={`w-2 h-2 rounded-full transition-all duration-300 ${shouldPulse ? 'animate-pulse' : ''}`}
-              style={{
-                backgroundColor: statusColor,
-                boxShadow: isActive ? `0 0 ${isDark ? 8 : 4}px ${statusColor}` : 'none',
-                opacity: isActive ? 1 : (isDark ? 0.35 : 0.5)
-              }}
-            />
-            <span
-              className={`text-[10px] font-mono transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
-              style={{
-                opacity: isActive ? 0.8 : (isDark ? 0.3 : 0.4),
-                color: statusColor,
-                fontWeight: isDark ? 'normal' : 500
-              }}
-            >
-              {statusText}
-            </span>
-          </div>
-        );
-      })()}
+      {type === 'status' ? (
+        <div className="flex items-center gap-1.5">
+          <span
+            className={`h-2 w-2 rounded-full transition-all duration-300 ${isActive || statusDisplay.tone !== 'healthy' ? 'animate-pulse' : ''}`}
+            style={{
+              backgroundColor: statusColor,
+              boxShadow: isActive ? `0 0 ${isDark ? 8 : 4}px ${statusColor}` : 'none',
+              opacity: isActive ? 1 : isDark ? 0.35 : 0.5,
+            }}
+          />
+          <span
+            className={`font-mono text-[10px] transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
+            style={{
+              opacity: isActive ? 0.82 : isDark ? 0.3 : 0.42,
+              color: statusColor,
+              fontWeight: isDark ? 'normal' : 500,
+            }}
+          >
+            {statusDisplay.text}
+          </span>
+        </div>
+      ) : null}
     </div>
-  );
+  )
 }
 
-// Widget configuration for left and right panels (using color indices)
-type WidgetConfig = {
-  type: 'sparkline' | 'bars' | 'gauge' | 'counter' | 'status';
-  label: string;
-  colorIndex: number;
-  // For gauge widgets - realistic value ranges
-  minValue?: number;
-  maxValue?: number;
-};
-
 const leftWidgets: WidgetConfig[] = [
-  { type: 'sparkline', label: 'req/sec', colorIndex: 0 },
-  { type: 'gauge', label: 'cpu', colorIndex: 2, minValue: 25, maxValue: 75 },
-  { type: 'bars', label: 'throughput', colorIndex: 1 },
-  { type: 'status', label: 'api-gw', colorIndex: 2 },
-  { type: 'counter', label: 'events', colorIndex: 5 },
-  { type: 'sparkline', label: 'latency', colorIndex: 4 },
-  { type: 'gauge', label: 'memory', colorIndex: 6, minValue: 45, maxValue: 80 },
-  { type: 'status', label: 'redis', colorIndex: 2 },
-];
+  { id: 'req_rate', type: 'sparkline', label: 'req/sec', colorIndex: 0 },
+  { id: 'lb', type: 'status', label: 'lb', colorIndex: 2 },
+  { id: 'queue', type: 'bars', label: 'queue', colorIndex: 7 },
+  { id: 'pods', type: 'counter', label: 'pods', colorIndex: 2 },
+  { id: 'latency', type: 'sparkline', label: 'latency', colorIndex: 4 },
+  { id: 'cpu', type: 'gauge', label: 'cpu', colorIndex: 5 },
+  { id: 'memory', type: 'gauge', label: 'memory', colorIndex: 6 },
+]
 
 const rightWidgets: WidgetConfig[] = [
-  { type: 'gauge', label: 'uptime', colorIndex: 2, minValue: 99.5, maxValue: 99.99 },
-  { type: 'sparkline', label: 'errors', colorIndex: 4 },
-  { type: 'status', label: 'postgres', colorIndex: 2 },
-  { type: 'counter', label: 'users', colorIndex: 0 },
-  { type: 'bars', label: 'queue', colorIndex: 7 },
-  { type: 'sparkline', label: 'io/sec', colorIndex: 3 },
-  { type: 'status', label: 'k8s', colorIndex: 2 },
-  { type: 'gauge', label: 'disk', colorIndex: 5, minValue: 55, maxValue: 75 },
-];
+  { id: 'uptime', type: 'gauge', label: 'uptime', colorIndex: 2 },
+  { id: 'errors', type: 'sparkline', label: 'errors', colorIndex: 4 },
+  { id: 'postgres', type: 'status', label: 'postgres', colorIndex: 2 },
+  { id: 'redis', type: 'status', label: 'redis', colorIndex: 0 },
+  { id: 'traffic', type: 'counter', label: 'traffic', colorIndex: 0 },
+  { id: 'targets', type: 'counter', label: 'targets', colorIndex: 5 },
+  { id: 'k8s', type: 'status', label: 'k8s', colorIndex: 2 },
+]
 
 export default function MetricWidgets() {
-  const [shouldRender, setShouldRender] = useState(getShouldRenderMetricWidgets);
-  const [isFocused, setIsFocused] = useState(false);
-  const [emergencyState, setEmergencyState] = useState<EmergencyState>('normal');
-  const [isDark, setIsDark] = useState(true);
-  
+  const [shouldRender, setShouldRender] = useState(getShouldRenderMetricWidgets)
+  const [isFocused, setIsFocused] = useState(false)
+  const [cluster, setCluster] = useState<ClusterSnapshot>(DEFAULT_CLUSTER_SNAPSHOT)
+  const [isDark, setIsDark] = useState(true)
+
   const checkScreenSize = useCallback(() => {
-    setShouldRender(getShouldRenderMetricWidgets());
-  }, []);
+    setShouldRender(getShouldRenderMetricWidgets())
+  }, [])
 
   useEffect(() => {
-    window.addEventListener('resize', checkScreenSize);
-    return () => window.removeEventListener('resize', checkScreenSize);
-  }, [checkScreenSize]);
+    window.addEventListener('resize', checkScreenSize)
+    return () => window.removeEventListener('resize', checkScreenSize)
+  }, [checkScreenSize])
 
-  // Listen for dark mode changes
   useEffect(() => {
     const checkDarkMode = () => {
-      setIsDark(document.documentElement.classList.contains('dark'));
-    };
-    
-    checkDarkMode();
-    
-    const observer = new MutationObserver(checkDarkMode);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    
-    return () => observer.disconnect();
-  }, []);
+      setIsDark(document.documentElement.classList.contains('dark'))
+    }
 
-  // Listen for animation-focus class on document element (same as HexagonServiceNetwork)
+    checkDarkMode()
+
+    const observer = new MutationObserver(checkDarkMode)
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    })
+
+    return () => observer.disconnect()
+  }, [])
+
   useEffect(() => {
     const checkFocusClass = () => {
-      setIsFocused(document.documentElement.classList.contains('animation-focus'));
-    };
-    
-    checkFocusClass();
-    
-    // Watch for class changes on the document element
-    const observer = new MutationObserver(checkFocusClass);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    
-    return () => observer.disconnect();
-  }, []);
+      setIsFocused(document.documentElement.classList.contains('animation-focus'))
+    }
 
-  // Listen for emergency events from HexagonServiceNetwork
+    checkFocusClass()
+
+    const observer = new MutationObserver(checkFocusClass)
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    })
+
+    return () => observer.disconnect()
+  }, [])
+
   useEffect(() => {
-    const handleEmergency = (event: Event) => {
-      const customEvent = event as CustomEvent<{ type: string }>;
-      const eventType = customEvent.detail?.type;
-      
-      if (eventType === 'start') {
-        setEmergencyState('emergency');
-      } else if (eventType === 'recovery') {
-        setEmergencyState('recovery');
-      } else if (eventType === 'end') {
-        setEmergencyState('normal');
+    const handleClusterUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent<ClusterSnapshot>
+      if (customEvent.detail) {
+        setCluster(customEvent.detail)
       }
-    };
-    
-    window.addEventListener('network-emergency', handleEmergency);
-    return () => window.removeEventListener('network-emergency', handleEmergency);
-  }, []);
+    }
 
-  if (!shouldRender) return null;
+    window.addEventListener(NETWORK_CLUSTER_STATE_EVENT, handleClusterUpdate)
+    return () => window.removeEventListener(NETWORK_CLUSTER_STATE_EVENT, handleClusterUpdate)
+  }, [])
+
+  if (!shouldRender) {
+    return null
+  }
 
   return (
-    <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-      {/* Left panel */}
-      <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 max-h-[80vh] overflow-hidden">
+    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+      <div className="absolute left-5 top-1/2 flex max-h-[80vh] -translate-y-1/2 flex-col gap-2.5 overflow-hidden">
         {leftWidgets.map((widget, index) => (
           <MetricWidget
-            key={`left-${index}`}
-            type={widget.type}
-            label={widget.label}
-            colorIndex={widget.colorIndex}
-            minValue={widget.minValue}
-            maxValue={widget.maxValue}
+            key={`left-${widget.id}`}
+            {...widget}
             delay={index * 150}
             isFocused={isFocused}
-            emergencyState={emergencyState}
+            cluster={cluster}
             isDark={isDark}
           />
         ))}
       </div>
 
-      {/* Right panel */}
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 max-h-[80vh] overflow-hidden">
+      <div className="absolute right-5 top-1/2 flex max-h-[80vh] -translate-y-1/2 flex-col gap-2.5 overflow-hidden">
         {rightWidgets.map((widget, index) => (
           <MetricWidget
-            key={`right-${index}`}
-            type={widget.type}
-            label={widget.label}
-            colorIndex={widget.colorIndex}
-            minValue={widget.minValue}
-            maxValue={widget.maxValue}
+            key={`right-${widget.id}`}
+            {...widget}
             delay={index * 150 + 100}
             isFocused={isFocused}
-            emergencyState={emergencyState}
+            cluster={cluster}
             isDark={isDark}
           />
         ))}
       </div>
     </div>
-  );
+  )
 }

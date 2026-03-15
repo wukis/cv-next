@@ -491,7 +491,7 @@ function AnimationFocus() {
   return (
     <DesktopTooltip
       label="Background preview"
-      description="Hover to spotlight the ambient network. Click to trigger emergency mode."
+      description="Hover to spotlight the ambient cluster. Click to trigger a failover drill."
     >
       <button
         type="button"
