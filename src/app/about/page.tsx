@@ -28,28 +28,33 @@ const systemExperience = [
   {
     label: 'Real-time betting',
     detail:
-      'Worked on online betting systems where correctness, latency, and financial behavior mattered more than brochure features.',
+      'Worked on betting systems where correctness, speed, and financial safety mattered more than presentation.',
   },
   {
     label: 'Warehouse and logistics',
     detail:
-      'Built warehouse workflow and shipping integrations for automotive e-commerce, including DHL, DPD, and UPS flows.',
+      'Built warehouse workflows and shipping integrations for automotive e-commerce, including DHL, DPD, and UPS.',
   },
   {
     label: 'Startup product work',
     detail:
-      'Helped take Atobi from an early startup product into a more mature delivery and architecture setup while the team scaled.',
+      'Helped take Atobi from an early startup product into a more mature engineering setup while the team scaled.',
   },
   {
     label: 'Search-heavy systems',
     detail:
-      'Rebuilt search for anwalt.de around GraphQL, geolocation, aggregations, and range filters for millions of monthly users.',
+      'Rebuilt search for anwalt.de with GraphQL, geolocation, aggregations, and range filters for millions of monthly users.',
   },
   {
     label: 'High-load commerce',
     detail:
-      'Now focused on checkout at SCAYLE, where reliability, observability, and operational quality matter under heavy traffic and peak events.',
+      'Now focused on checkout at SCAYLE, where reliability and operational quality matter under heavy traffic and peak events.',
   },
+] as const
+
+const earlyEngineeringStory = [
+  'My interest in engineering started early, when the mobile web still felt experimental. I built WML pages back when phones were only beginning to browse the internet, and I learned by working inside tight technical limits.',
+  'Later I built a text-based game in PHP4 with SMS payments. Watching mobile operators take roughly 50% of the revenue was frustrating, but it also made the business side of software very real to me. That project is a big part of why I chose to pursue software engineering professionally.',
 ] as const
 
 export const metadata: Metadata = {
@@ -180,6 +185,17 @@ export default function About() {
 
               <section className="border-t border-neutral-200 pt-8 dark:border-neutral-700">
                 <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
+                  how it started
+                </h3>
+                <div className="mt-4 space-y-4 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 sm:text-base">
+                  {earlyEngineeringStory.map((paragraph) => (
+                    <p key={paragraph}>{paragraph}</p>
+                  ))}
+                </div>
+              </section>
+
+              <section className="border-t border-neutral-200 pt-8 dark:border-neutral-700">
+                <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
                   current focus
                 </h3>
                 <p className="mt-4 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 sm:text-base">
@@ -204,22 +220,22 @@ export default function About() {
                   different kinds of systems
                 </h3>
                 <p className="mt-4 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 sm:text-base">
-                  One thing that shaped me early was not staying inside one
-                  narrow product category. I have worked on very different
-                  kinds of systems, and that range changed how I think about
-                  tradeoffs, operational risk, and what “good enough” means in
-                  different environments.
+                  A big part of my experience comes from working on systems
+                  built for very different purposes. I have not stayed inside
+                  one product category, and that range changed how I think
+                  about tradeoffs, risk, and what good engineering looks like
+                  in different environments.
                 </p>
-                <div className="mt-5 space-y-5">
+                <div className="mt-5 space-y-3">
                   {systemExperience.map((item) => (
                     <article
                       key={item.label}
-                      className="border-b border-neutral-200 pb-5 last:border-b-0 last:pb-0 dark:border-neutral-700"
+                      className="rounded-lg border border-neutral-200 bg-neutral-50/70 p-4 dark:border-neutral-700 dark:bg-neutral-800/40"
                     >
-                      <h4 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-                        {item.label}
-                      </h4>
-                      <p className="mt-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
+                      <p className="text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
+                        <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                          {item.label}:
+                        </span>{' '}
                         {item.detail}
                       </p>
                     </article>
