@@ -1099,10 +1099,11 @@ export default function EmergencyCallOverlay() {
       (previous.state === 'normal' || scenarioChanged)
 
     if (enteredIncident && cluster.scenarioKey) {
+      const scenarioKey = cluster.scenarioKey
       const sessionNow = getNow()
       const timeoutId = window.setTimeout(() => {
         if (session && previous.state !== 'normal') {
-          const reactionPool = RESTART_REACTIONS[cluster.scenarioKey]
+          const reactionPool = RESTART_REACTIONS[scenarioKey]
           const seededReaction =
             reactionPool[Math.floor(sessionNow / 1000) % reactionPool.length]
           const availableReaction =
@@ -1136,9 +1137,8 @@ export default function EmergencyCallOverlay() {
         }
 
         setSession((current) => {
-          const chosenScenarioParticipants = chooseScenarioParticipants(
-            cluster.scenarioKey!,
-          )
+          const chosenScenarioParticipants =
+            chooseScenarioParticipants(scenarioKey)
           const scenarioParticipants =
             current && previous.state !== 'normal'
               ? mergeScenarioParticipants(
@@ -1154,7 +1154,7 @@ export default function EmergencyCallOverlay() {
           return {
             startedAt: current?.startedAt ?? sessionNow,
             holdUntil,
-            scenarioKey: cluster.scenarioKey!,
+            scenarioKey,
             triggerSource:
               cluster.triggerSource ?? current?.triggerSource ?? null,
             cycleStartedAt: sessionNow,
