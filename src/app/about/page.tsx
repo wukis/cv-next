@@ -7,16 +7,14 @@ import { ProfileSocialLinks } from '@/components/ProfileSocialLinks'
 import { TerminalPageHeader } from '@/components/TerminalHeader'
 import { TechStack } from '@/components/TechStack'
 import portraitImage from '@/images/jonas-petrik-portrait-2.jpg'
-import { calculateTotalExperienceYears, WorkInterface } from '@/lib/experience'
-import work from '@/data/work.json'
-import { aboutNarrative, publicEmail } from '@/lib/siteProfile'
-
-const totalExperienceYears = calculateTotalExperienceYears(
-  work as WorkInterface[],
-)
-
-// Get current employment (first entry in work.json)
-const currentEmployment = (work as WorkInterface[])[0]
+import {
+  aboutNarrative,
+  currentPublicRole,
+  publicBasics,
+  publicEmail,
+  publicLocationSummary,
+  totalPublicExperienceYears,
+} from '@/lib/siteProfile'
 
 const howIWork = [
   'Stay close to production and use incidents, alerts, and failure modes as design feedback.',
@@ -101,16 +99,16 @@ export default function About() {
                 <div className="mt-5">
                   <div className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
-                    Staff Engineer / Team Lead
+                    {publicBasics.label}
                   </div>
                   <h2 className="mt-3 text-2xl font-bold tracking-tight text-neutral-800 dark:text-neutral-100">
-                    Jonas Petrik
+                    {publicBasics.name}
                   </h2>
                   <p className="mt-3 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
-                    Based in Germany, originally from Lithuania.
+                    {publicLocationSummary}
                   </p>
                   <p className="mt-1 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
-                    {totalExperienceYears}+ years across backend, platform,
+                    {totalPublicExperienceYears}+ years across backend, platform,
                     search, and engineering leadership.
                   </p>
                 </div>
@@ -121,13 +119,13 @@ export default function About() {
                   current role
                 </h3>
                 <p className="mt-3 text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                  {currentEmployment.position}
+                  {currentPublicRole.position}
                 </p>
                 <p className="mt-1 text-sm text-neutral-700 dark:text-neutral-200">
-                  {currentEmployment.name}
+                  {currentPublicRole.name}
                 </p>
                 <p className="mt-3 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
-                  {currentEmployment.scope}
+                  {currentPublicRole.scope}
                 </p>
               </section>
 
@@ -206,7 +204,7 @@ export default function About() {
                   and fixing the parts that create avoidable noise for the team.
                 </p>
                 <ul className="mt-4 space-y-3 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
-                  {currentEmployment.highlights.map((highlight) => (
+                  {currentPublicRole.highlights.map((highlight) => (
                     <li key={highlight} className="flex gap-3">
                       <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-neutral-400 dark:bg-neutral-500" />
                       <span>{highlight}</span>
@@ -258,7 +256,7 @@ export default function About() {
         </div>
 
         <TechStack
-          technologies={currentEmployment.technologies}
+          technologies={currentPublicRole.technologies}
           tone="plain"
           contentId="about-tech-stack"
         />

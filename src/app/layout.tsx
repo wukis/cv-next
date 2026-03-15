@@ -3,7 +3,7 @@ import { type Metadata } from 'next'
 import { Providers } from '@/app/providers'
 import { DesktopAmbientGate } from '@/components/DesktopAmbientGate'
 import { Layout } from '@/components/Layout'
-import linkedin from '@/data/linkedin.json'
+import { profileContent } from '@/lib/profileContent'
 import { seoDescription, seoKeywords, siteUrl } from '@/lib/siteProfile'
 
 import '@/styles/tailwind.css'
@@ -11,14 +11,14 @@ import '@/styles/tailwind.css'
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    template: '%s | ' + linkedin.basics.name,
-    default: linkedin.basics.name + ' - ' + linkedin.basics.label,
+    template: `%s | ${profileContent.person.name}`,
+    default: `${profileContent.person.name} - ${profileContent.person.label}`,
   },
   description: seoDescription,
   keywords: seoKeywords,
-  authors: [{ name: linkedin.basics.name, url: siteUrl }],
-  creator: linkedin.basics.name,
-  publisher: linkedin.basics.name,
+  authors: [{ name: profileContent.person.name, url: siteUrl }],
+  creator: profileContent.person.name,
+  publisher: profileContent.person.name,
   formatDetection: {
     email: false,
     address: false,
@@ -31,21 +31,21 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: siteUrl,
-    siteName: linkedin.basics.name,
-    title: linkedin.basics.name + ' - ' + linkedin.basics.label,
+    siteName: profileContent.person.name,
+    title: `${profileContent.person.name} - ${profileContent.person.label}`,
     description: seoDescription,
     images: [
       {
         url: '/jonas-petrik-portrait.png',
         width: 800,
         height: 800,
-        alt: linkedin.basics.name,
+        alt: profileContent.person.name,
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: linkedin.basics.name + ' - ' + linkedin.basics.label,
+    title: `${profileContent.person.name} - ${profileContent.person.label}`,
     description: seoDescription,
     images: ['/jonas-petrik-portrait.png'],
     creator: '@jonaspetrik',

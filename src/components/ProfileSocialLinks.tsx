@@ -4,6 +4,7 @@ import Link from 'next/link'
 
 import { surfaceHoverMotionClassName } from '@/components/interactionStyles'
 import { GitHubIcon, GitLabIcon, LinkedInIcon } from '@/components/SocialIcons'
+import { profileContent } from '@/lib/profileContent'
 
 function MailIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
@@ -20,17 +21,21 @@ const socialLinkClassName =
   `rounded-md border border-neutral-300 bg-neutral-100 p-1.5 text-neutral-700 hover:border-neutral-400 hover:bg-neutral-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:border-neutral-600 dark:hover:bg-neutral-700 ${surfaceHoverMotionClassName}`
 
 export function ProfileSocialLinks() {
+  const socialLinks = new Map(
+    profileContent.links.map((profile) => [profile.label, profile.href]),
+  )
+
   return (
     <div className="mt-3 flex flex-row justify-center gap-1.5">
       <Link
-        href="mailto:jonas@petrik.dev"
+        href={`mailto:${profileContent.person.email}`}
         className={socialLinkClassName}
         aria-label="Email"
       >
         <MailIcon className="h-4 w-4 fill-current" />
       </Link>
       <Link
-        href="https://www.linkedin.com/in/jonas-petrik/"
+        href={socialLinks.get('LinkedIn') ?? '#'}
         target="_blank"
         rel="noopener noreferrer"
         className={socialLinkClassName}
@@ -39,7 +44,7 @@ export function ProfileSocialLinks() {
         <LinkedInIcon className="h-4 w-4 fill-current" />
       </Link>
       <Link
-        href="https://github.com/wukis"
+        href={socialLinks.get('GitHub') ?? '#'}
         target="_blank"
         rel="noopener noreferrer"
         className={socialLinkClassName}
@@ -48,7 +53,7 @@ export function ProfileSocialLinks() {
         <GitHubIcon className="h-4 w-4 fill-current" />
       </Link>
       <Link
-        href="https://gitlab.com/jonas.petrik"
+        href={socialLinks.get('GitLab') ?? '#'}
         target="_blank"
         rel="noopener noreferrer"
         className={socialLinkClassName}

@@ -5,8 +5,7 @@ import { Container } from '@/components/Container'
 import { TechStack } from '@/components/TechStack'
 import { TerminalPageHeader } from '@/components/TerminalHeader'
 import { EducationInterface, WorkInterface } from '@/lib/experience'
-import linkedIn from '@/data/linkedin.json'
-import work from '@/data/work.json'
+import { profileContent } from '@/lib/profileContent'
 import Image from 'next/image'
 
 const getDuration = (
@@ -130,7 +129,7 @@ const calculateTotalExperience = (
   )
 }
 
-const groupedWorkExperiences = groupWorkExperiences(work as WorkInterface[])
+const groupedWorkExperiences = groupWorkExperiences(profileContent.work)
 const totalExperience = calculateTotalExperience(groupedWorkExperiences)
 const totalExperienceYears =
   totalExperience.years + Math.floor(totalExperience.months / 12)
@@ -846,12 +845,12 @@ export default function ExperienceClientContent() {
         />
 
         <div className="max-w-3xl">
-          {linkedIn.education.map(
+          {profileContent.education.map(
             (education: EducationInterface, index: number) => (
               <Education
                 key={education.institution}
                 education={education}
-                isLast={index === linkedIn.education.length - 1}
+                isLast={index === profileContent.education.length - 1}
               />
             ),
           )}

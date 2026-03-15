@@ -1,10 +1,10 @@
 import { type Metadata } from 'next'
 import HomeClientContent from '@/components/HomeClientContent'
-import linkedin from '@/data/linkedin.json'
+import { profileContent } from '@/lib/profileContent'
 import { personKnowsAbout, seoDescription, siteUrl } from '@/lib/siteProfile'
 
 export const metadata: Metadata = {
-  title: linkedin.basics.name + ' - ' + linkedin.basics.label,
+  title: `${profileContent.person.name} - ${profileContent.person.label}`,
   description: seoDescription,
   alternates: {
     canonical: '/',
@@ -15,30 +15,26 @@ export const metadata: Metadata = {
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Person',
-  name: linkedin.basics.name,
+  name: profileContent.person.name,
   url: siteUrl,
   image: `${siteUrl}/jonas-petrik-portrait.png`,
-  email: linkedin.basics.email,
-  jobTitle: linkedin.basics.label,
+  email: profileContent.person.email,
+  jobTitle: profileContent.person.label,
   description: seoDescription,
   address: {
     '@type': 'PostalAddress',
-    addressCountry: 'Germany',
+    addressCountry: profileContent.person.location,
   },
   alumniOf: {
     '@type': 'EducationOrganization',
-    name: 'Vilniaus Universitetas',
+    name: profileContent.education[0]?.institution ?? 'Vilniaus Universitetas',
   },
   worksFor: {
     '@type': 'Organization',
-    name: 'SCAYLE',
-    url: 'https://www.scayle.com',
+    name: profileContent.currentRole.name,
+    url: profileContent.currentRole.url,
   },
-  sameAs: [
-    'https://www.linkedin.com/in/jonas-petrik/',
-    'https://github.com/wukis',
-    'https://gitlab.com/jonas.petrik',
-  ],
+  sameAs: profileContent.links.map((profile) => profile.href),
   knowsAbout: personKnowsAbout,
 }
 

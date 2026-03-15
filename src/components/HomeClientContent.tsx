@@ -9,24 +9,17 @@ import { ProfileSocialLinks } from '@/components/ProfileSocialLinks'
 import { TerminalSectionHeader } from '@/components/TerminalHeader'
 import { TechStack } from '@/components/TechStack'
 import { type RecommendationInterface } from '@/lib/recommendations'
-import { calculateTotalExperienceYears, WorkInterface } from '@/lib/experience'
 import portraitImage from '@/images/jonas-petrik-portrait.png'
-import linkedin from '@/data/linkedin.json'
-import work from '@/data/work.json'
 import {
+  currentPublicRole,
   getHomepageRecommendations,
   heroIntro,
   homeImpactCards,
   publicEmail,
+  publicBasics,
   selectedImpactStories,
+  totalPublicExperienceYears,
 } from '@/lib/siteProfile'
-
-const totalExperienceYears = calculateTotalExperienceYears(
-  work as WorkInterface[],
-)
-
-// Get current employment (first entry in work.json)
-const currentEmployment = (work as WorkInterface[])[0]
 
 function truncate(text: string, length: number) {
   if (text.length <= length) {
@@ -282,11 +275,11 @@ export default function HomeClientContent() {
                 <div className="mb-3">
                   <span className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
-                    {linkedin.basics.label}
+                    {publicBasics.label}
                   </span>
                 </div>
                 <h1 className="text-2xl font-bold tracking-tight text-neutral-800 sm:text-3xl lg:text-4xl xl:text-5xl dark:text-neutral-100">
-                  {linkedin.basics.name}
+                  {publicBasics.name}
                 </h1>
                 <div className="mt-4 space-y-3 text-sm leading-relaxed text-neutral-700 sm:text-base dark:text-neutral-200">
                   {heroIntro.map((paragraph) => (
@@ -295,7 +288,7 @@ export default function HomeClientContent() {
                 </div>
                 <div className="mt-4 flex justify-center sm:justify-start">
                   <p className="inline-flex items-center rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 font-mono text-[11px] text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800/80 dark:text-neutral-300">
-                    {totalExperienceYears}+ years across fullstack engineering,
+                    {totalPublicExperienceYears}+ years across fullstack engineering,
                     architecture, DevOps, and team leadership
                   </p>
                 </div>
@@ -324,7 +317,7 @@ export default function HomeClientContent() {
 
           {/* Tech Stack from current employment */}
           <TechStack
-            technologies={currentEmployment.technologies}
+            technologies={currentPublicRole.technologies}
             tone="plain"
             contentId="home-tech-stack"
           />

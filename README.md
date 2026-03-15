@@ -2,6 +2,8 @@
 
 This repository contains the personal site, recruiter-friendly CV page, and the checked-in PDF export.
 
+Reusable profile content is centralized in `src/lib/profileContent.ts`. Platform-specific outputs, like the public resume builder, should read from that module instead of reaching into `linkedin.json` or `work.json` directly.
+
 ## Getting started
 
 Install dependencies:

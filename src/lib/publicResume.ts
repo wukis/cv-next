@@ -1,13 +1,5 @@
-import linkedin from '@/data/linkedin.json'
 import { type WorkInterface } from '@/lib/experience'
-import {
-  cvSummary,
-  personKnowsAbout,
-  publicBasics,
-  publicProfileLinks,
-  publicWork,
-  siteUrl,
-} from '@/lib/siteProfile'
+import { profileContent } from '@/lib/profileContent'
 
 function normalizeDate(date: string) {
   return date === 'now' ? date : `${date}-01`
@@ -31,24 +23,27 @@ function dedupeTechnologies(work: WorkInterface[]) {
 }
 
 export function buildPublicResume() {
-  const technologies = dedupeTechnologies(publicWork)
+  const technologies = dedupeTechnologies(profileContent.work)
 
   return {
     $schema:
       'https://raw.githubusercontent.com/jsonresume/resume-schema/v1.0.0/schema.json',
     basics: {
-      ...publicBasics,
-      summary: cvSummary,
+      name: profileContent.person.name,
+      label: profileContent.person.label,
+      email: profileContent.person.email,
+      url: profileContent.person.website,
+      summary: profileContent.person.summary,
       location: {
         countryCode: 'DE',
-        address: publicBasics.location,
+        address: profileContent.person.location,
       },
-      profiles: publicProfileLinks.map((profile) => ({
+      profiles: profileContent.links.map((profile) => ({
         network: profile.label,
         url: profile.href,
       })),
     },
-    work: publicWork.map((role) => ({
+    work: profileContent.work.map((role) => ({
       name: role.name,
       position: role.position,
       startDate: normalizeDate(role.startDate),
@@ -58,7 +53,7 @@ export function buildPublicResume() {
       url: role.url,
       location: role.location ?? '',
     })),
-    education: linkedin.education.map((entry) => ({
+    education: profileContent.education.map((entry) => ({
       institution: entry.institution,
       area: entry.area,
       studyType: entry.studyType,
@@ -106,12 +101,12 @@ export function buildPublicResume() {
       },
       {
         name: 'Core strengths',
-        keywords: personKnowsAbout,
+        keywords: profileContent.expertise.keywords,
       },
     ],
     meta: {
-      canonical: `${siteUrl}/resume.json`,
-      generatedFrom: `${siteUrl}/cv`,
+      canonical: `${profileContent.site.url}/resume.json`,
+      generatedFrom: `${profileContent.site.url}/cv`,
     },
   }
 }
