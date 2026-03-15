@@ -16,6 +16,11 @@ const LogTerminal = dynamic(() => import('@/components/LogTerminal'), {
   ssr: false,
 })
 
+const EmergencyCallOverlay = dynamic(
+  () => import('@/components/EmergencyCallOverlay'),
+  { ssr: false },
+)
+
 const ConsoleEasterEgg = dynamic(
   () =>
     import('@/components/ConsoleEasterEgg').then((mod) => ({
@@ -72,6 +77,7 @@ export default function AmbientDecorations() {
       <ConsoleEasterEgg />
       <HexagonServiceNetwork />
       <MetricWidgets />
+      <EmergencyCallOverlay />
       <LogTerminal />
     </>
   )

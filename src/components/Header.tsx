@@ -19,6 +19,8 @@ import { recommendationsCopy } from '@/lib/recommendationsCopy'
 import { useAmbientEligibility } from '@/components/useAmbientEligibility'
 
 const headerControlClassName = `group inline-flex min-h-11 items-center justify-center rounded-lg bg-white/90 text-neutral-800 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-300/70 backdrop-blur transition-colors hover:text-emerald-800 hover:ring-emerald-400/50 dark:bg-neutral-800/90 dark:text-neutral-200 dark:ring-neutral-700/70 dark:hover:text-emerald-200 dark:hover:ring-emerald-400/50 ${surfaceHoverMotionClassName}`
+const animationFocusButtonClassName =
+  'group inline-flex min-h-11 items-center justify-center rounded-lg bg-white/90 text-neutral-800 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-300/70 backdrop-blur transition-[color,box-shadow,ring-color] duration-200 hover:text-emerald-800 hover:shadow-lg hover:ring-emerald-400/50 dark:bg-neutral-800/90 dark:text-neutral-200 dark:ring-neutral-700/70 dark:hover:text-emerald-200 dark:hover:ring-emerald-400/50'
 
 function useDesktopTooltipEnabled() {
   const [isEnabled, setIsEnabled] = useState(false)
@@ -519,7 +521,7 @@ function AnimationFocus() {
     >
       <button
         type="button"
-        className={`${headerControlClassName} h-11 w-11 cursor-pointer`}
+        className={`${animationFocusButtonClassName} h-11 w-11 cursor-pointer`}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
         onClick={() =>

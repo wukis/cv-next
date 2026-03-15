@@ -2,6 +2,11 @@
 
 import { useEffect } from 'react'
 import { createBoxLineWithBorders, createEmptyBoxLine } from '@/lib/consoleBox'
+import {
+  getAmbientCallHistory,
+  NETWORK_CALL_HISTORY_EVENT,
+  type AmbientCallHistoryEntry,
+} from '@/lib/ambientCluster'
 
 type IncidentScenario = {
   service: string
@@ -188,6 +193,30 @@ function createIncidentBoxLine(content: string): string {
   return createBoxLineWithBorders(content, { width: BOX_WIDTH })
 }
 
+function formatAmbientHistoryTime(timestamp: number) {
+  return new Date(timestamp).toTimeString().slice(0, 8)
+}
+
+function formatAmbientHistoryEntry(entry: AmbientCallHistoryEntry) {
+  if (entry.kind === 'status') {
+    return `${formatAmbientHistoryTime(entry.timestamp)} system: ${entry.text}`
+  }
+
+  return `${formatAmbientHistoryTime(entry.timestamp)} ${entry.speakerLabel.toLowerCase()}: ${entry.text}`
+}
+
+function getAmbientHistoryColor(entry: AmbientCallHistoryEntry) {
+  if (entry.kind === 'status') {
+    return '#94a3b8'
+  }
+
+  if (entry.kind === 'hint') {
+    return '#f59e0b'
+  }
+
+  return '#22c55e'
+}
+
 export function ConsoleEasterEgg() {
   useEffect(() => {
     const incident = createNonRepeatingPicker(INCIDENT_SCENARIOS)()
@@ -205,6 +234,8 @@ export function ConsoleEasterEgg() {
     const incidentBotLine = createNonRepeatingPicker(INCIDENT_BOT_LINES)()
     const pmLine = createNonRepeatingPicker(PM_LINES)()
     const resolutionLine = createNonRepeatingPicker(RESOLUTION_LINES)()
+    const ambientHistory = getAmbientCallHistory()
+    const loggedHistoryIds = new Set(ambientHistory.map((entry) => entry.id))
 
     const incidentCard = `
 %c┌${createBoxBorder('─')}┐
@@ -229,6 +260,9 @@ ${createEmptyBoxLine(BOX_WIDTH)}
       `${formatLogTime(baseDate, 10)} ${pmLine}`,
       `${formatLogTime(baseDate, 12)} ${resolutionLine}`,
     ].join('\n')
+    const ambientTranscript = ambientHistory
+      .map((entry) => formatAmbientHistoryEntry(entry))
+      .join('\n')
 
     const commandMenu = `
 %cEmergency comms tools:
@@ -248,8 +282,8 @@ ${createEmptyBoxLine(BOX_WIDTH)}
     )
 
     console.log(
-      '%c' + transcript,
-      `color: ${incident.severity === 'SEV-1' ? '#f97316' : '#22c55e'}; font-family: monospace; font-size: 11px; line-height: 1.6;`,
+      '%c' + (ambientTranscript || transcript),
+      `color: ${ambientTranscript ? '#22c55e' : incident.severity === 'SEV-1' ? '#f97316' : '#22c55e'}; font-family: monospace; font-size: 11px; line-height: 1.6;`,
     )
 
     console.log(
@@ -322,6 +356,34 @@ ${createEmptyBoxLine(BOX_WIDTH)}
         '%cTry: jonas.status(), jonas.fixProd(), jonas.blame(), jonas.rollback(), or jonas.hire()',
         'color: #c084fc; font-size: 11px; font-family: monospace;',
       )
+
+      const handleAmbientHistory = (event: Event) => {
+        const customEvent = event as CustomEvent<{
+          entries: AmbientCallHistoryEntry[]
+          latestEntry: AmbientCallHistoryEntry
+        }>
+        const latestEntry = customEvent.detail?.latestEntry
+
+        if (!latestEntry || loggedHistoryIds.has(latestEntry.id)) {
+          return
+        }
+
+        loggedHistoryIds.add(latestEntry.id)
+        console.log(
+          '%c' + formatAmbientHistoryEntry(latestEntry),
+          `color: ${getAmbientHistoryColor(latestEntry)}; font-family: monospace; font-size: 11px; line-height: 1.6;`,
+        )
+      }
+
+      window.addEventListener(NETWORK_CALL_HISTORY_EVENT, handleAmbientHistory)
+
+      return () => {
+        delete windowWithJonas.jonas
+        window.removeEventListener(
+          NETWORK_CALL_HISTORY_EVENT,
+          handleAmbientHistory,
+        )
+      }
     }
   }, [])
 

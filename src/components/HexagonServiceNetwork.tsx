@@ -3,6 +3,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import {
+  NETWORK_CALL_ASSIGNMENTS_EVENT,
+  type AmbientCallAssignment,
   type ClusterEventEntry,
   type ClusterNodeLifecycle,
   type ClusterNodeRole,
@@ -45,6 +47,8 @@ const APP_SERVICE_ORDER = [
   'checkout',
   'warehouse',
 ] as const
+const AUTO_EMERGENCY_INTERVAL_SECONDS = 300
+const AUTO_EMERGENCY_JITTER_SECONDS = 45
 
 const EMERGENCY_SCENARIOS: Record<
   EmergencyScenarioKey,
@@ -65,7 +69,8 @@ const EMERGENCY_SCENARIOS: Record<
   failover: {
     title: 'FAILOVER EVENT',
     subtitle: 'lb-ext rerouting around unhealthy pods',
-    eventMessage: 'lb-ext failover drill started; traffic is being rerouted around unstable pods',
+    eventMessage:
+      'lb-ext failover drill started; traffic is being rerouted around unstable pods',
     affectedRoles: ['loadBalancer', 'appPod'],
     failureTarget: 3,
     metricImpact: {
@@ -78,7 +83,8 @@ const EMERGENCY_SCENARIOS: Record<
   dbDown: {
     title: 'DATABASE OUTAGE',
     subtitle: 'primary storage unavailable; services retrying writes',
-    eventMessage: 'database incident detected; primary writes are failing and services are backing off',
+    eventMessage:
+      'database incident detected; primary writes are failing and services are backing off',
     affectedRoles: ['database', 'worker', 'appPod'],
     failureTarget: 2,
     metricImpact: {
@@ -91,7 +97,8 @@ const EMERGENCY_SCENARIOS: Record<
   cacheReload: {
     title: 'CACHE RELOADING',
     subtitle: 'redis cluster warming keys and serving misses',
-    eventMessage: 'redis cluster reload started; cache misses are climbing while keys repopulate',
+    eventMessage:
+      'redis cluster reload started; cache misses are climbing while keys repopulate',
     affectedRoles: ['cache', 'appPod'],
     failureTarget: 1,
     metricImpact: {
@@ -104,7 +111,8 @@ const EMERGENCY_SCENARIOS: Record<
   queueFull: {
     title: 'QUEUE SATURATED',
     subtitle: 'workers are backpressured while backlog drains',
-    eventMessage: 'queue saturation detected; worker backlog is rising and dispatch is slowing',
+    eventMessage:
+      'queue saturation detected; worker backlog is rising and dispatch is slowing',
     affectedRoles: ['queue', 'worker', 'appPod'],
     failureTarget: 1,
     metricImpact: {
@@ -267,10 +275,7 @@ interface StatusIndicator {
   label?: string
 }
 
-const COLORS: Record<
-  ColorKey,
-  { main: string; glow: string; fill: string }
-> = {
+const COLORS: Record<ColorKey, { main: string; glow: string; fill: string }> = {
   emerald: {
     main: 'rgba(16, 185, 129, VAL)',
     glow: 'rgba(52, 211, 153, VAL)',
@@ -419,6 +424,10 @@ function withOpacity(template: string, opacity: number) {
   return template.replace('VAL', String(clamp(opacity, 0, 1)))
 }
 
+function softenAccent(accent: string, alpha: string) {
+  return accent.replace(/0\.\d+\)/, `${alpha})`)
+}
+
 function project3D(
   x: number,
   y: number,
@@ -510,7 +519,11 @@ function drawQuadraticSegment(
   }
 }
 
-function getHexPoints(cx: number, cy: number, size: number): [number, number][] {
+function getHexPoints(
+  cx: number,
+  cy: number,
+  size: number,
+): [number, number][] {
   return Array.from({ length: 6 }, (_, index) => {
     const angle = (Math.PI / 3) * index - Math.PI / 2
     return [cx + size * Math.cos(angle), cy + size * Math.sin(angle)]
@@ -558,7 +571,12 @@ function drawRoundedRectPath(
   ctx.lineTo(x + width - effectiveRadius, y)
   ctx.quadraticCurveTo(x + width, y, x + width, y + effectiveRadius)
   ctx.lineTo(x + width, y + height - effectiveRadius)
-  ctx.quadraticCurveTo(x + width, y + height, x + width - effectiveRadius, y + height)
+  ctx.quadraticCurveTo(
+    x + width,
+    y + height,
+    x + width - effectiveRadius,
+    y + height,
+  )
   ctx.lineTo(x + effectiveRadius, y + height)
   ctx.quadraticCurveTo(x, y + height, x, y + height - effectiveRadius)
   ctx.lineTo(x, y + effectiveRadius)
@@ -617,7 +635,14 @@ function drawInfoPanel(
   ctx.shadowColor = 'transparent'
   ctx.shadowBlur = 0
   ctx.shadowOffsetY = 0
-  drawRoundedRectPath(ctx, insetX, insetY, insetWidth, insetHeight, Math.max(6, radius - 1))
+  drawRoundedRectPath(
+    ctx,
+    insetX,
+    insetY,
+    insetWidth,
+    insetHeight,
+    Math.max(6, radius - 1),
+  )
   ctx.fillStyle = panelIsDark
     ? `rgba(15, 23, 42, ${opacity * 0.82})`
     : `rgba(248, 250, 252, ${opacity * 0.97})`
@@ -733,6 +758,95 @@ function drawPanelText(
   ctx.fillStyle = fillStyle
   ctx.fillText(text, x, y)
   ctx.restore()
+}
+
+function drawPanelCallAssignments(
+  ctx: CanvasRenderingContext2D,
+  options: {
+    assignments: AmbientCallAssignment[]
+    panelX: number
+    panelY: number
+    panelWidth: number
+    panelHeight: number
+    viewportWidth: number
+    isDark: boolean
+    time: number
+    metaOpacity: number
+  },
+) {
+  const {
+    assignments,
+    panelX,
+    panelY,
+    panelWidth,
+    panelHeight,
+    viewportWidth,
+    isDark,
+    time,
+    metaOpacity,
+  } = options
+
+  if (assignments.length === 0) {
+    return
+  }
+
+  const rowHeight = 16
+  const totalHeight = assignments.length * rowHeight
+  const centerY = panelY + panelHeight / 2
+  const startY = centerY - totalHeight / 2 + rowHeight / 2
+  const preferLeft = panelX + panelWidth + 82 > viewportWidth - 18
+  const circleX = preferLeft ? panelX + 2 : panelX + panelWidth - 2
+  const textAlign: CanvasTextAlign = preferLeft ? 'right' : 'left'
+  const textX = preferLeft ? circleX - 10 : circleX + 10
+
+  assignments.forEach((assignment, index) => {
+    const y = startY + index * rowHeight
+    const pulse = assignment.isSpeaker
+      ? 1 + 0.2 * (0.5 + 0.5 * Math.sin(time * Math.PI * 2.8))
+      : 1
+    const opacity = assignment.isDropping
+      ? metaOpacity * 0.52
+      : metaOpacity * 0.92
+
+    ctx.save()
+    ctx.globalAlpha = opacity
+
+    if (assignment.isSpeaker) {
+      ctx.beginPath()
+      ctx.fillStyle = softenAccent(assignment.accent, '0.24')
+      ctx.arc(circleX, y, 7.6 * pulse, 0, Math.PI * 2)
+      ctx.fill()
+    }
+
+    ctx.beginPath()
+    ctx.fillStyle = isDark
+      ? 'rgba(15, 23, 42, 0.96)'
+      : 'rgba(255, 255, 255, 0.96)'
+    ctx.strokeStyle = softenAccent(
+      assignment.accent,
+      assignment.isDropping ? '0.46' : '0.78',
+    )
+    ctx.lineWidth = 1.2
+    ctx.arc(circleX, y, 6.1, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.stroke()
+
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.font = '600 7px ui-monospace, monospace'
+    ctx.fillStyle = isDark
+      ? 'rgba(248, 250, 252, 0.96)'
+      : 'rgba(15, 23, 42, 0.92)'
+    ctx.fillText(assignment.initials, circleX, y + 0.5)
+
+    ctx.textAlign = textAlign
+    ctx.font = '6.5px ui-monospace, monospace'
+    ctx.fillStyle = isDark
+      ? `rgba(148, 163, 184, ${opacity})`
+      : `rgba(71, 85, 105, ${opacity})`
+    ctx.fillText(assignment.label.toUpperCase(), textX, y + 0.5)
+    ctx.restore()
+  })
 }
 
 function wrapCanvasText(
@@ -862,9 +976,7 @@ function drawStatusIndicator(
   ctx.globalAlpha = baseOpacity
 
   if (indicator.type === 'success') {
-    ctx.strokeStyle = isDark
-      ? 'rgba(52, 211, 153, 1)'
-      : 'rgba(16, 185, 129, 1)'
+    ctx.strokeStyle = isDark ? 'rgba(52, 211, 153, 1)' : 'rgba(16, 185, 129, 1)'
     ctx.lineWidth = 1.6
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
@@ -874,9 +986,7 @@ function drawStatusIndicator(
     ctx.lineTo(size * 0.52, -size * 0.28)
     ctx.stroke()
   } else if (indicator.type === 'warning') {
-    ctx.strokeStyle = isDark
-      ? 'rgba(251, 191, 36, 1)'
-      : 'rgba(245, 158, 11, 1)'
+    ctx.strokeStyle = isDark ? 'rgba(251, 191, 36, 1)' : 'rgba(245, 158, 11, 1)'
     ctx.fillStyle = ctx.strokeStyle
     ctx.lineWidth = 1.2
     ctx.beginPath()
@@ -893,9 +1003,7 @@ function drawStatusIndicator(
     ctx.arc(0, size * 0.22, 1, 0, Math.PI * 2)
     ctx.fill()
   } else {
-    ctx.strokeStyle = isDark
-      ? 'rgba(248, 113, 113, 1)'
-      : 'rgba(239, 68, 68, 1)'
+    ctx.strokeStyle = isDark ? 'rgba(248, 113, 113, 1)' : 'rgba(239, 68, 68, 1)'
     ctx.lineWidth = 1.55
     ctx.lineCap = 'round'
     ctx.beginPath()
@@ -976,7 +1084,11 @@ function getServiceClusterActivePodCount(counts: {
   starting: number
   draining: number
 }) {
-  return counts.ready + counts.starting + Math.max(0, Math.round(counts.draining * 0.35))
+  return (
+    counts.ready +
+    counts.starting +
+    Math.max(0, Math.round(counts.draining * 0.35))
+  )
 }
 
 function getRenderedHoneycombCellCount(podCount: number) {
@@ -999,13 +1111,18 @@ function getServiceClusterShellRadius(
 ) {
   const renderedCells = Math.max(1, getRenderedHoneycombCellCount(activeCount))
   const density = clamp(activeCount / capacity, 0.16, 1)
-  const cellSize = clamp((6.2 + renderedCells * 0.26 + scale * 6.2) * bounce, 8, 19.5)
+  const cellSize = clamp(
+    (6.2 + renderedCells * 0.26 + scale * 6.2) * bounce,
+    8,
+    19.5,
+  )
   const growthFactor = Math.min(1.6, Math.sqrt(Math.max(activeCount, 1)) * 0.12)
   return cellSize * (2.1 + density * 1.35 + growthFactor)
 }
 
 function getServiceLayoutRadiusEstimate(service: AppServiceConfig) {
-  const baselineAverage = (service.baselineReplicas[0] + service.baselineReplicas[1]) / 2
+  const baselineAverage =
+    (service.baselineReplicas[0] + service.baselineReplicas[1]) / 2
   const layoutDemand = Math.max(baselineAverage, service.spikeReplicas * 0.9)
   return clamp(
     34 +
@@ -1036,7 +1153,9 @@ function getProjectedServiceClusterEnvelope(
 
   return {
     ...projected,
-    radius: getServiceLayoutRadiusEstimate(service) * clamp(projected.scale, 0.4, 1.12),
+    radius:
+      getServiceLayoutRadiusEstimate(service) *
+      clamp(projected.scale, 0.4, 1.12),
   }
 }
 
@@ -1109,7 +1228,8 @@ function resolveServiceClusterCenters(
         const desiredSeparation = placement.radius + otherPlacement.radius + 34
 
         if (distance < desiredSeparation) {
-          const repel = ((desiredSeparation - distance) / desiredSeparation) * 8.5
+          const repel =
+            ((desiredSeparation - distance) / desiredSeparation) * 8.5
           forceX += (dx / distance) * repel
           forceY += (dy / distance) * repel
         }
@@ -1122,7 +1242,8 @@ function resolveServiceClusterCenters(
         const desiredSeparation = placement.radius + zone.radius + 24
 
         if (distance < desiredSeparation) {
-          const repel = ((desiredSeparation - distance) / desiredSeparation) * 10.5
+          const repel =
+            ((desiredSeparation - distance) / desiredSeparation) * 10.5
           forceX += (dx / distance) * repel
           forceY += (dy / distance) * repel
         }
@@ -1143,7 +1264,12 @@ function resolveServiceClusterCenters(
           placement.radius +
           downstreamPlacement.radius +
           84 +
-          (1 - Math.min(placement.trafficWeight, downstreamPlacement.trafficWeight)) * 18
+          (1 -
+            Math.min(
+              placement.trafficWeight,
+              downstreamPlacement.trafficWeight,
+            )) *
+            18
         const pull = (distance - targetDistance) * 0.012
         forceX += (dx / distance) * pull
         forceY += (dy / distance) * pull
@@ -1182,9 +1308,14 @@ function getServiceClusterRotation(
 ) {
   const motionFactor = 0.3 + focusLevel * 0.7
   const drift = time * (0.06 + 0.12 * focusLevel) + bouncePhase * 0.42
-  const wobble = Math.sin(time * (0.22 + 0.58 * focusLevel) + bouncePhase) * 0.18 * motionFactor
+  const wobble =
+    Math.sin(time * (0.22 + 0.58 * focusLevel) + bouncePhase) *
+    0.18 *
+    motionFactor
   const impactSpin =
-    Math.sin(time * (0.7 + (1.7 + bounceEnergy * 2.6) * focusLevel) + bouncePhase) *
+    Math.sin(
+      time * (0.7 + (1.7 + bounceEnergy * 2.6) * focusLevel) + bouncePhase,
+    ) *
     bounceEnergy *
     0.22 *
     motionFactor
@@ -1221,7 +1352,10 @@ function chooseServicePanelPlacement(options: {
     { x: clusterX + offset, y: clusterY - panelHeight / 2 },
     { x: clusterX - panelWidth - offset, y: clusterY - panelHeight / 2 },
     { x: clusterX + offset * 0.84, y: clusterY - panelHeight - offset * 0.5 },
-    { x: clusterX - panelWidth - offset * 0.84, y: clusterY - panelHeight - offset * 0.5 },
+    {
+      x: clusterX - panelWidth - offset * 0.84,
+      y: clusterY - panelHeight - offset * 0.5,
+    },
     { x: clusterX + offset * 0.84, y: clusterY + offset * 0.16 },
     { x: clusterX - panelWidth - offset * 0.84, y: clusterY + offset * 0.16 },
   ]
@@ -1234,13 +1368,20 @@ function chooseServicePanelPlacement(options: {
     const centerY = candidate.y + panelHeight / 2
     const overflowLeft = Math.max(0, 12 - candidate.x)
     const overflowTop = Math.max(0, 12 - candidate.y)
-    const overflowRight = Math.max(0, candidate.x + panelWidth - (viewportWidth - 12))
-    const overflowBottom = Math.max(0, candidate.y + panelHeight - (viewportHeight - 12))
+    const overflowRight = Math.max(
+      0,
+      candidate.x + panelWidth - (viewportWidth - 12),
+    )
+    const overflowBottom = Math.max(
+      0,
+      candidate.y + panelHeight - (viewportHeight - 12),
+    )
     const overflowPenalty =
       (overflowLeft + overflowTop + overflowRight + overflowBottom) * 8
 
     const nearestClusterDistance = otherCenters.reduce((nearest, center) => {
-      const distance = Math.hypot(center.x - centerX, center.y - centerY) - center.radius
+      const distance =
+        Math.hypot(center.x - centerX, center.y - centerY) - center.radius
       return Math.min(nearest, distance)
     }, Number.POSITIVE_INFINITY)
     const crowdPenalty = Math.max(0, 190 - nearestClusterDistance) * 1.4
@@ -1249,7 +1390,8 @@ function chooseServicePanelPlacement(options: {
       Math.abs(centerY - viewportCenterY) * 0.03
     const alignmentBonus =
       Math.abs(centerX - clusterX) > Math.abs(centerY - clusterY) ? 12 : 6
-    const score = viewportRoomBonus + alignmentBonus - overflowPenalty - crowdPenalty
+    const score =
+      viewportRoomBonus + alignmentBonus - overflowPenalty - crowdPenalty
 
     if (score > bestScore) {
       bestScore = score
@@ -1330,11 +1472,17 @@ function drawServiceClusterHoneycomb(
   )
   const bounce =
     1 +
-    Math.sin(time * (5.4 + bounceEnergy * 3.6) + bouncePhase + x * 0.012 + y * 0.014) *
+    Math.sin(
+      time * (5.4 + bounceEnergy * 3.6) + bouncePhase + x * 0.012 + y * 0.014,
+    ) *
       bounceEnergy *
       0.22
   const density = clamp(activeCount / counts.capacity, 0.16, 1)
-  const cellSize = clamp((6.2 + cellCount * 0.26 + scale * 6.2) * bounce, 8, 19.5)
+  const cellSize = clamp(
+    (6.2 + cellCount * 0.26 + scale * 6.2) * bounce,
+    8,
+    19.5,
+  )
   const stepX = cellSize * 1.58
   const stepY = cellSize * 1.36
   const shellRadius = getServiceClusterShellRadius(
@@ -1353,7 +1501,10 @@ function drawServiceClusterHoneycomb(
 
   ctx.beginPath()
   ctx.arc(0, 0, shellRadius, 0, Math.PI * 2)
-  ctx.fillStyle = withOpacity(palette.glow, isDark ? 0.09 + pressure * 0.07 : 0.08 + pressure * 0.05)
+  ctx.fillStyle = withOpacity(
+    palette.glow,
+    isDark ? 0.09 + pressure * 0.07 : 0.08 + pressure * 0.05,
+  )
   ctx.fill()
 
   for (let index = 0; index < ghostCount; index += 1) {
@@ -1378,7 +1529,9 @@ function drawServiceClusterHoneycomb(
     const cellY = slot.r * stepY
     const pulse =
       1 +
-      Math.sin(time * 6.2 + bouncePhase + index * 0.8 + service.centerX * 0.01) *
+      Math.sin(
+        time * 6.2 + bouncePhase + index * 0.8 + service.centerX * 0.01,
+      ) *
         (0.012 + bounceEnergy * 0.055)
     const currentSize = cellSize * 0.78 * pulse
 
@@ -1421,7 +1574,13 @@ function drawServiceClusterHoneycomb(
   ctx.stroke()
 
   ctx.beginPath()
-  ctx.arc(0, 0, Math.max(3.8, cellSize * (0.24 + density * 0.15)), 0, Math.PI * 2)
+  ctx.arc(
+    0,
+    0,
+    Math.max(3.8, cellSize * (0.24 + density * 0.15)),
+    0,
+    Math.PI * 2,
+  )
   ctx.fillStyle = withOpacity(palette.glow, isDark ? 0.5 : 0.36)
   ctx.fill()
 
@@ -1433,7 +1592,9 @@ function getEmergencyScenario(key: EmergencyScenarioKey) {
 }
 
 function pickRandomEmergencyScenario(): EmergencyScenarioKey {
-  const scenarioKeys = Object.keys(EMERGENCY_SCENARIOS) as EmergencyScenarioKey[]
+  const scenarioKeys = Object.keys(
+    EMERGENCY_SCENARIOS,
+  ) as EmergencyScenarioKey[]
   return scenarioKeys[Math.floor(Math.random() * scenarioKeys.length)]
 }
 
@@ -1443,7 +1604,10 @@ function getNodePalette(
   emergencyState: EmergencyState,
   emergencyScenarioKey: EmergencyScenarioKey,
 ): { colorKey: ColorKey; attention: number } {
-  if (node.lifecycleState === 'unhealthy' || node.lifecycleState === 'terminating') {
+  if (
+    node.lifecycleState === 'unhealthy' ||
+    node.lifecycleState === 'terminating'
+  ) {
     return {
       colorKey: 'red',
       attention: 0.92,
@@ -1526,11 +1690,16 @@ function getNodeVisibility(node: ServiceNode, time: number) {
 
 function getNodeScaleMultiplier(node: ServiceNode, time: number) {
   if (node.lifecycleState === 'starting') {
-    return 0.34 + 0.66 * clamp((time - node.statusSince) / STARTING_DURATION, 0, 1)
+    return (
+      0.34 + 0.66 * clamp((time - node.statusSince) / STARTING_DURATION, 0, 1)
+    )
   }
 
   if (node.lifecycleState === 'terminating') {
-    return 0.72 + 0.28 * clamp(1 - (time - node.statusSince) / TERMINATING_DURATION, 0, 1)
+    return (
+      0.72 +
+      0.28 * clamp(1 - (time - node.statusSince) / TERMINATING_DURATION, 0, 1)
+    )
   }
 
   if (node.role === 'loadBalancer') {
@@ -1601,7 +1770,13 @@ function getServiceStatusDisplay(
   },
 ) {
   const { ready, starting, draining, unhealthy, total, desired } = counts
-  const { emergencyState, emergencyScenarioKey, isTrafficSpike, isDark, metaOpacity } = context
+  const {
+    emergencyState,
+    emergencyScenarioKey,
+    isTrafficSpike,
+    isDark,
+    metaOpacity,
+  } = context
   const missingReplicas = Math.max(desired - ready, 0)
   const serviceAffectedByScenario = isScenarioAffectingService(
     serviceName,
@@ -1609,7 +1784,10 @@ function getServiceStatusDisplay(
     emergencyScenarioKey,
   )
 
-  if (unhealthy > 0 || (emergencyState === 'emergency' && serviceAffectedByScenario)) {
+  if (
+    unhealthy > 0 ||
+    (emergencyState === 'emergency' && serviceAffectedByScenario)
+  ) {
     return {
       text:
         unhealthy > 0
@@ -1771,6 +1949,7 @@ const HexagonServiceNetwork: React.FC = () => {
   const toastQueueRef = useRef<EventToast[]>([])
   const activeToastRef = useRef<EventToast[]>([])
   const toastSignatureRef = useRef('')
+  const callAssignmentsRef = useRef<AmbientCallAssignment[]>([])
   const serviceInstanceCounterRef = useRef<Record<AppServiceGroup, number>>({
     edge: 0,
     auth: 0,
@@ -1846,7 +2025,7 @@ const HexagonServiceNetwork: React.FC = () => {
     recoveryStartTime: 0,
     recoveryDuration: 4.5,
     lastEmergencyTime: 0,
-    nextEmergencyInterval: 30,
+    nextEmergencyInterval: AUTO_EMERGENCY_INTERVAL_SECONDS,
     hasTriggeredFirstEmergency: false,
     hasEverFocused: false,
     accumulatedFocusTime: 0,
@@ -1900,15 +2079,15 @@ const HexagonServiceNetwork: React.FC = () => {
             ? BASE_HEX_SIZE + 7
             : role === 'ingress'
               ? BASE_HEX_SIZE + 6
-            : role === 'database'
-              ? BASE_HEX_SIZE + 5
-              : role === 'cache' || role === 'queue'
-                ? BASE_HEX_SIZE + 4
-                : role === 'worker' || role === 'observability'
-                  ? BASE_HEX_SIZE + 3.5
-              : role === 'appPod'
-                ? BASE_HEX_SIZE + 1.5
-                : BASE_HEX_SIZE,
+              : role === 'database'
+                ? BASE_HEX_SIZE + 5
+                : role === 'cache' || role === 'queue'
+                  ? BASE_HEX_SIZE + 4
+                  : role === 'worker' || role === 'observability'
+                    ? BASE_HEX_SIZE + 3.5
+                    : role === 'appPod'
+                      ? BASE_HEX_SIZE + 1.5
+                      : BASE_HEX_SIZE,
         pulse: Math.random() * Math.PI * 2,
         pulseSpeed: 0.012 + Math.random() * 0.014,
         statusSince: timeRef.current,
@@ -1920,7 +2099,9 @@ const HexagonServiceNetwork: React.FC = () => {
   )
 
   const getAppServiceConfig = useCallback((serviceName: AppServiceGroup) => {
-    return appServicesRef.current.find((service) => service.name === serviceName)
+    return appServicesRef.current.find(
+      (service) => service.name === serviceName,
+    )
   }, [])
 
   const createAppPod = useCallback(
@@ -1932,7 +2113,8 @@ const HexagonServiceNetwork: React.FC = () => {
       overrides?: Partial<ServiceNode>,
     ) => {
       const service = getAppServiceConfig(serviceName)
-      const nextInstance = (serviceInstanceCounterRef.current[serviceName] ?? 0) + 1
+      const nextInstance =
+        (serviceInstanceCounterRef.current[serviceName] ?? 0) + 1
       serviceInstanceCounterRef.current[serviceName] = nextInstance
 
       return createNode(
@@ -1979,10 +2161,17 @@ const HexagonServiceNetwork: React.FC = () => {
         (node) => node.lifecycleState === 'terminating',
       ).length
       const emergencyState = getEmergencyState()
-      const emergencyScenario = getEmergencyScenario(emergencyRef.current.scenarioKey)
+      const emergencyScenario = getEmergencyScenario(
+        emergencyRef.current.scenarioKey,
+      )
       const replicaTarget = clusterRef.current.desiredReplicas
       const pressureFactor = 1 - readyReplicas / Math.max(replicaTarget, 1)
-      const emergencyFactor = emergencyState === 'emergency' ? 1 : emergencyState === 'recovery' ? 0.35 : 0
+      const emergencyFactor =
+        emergencyState === 'emergency'
+          ? 1
+          : emergencyState === 'recovery'
+            ? 0.35
+            : 0
       const focusFactor = focusTransitionRef.current
       const spikeFactor = clusterRef.current.trafficSpikeLevel
 
@@ -1993,7 +2182,9 @@ const HexagonServiceNetwork: React.FC = () => {
           emergencyState === 'normal' ? null : emergencyRef.current.scenarioKey,
         isTrafficSpike: clusterRef.current.isTrafficSpike,
         triggerSource:
-          emergencyState === 'normal' ? null : emergencyRef.current.triggerSource,
+          emergencyState === 'normal'
+            ? null
+            : emergencyRef.current.triggerSource,
         replicaTarget,
         liveReplicas: appPods.length,
         readyReplicas,
@@ -2010,15 +2201,14 @@ const HexagonServiceNetwork: React.FC = () => {
           pressureFactor * 280 +
           emergencyFactor * 120 +
           spikeFactor * 1650,
-        errorRate:
-          clamp(
-            unhealthyReplicas * 4 +
-              drainingReplicas * 1.4 +
-              terminatingReplicas * 1.1 +
-              emergencyFactor * (6 + emergencyScenario.metricImpact.errorRate),
-            0.2,
-            18,
-          ),
+        errorRate: clamp(
+          unhealthyReplicas * 4 +
+            drainingReplicas * 1.4 +
+            terminatingReplicas * 1.1 +
+            emergencyFactor * (6 + emergencyScenario.metricImpact.errorRate),
+          0.2,
+          18,
+        ),
         latencyMs:
           28 +
           pressureFactor * 48 +
@@ -2026,17 +2216,18 @@ const HexagonServiceNetwork: React.FC = () => {
           drainingReplicas * 7 +
           emergencyFactor * (18 + emergencyScenario.metricImpact.latencyMs),
         queueDepth: Math.round(
-            8 +
-              pressureFactor * 42 +
-              emergencyFactor * (34 + emergencyScenario.metricImpact.queueDepth) +
-              focusFactor * 10 +
-              startingReplicas * 6 +
-              spikeFactor * 28,
+          8 +
+            pressureFactor * 42 +
+            emergencyFactor * (34 + emergencyScenario.metricImpact.queueDepth) +
+            focusFactor * 10 +
+            startingReplicas * 6 +
+            spikeFactor * 28,
         ),
         trafficIntensity: clamp(
           0.3 +
             focusFactor * 0.55 +
-            emergencyFactor * (0.15 + emergencyScenario.metricImpact.trafficIntensity) +
+            emergencyFactor *
+              (0.15 + emergencyScenario.metricImpact.trafficIntensity) +
             spikeFactor * 0.26,
           0,
           1,
@@ -2094,7 +2285,9 @@ const HexagonServiceNetwork: React.FC = () => {
 
       while (activeToastRef.current.length + toastQueueRef.current.length > 3) {
         if (activeToastRef.current.length > 0) {
-          activeToastRef.current.sort((left, right) => left.shownAt - right.shownAt)
+          activeToastRef.current.sort(
+            (left, right) => left.shownAt - right.shownAt,
+          )
           activeToastRef.current.shift()
         } else {
           toastQueueRef.current.shift()
@@ -2162,7 +2355,8 @@ const HexagonServiceNetwork: React.FC = () => {
     return nodesRef.current.filter(
       (node) =>
         node.role === 'appPod' &&
-        (node.lifecycleState === 'starting' || node.lifecycleState === 'draining'),
+        (node.lifecycleState === 'starting' ||
+          node.lifecycleState === 'draining'),
     ).length
   }, [])
 
@@ -2173,7 +2367,8 @@ const HexagonServiceNetwork: React.FC = () => {
           (node) =>
             node.role === 'appPod' &&
             node.replicaGroup &&
-            (node.lifecycleState === 'starting' || node.lifecycleState === 'draining'),
+            (node.lifecycleState === 'starting' ||
+              node.lifecycleState === 'draining'),
         )
         .map((node) => node.replicaGroup as AppServiceGroup),
     )
@@ -2215,7 +2410,11 @@ const HexagonServiceNetwork: React.FC = () => {
         )
         const normalizedDx = (projected.screenX - centerX) / (width * 0.48)
         const normalizedDy = (projected.screenY - centerY) / (height * 0.48)
-        const centrality = clamp(1 - Math.hypot(normalizedDx, normalizedDy), 0, 1)
+        const centrality = clamp(
+          1 - Math.hypot(normalizedDx, normalizedDy),
+          0,
+          1,
+        )
         const depthWeight = clamp(projected.scale, 0.35, 1.35)
         const score = depthWeight * 0.7 + centrality * 0.9
 
@@ -2244,7 +2443,10 @@ const HexagonServiceNetwork: React.FC = () => {
           return rankA - rankB
         }
 
-        return APP_SERVICE_ORDER.indexOf(serviceA) - APP_SERVICE_ORDER.indexOf(serviceB)
+        return (
+          APP_SERVICE_ORDER.indexOf(serviceA) -
+          APP_SERVICE_ORDER.indexOf(serviceB)
+        )
       })
     },
     [getMostVisibleServiceGroups],
@@ -2342,11 +2544,13 @@ const HexagonServiceNetwork: React.FC = () => {
       let anchorWeight = 0
 
       const fromService =
-        fromNode.replicaGroup && APP_SERVICE_ORDER.includes(fromNode.replicaGroup as AppServiceGroup)
+        fromNode.replicaGroup &&
+        APP_SERVICE_ORDER.includes(fromNode.replicaGroup as AppServiceGroup)
           ? getAppServiceConfig(fromNode.replicaGroup as AppServiceGroup)
           : undefined
       const toService =
-        toNode.replicaGroup && APP_SERVICE_ORDER.includes(toNode.replicaGroup as AppServiceGroup)
+        toNode.replicaGroup &&
+        APP_SERVICE_ORDER.includes(toNode.replicaGroup as AppServiceGroup)
           ? getAppServiceConfig(toNode.replicaGroup as AppServiceGroup)
           : undefined
 
@@ -2368,12 +2572,22 @@ const HexagonServiceNetwork: React.FC = () => {
         const clusterDx = toCluster.screenX - fromCluster.screenX
         const clusterDy = toCluster.screenY - fromCluster.screenY
         const clusterDistance = Math.hypot(clusterDx, clusterDy) || 1
-        const fromOffset = Math.min(fromCluster.radius * 0.34, clusterDistance * 0.22)
-        const toOffset = Math.min(toCluster.radius * 0.34, clusterDistance * 0.22)
-        const fromAnchorX = fromCluster.screenX + (clusterDx / clusterDistance) * fromOffset
-        const fromAnchorY = fromCluster.screenY + (clusterDy / clusterDistance) * fromOffset
-        const toAnchorX = toCluster.screenX - (clusterDx / clusterDistance) * toOffset
-        const toAnchorY = toCluster.screenY - (clusterDy / clusterDistance) * toOffset
+        const fromOffset = Math.min(
+          fromCluster.radius * 0.34,
+          clusterDistance * 0.22,
+        )
+        const toOffset = Math.min(
+          toCluster.radius * 0.34,
+          clusterDistance * 0.22,
+        )
+        const fromAnchorX =
+          fromCluster.screenX + (clusterDx / clusterDistance) * fromOffset
+        const fromAnchorY =
+          fromCluster.screenY + (clusterDy / clusterDistance) * fromOffset
+        const toAnchorX =
+          toCluster.screenX - (clusterDx / clusterDistance) * toOffset
+        const toAnchorY =
+          toCluster.screenY - (clusterDy / clusterDistance) * toOffset
         anchorX = (fromAnchorX + toAnchorX) / 2
         anchorY = (fromAnchorY + toAnchorY) / 2
         anchorWeight = 0.6
@@ -2390,7 +2604,10 @@ const HexagonServiceNetwork: React.FC = () => {
           const clusterDx = midX - cluster.screenX
           const clusterDy = midY - cluster.screenY
           const clusterDistance = Math.hypot(clusterDx, clusterDy) || 1
-          const clusterOffset = Math.min(cluster.radius * 0.42, clusterDistance * 0.32)
+          const clusterOffset = Math.min(
+            cluster.radius * 0.42,
+            clusterDistance * 0.32,
+          )
           const clusterAnchorX =
             cluster.screenX + (clusterDx / clusterDistance) * clusterOffset
           const clusterAnchorY =
@@ -2405,7 +2622,10 @@ const HexagonServiceNetwork: React.FC = () => {
         anchorWeight = 0.3
       }
 
-      if (fromNode.replicaGroup && fromNode.replicaGroup === toNode.replicaGroup) {
+      if (
+        fromNode.replicaGroup &&
+        fromNode.replicaGroup === toNode.replicaGroup
+      ) {
         bend *= 0.45
       }
 
@@ -2462,7 +2682,8 @@ const HexagonServiceNetwork: React.FC = () => {
       exitingNodes.forEach((node, index) => {
         node.targetX = service.centerX + exitDirection * (118 + index * 18)
         node.targetY = service.centerY - 26 + index * 18
-        node.targetZ = service.centerZ + (index % 2 === 0 ? 22 : -22) + index * 8
+        node.targetZ =
+          service.centerZ + (index % 2 === 0 ? 22 : -22) + index * 8
       })
     })
   }, [getAppServiceConfig, getServicePodPlacement])
@@ -2495,7 +2716,8 @@ const HexagonServiceNetwork: React.FC = () => {
       const burstEnvelope =
         burstHeadroom > 0
           ? clamp(
-              Math.max(0, severity - 0.34) * (0.95 + service.trafficWeight * 0.9) +
+              Math.max(0, severity - 0.34) *
+                (0.95 + service.trafficWeight * 0.9) +
                 Math.random() * 0.14,
               0,
               1,
@@ -2506,7 +2728,9 @@ const HexagonServiceNetwork: React.FC = () => {
       const targetBySpike = Math.round(
         baseline + (spikeCeiling - baseline) * spikeEnvelope,
       )
-      const targetByBurst = Math.round(spikeCeiling + burstHeadroom * burstEnvelope)
+      const targetByBurst = Math.round(
+        spikeCeiling + burstHeadroom * burstEnvelope,
+      )
 
       return clamp(
         Math.max(targetByDemand, targetBySpike, targetByBurst),
@@ -2519,7 +2743,8 @@ const HexagonServiceNetwork: React.FC = () => {
 
   const createReplacementPod = useCallback(
     (failedNode: ServiceNode) => {
-      const serviceName = (failedNode.replicaGroup as AppServiceGroup | undefined) ?? 'edge'
+      const serviceName =
+        (failedNode.replicaGroup as AppServiceGroup | undefined) ?? 'edge'
       const service = getAppServiceConfig(serviceName)
       if (!service) {
         return
@@ -2557,16 +2782,19 @@ const HexagonServiceNetwork: React.FC = () => {
       const visibleServices = new Set(getMostVisibleServiceGroups(3))
       const emergencyScenarioServices =
         reason === 'emergency'
-          ? new Set(getScenarioAffectedServices(emergencyRef.current.scenarioKey))
-          : null
-      const scenarioCandidates =
-        emergencyScenarioServices
-          ? candidates.filter((candidate) =>
-              candidate.replicaGroup
-                ? emergencyScenarioServices.has(candidate.replicaGroup as AppServiceGroup)
-                : false,
+          ? new Set(
+              getScenarioAffectedServices(emergencyRef.current.scenarioKey),
             )
-          : candidates
+          : null
+      const scenarioCandidates = emergencyScenarioServices
+        ? candidates.filter((candidate) =>
+            candidate.replicaGroup
+              ? emergencyScenarioServices.has(
+                  candidate.replicaGroup as AppServiceGroup,
+                )
+              : false,
+          )
+        : candidates
       const preferredCandidates = scenarioCandidates.filter((candidate) =>
         candidate.replicaGroup
           ? visibleServices.has(candidate.replicaGroup as AppServiceGroup)
@@ -2578,7 +2806,8 @@ const HexagonServiceNetwork: React.FC = () => {
           : scenarioCandidates.length > 0
             ? scenarioCandidates
             : candidates
-      const pod = selectionPool[Math.floor(Math.random() * selectionPool.length)]
+      const pod =
+        selectionPool[Math.floor(Math.random() * selectionPool.length)]
       pod.lifecycleState = 'draining'
       pod.acceptingTraffic = false
       pod.statusSince = timeRef.current
@@ -2593,7 +2822,12 @@ const HexagonServiceNetwork: React.FC = () => {
       emitClusterSnapshot(true)
       return true
     },
-    [emitClusterSnapshot, getMostVisibleServiceGroups, getReadyAppPods, pushClusterEvent],
+    [
+      emitClusterSnapshot,
+      getMostVisibleServiceGroups,
+      getReadyAppPods,
+      pushClusterEvent,
+    ],
   )
 
   const createScaleUpPod = useCallback(
@@ -2684,7 +2918,9 @@ const HexagonServiceNetwork: React.FC = () => {
     if (
       timeRef.current < cluster.nextScaleActionTime ||
       getScalingActivityCount() >= maxConcurrentScalingPods ||
-      nodesRef.current.some((node) => node.role === 'appPod' && node.lifecycleState === 'unhealthy')
+      nodesRef.current.some(
+        (node) => node.role === 'appPod' && node.lifecycleState === 'unhealthy',
+      )
     ) {
       return false
     }
@@ -2708,7 +2944,8 @@ const HexagonServiceNetwork: React.FC = () => {
 
       if (currentReplicas < desiredReplicas && canScaleService(serviceName)) {
         if (createScaleUpPod(serviceName)) {
-          cluster.nextScaleActionTime = timeRef.current + 0.42 + Math.random() * 0.35
+          cluster.nextScaleActionTime =
+            timeRef.current + 0.42 + Math.random() * 0.35
           return true
         }
       }
@@ -2728,7 +2965,8 @@ const HexagonServiceNetwork: React.FC = () => {
 
       if (currentReplicas > desiredReplicas && canScaleService(serviceName)) {
         if (requestScaleDownPod(serviceName)) {
-          cluster.nextScaleActionTime = timeRef.current + 0.58 + Math.random() * 0.4
+          cluster.nextScaleActionTime =
+            timeRef.current + 0.58 + Math.random() * 0.4
           return true
         }
       }
@@ -2756,19 +2994,18 @@ const HexagonServiceNetwork: React.FC = () => {
     }
 
     const visibleServices = new Set(getMostVisibleServiceGroups(3))
-    const candidates = APP_SERVICE_ORDER
-      .map((serviceName) => {
-        const baseline = cluster.baselineServiceReplicas[serviceName]
-        const desired = cluster.desiredServiceReplicas[serviceName]
-        return {
-          serviceName,
-          baseline,
-          desired,
-          excess: desired - baseline,
-          currentReplicas: getServiceReplicaCount(serviceName),
-          isVisible: visibleServices.has(serviceName),
-        }
-      })
+    const candidates = APP_SERVICE_ORDER.map((serviceName) => {
+      const baseline = cluster.baselineServiceReplicas[serviceName]
+      const desired = cluster.desiredServiceReplicas[serviceName]
+      return {
+        serviceName,
+        baseline,
+        desired,
+        excess: desired - baseline,
+        currentReplicas: getServiceReplicaCount(serviceName),
+        isVisible: visibleServices.has(serviceName),
+      }
+    })
       .filter((candidate) => candidate.excess > 0)
       .sort((candidateA, candidateB) => {
         if (candidateA.isVisible !== candidateB.isVisible) {
@@ -2801,11 +3038,11 @@ const HexagonServiceNetwork: React.FC = () => {
       return false
     }
 
-    cluster.desiredReplicas = Object.values(cluster.desiredServiceReplicas).reduce(
-      (sum, count) => sum + count,
-      0,
-    )
-    cluster.nextScaleCooldownTime = timeRef.current + 1.35 + Math.random() * 0.95
+    cluster.desiredReplicas = Object.values(
+      cluster.desiredServiceReplicas,
+    ).reduce((sum, count) => sum + count, 0)
+    cluster.nextScaleCooldownTime =
+      timeRef.current + 1.35 + Math.random() * 0.95
     cluster.nextScaleActionTime = Math.max(
       cluster.nextScaleActionTime,
       timeRef.current + 0.24,
@@ -2826,7 +3063,9 @@ const HexagonServiceNetwork: React.FC = () => {
 
       const nextScenarioKey = scenarioKey ?? pickRandomEmergencyScenario()
       const scenario = getEmergencyScenario(nextScenarioKey)
-      const affectedServiceNames = new Set(getScenarioAffectedServices(nextScenarioKey))
+      const affectedServiceNames = new Set(
+        getScenarioAffectedServices(nextScenarioKey),
+      )
       const readyAffectedPods = getReadyAppPods().filter((node) =>
         node.replicaGroup
           ? affectedServiceNames.has(node.replicaGroup as AppServiceGroup)
@@ -3018,22 +3257,27 @@ const HexagonServiceNetwork: React.FC = () => {
         },
         reservedZones,
       )
-      const serviceConfigs: AppServiceConfig[] = serviceTopologyConfigs.map((service) => {
-        const center = serviceCenters.get(service.name)
+      const serviceConfigs: AppServiceConfig[] = serviceTopologyConfigs.map(
+        (service) => {
+          const center = serviceCenters.get(service.name)
 
-        return {
-          ...service,
-          centerX: center?.x ?? lerp(leftBound, rightBound, service.layoutSeed.x),
-          centerY: center?.y ?? lerp(topBound, bottomBound, service.layoutSeed.y),
-          centerZ: center?.z ?? service.layoutSeed.z * infraDepth,
-        }
-      })
+          return {
+            ...service,
+            centerX:
+              center?.x ?? lerp(leftBound, rightBound, service.layoutSeed.x),
+            centerY:
+              center?.y ?? lerp(topBound, bottomBound, service.layoutSeed.y),
+            centerZ: center?.z ?? service.layoutSeed.z * infraDepth,
+          }
+        },
+      )
       appServicesRef.current = serviceConfigs
       clusterRef.current.baselineServiceReplicas = serviceConfigs.reduce(
         (accumulator, service) => {
           const [baselineMin, baselineMax] = service.baselineReplicas
           accumulator[service.name] = clamp(
-            baselineMin + Math.floor(Math.random() * (baselineMax - baselineMin + 1)),
+            baselineMin +
+              Math.floor(Math.random() * (baselineMax - baselineMin + 1)),
             service.minReplicas,
             service.maxReplicas,
           )
@@ -3046,10 +3290,7 @@ const HexagonServiceNetwork: React.FC = () => {
           basket: 1,
           checkout: 1,
           warehouse: 1,
-        } as Record<
-          AppServiceGroup,
-          number
-        >,
+        } as Record<AppServiceGroup, number>,
       )
       clusterRef.current.desiredServiceReplicas = {
         ...clusterRef.current.baselineServiceReplicas,
@@ -3066,7 +3307,7 @@ const HexagonServiceNetwork: React.FC = () => {
           lerp(topBound, bottomBound, 0.46),
           infraDepth * 1.4,
           {
-          replicaGroup: 'edge',
+            replicaGroup: 'edge',
           },
         ),
         createNode(
@@ -3076,7 +3317,7 @@ const HexagonServiceNetwork: React.FC = () => {
           lerp(topBound, bottomBound, 0.54),
           infraDepth,
           {
-          replicaGroup: 'edge',
+            replicaGroup: 'edge',
           },
         ),
         createNode(
@@ -3153,7 +3394,8 @@ const HexagonServiceNetwork: React.FC = () => {
 
       serviceConfigs.forEach((service) => {
         const initialReplicaCount =
-          clusterRef.current.baselineServiceReplicas[service.name] ?? service.minReplicas
+          clusterRef.current.baselineServiceReplicas[service.name] ??
+          service.minReplicas
 
         for (let index = 0; index < initialReplicaCount; index += 1) {
           const placement = getServicePodPlacement(
@@ -3254,15 +3496,22 @@ const HexagonServiceNetwork: React.FC = () => {
       const queue = queues[0]
       const worker = workers[index % Math.max(workers.length, 1)]
       const telemetry = observability[index % Math.max(observability.length, 1)]
-      const primaryDb = databases.find((node) => node.label === 'pg-primary') ?? databases[0]
-      const replicaDb = databases.find((node) => node.label === 'pg-replica') ?? databases[1] ?? databases[0]
-      const authTarget = podsByService.auth[index % Math.max(podsByService.auth.length, 1)]
+      const primaryDb =
+        databases.find((node) => node.label === 'pg-primary') ?? databases[0]
+      const replicaDb =
+        databases.find((node) => node.label === 'pg-replica') ??
+        databases[1] ??
+        databases[0]
+      const authTarget =
+        podsByService.auth[index % Math.max(podsByService.auth.length, 1)]
       const catalogTarget =
         podsByService.catalog[index % Math.max(podsByService.catalog.length, 1)]
       const basketTarget =
         podsByService.basket[index % Math.max(podsByService.basket.length, 1)]
       const warehouseTarget =
-        podsByService.warehouse[index % Math.max(podsByService.warehouse.length, 1)]
+        podsByService.warehouse[
+          index % Math.max(podsByService.warehouse.length, 1)
+        ]
 
       if (pod.replicaGroup === 'auth') {
         if (redisMaster) {
@@ -3647,7 +3896,9 @@ const HexagonServiceNetwork: React.FC = () => {
   useEffect(() => {
     const checkClasses = () => {
       setIsDark(document.documentElement.classList.contains('dark'))
-      setIsFocused(document.documentElement.classList.contains('animation-focus'))
+      setIsFocused(
+        document.documentElement.classList.contains('animation-focus'),
+      )
     }
 
     checkClasses()
@@ -3678,13 +3929,33 @@ const HexagonServiceNetwork: React.FC = () => {
       )
     }
 
-    window.addEventListener(TRIGGER_NETWORK_EMERGENCY_EVENT, handleTriggerEmergency)
+    window.addEventListener(
+      TRIGGER_NETWORK_EMERGENCY_EVENT,
+      handleTriggerEmergency,
+    )
     return () =>
       window.removeEventListener(
         TRIGGER_NETWORK_EMERGENCY_EVENT,
         handleTriggerEmergency,
       )
   }, [startEmergency])
+
+  useEffect(() => {
+    const handleCallAssignments = (event: Event) => {
+      const customEvent = event as CustomEvent<AmbientCallAssignment[]>
+      callAssignmentsRef.current = customEvent.detail ?? []
+    }
+
+    window.addEventListener(
+      NETWORK_CALL_ASSIGNMENTS_EVENT,
+      handleCallAssignments,
+    )
+    return () =>
+      window.removeEventListener(
+        NETWORK_CALL_ASSIGNMENTS_EVENT,
+        handleCallAssignments,
+      )
+  }, [])
 
   useEffect(() => {
     if (!mounted) {
@@ -3775,8 +4046,12 @@ const HexagonServiceNetwork: React.FC = () => {
         }
       }
 
-      zoomState.current += (zoomState.target - zoomState.current) * (0.08 + focusLevel * 0.08)
-      if (Math.abs(zoomState.current) < 0.35 && Math.abs(zoomState.target) < 0.35) {
+      zoomState.current +=
+        (zoomState.target - zoomState.current) * (0.08 + focusLevel * 0.08)
+      if (
+        Math.abs(zoomState.current) < 0.35 &&
+        Math.abs(zoomState.target) < 0.35
+      ) {
         zoomState.current = 0
       }
       cameraZoomOffset = zoomState.current
@@ -3816,17 +4091,34 @@ const HexagonServiceNetwork: React.FC = () => {
         cluster.trafficSpikeEndTime = timeRef.current + 10 + Math.random() * 6
         cluster.trafficSpikeSeverity = 0.5 + Math.random() * 0.5
         cluster.desiredServiceReplicas = {
-          edge: getTrafficSpikeReplicaTarget('edge', cluster.trafficSpikeSeverity),
-          auth: getTrafficSpikeReplicaTarget('auth', cluster.trafficSpikeSeverity),
-          catalog: getTrafficSpikeReplicaTarget('catalog', cluster.trafficSpikeSeverity),
-          basket: getTrafficSpikeReplicaTarget('basket', cluster.trafficSpikeSeverity),
-          checkout: getTrafficSpikeReplicaTarget('checkout', cluster.trafficSpikeSeverity),
-          warehouse: getTrafficSpikeReplicaTarget('warehouse', cluster.trafficSpikeSeverity),
+          edge: getTrafficSpikeReplicaTarget(
+            'edge',
+            cluster.trafficSpikeSeverity,
+          ),
+          auth: getTrafficSpikeReplicaTarget(
+            'auth',
+            cluster.trafficSpikeSeverity,
+          ),
+          catalog: getTrafficSpikeReplicaTarget(
+            'catalog',
+            cluster.trafficSpikeSeverity,
+          ),
+          basket: getTrafficSpikeReplicaTarget(
+            'basket',
+            cluster.trafficSpikeSeverity,
+          ),
+          checkout: getTrafficSpikeReplicaTarget(
+            'checkout',
+            cluster.trafficSpikeSeverity,
+          ),
+          warehouse: getTrafficSpikeReplicaTarget(
+            'warehouse',
+            cluster.trafficSpikeSeverity,
+          ),
         }
-        cluster.desiredReplicas = Object.values(cluster.desiredServiceReplicas).reduce(
-          (sum, count) => sum + count,
-          0,
-        )
+        cluster.desiredReplicas = Object.values(
+          cluster.desiredServiceReplicas,
+        ).reduce((sum, count) => sum + count, 0)
         cluster.nextScaleActionTime = timeRef.current + 0.5
         pushClusterEvent(
           'warn',
@@ -3838,10 +4130,9 @@ const HexagonServiceNetwork: React.FC = () => {
       ) {
         cluster.isTrafficSpike = false
         cluster.trafficSpikeSeverity = 0
-        cluster.desiredReplicas = Object.values(cluster.desiredServiceReplicas).reduce(
-          (sum, count) => sum + count,
-          0,
-        )
+        cluster.desiredReplicas = Object.values(
+          cluster.desiredServiceReplicas,
+        ).reduce((sum, count) => sum + count, 0)
         cluster.nextTrafficSpikeTime = timeRef.current + 5 + Math.random() * 7
         cluster.nextScaleActionTime = timeRef.current + 0.7
         cluster.nextScaleCooldownTime = timeRef.current + 1.1
@@ -3871,7 +4162,8 @@ const HexagonServiceNetwork: React.FC = () => {
         emergency.hasTriggeredFirstEmergency &&
         !emergency.isActive &&
         !emergency.isRecovery &&
-        timeRef.current - emergency.lastEmergencyTime > emergency.nextEmergencyInterval
+        timeRef.current - emergency.lastEmergencyTime >
+          emergency.nextEmergencyInterval
       ) {
         startEmergency()
       }
@@ -3929,13 +4221,17 @@ const HexagonServiceNetwork: React.FC = () => {
           })
         }
 
-        if (timeRef.current - emergency.recoveryStartTime > emergency.recoveryDuration) {
+        if (
+          timeRef.current - emergency.recoveryStartTime >
+          emergency.recoveryDuration
+        ) {
           emergency.isRecovery = false
           emergency.lastEmergencyTime = timeRef.current
           emergency.triggerSource = null
           emergency.nextEmergencyInterval = isFocusedRef.current
-            ? 60
-            : 60 + Math.random() * 120
+            ? AUTO_EMERGENCY_INTERVAL_SECONDS
+            : AUTO_EMERGENCY_INTERVAL_SECONDS +
+              Math.random() * AUTO_EMERGENCY_JITTER_SECONDS
           window.dispatchEvent(
             new CustomEvent('network-emergency', { detail: { type: 'end' } }),
           )
@@ -4004,7 +4300,10 @@ const HexagonServiceNetwork: React.FC = () => {
           age > TERMINATING_DURATION
         ) {
           return []
-        } else if (node.lifecycleState === 'starting' && age > STARTING_DURATION) {
+        } else if (
+          node.lifecycleState === 'starting' &&
+          age > STARTING_DURATION
+        ) {
           node.lifecycleState = 'ready'
           node.acceptingTraffic = true
           node.scaleDownTarget = false
@@ -4106,8 +4405,24 @@ const HexagonServiceNetwork: React.FC = () => {
       })
 
       const sortedNodes = [...nodesRef.current].sort((nodeA, nodeB) => {
-        const a = project3D(nodeA.x, nodeA.y, nodeA.z, centerX, centerY, rotX, rotY)
-        const b = project3D(nodeB.x, nodeB.y, nodeB.z, centerX, centerY, rotX, rotY)
+        const a = project3D(
+          nodeA.x,
+          nodeA.y,
+          nodeA.z,
+          centerX,
+          centerY,
+          rotX,
+          rotY,
+        )
+        const b = project3D(
+          nodeB.x,
+          nodeB.y,
+          nodeB.z,
+          centerX,
+          centerY,
+          rotX,
+          rotY,
+        )
         return a.z - b.z
       })
 
@@ -4139,10 +4454,16 @@ const HexagonServiceNetwork: React.FC = () => {
         )
 
         const lineProgress = connection.establishProgress
-        const currentX = from.screenX + (to.screenX - from.screenX) * lineProgress
-        const currentY = from.screenY + (to.screenY - from.screenY) * lineProgress
+        const currentX =
+          from.screenX + (to.screenX - from.screenX) * lineProgress
+        const currentY =
+          from.screenY + (to.screenY - from.screenY) * lineProgress
         const avgZ = (from.z + to.z) / 2
-        const depthFade = clamp((PERSPECTIVE + avgZ) / (PERSPECTIVE * 1.8), 0.28, 1)
+        const depthFade = clamp(
+          (PERSPECTIVE + avgZ) / (PERSPECTIVE * 1.8),
+          0.28,
+          1,
+        )
         const fromIncident =
           fromNode.lifecycleState === 'draining' ||
           fromNode.lifecycleState === 'unhealthy' ||
@@ -4174,11 +4495,14 @@ const HexagonServiceNetwork: React.FC = () => {
                 ? isDark
                   ? 0.95
                   : 1.15
-              : isDark
-                ? 0.75
-                : 1.05
+                : isDark
+                  ? 0.75
+                  : 1.05
 
-        if (connection.kind === 'loadBalancer' || connection.kind === 'service') {
+        if (
+          connection.kind === 'loadBalancer' ||
+          connection.kind === 'service'
+        ) {
           const dashOffset = (timeRef.current * 18) % 24
           ctx.setLineDash(connection.kind === 'loadBalancer' ? [5, 7] : [4, 9])
           ctx.lineDashOffset = -dashOffset
@@ -4223,7 +4547,9 @@ const HexagonServiceNetwork: React.FC = () => {
                     toNode.lifecycleState === 'ready')
 
         const packetIntervalMultiplier =
-          1.55 - focusLevel * 0.72 - (currentEmergencyState === 'emergency' ? 0.25 : 0)
+          1.55 -
+          focusLevel * 0.72 -
+          (currentEmergencyState === 'emergency' ? 0.25 : 0)
         if (
           connection.isEstablished &&
           targetReady &&
@@ -4248,7 +4574,10 @@ const HexagonServiceNetwork: React.FC = () => {
       })
 
       const connectionMap = new Map(
-        connectionsRef.current.map((connection) => [connection.key, connection]),
+        connectionsRef.current.map((connection) => [
+          connection.key,
+          connection,
+        ]),
       )
 
       packetsRef.current = packetsRef.current.filter((packet) => {
@@ -4338,7 +4667,8 @@ const HexagonServiceNetwork: React.FC = () => {
           rotX,
           rotY,
         )
-        const headT = packet.direction === 1 ? packet.progress : 1 - packet.progress
+        const headT =
+          packet.direction === 1 ? packet.progress : 1 - packet.progress
         const headPoint = getQuadraticPoint(
           from.screenX,
           from.screenY,
@@ -4351,16 +4681,21 @@ const HexagonServiceNetwork: React.FC = () => {
         const x = headPoint.x
         const y = headPoint.y
         const packetZ = from.z + (to.z - from.z) * headT
-        const depthFade = clamp((PERSPECTIVE + packetZ) / (PERSPECTIVE * 1.9), 0.35, 1)
+        const depthFade = clamp(
+          (PERSPECTIVE + packetZ) / (PERSPECTIVE * 1.9),
+          0.35,
+          1,
+        )
         const targetNode = packet.direction === 1 ? toNode : fromNode
-        const palette = COLORS[
-          getNodePalette(
-            targetNode,
-            timeRef.current,
-            currentEmergencyState,
-            emergencyRef.current.scenarioKey,
-          ).colorKey
-        ]
+        const palette =
+          COLORS[
+            getNodePalette(
+              targetNode,
+              timeRef.current,
+              currentEmergencyState,
+              emergencyRef.current.scenarioKey,
+            ).colorKey
+          ]
 
         const trailLength = packet.type === 'tcp' ? 0.16 : 0.1
         const tailT =
@@ -4414,7 +4749,10 @@ const HexagonServiceNetwork: React.FC = () => {
         ctx.setLineDash([])
 
         const headOpacity = (isDark ? 0.78 : 0.88) * depthFade
-        const size = packet.size * depthFade * (Math.sin(timeRef.current * 8 + packet.id) * 0.22 + 1)
+        const size =
+          packet.size *
+          depthFade *
+          (Math.sin(timeRef.current * 8 + packet.id) * 0.22 + 1)
         ctx.fillStyle = withOpacity(palette.main, headOpacity)
 
         if (packet.type === 'tcp') {
@@ -4478,9 +4816,7 @@ const HexagonServiceNetwork: React.FC = () => {
               ? 1.1
               : 1.04
         const topologyGlowOpacity =
-          node.role === 'loadBalancer' || node.role === 'ingress'
-            ? 0.2
-            : 0.14
+          node.role === 'loadBalancer' || node.role === 'ingress' ? 0.2 : 0.14
 
         drawHexagon(
           ctx,
@@ -4520,8 +4856,7 @@ const HexagonServiceNetwork: React.FC = () => {
         )
 
         if (depthFade > 0.6) {
-          const labelOpacity =
-            (isDark ? 0.82 : 0.86) * depthFade * visibility
+          const labelOpacity = (isDark ? 0.82 : 0.86) * depthFade * visibility
           const fontSize =
             node.role === 'loadBalancer' || node.role === 'ingress'
               ? 9
@@ -4573,13 +4908,17 @@ const HexagonServiceNetwork: React.FC = () => {
               ? `rgba(248, 250, 252, ${labelOpacity})`
               : `rgba(15, 23, 42, ${labelOpacity})`,
             plateIsDark: isDark,
-            emphasis: node.role === 'loadBalancer' || node.role === 'ingress' ? 'title' : 'meta',
+            emphasis:
+              node.role === 'loadBalancer' || node.role === 'ingress'
+                ? 'title'
+                : 'meta',
           })
         }
       })
 
-      statusIndicatorsRef.current = statusIndicatorsRef.current.filter((indicator) =>
-        drawStatusIndicator(ctx, indicator, timeRef.current, isDark, nodeMap),
+      statusIndicatorsRef.current = statusIndicatorsRef.current.filter(
+        (indicator) =>
+          drawStatusIndicator(ctx, indicator, timeRef.current, isDark, nodeMap),
       )
 
       const serviceProjectionMap = new Map(
@@ -4643,11 +4982,20 @@ const HexagonServiceNetwork: React.FC = () => {
           (node) => node.lifecycleState === 'starting',
         ).length
         const desiredPods =
-          clusterRef.current.desiredServiceReplicas[service.name] ?? servicePods.length
+          clusterRef.current.desiredServiceReplicas[service.name] ??
+          servicePods.length
         const capacityPods = service.maxReplicas
         const plateIsDark = isDark
-        const captionOpacity = clamp((isDark ? 0.82 : 0.86) * depthFade + 0.14, 0.88, 1)
-        const metaOpacity = clamp((isDark ? 0.72 : 0.76) * depthFade + 0.12, 0.76, 0.98)
+        const captionOpacity = clamp(
+          (isDark ? 0.82 : 0.86) * depthFade + 0.14,
+          0.88,
+          1,
+        )
+        const metaOpacity = clamp(
+          (isDark ? 0.72 : 0.76) * depthFade + 0.12,
+          0.76,
+          0.98,
+        )
         const drainingPods = servicePods.filter(
           (node) => node.lifecycleState === 'draining',
         ).length
@@ -4658,7 +5006,9 @@ const HexagonServiceNetwork: React.FC = () => {
         ).length
         const activeLifecycleCount = startingPods + drainingPods + unhealthyPods
         const motionState = serviceClusterMotionRef.current[service.name]
-        const activeDelta = Math.abs(activeLifecycleCount - motionState.activeCount)
+        const activeDelta = Math.abs(
+          activeLifecycleCount - motionState.activeCount,
+        )
         const totalDelta = Math.abs(servicePods.length - motionState.totalCount)
         const desiredDelta = Math.abs(desiredPods - motionState.desiredCount)
         const scaleOutStarted = desiredPods > motionState.desiredCount
@@ -4739,24 +5089,33 @@ const HexagonServiceNetwork: React.FC = () => {
           },
         })
 
-        const panelOpacity = clamp((isDark ? 0.96 : 0.88) * depthFade + 0.08, 0.86, 1)
+        const panelOpacity = clamp(
+          (isDark ? 0.96 : 0.88) * depthFade + 0.08,
+          0.86,
+          1,
+        )
         const titleFont = `bold ${Math.max(10, Math.round(10 * depthFade))}px ui-monospace, monospace`
         const metaFont = `${Math.max(9, Math.round(9 * depthFade))}px ui-monospace, monospace`
         const statusFont = `${Math.max(8, Math.round(8 * depthFade))}px ui-monospace, monospace`
         ctx.font = titleFont
         const titleWidth = ctx.measureText(service.displayLabel).width
         ctx.font = metaFont
-        const readyWidth = ctx.measureText(`${readyPods}/${capacityPods} ready`).width
+        const readyWidth = ctx.measureText(
+          `${readyPods}/${capacityPods} ready`,
+        ).width
         ctx.font = statusFont
         const statusWidth = ctx.measureText(statusDisplay.text).width
-        const panelWidth = Math.max(titleWidth, readyWidth, statusWidth, 92) + 34
+        const panelWidth =
+          Math.max(titleWidth, readyWidth, statusWidth, 92) + 34
         const panelHeight = 60
         const panelAccent = withOpacity(
           COLORS[service.color].main,
           isDark ? panelOpacity * 0.88 : panelOpacity * 0.78,
         )
         const activePodsForSizing =
-          readyPods + startingPods + Math.max(0, Math.round(drainingPods * 0.35))
+          readyPods +
+          startingPods +
+          Math.max(0, Math.round(drainingPods * 0.35))
         const clusterRadius = getServiceClusterShellRadius(
           activePodsForSizing,
           capacityPods,
@@ -4773,8 +5132,10 @@ const HexagonServiceNetwork: React.FC = () => {
           viewportHeight: height,
           otherCenters: occupiedLayoutZones.filter(
             (zone) =>
-              Math.hypot(zone.x - clusterProjected.screenX, zone.y - clusterProjected.screenY) >
-              1,
+              Math.hypot(
+                zone.x - clusterProjected.screenX,
+                zone.y - clusterProjected.screenY,
+              ) > 1,
           ),
         })
         const panelCenterX = panelPosition.x + panelWidth / 2
@@ -4798,7 +5159,11 @@ const HexagonServiceNetwork: React.FC = () => {
         ctx.fillStyle = plateIsDark
           ? `rgba(226, 232, 240, ${Math.max(metaOpacity * 0.9, 0.74)})`
           : `rgba(71, 85, 105, ${Math.max(metaOpacity * 0.92, 0.74)})`
-        ctx.fillText('SERVICE CLUSTER', panelCenterX, panelLayout.header.centerY)
+        ctx.fillText(
+          'SERVICE CLUSTER',
+          panelCenterX,
+          panelLayout.header.centerY,
+        )
 
         drawPanelText(ctx, {
           text: service.displayLabel,
@@ -4833,6 +5198,24 @@ const HexagonServiceNetwork: React.FC = () => {
           plateIsDark,
           emphasis: 'status',
         })
+
+        const panelCallAssignments = callAssignmentsRef.current.filter(
+          (assignment) => assignment.serviceName === service.name,
+        )
+
+        if (isFocusedRef.current && panelCallAssignments.length > 0) {
+          drawPanelCallAssignments(ctx, {
+            assignments: panelCallAssignments,
+            panelX: panelPosition.x,
+            panelY: panelPosition.y,
+            panelWidth,
+            panelHeight,
+            viewportWidth: width,
+            isDark: plateIsDark,
+            time: timeRef.current,
+            metaOpacity,
+          })
+        }
       })
 
       if (emergency.isActive) {
@@ -4844,7 +5227,11 @@ const HexagonServiceNetwork: React.FC = () => {
         }
       } else if (emergency.isRecovery) {
         const recoveryAge = timeRef.current - emergency.recoveryStartTime
-        const fadeOut = clamp(1 - recoveryAge / emergency.recoveryDuration, 0, 1)
+        const fadeOut = clamp(
+          1 - recoveryAge / emergency.recoveryDuration,
+          0,
+          1,
+        )
         ctx.fillStyle = `rgba(34, 197, 94, ${0.045 * fadeOut})`
         ctx.fillRect(0, 0, width, height)
       }
@@ -4902,7 +5289,7 @@ const HexagonServiceNetwork: React.FC = () => {
     <>
       <canvas
         ref={canvasRef}
-        className="fixed inset-0 -z-10 pointer-events-none transition-opacity duration-500"
+        className="pointer-events-none fixed inset-0 -z-10 transition-opacity duration-500"
         style={{ opacity: canvasOpacity }}
         aria-hidden="true"
       />
@@ -4957,7 +5344,9 @@ const HexagonServiceNetwork: React.FC = () => {
                 <div
                   className="font-mono text-[13px] font-semibold uppercase tracking-[0.08em]"
                   style={{
-                    color: isDark ? 'rgba(248, 250, 252, 0.96)' : 'rgba(15, 23, 42, 0.92)',
+                    color: isDark
+                      ? 'rgba(248, 250, 252, 0.96)'
+                      : 'rgba(15, 23, 42, 0.92)',
                   }}
                 >
                   {toast.title}
@@ -4965,7 +5354,9 @@ const HexagonServiceNetwork: React.FC = () => {
                 <div
                   className="mt-1 text-sm leading-5"
                   style={{
-                    color: isDark ? 'rgba(226, 232, 240, 0.78)' : 'rgba(51, 65, 85, 0.8)',
+                    color: isDark
+                      ? 'rgba(226, 232, 240, 0.78)'
+                      : 'rgba(51, 65, 85, 0.8)',
                   }}
                 >
                   {toast.subtitle}
