@@ -327,25 +327,17 @@ function getWidgetAppearance(
 
   const containerOpacity = isPreviewing
     ? 1
-    : visualState === 'normal'
-      ? isDark
-        ? 0.16
-        : 0.24
-      : isDark
-        ? 0.28
-        : 0.38
+    : isDark
+      ? 0.16
+      : 0.24
 
   const textOpacity = isPreviewing
     ? isDark
       ? 0.82
       : 0.94
-    : visualState === 'normal'
-      ? isDark
-        ? 0.24
-        : 0.4
-      : isDark
-        ? 0.42
-        : 0.58
+    : isDark
+      ? 0.24
+      : 0.4
 
   const borderColor =
     visualState === 'error'
@@ -886,7 +878,7 @@ function MetricWidget({
         backdrop-blur-sm transition-all duration-300 ease-out
         ${visible ? 'translate-y-0' : 'translate-y-2 opacity-0'}
         ${borderColor} ${bgColor}
-        ${visualState === 'error' ? 'animate-pulse' : ''}
+        ${isPreviewing && visualState === 'error' ? 'animate-pulse' : ''}
       `}
       style={{
         boxShadow: isDark
@@ -899,7 +891,7 @@ function MetricWidget({
     >
       <div className="min-w-0">
           <span
-            className={`block truncate font-mono text-[8px] uppercase tracking-wider transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
+            className={`block h-[10px] truncate font-mono text-[8px] uppercase tracking-wider transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
             style={{
               opacity: textOpacity,
               color:
@@ -913,7 +905,7 @@ function MetricWidget({
             {label}
           </span>
           <span
-            className={`block truncate font-mono text-[7px] uppercase tracking-[0.16em] ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
+            className={`block h-[10px] truncate whitespace-nowrap font-mono text-[7px] uppercase tracking-[0.16em] ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
             style={{
               opacity: isPreviewing ? 0.7 : 0.42,
               color: effectiveColor,
@@ -946,7 +938,7 @@ function MetricWidget({
             label={id === 'uptime' ? undefined : `${Math.round(value)}%`}
           />
           <span
-            className="font-mono text-[9px] transition-all duration-300"
+            className="min-w-[52px] whitespace-nowrap text-right font-mono tabular-nums text-[9px] transition-all duration-300"
             style={{
               color: effectiveColor,
               opacity: isPreviewing ? 1 : isDark ? 0.34 : 0.48,
@@ -961,7 +953,7 @@ function MetricWidget({
 
       {type === 'counter' ? (
         <span
-          className="text-[13px] font-mono font-medium transition-all duration-300"
+          className="min-h-[16px] whitespace-nowrap font-mono text-[13px] font-medium tabular-nums transition-all duration-300"
           style={{
             color: effectiveColor,
             opacity: isPreviewing ? 1 : isDark ? 0.34 : 0.48,
@@ -983,7 +975,7 @@ function MetricWidget({
             }}
           />
           <span
-            className={`font-mono text-[9px] transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
+            className={`min-w-[44px] whitespace-nowrap font-mono text-[9px] transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
             style={{
               opacity: isPreviewing ? 0.82 : isDark ? 0.3 : 0.42,
               color: statusColor,
@@ -996,7 +988,7 @@ function MetricWidget({
       ) : null}
 
       <div
-        className={`border-t pt-1 font-mono text-[8px] leading-3.5 ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
+        className={`h-[29px] overflow-hidden border-t pt-1 font-mono text-[8px] leading-3.5 ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
         style={{
           opacity: isPreviewing ? 0.9 : isDark ? 0.42 : 0.56,
           color: visualState === 'normal' ? undefined : effectiveColor,
@@ -1164,7 +1156,7 @@ function CompositeMetricWidget({
         backdrop-blur-sm transition-all duration-300 ease-out
         ${visible ? 'translate-y-0' : 'translate-y-2 opacity-0'}
         ${borderColor} ${bgColor}
-        ${visualState === 'error' ? 'animate-pulse' : ''}
+        ${isPreviewing && visualState === 'error' ? 'animate-pulse' : ''}
       `}
       style={{
         boxShadow: isDark
@@ -1177,7 +1169,7 @@ function CompositeMetricWidget({
     >
       <div className="min-w-0">
           <span
-            className={`block truncate font-mono text-[8px] uppercase tracking-wider transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
+            className={`block h-[10px] truncate font-mono text-[8px] uppercase tracking-wider transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
             style={{
               opacity: textOpacity,
               color:
@@ -1191,7 +1183,7 @@ function CompositeMetricWidget({
             {label}
           </span>
           <span
-            className={`block truncate font-mono text-[7px] uppercase tracking-[0.16em] ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
+            className={`block h-[10px] truncate whitespace-nowrap font-mono text-[7px] uppercase tracking-[0.16em] ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
             style={{
               opacity: isPreviewing ? 0.7 : 0.42,
               color: effectiveColor,
@@ -1231,7 +1223,7 @@ function CompositeMetricWidget({
                 <span className="font-mono text-[7px] uppercase tracking-[0.16em]" style={{ color: effectiveColor, opacity: 0.78 }}>
                   request pace
                 </span>
-                <span className="font-mono text-[8px]" style={{ color: effectiveColor, opacity: 0.72 }}>
+                <span className="min-w-[52px] whitespace-nowrap text-right font-mono tabular-nums text-[8px]" style={{ color: effectiveColor, opacity: 0.72 }}>
                   {Math.round(cluster.requestRate)}
                 </span>
               </div>
@@ -1249,7 +1241,7 @@ function CompositeMetricWidget({
                 <span className="font-mono text-[7px] uppercase tracking-[0.16em]" style={{ color: latencyTraceColor, opacity: 0.82 }}>
                   tail latency
                 </span>
-                <span className="font-mono text-[8px]" style={{ color: latencyTraceColor, opacity: 0.78 }}>
+                <span className="min-w-[52px] whitespace-nowrap text-right font-mono tabular-nums text-[8px]" style={{ color: latencyTraceColor, opacity: 0.78 }}>
                   {Math.round(cluster.latencyMs)}ms
                 </span>
               </div>
@@ -1276,7 +1268,7 @@ function CompositeMetricWidget({
               pod set
             </span>
             <span
-              className="font-mono text-[18px] font-semibold"
+              className="whitespace-nowrap font-mono text-[18px] font-semibold tabular-nums"
               style={{
                 color: effectiveColor,
                 opacity: isPreviewing ? 1 : isDark ? 0.42 : 0.56,
@@ -1347,7 +1339,7 @@ function CompositeMetricWidget({
       ) : null}
 
       <div
-        className={`border-t pt-1 font-mono text-[8px] leading-3.5 ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
+        className={`h-[29px] overflow-hidden border-t pt-1 font-mono text-[8px] leading-3.5 ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
         style={{
           opacity: isPreviewing ? 0.9 : isDark ? 0.42 : 0.56,
           color: visualState === 'normal' ? undefined : effectiveColor,

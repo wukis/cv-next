@@ -89,7 +89,7 @@ export function deriveAmbientMonitoringState(snapshot: ClusterSnapshot) {
         terminalVisible: true,
         buttonLabel: 'Cluster preview',
         buttonDescription:
-          'Preview mode raises live load and reveals likely next paths: surge scaling, reroute pressure, cache warmup misses, or queue buildup. Hold hover to auto-trigger a drill, or click for immediate failover.',
+          'Preview mode raises live load and reveals likely next paths: surge scaling, reroute pressure, cache warmup misses, or queue buildup. While hovering, scroll to zoom the cluster view. Hold hover to auto-trigger a drill, or click for immediate failover.',
         statusPill: 'PREVIEW',
         accent: 'preview' as const,
       }
@@ -108,7 +108,7 @@ export function deriveAmbientMonitoringState(snapshot: ClusterSnapshot) {
         terminalVisible: snapshot.focusMode === 'preview',
         buttonLabel: 'Traffic surge',
         buttonDescription:
-          'Autoscaling is reacting to ambient traffic pressure. Hover to inspect likely incident paths, or click to force a failover drill.',
+          'Autoscaling is reacting to ambient traffic pressure. Hover to inspect likely incident paths and scroll to zoom the cluster view, or click to force a failover drill.',
         statusPill: 'SURGE',
         accent: 'surge' as const,
       }
@@ -145,7 +145,7 @@ export function deriveAmbientMonitoringState(snapshot: ClusterSnapshot) {
         terminalVisible: snapshot.focusMode === 'preview',
         buttonLabel: 'Recovery active',
         buttonDescription:
-          'Recovery is reconciling replicas and restoring traffic paths. Hover still previews live pressure, but the active drill will finish first.',
+          'Recovery is reconciling replicas and restoring traffic paths. Hover still previews live pressure and supports scroll zoom, but the active drill will finish first.',
         statusPill: 'RECOVERY',
         accent: 'recovery' as const,
       }
@@ -164,7 +164,7 @@ export function deriveAmbientMonitoringState(snapshot: ClusterSnapshot) {
         terminalVisible: false,
         buttonLabel: 'Background preview',
         buttonDescription:
-          'Hover to preview cluster pressure paths like surge scaling, reroute pressure, cache warmup misses, and queue buildup. Click to start a failover drill immediately.',
+          'Hover to preview cluster pressure paths like surge scaling, reroute pressure, cache warmup misses, and queue buildup. While hovering, scroll to zoom the cluster view. Click to start a failover drill immediately.',
         statusPill: 'STEADY',
         accent: 'steady' as const,
       }

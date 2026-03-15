@@ -118,6 +118,57 @@ const EMERGENCY_SCENARIOS: Record<
 
 type AppServiceGroup = (typeof APP_SERVICE_ORDER)[number]
 
+const SCENARIO_AFFECTED_SERVICES: Record<
+  EmergencyScenarioKey,
+  AppServiceGroup[]
+> = {
+  failover: ['edge', 'checkout'],
+  dbDown: ['auth', 'basket', 'checkout'],
+  cacheReload: ['catalog', 'basket'],
+  queueFull: ['checkout', 'warehouse'],
+}
+
+function getScenarioAffectedServices(scenarioKey: EmergencyScenarioKey) {
+  return SCENARIO_AFFECTED_SERVICES[scenarioKey]
+}
+
+function isScenarioAffectingNode(
+  node: ServiceNode,
+  emergencyState: EmergencyState,
+  emergencyScenarioKey: EmergencyScenarioKey,
+) {
+  if (emergencyState !== 'emergency' && emergencyState !== 'recovery') {
+    return false
+  }
+
+  const scenario = getEmergencyScenario(emergencyScenarioKey)
+  if (!scenario.affectedRoles.includes(node.role)) {
+    return false
+  }
+
+  if (node.role !== 'appPod') {
+    return true
+  }
+
+  return node.replicaGroup
+    ? getScenarioAffectedServices(emergencyScenarioKey).includes(
+        node.replicaGroup as AppServiceGroup,
+      )
+    : false
+}
+
+function isScenarioAffectingService(
+  serviceName: AppServiceGroup,
+  emergencyState: EmergencyState,
+  emergencyScenarioKey: EmergencyScenarioKey,
+) {
+  if (emergencyState !== 'emergency' && emergencyState !== 'recovery') {
+    return false
+  }
+
+  return getScenarioAffectedServices(emergencyScenarioKey).includes(serviceName)
+}
+
 interface AppServiceConfig {
   name: AppServiceGroup
   displayLabel: string
@@ -327,6 +378,10 @@ const STARTING_DURATION = 3.2
 const SNAPSHOT_INTERVAL = 0.45
 const POD_LAYOUT_STIFFNESS = 0.09
 const POD_LAYOUT_DAMPING = 0.76
+const CAMERA_ZOOM_MIN = -260
+const CAMERA_ZOOM_MAX = 320
+
+let cameraZoomOffset = 0
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value))
@@ -334,6 +389,26 @@ function clamp(value: number, min: number, max: number) {
 
 function lerp(start: number, end: number, factor: number) {
   return start + (end - start) * factor
+}
+
+function easeInOutCubic(value: number) {
+  return value < 0.5
+    ? 4 * value * value * value
+    : 1 - Math.pow(-2 * value + 2, 3) / 2
+}
+
+function getSteppedMotionLevel(focusLevel: number) {
+  const clampedFocus = clamp(focusLevel, 0, 1)
+
+  if (clampedFocus <= 0.28) {
+    return 0.12 * easeInOutCubic(clampedFocus / 0.28)
+  }
+
+  if (clampedFocus <= 0.68) {
+    return 0.12 + 0.38 * easeInOutCubic((clampedFocus - 0.28) / 0.4)
+  }
+
+  return 0.5 + 0.5 * easeInOutCubic((clampedFocus - 0.68) / 0.32)
 }
 
 function randomInRange(min: number, max: number) {
@@ -363,12 +438,14 @@ function project3D(
   const y1 = y * cosX - z1 * sinX
   const z2 = y * sinX + z1 * cosX
 
-  const scale = PERSPECTIVE / (PERSPECTIVE + z2)
+  const adjustedZ = z2 + cameraZoomOffset
+  const depth = Math.max(PERSPECTIVE * 0.38, PERSPECTIVE + adjustedZ)
+  const scale = PERSPECTIVE / depth
   return {
     screenX: centerX + x1 * scale,
     screenY: centerY + y1 * scale,
     scale,
-    z: z2,
+    z: adjustedZ,
   }
 }
 
@@ -1101,10 +1178,16 @@ function getServiceClusterRotation(
   time: number,
   bounceEnergy: number,
   bouncePhase: number,
+  focusLevel: number,
 ) {
-  const drift = time * 0.18 + bouncePhase * 0.42
-  const wobble = Math.sin(time * 0.8 + bouncePhase) * 0.18
-  const impactSpin = Math.sin(time * (2.4 + bounceEnergy * 2.6) + bouncePhase) * bounceEnergy * 0.22
+  const motionFactor = 0.3 + focusLevel * 0.7
+  const drift = time * (0.06 + 0.12 * focusLevel) + bouncePhase * 0.42
+  const wobble = Math.sin(time * (0.22 + 0.58 * focusLevel) + bouncePhase) * 0.18 * motionFactor
+  const impactSpin =
+    Math.sin(time * (0.7 + (1.7 + bounceEnergy * 2.6) * focusLevel) + bouncePhase) *
+    bounceEnergy *
+    0.22 *
+    motionFactor
   return drift + wobble + impactSpin
 }
 
@@ -1385,9 +1468,11 @@ function getNodePalette(
     }
   }
 
-  const scenario = getEmergencyScenario(emergencyScenarioKey)
-  const scenarioActive = emergencyState === 'emergency' || emergencyState === 'recovery'
-  const scenarioAffectsNode = scenarioActive && scenario.affectedRoles.includes(node.role)
+  const scenarioAffectsNode = isScenarioAffectingNode(
+    node,
+    emergencyState,
+    emergencyScenarioKey,
+  )
   if (scenarioAffectsNode) {
     if (emergencyState === 'emergency') {
       return {
@@ -1509,16 +1594,22 @@ function getServiceStatusDisplay(
   },
   context: {
     emergencyState: EmergencyState
+    emergencyScenarioKey: EmergencyScenarioKey
     isTrafficSpike: boolean
     isDark: boolean
     metaOpacity: number
   },
 ) {
   const { ready, starting, draining, unhealthy, total, desired } = counts
-  const { emergencyState, isTrafficSpike, isDark, metaOpacity } = context
+  const { emergencyState, emergencyScenarioKey, isTrafficSpike, isDark, metaOpacity } = context
   const missingReplicas = Math.max(desired - ready, 0)
+  const serviceAffectedByScenario = isScenarioAffectingService(
+    serviceName,
+    emergencyState,
+    emergencyScenarioKey,
+  )
 
-  if (unhealthy > 0 || emergencyState === 'emergency') {
+  if (unhealthy > 0 || (emergencyState === 'emergency' && serviceAffectedByScenario)) {
     return {
       text:
         unhealthy > 0
@@ -1557,7 +1648,7 @@ function getServiceStatusDisplay(
     }
   }
 
-  if (emergencyState === 'recovery') {
+  if (emergencyState === 'recovery' && serviceAffectedByScenario) {
     return {
       text: 'stabilizing mesh',
       color: isDark
@@ -1672,6 +1763,10 @@ const HexagonServiceNetwork: React.FC = () => {
   const focusTransitionRef = useRef(0)
   const frameSkipRef = useRef(0)
   const isFocusedRef = useRef(false)
+  const zoomRef = useRef({
+    current: 0,
+    target: 0,
+  })
   const appServicesRef = useRef<AppServiceConfig[]>([])
   const toastQueueRef = useRef<EventToast[]>([])
   const activeToastRef = useRef<EventToast[]>([])
@@ -1722,6 +1817,7 @@ const HexagonServiceNetwork: React.FC = () => {
     trafficSpikeLevel: 0,
     trafficSpikeSeverity: 0,
     nextScaleActionTime: 0,
+    nextScaleCooldownTime: 0,
     baselineServiceReplicas: {
       edge: 1,
       auth: 1,
@@ -2459,13 +2555,29 @@ const HexagonServiceNetwork: React.FC = () => {
       }
 
       const visibleServices = new Set(getMostVisibleServiceGroups(3))
-      const preferredCandidates = candidates.filter((candidate) =>
+      const emergencyScenarioServices =
+        reason === 'emergency'
+          ? new Set(getScenarioAffectedServices(emergencyRef.current.scenarioKey))
+          : null
+      const scenarioCandidates =
+        emergencyScenarioServices
+          ? candidates.filter((candidate) =>
+              candidate.replicaGroup
+                ? emergencyScenarioServices.has(candidate.replicaGroup as AppServiceGroup)
+                : false,
+            )
+          : candidates
+      const preferredCandidates = scenarioCandidates.filter((candidate) =>
         candidate.replicaGroup
           ? visibleServices.has(candidate.replicaGroup as AppServiceGroup)
           : false,
       )
       const selectionPool =
-        preferredCandidates.length > 0 ? preferredCandidates : candidates
+        preferredCandidates.length > 0
+          ? preferredCandidates
+          : scenarioCandidates.length > 0
+            ? scenarioCandidates
+            : candidates
       const pod = selectionPool[Math.floor(Math.random() * selectionPool.length)]
       pod.lifecycleState = 'draining'
       pod.acceptingTraffic = false
@@ -2633,6 +2745,75 @@ const HexagonServiceNetwork: React.FC = () => {
     sortServicesByVisibility,
   ])
 
+  const relaxReplicaTargetsTowardsBaseline = useCallback(() => {
+    const cluster = clusterRef.current
+
+    if (
+      cluster.isTrafficSpike ||
+      timeRef.current < cluster.nextScaleCooldownTime
+    ) {
+      return false
+    }
+
+    const visibleServices = new Set(getMostVisibleServiceGroups(3))
+    const candidates = APP_SERVICE_ORDER
+      .map((serviceName) => {
+        const baseline = cluster.baselineServiceReplicas[serviceName]
+        const desired = cluster.desiredServiceReplicas[serviceName]
+        return {
+          serviceName,
+          baseline,
+          desired,
+          excess: desired - baseline,
+          currentReplicas: getServiceReplicaCount(serviceName),
+          isVisible: visibleServices.has(serviceName),
+        }
+      })
+      .filter((candidate) => candidate.excess > 0)
+      .sort((candidateA, candidateB) => {
+        if (candidateA.isVisible !== candidateB.isVisible) {
+          return candidateA.isVisible ? -1 : 1
+        }
+
+        if (candidateA.excess !== candidateB.excess) {
+          return candidateB.excess - candidateA.excess
+        }
+
+        return candidateB.currentReplicas - candidateA.currentReplicas
+      })
+
+    if (candidates.length === 0) {
+      return false
+    }
+
+    const trimCount = candidates[0].excess >= 8 ? 2 : 1
+    let changed = false
+
+    candidates.slice(0, trimCount).forEach((candidate) => {
+      const nextDesired = Math.max(candidate.baseline, candidate.desired - 1)
+      if (nextDesired !== candidate.desired) {
+        cluster.desiredServiceReplicas[candidate.serviceName] = nextDesired
+        changed = true
+      }
+    })
+
+    if (!changed) {
+      return false
+    }
+
+    cluster.desiredReplicas = Object.values(cluster.desiredServiceReplicas).reduce(
+      (sum, count) => sum + count,
+      0,
+    )
+    cluster.nextScaleCooldownTime = timeRef.current + 1.35 + Math.random() * 0.95
+    cluster.nextScaleActionTime = Math.max(
+      cluster.nextScaleActionTime,
+      timeRef.current + 0.24,
+    )
+
+    return true
+  }, [getMostVisibleServiceGroups, getServiceReplicaCount])
+
   const startEmergency = useCallback(
     (
       scenarioKey?: EmergencyScenarioKey,
@@ -2645,6 +2826,12 @@ const HexagonServiceNetwork: React.FC = () => {
 
       const nextScenarioKey = scenarioKey ?? pickRandomEmergencyScenario()
       const scenario = getEmergencyScenario(nextScenarioKey)
+      const affectedServiceNames = new Set(getScenarioAffectedServices(nextScenarioKey))
+      const readyAffectedPods = getReadyAppPods().filter((node) =>
+        node.replicaGroup
+          ? affectedServiceNames.has(node.replicaGroup as AppServiceGroup)
+          : false,
+      )
       emergency.isActive = true
       emergency.scenarioKey = nextScenarioKey
       emergency.triggerSource = triggerSource
@@ -2654,7 +2841,7 @@ const HexagonServiceNetwork: React.FC = () => {
       emergency.triggeredFailures = 0
       emergency.failureTarget = Math.min(
         scenario.failureTarget,
-        Math.max(2, getReadyAppPods().length - 1),
+        Math.max(1, readyAffectedPods.length),
       )
       emergency.recoveryAnnounced = false
       pushClusterEvent('error', scenario.eventMessage)
@@ -2696,6 +2883,7 @@ const HexagonServiceNetwork: React.FC = () => {
       clusterRef.current.trafficSpikeLevel = 0
       clusterRef.current.trafficSpikeSeverity = 0
       clusterRef.current.nextScaleActionTime = 0
+      clusterRef.current.nextScaleCooldownTime = 0
       const rightWidgetGutter = clamp(width * 0.16, 220, 300)
       const leftContentGutter = clamp(width * 0.12, 110, 180)
       const topPreviewGutter = clamp(height * 0.18, 120, 190)
@@ -3542,8 +3730,22 @@ const HexagonServiceNetwork: React.FC = () => {
       emitClusterSnapshot(true)
     }
 
+    const handleWheel = (event: WheelEvent) => {
+      if (!isFocusedRef.current) {
+        return
+      }
+
+      event.preventDefault()
+      zoomRef.current.target = clamp(
+        zoomRef.current.target + event.deltaY * 0.34,
+        CAMERA_ZOOM_MIN,
+        CAMERA_ZOOM_MAX,
+      )
+    }
+
     resize()
     window.addEventListener('resize', resize)
+    window.addEventListener('wheel', handleWheel, { passive: false })
 
     const animate = () => {
       if (!isFocusedRef.current && frameSkipRef.current % 2 === 0) {
@@ -3563,10 +3765,25 @@ const HexagonServiceNetwork: React.FC = () => {
       focusTransitionRef.current +=
         (targetFocus - focusTransitionRef.current) * 0.05
       const focusLevel = focusTransitionRef.current
+      const motionFocusLevel = getSteppedMotionLevel(focusLevel)
+      const zoomState = zoomRef.current
+
+      if (!isFocusedRef.current) {
+        zoomState.target *= 0.88
+        if (Math.abs(zoomState.target) < 1) {
+          zoomState.target = 0
+        }
+      }
+
+      zoomState.current += (zoomState.target - zoomState.current) * (0.08 + focusLevel * 0.08)
+      if (Math.abs(zoomState.current) < 0.35 && Math.abs(zoomState.target) < 0.35) {
+        zoomState.current = 0
+      }
+      cameraZoomOffset = zoomState.current
 
       const rotationSpeed =
         ROTATION_SPEED_NORMAL +
-        (ROTATION_SPEED_FOCUSED - ROTATION_SPEED_NORMAL) * focusLevel
+        (ROTATION_SPEED_FOCUSED - ROTATION_SPEED_NORMAL) * motionFocusLevel
       rotationRef.current.y += rotationSpeed
       rotationRef.current.x = Math.sin(timeRef.current * 0.1) * 0.14
 
@@ -3621,19 +3838,21 @@ const HexagonServiceNetwork: React.FC = () => {
       ) {
         cluster.isTrafficSpike = false
         cluster.trafficSpikeSeverity = 0
-        cluster.desiredServiceReplicas = {
-          ...cluster.baselineServiceReplicas,
-        }
         cluster.desiredReplicas = Object.values(cluster.desiredServiceReplicas).reduce(
           (sum, count) => sum + count,
           0,
         )
         cluster.nextTrafficSpikeTime = timeRef.current + 5 + Math.random() * 7
         cluster.nextScaleActionTime = timeRef.current + 0.7
+        cluster.nextScaleCooldownTime = timeRef.current + 1.1
         pushClusterEvent(
           'info',
-          'ingress traffic normalized; autoscaler is slowly rolling excess pods back out',
+          'ingress traffic normalized; autoscaler is tapering excess pods back out',
         )
+      }
+
+      if (currentEmergencyState === 'normal' && !cluster.isTrafficSpike) {
+        relaxReplicaTargetsTowardsBaseline()
       }
 
       if (currentEmergencyState === 'normal') {
@@ -4050,11 +4269,16 @@ const HexagonServiceNetwork: React.FC = () => {
           let statusType: StatusIndicator['type'] = 'success'
           let label: string | undefined
           let shouldShowIndicator = false
+          const scenarioAffectsTargetNode = isScenarioAffectingNode(
+            targetNode,
+            currentEmergencyState,
+            emergencyRef.current.scenarioKey,
+          )
 
           if (
             targetNode.lifecycleState === 'draining' ||
             targetNode.lifecycleState === 'unhealthy' ||
-            currentEmergencyState === 'emergency'
+            scenarioAffectsTargetNode
           ) {
             statusType = 'failure'
             shouldShowIndicator = Math.random() < 0.5
@@ -4475,6 +4699,7 @@ const HexagonServiceNetwork: React.FC = () => {
           },
           {
             emergencyState: currentEmergencyState,
+            emergencyScenarioKey: emergencyRef.current.scenarioKey,
             isTrafficSpike: clusterRef.current.isTrafficSpike,
             isDark: plateIsDark,
             metaOpacity,
@@ -4489,6 +4714,7 @@ const HexagonServiceNetwork: React.FC = () => {
           timeRef.current,
           motionState.energy,
           motionState.phase,
+          motionFocusLevel,
         )
         drawServiceClusterHoneycomb(ctx, {
           service,
@@ -4631,6 +4857,8 @@ const HexagonServiceNetwork: React.FC = () => {
 
     return () => {
       window.removeEventListener('resize', resize)
+      window.removeEventListener('wheel', handleWheel)
+      cameraZoomOffset = 0
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current)
       }
@@ -4649,6 +4877,7 @@ const HexagonServiceNetwork: React.FC = () => {
     mounted,
     isDark,
     pushClusterEvent,
+    relaxReplicaTargetsTowardsBaseline,
     relayoutServicePods,
     runAutoscaler,
     startEmergency,
@@ -4661,7 +4890,13 @@ const HexagonServiceNetwork: React.FC = () => {
     return null
   }
 
-  const canvasOpacity = isFocused ? 0.92 : 0
+  const canvasOpacity = isFocused
+    ? isDark
+      ? 0.98
+      : 0.92
+    : isDark
+      ? 0.12
+      : 0.06
 
   return (
     <>

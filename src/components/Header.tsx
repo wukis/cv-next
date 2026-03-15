@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -48,11 +48,13 @@ function DesktopTooltip({
   align = 'center',
   label,
   description,
+  panelClassName,
   children,
 }: {
   align?: 'left' | 'center' | 'right'
   label: string
   description: string
+  panelClassName?: string
   children: React.ReactNode
 }) {
   const isEnabled = useDesktopTooltipEnabled()
@@ -77,6 +79,7 @@ function DesktopTooltip({
               align === 'left' && 'origin-top-left',
               align === 'center' && 'origin-top',
               align === 'right' && 'origin-top-right',
+              panelClassName,
             )}
           >
             <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">
@@ -373,10 +376,19 @@ function DesktopNavigation(props: React.ComponentPropsWithoutRef<'nav'>) {
 }
 
 function ThemeToggle() {
+  const isMounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  )
   const { resolvedTheme, setTheme } = useTheme()
+
   const otherTheme = resolvedTheme === 'dark' ? 'light' : 'dark'
-  const tooltipLabel =
-    otherTheme === 'dark' ? 'Switch to dark mode' : 'Switch to light mode'
+  const tooltipLabel = isMounted
+    ? otherTheme === 'dark'
+      ? 'Switch to dark mode'
+      : 'Switch to light mode'
+    : 'Toggle theme'
 
   return (
     <DesktopTooltip
@@ -469,7 +481,7 @@ function AnimationFocus() {
   const monitoring = deriveAmbientMonitoringState(cluster)
   const tooltipDescription = isHovering
     ? monitoring.buttonDescription
-    : 'Hover to preview cluster pressure paths like surge scaling, reroute pressure, cache warmup misses, and queue buildup. Click to start a failover drill immediately.'
+    : 'Hover to preview cluster pressure paths like surge scaling, reroute pressure, cache warmup misses, and queue buildup. While hovering, scroll to zoom the cluster view. Click to start a failover drill immediately.'
 
   useEffect(() => {
     if (isHovering) {
@@ -500,8 +512,10 @@ function AnimationFocus() {
 
   return (
     <DesktopTooltip
+      align="right"
       label={monitoring.buttonLabel}
       description={tooltipDescription}
+      panelClassName="min-w-[20rem] max-w-[26rem]"
     >
       <button
         type="button"
