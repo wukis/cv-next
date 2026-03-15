@@ -11,6 +11,20 @@ const testimonialAccent = {
   ring: 'ring-emerald-500/40 dark:ring-emerald-400/40',
 }
 
+function SortIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" {...props}>
+      <path
+        d="M6 4v12m0 0-2.5-2.5M6 16l2.5-2.5M14 16V4m0 0-2.5 2.5M14 4l2.5 2.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 function Recommendation({
   recommendation,
   isHighlighted,
@@ -156,13 +170,18 @@ export function TestimonialsWall({
                   current === 'recent' ? 'natural' : 'recent',
                 )
               }}
-              className={`font-mono text-xs transition-colors ${
+              className={`hidden items-center gap-1.5 rounded-full border px-3 py-1.5 font-mono text-xs transition-all sm:inline-flex ${
                 sortMode === 'recent'
-                  ? 'text-emerald-700 dark:text-emerald-300'
-                  : 'text-neutral-500 hover:text-emerald-700 dark:text-neutral-400 dark:hover:text-emerald-300'
+                  ? 'border-emerald-300 bg-emerald-50 text-emerald-800 shadow-sm dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200'
+                  : 'border-neutral-200 text-neutral-500 hover:border-emerald-300 hover:bg-emerald-50/70 hover:text-emerald-700 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-300'
               }`}
               aria-pressed={sortMode === 'recent'}
             >
+              <SortIcon
+                className={`h-3.5 w-3.5 transition-transform ${
+                  sortMode === 'recent' ? 'rotate-180' : ''
+                }`}
+              />
               most recent
             </button>
           ) : null}

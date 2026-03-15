@@ -56,9 +56,9 @@ export function TerminalPageHeader({
   as = 'h1',
 }: TerminalPageHeaderProps) {
   return (
-    <div className="mb-10">
+    <div className="mb-8 sm:mb-10">
       {eyebrow ? (
-        <div className="mb-4 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+        <div className="mb-3 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-neutral-500 dark:text-neutral-400 sm:mb-4 sm:text-[11px] sm:tracking-[0.2em]">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
           {eyebrow}
         </div>
@@ -67,9 +67,9 @@ export function TerminalPageHeader({
         as={as}
         command={command}
         argument={argument}
-        className="text-2xl font-bold tracking-tight sm:text-4xl lg:text-5xl"
+        className="text-lg font-semibold tracking-tight sm:text-4xl sm:font-bold lg:text-5xl"
       />
-      <p className="mt-3 font-mono text-sm text-neutral-600 dark:text-neutral-400 sm:text-lg">
+      <p className="mt-2 font-mono text-xs text-neutral-600 dark:text-neutral-400 sm:mt-3 sm:text-lg">
         <span className="text-neutral-500 dark:text-neutral-400"># </span>
         {description}
       </p>

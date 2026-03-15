@@ -431,11 +431,11 @@ function Education({
                 <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100">
                   {education.institution}
                 </h3>
-                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-neutral-700 dark:text-neutral-200">
+                <div className="mt-1 flex flex-col items-start gap-1 text-sm text-neutral-700 dark:text-neutral-200 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-1">
                   <span className="font-mono text-neutral-500 dark:text-neutral-400">
                     {duration.years}y
                   </span>
-                  <span className="text-neutral-300 dark:text-neutral-600">
+                  <span className="hidden text-neutral-300 sm:inline dark:text-neutral-600">
                     ·
                   </span>
                   <span className="flex items-center gap-1">
@@ -470,7 +470,7 @@ function Education({
               <div className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-neutral-400 dark:bg-neutral-500" />
 
               <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-col items-start gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
                   <h4 className="font-medium text-neutral-800 dark:text-neutral-100">
                     {education.studyType} in {education.area}
                   </h4>
@@ -651,11 +651,11 @@ function Work({
                           companyData.company
                         )}
                       </h3>
-                      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-neutral-700 dark:text-neutral-200">
+                      <div className="mt-1 flex flex-col items-start gap-1 text-sm text-neutral-700 dark:text-neutral-200 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-1">
                         <span className="font-mono text-neutral-500 dark:text-neutral-400">
                           {formatDuration(companyData.totalDuration)}
                         </span>
-                        <span className="text-neutral-300 dark:text-neutral-600">
+                        <span className="hidden text-neutral-300 sm:inline dark:text-neutral-600">
                           ·
                         </span>
                         <span className="flex items-center gap-1">
@@ -684,7 +684,7 @@ function Work({
                         </span>
                         {hasMultipleRoles && (
                           <>
-                            <span className="text-neutral-300 dark:text-neutral-600">
+                            <span className="hidden text-neutral-300 sm:inline dark:text-neutral-600">
                               ·
                             </span>
                             <span className="inline-flex items-center gap-1 text-neutral-500 dark:text-neutral-400">
@@ -741,36 +741,38 @@ function Work({
                           <div className="mt-[7px] h-2 w-2 flex-shrink-0 rounded-full bg-neutral-400 dark:bg-neutral-500" />
 
                           <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex flex-col items-start gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
                               <h4 className="font-medium text-neutral-900 dark:text-neutral-100">
                                 {experience.position}
                               </h4>
-                              <span className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                                {formatDuration(
-                                  getDuration(
-                                    experience.startDate,
-                                    experience.endDate,
-                                  ),
-                                )}
-                              </span>
-                              {isPromoted && (
-                                <span className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                                  <svg
-                                    className="h-2.5 w-2.5"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M5 10l7-7m0 0l7 7m-7-7v18"
-                                    />
-                                  </svg>
-                                  promoted
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                                  {formatDuration(
+                                    getDuration(
+                                      experience.startDate,
+                                      experience.endDate,
+                                    ),
+                                  )}
                                 </span>
-                              )}
+                                {isPromoted && (
+                                  <span className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                                    <svg
+                                      className="h-2.5 w-2.5"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M5 10l7-7m0 0l7 7m-7-7v18"
+                                      />
+                                    </svg>
+                                    promoted
+                                  </span>
+                                )}
+                              </div>
                             </div>
 
                             {experience.scope ? (

@@ -301,7 +301,7 @@ export default function HomeClientContent() {
                   </p>
                 </div>
 
-                <div className="mt-5 flex flex-col items-center gap-3 sm:flex-row sm:items-center">
+                <div className="mt-5 flex flex-row flex-wrap items-center justify-center gap-3 sm:justify-start">
                   <Button
                     href="/cv"
                     variant="secondary"

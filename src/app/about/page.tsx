@@ -81,11 +81,11 @@ export default function About() {
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-[18rem_minmax(0,1fr)]">
             <aside className="space-y-8">
               <div className="border-b border-neutral-200 pb-8 dark:border-neutral-700">
-                <div className="aspect-[4/4.4] w-full max-w-[18rem] overflow-hidden rounded-xl shadow-lg ring-4 ring-white dark:ring-neutral-800">
+                <div className="mx-auto aspect-[4/4.4] w-full max-w-[9rem] overflow-hidden rounded-xl shadow-lg ring-4 ring-white sm:max-w-[14rem] dark:ring-neutral-800">
                   <Image
                     src={portraitImage}
                     alt="Jonas Petrik - Staff Engineer and Team Lead"
-                    sizes="(min-width: 1024px) 18rem, (min-width: 640px) 14rem, 100vw"
+                    sizes="(min-width: 1024px) 14rem, (min-width: 640px) 14rem, 9rem"
                     className="h-full w-full object-cover"
                     priority={false}
                   />
