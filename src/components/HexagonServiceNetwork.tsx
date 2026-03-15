@@ -124,6 +124,7 @@ interface AppServiceConfig {
   labelPrefix: string
   color: ColorKey
   minReplicas: number
+  baselineReplicas: [number, number]
   spikeReplicas: number
   maxReplicas: number
   trafficWeight: number
@@ -885,36 +886,122 @@ function getServiceClusterColorKey(
     unhealthy: number
   },
 ): ColorKey {
-  const scenario = getEmergencyScenario(emergencyScenarioKey)
-  const scenarioAffectsCluster =
-    (emergencyState === 'emergency' || emergencyState === 'recovery') &&
-    scenario.affectedRoles.includes('appPod')
-
-  if (emergencyState === 'recovery' && scenarioAffectsCluster) {
-    return 'emerald'
-  }
-
-  if (counts.unhealthy > 0 || (emergencyState === 'emergency' && scenarioAffectsCluster)) {
-    if (emergencyScenarioKey === 'cacheReload') {
-      return 'amber'
-    }
-
-    if (emergencyScenarioKey === 'queueFull') {
-      return 'orange'
-    }
-
-    return emergencyScenarioKey === 'dbDown' ? 'indigo' : 'red'
-  }
-
-  if (counts.draining > 0) {
-    return 'amber'
-  }
-
-  if (counts.starting > 0) {
-    return 'sky'
-  }
-
   return service.color
+}
+
+function getServiceClusterActivePodCount(counts: {
+  ready: number
+  starting: number
+  draining: number
+}) {
+  return counts.ready + counts.starting + Math.max(0, Math.round(counts.draining * 0.35))
+}
+
+function getRenderedHoneycombCellCount(podCount: number) {
+  if (podCount <= 0) {
+    return 0
+  }
+
+  if (podCount <= 12) {
+    return podCount
+  }
+
+  return Math.min(28, 12 + Math.round(Math.sqrt(podCount - 12) * 3.4))
+}
+
+function getServiceClusterShellRadius(
+  activeCount: number,
+  capacity: number,
+  scale: number,
+  bounce = 1,
+) {
+  const renderedCells = Math.max(1, getRenderedHoneycombCellCount(activeCount))
+  const density = clamp(activeCount / capacity, 0.16, 1)
+  const cellSize = clamp((6.2 + renderedCells * 0.26 + scale * 6.2) * bounce, 8, 19.5)
+  const growthFactor = Math.min(1.6, Math.sqrt(Math.max(activeCount, 1)) * 0.12)
+  return cellSize * (2.1 + density * 1.35 + growthFactor)
+}
+
+function getServiceClusterRotation(
+  time: number,
+  bounceEnergy: number,
+  bouncePhase: number,
+) {
+  const drift = time * 0.18 + bouncePhase * 0.42
+  const wobble = Math.sin(time * 0.8 + bouncePhase) * 0.18
+  const impactSpin = Math.sin(time * (2.4 + bounceEnergy * 2.6) + bouncePhase) * bounceEnergy * 0.22
+  return drift + wobble + impactSpin
+}
+
+function chooseServicePanelPlacement(options: {
+  clusterX: number
+  clusterY: number
+  clusterRadius: number
+  panelWidth: number
+  panelHeight: number
+  viewportWidth: number
+  viewportHeight: number
+  otherCenters: Array<{ x: number; y: number }>
+}) {
+  const {
+    clusterX,
+    clusterY,
+    clusterRadius,
+    panelWidth,
+    panelHeight,
+    viewportWidth,
+    viewportHeight,
+    otherCenters,
+  } = options
+
+  const viewportCenterX = viewportWidth / 2
+  const viewportCenterY = viewportHeight / 2
+  const offset = clusterRadius + 18
+  const candidates = [
+    { x: clusterX - panelWidth / 2, y: clusterY - panelHeight - offset },
+    { x: clusterX - panelWidth / 2, y: clusterY + offset },
+    { x: clusterX + offset, y: clusterY - panelHeight / 2 },
+    { x: clusterX - panelWidth - offset, y: clusterY - panelHeight / 2 },
+    { x: clusterX + offset * 0.84, y: clusterY - panelHeight - offset * 0.5 },
+    { x: clusterX - panelWidth - offset * 0.84, y: clusterY - panelHeight - offset * 0.5 },
+    { x: clusterX + offset * 0.84, y: clusterY + offset * 0.16 },
+    { x: clusterX - panelWidth - offset * 0.84, y: clusterY + offset * 0.16 },
+  ]
+
+  let bestCandidate = candidates[0]
+  let bestScore = Number.NEGATIVE_INFINITY
+
+  candidates.forEach((candidate) => {
+    const centerX = candidate.x + panelWidth / 2
+    const centerY = candidate.y + panelHeight / 2
+    const overflowLeft = Math.max(0, 12 - candidate.x)
+    const overflowTop = Math.max(0, 12 - candidate.y)
+    const overflowRight = Math.max(0, candidate.x + panelWidth - (viewportWidth - 12))
+    const overflowBottom = Math.max(0, candidate.y + panelHeight - (viewportHeight - 12))
+    const overflowPenalty =
+      (overflowLeft + overflowTop + overflowRight + overflowBottom) * 8
+
+    const nearestClusterDistance = otherCenters.reduce((nearest, center) => {
+      return Math.min(nearest, Math.hypot(center.x - centerX, center.y - centerY))
+    }, Number.POSITIVE_INFINITY)
+    const crowdPenalty = Math.max(0, 190 - nearestClusterDistance) * 1.4
+    const viewportRoomBonus =
+      Math.abs(centerX - viewportCenterX) * 0.06 +
+      Math.abs(centerY - viewportCenterY) * 0.03
+    const alignmentBonus =
+      Math.abs(centerX - clusterX) > Math.abs(centerY - clusterY) ? 12 : 6
+    const score = viewportRoomBonus + alignmentBonus - overflowPenalty - crowdPenalty
+
+    if (score > bestScore) {
+      bestScore = score
+      bestCandidate = candidate
+    }
+  })
+
+  return {
+    x: clamp(bestCandidate.x, 12, viewportWidth - panelWidth - 12),
+    y: clamp(bestCandidate.y, 12, viewportHeight - panelHeight - 12),
+  }
 }
 
 function drawServiceClusterHoneycomb(
@@ -930,6 +1017,7 @@ function drawServiceClusterHoneycomb(
     emergencyScenarioKey: EmergencyScenarioKey
     bounceEnergy: number
     bouncePhase: number
+    localRotation: number
     counts: {
       ready: number
       starting: number
@@ -952,6 +1040,7 @@ function drawServiceClusterHoneycomb(
     emergencyScenarioKey,
     bounceEnergy,
     bouncePhase,
+    localRotation,
     counts,
   } = options
 
@@ -966,8 +1055,12 @@ function drawServiceClusterHoneycomb(
     counts,
   )
   const palette = COLORS[colorKey]
-  const cellCount = Math.min(counts.total, 10)
-  const ghostCount = Math.min(Math.max(counts.desired, counts.total), 10)
+  const activeCount = getServiceClusterActivePodCount(counts)
+  const cellCount = getRenderedHoneycombCellCount(activeCount)
+  const ghostCount = Math.max(
+    cellCount,
+    getRenderedHoneycombCellCount(Math.max(counts.desired, activeCount)),
+  )
   const pressure = clamp(
     counts.starting * 0.18 +
       counts.draining * 0.16 +
@@ -981,17 +1074,23 @@ function drawServiceClusterHoneycomb(
     Math.sin(time * (5.4 + bounceEnergy * 3.6) + bouncePhase + x * 0.012 + y * 0.014) *
       bounceEnergy *
       0.22
-  const density = clamp(counts.total / counts.capacity, 0.2, 1)
-  const cellSize = clamp((6.4 + counts.total * 0.22 + scale * 6.5) * bounce, 8, 17.5)
+  const density = clamp(activeCount / counts.capacity, 0.16, 1)
+  const cellSize = clamp((6.2 + cellCount * 0.26 + scale * 6.2) * bounce, 8, 19.5)
   const stepX = cellSize * 1.58
   const stepY = cellSize * 1.36
-  const shellRadius = cellSize * (2.2 + density * 1.2)
+  const shellRadius = getServiceClusterShellRadius(
+    activeCount,
+    counts.capacity,
+    scale,
+    bounce,
+  )
   const fillOpacity = isDark ? 0.16 + density * 0.12 : 0.18 + density * 0.1
   const strokeOpacity = isDark ? 0.68 + density * 0.18 : 0.72 + density * 0.12
   const ghostOpacity = isDark ? 0.14 : 0.18
 
   ctx.save()
   ctx.translate(x, y)
+  ctx.rotate(localRotation)
 
   ctx.beginPath()
   ctx.arc(0, 0, shellRadius, 0, Math.PI * 2)
@@ -1063,7 +1162,7 @@ function drawServiceClusterHoneycomb(
   ctx.stroke()
 
   ctx.beginPath()
-  ctx.arc(0, 0, Math.max(3.5, cellSize * 0.26), 0, Math.PI * 2)
+  ctx.arc(0, 0, Math.max(3.8, cellSize * (0.24 + density * 0.15)), 0, Math.PI * 2)
   ctx.fillStyle = withOpacity(palette.glow, isDark ? 0.5 : 0.36)
   ctx.fill()
 
@@ -1416,6 +1515,7 @@ const HexagonServiceNetwork: React.FC = () => {
           energy: 0,
           activeCount: 0,
           totalCount: 0,
+          desiredCount: 0,
           phase: index * 0.82,
         }
         return accumulator
@@ -1426,6 +1526,7 @@ const HexagonServiceNetwork: React.FC = () => {
           energy: number
           activeCount: number
           totalCount: number
+          desiredCount: number
           phase: number
         }
       >,
@@ -2092,18 +2193,34 @@ const HexagonServiceNetwork: React.FC = () => {
       }
 
       const demandEnvelope = clamp(
-        severity * service.trafficWeight + Math.random() * 0.18,
+        severity * (0.74 + service.trafficWeight * 0.68) + Math.random() * 0.22,
         0,
         1,
       )
+      const spikeEnvelope = clamp(
+        severity * (0.88 + service.trafficWeight * 0.42) + Math.random() * 0.16,
+        0,
+        1,
+      )
+      const burstHeadroom = Math.max(service.maxReplicas - spikeCeiling, 0)
+      const burstEnvelope =
+        burstHeadroom > 0
+          ? clamp(
+              Math.max(0, severity - 0.34) * (0.95 + service.trafficWeight * 0.9) +
+                Math.random() * 0.14,
+              0,
+              1,
+            )
+          : 0
       const targetByDemand =
         baseline + Math.round((service.maxReplicas - baseline) * demandEnvelope)
       const targetBySpike = Math.round(
-        baseline + (spikeCeiling - baseline) * clamp(severity * 1.08, 0, 1),
+        baseline + (spikeCeiling - baseline) * spikeEnvelope,
       )
+      const targetByBurst = Math.round(spikeCeiling + burstHeadroom * burstEnvelope)
 
       return clamp(
-        Math.max(targetByDemand, targetBySpike),
+        Math.max(targetByDemand, targetBySpike, targetByBurst),
         baseline,
         service.maxReplicas,
       )
@@ -2402,8 +2519,9 @@ const HexagonServiceNetwork: React.FC = () => {
           labelPrefix: 'edge',
           color: 'sky',
           minReplicas: 1,
-          spikeReplicas: 8,
-          maxReplicas: 10,
+          baselineReplicas: [3, 7],
+          spikeReplicas: 12,
+          maxReplicas: 18,
           trafficWeight: 1,
           centerX: lerp(leftBound, rightBound, 0.84),
           centerY: lerp(topBound, bottomBound, 0.46),
@@ -2416,9 +2534,10 @@ const HexagonServiceNetwork: React.FC = () => {
           labelPrefix: 'auth',
           color: 'emerald',
           minReplicas: 1,
-          spikeReplicas: 6,
-          maxReplicas: 10,
-          trafficWeight: 0.6,
+          baselineReplicas: [2, 5],
+          spikeReplicas: 7,
+          maxReplicas: 12,
+          trafficWeight: 0.56,
           centerX: lerp(leftBound, rightBound, 0.6),
           centerY: lerp(topBound, bottomBound, 0.18),
           centerZ: infraDepth * 0.16,
@@ -2430,9 +2549,10 @@ const HexagonServiceNetwork: React.FC = () => {
           labelPrefix: 'catalog',
           color: 'amber',
           minReplicas: 1,
-          spikeReplicas: 7,
-          maxReplicas: 10,
-          trafficWeight: 0.7,
+          baselineReplicas: [3, 6],
+          spikeReplicas: 10,
+          maxReplicas: 18,
+          trafficWeight: 0.68,
           centerX: lerp(leftBound, rightBound, 0.52),
           centerY: lerp(topBound, bottomBound, 0.82),
           centerZ: -infraDepth * 0.26,
@@ -2444,9 +2564,10 @@ const HexagonServiceNetwork: React.FC = () => {
           labelPrefix: 'basket',
           color: 'rose',
           minReplicas: 1,
-          spikeReplicas: 8,
-          maxReplicas: 10,
-          trafficWeight: 0.82,
+          baselineReplicas: [3, 8],
+          spikeReplicas: 14,
+          maxReplicas: 24,
+          trafficWeight: 0.84,
           centerX: lerp(leftBound, rightBound, 0.37),
           centerY: lerp(topBound, bottomBound, 0.5),
           centerZ: infraDepth * 0.28,
@@ -2458,9 +2579,10 @@ const HexagonServiceNetwork: React.FC = () => {
           labelPrefix: 'checkout',
           color: 'violet',
           minReplicas: 1,
-          spikeReplicas: 9,
-          maxReplicas: 10,
-          trafficWeight: 0.9,
+          baselineReplicas: [5, 10],
+          spikeReplicas: 22,
+          maxReplicas: 50,
+          trafficWeight: 1.18,
           centerX: lerp(leftBound, rightBound, 0.16),
           centerY: lerp(topBound, bottomBound, 0.36),
           centerZ: infraDepth * 0.9,
@@ -2472,9 +2594,10 @@ const HexagonServiceNetwork: React.FC = () => {
           labelPrefix: 'warehouse',
           color: 'teal',
           minReplicas: 1,
-          spikeReplicas: 7,
-          maxReplicas: 10,
-          trafficWeight: 0.72,
+          baselineReplicas: [2, 6],
+          spikeReplicas: 9,
+          maxReplicas: 16,
+          trafficWeight: 0.62,
           centerX: lerp(leftBound, rightBound, 0.18),
           centerY: lerp(topBound, bottomBound, 0.78),
           centerZ: -infraDepth * 0.62,
@@ -2484,8 +2607,9 @@ const HexagonServiceNetwork: React.FC = () => {
       appServicesRef.current = serviceConfigs
       clusterRef.current.baselineServiceReplicas = serviceConfigs.reduce(
         (accumulator, service) => {
+          const [baselineMin, baselineMax] = service.baselineReplicas
           accumulator[service.name] = clamp(
-            1 + Math.floor(Math.random() * 10),
+            baselineMin + Math.floor(Math.random() * (baselineMax - baselineMin + 1)),
             service.minReplicas,
             service.maxReplicas,
           )
@@ -3937,7 +4061,27 @@ const HexagonServiceNetwork: React.FC = () => {
         drawStatusIndicator(ctx, indicator, timeRef.current, isDark, nodeMap),
       )
 
+      const serviceProjectionMap = new Map(
+        appServicesRef.current.map((service) => [
+          service.name,
+          project3D(
+            service.centerX,
+            service.centerY,
+            service.centerZ,
+            centerX,
+            centerY,
+            rotX,
+            rotY,
+          ),
+        ]),
+      )
+
       appServicesRef.current.forEach((service) => {
+        const serviceProjection = serviceProjectionMap.get(service.name)
+        if (!serviceProjection) {
+          return
+        }
+
         const projected = project3D(
           service.centerX,
           service.centerY - 52,
@@ -3983,27 +4127,33 @@ const HexagonServiceNetwork: React.FC = () => {
         const motionState = serviceClusterMotionRef.current[service.name]
         const activeDelta = Math.abs(activeLifecycleCount - motionState.activeCount)
         const totalDelta = Math.abs(servicePods.length - motionState.totalCount)
+        const desiredDelta = Math.abs(desiredPods - motionState.desiredCount)
+        const scaleOutStarted = desiredPods > motionState.desiredCount
+        const scaleInStarted = desiredPods < motionState.desiredCount
         const impactTarget = clamp(
-          activeLifecycleCount * 0.22 +
-            activeDelta * 0.28 +
-            totalDelta * 0.2 +
-            (activeLifecycleCount >= 2 ? 0.12 : 0),
+          activeDelta * 0.18 +
+            totalDelta * 0.14 +
+            desiredDelta * 0.08 +
+            (scaleOutStarted ? 0.08 : 0) +
+            (scaleInStarted ? 0.06 : 0) +
+            (activeDelta >= 2 ? 0.08 : 0),
           0,
-          1,
+          0.58,
         )
 
-        if (activeLifecycleCount > 0 || totalDelta > 0) {
+        if (impactTarget > 0.015) {
           motionState.energy = clamp(
-            motionState.energy * 0.82 + impactTarget * 0.42,
+            motionState.energy * 0.72 + impactTarget,
             0,
-            1,
+            0.82,
           )
         } else {
-          motionState.energy *= 0.93
+          motionState.energy *= 0.86
         }
 
         motionState.activeCount = activeLifecycleCount
         motionState.totalCount = servicePods.length
+        motionState.desiredCount = desiredPods
         const statusDisplay = getServiceStatusDisplay(
           service.name,
           {
@@ -4022,14 +4172,14 @@ const HexagonServiceNetwork: React.FC = () => {
           },
         )
 
-        const clusterProjected = project3D(
-          service.centerX,
-          service.centerY + 4,
-          service.centerZ,
-          centerX,
-          centerY,
-          rotX,
-          rotY,
+        const clusterProjected = {
+          ...serviceProjection,
+          screenY: serviceProjection.screenY + 4,
+        }
+        const clusterRotation = getServiceClusterRotation(
+          timeRef.current,
+          motionState.energy,
+          motionState.phase,
         )
         drawServiceClusterHoneycomb(ctx, {
           service,
@@ -4042,6 +4192,7 @@ const HexagonServiceNetwork: React.FC = () => {
           emergencyScenarioKey: emergencyRef.current.scenarioKey,
           bounceEnergy: motionState.energy,
           bouncePhase: motionState.phase,
+          localRotation: clusterRotation,
           counts: {
             ready: readyPods,
             starting: startingPods,
@@ -4069,10 +4220,34 @@ const HexagonServiceNetwork: React.FC = () => {
           COLORS[service.color].main,
           isDark ? panelOpacity * 0.88 : panelOpacity * 0.78,
         )
+        const activePodsForSizing =
+          readyPods + startingPods + Math.max(0, Math.round(drainingPods * 0.35))
+        const clusterRadius = getServiceClusterShellRadius(
+          activePodsForSizing,
+          capacityPods,
+          clusterProjected.scale,
+          1 + motionState.energy * 0.12,
+        )
+        const panelPosition = chooseServicePanelPlacement({
+          clusterX: clusterProjected.screenX,
+          clusterY: clusterProjected.screenY,
+          clusterRadius,
+          panelWidth,
+          panelHeight,
+          viewportWidth: width,
+          viewportHeight: height,
+          otherCenters: [...serviceProjectionMap.entries()]
+            .filter(([serviceName]) => serviceName !== service.name)
+            .map(([, projection]) => ({
+              x: projection.screenX,
+              y: projection.screenY,
+            })),
+        })
+        const panelCenterX = panelPosition.x + panelWidth / 2
 
         const panelLayout = drawInfoPanel(ctx, {
-          x: projected.screenX - panelWidth / 2,
-          y: projected.screenY - 18,
+          x: panelPosition.x,
+          y: panelPosition.y,
           width: panelWidth,
           height: panelHeight,
           radius: 10,
@@ -4089,11 +4264,11 @@ const HexagonServiceNetwork: React.FC = () => {
         ctx.fillStyle = plateIsDark
           ? `rgba(226, 232, 240, ${Math.max(metaOpacity * 0.9, 0.74)})`
           : `rgba(71, 85, 105, ${Math.max(metaOpacity * 0.92, 0.74)})`
-        ctx.fillText('SERVICE CLUSTER', projected.screenX, panelLayout.header.centerY)
+        ctx.fillText('SERVICE CLUSTER', panelCenterX, panelLayout.header.centerY)
 
         drawPanelText(ctx, {
           text: service.displayLabel,
-          x: projected.screenX,
+          x: panelCenterX,
           y: panelLayout.body.y + panelLayout.body.height * 0.38,
           font: titleFont,
           fillStyle: plateIsDark
@@ -4105,7 +4280,7 @@ const HexagonServiceNetwork: React.FC = () => {
 
         drawPanelText(ctx, {
           text: `${readyPods}/${capacityPods} ready`,
-          x: projected.screenX,
+          x: panelCenterX,
           y: panelLayout.body.y + panelLayout.body.height * 0.72,
           font: metaFont,
           fillStyle: plateIsDark
@@ -4117,7 +4292,7 @@ const HexagonServiceNetwork: React.FC = () => {
 
         drawPanelText(ctx, {
           text: statusDisplay.text,
-          x: projected.screenX,
+          x: panelCenterX,
           y: panelLayout.footer.centerY,
           font: statusFont,
           fillStyle: statusDisplay.color,
