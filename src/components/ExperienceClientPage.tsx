@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { Button, DocumentIcon } from '@/components/Button'
 import { Container } from '@/components/Container'
 import { TechStack } from '@/components/TechStack'
 import { TerminalPageHeader } from '@/components/TerminalHeader'
@@ -789,6 +790,37 @@ function Work({
   )
 }
 
+function RecruiterCvHint() {
+  return (
+    <div className="mb-8 rounded-2xl border border-neutral-200 bg-white/90 p-4 shadow-sm shadow-neutral-900/5 backdrop-blur-sm dark:border-neutral-700 dark:bg-neutral-900/90 dark:shadow-none sm:p-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-300">
+            recruiter view
+          </p>
+          <p className="mt-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 sm:text-[15px]">
+            Prefer a quicker skim? The{' '}
+            <span className="font-mono text-[0.95em] text-neutral-900 dark:text-neutral-100">
+              /cv
+            </span>{' '}
+            page shows the same experience in a cleaner, recruiter-friendly
+            layout.
+          </p>
+        </div>
+
+        <Button
+          href="/cv"
+          variant="secondary"
+          className="w-full shrink-0 justify-center rounded-xl border border-neutral-300 bg-neutral-50 px-4 py-3 font-mono text-neutral-900 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 sm:w-auto dark:border-neutral-700 dark:bg-neutral-800/80 dark:text-neutral-100 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-200"
+        >
+          <DocumentIcon className="h-4 w-4" />
+          <span>open CV view</span>
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 export default function ExperienceClientContent() {
   return (
     <div>
@@ -800,6 +832,7 @@ export default function ExperienceClientContent() {
         />
 
         <div className="max-w-3xl">
+          <RecruiterCvHint />
           <Work groupedWorkExperiences={groupedWorkExperiences} />
         </div>
       </Container>
