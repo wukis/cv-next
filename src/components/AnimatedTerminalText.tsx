@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { usePathname } from 'next/navigation'
 
 type TerminalTextSegment = {
   text: string
@@ -15,6 +16,23 @@ type AnimationStatus = 'ready' | 'pending' | 'animating' | 'settling' | 'done'
 
 const REDUCED_MOTION_MEDIA_QUERY = '(prefers-reduced-motion: reduce)'
 const TYPING_RHYTHM_PATTERN = [-8, 4, 10, -3, 7, 1]
+const SESSION_STORAGE_PREFIX = 'terminal-header-seen:'
+
+function hasSeenAnimation(sessionStorageKey: string) {
+  try {
+    return window.sessionStorage.getItem(sessionStorageKey) === 'true'
+  } catch {
+    return false
+  }
+}
+
+function markAnimationSeen(sessionStorageKey: string) {
+  try {
+    window.sessionStorage.setItem(sessionStorageKey, 'true')
+  } catch {
+    // Ignore storage access issues and fall back to current-render behavior.
+  }
+}
 
 function clearScheduledFrames(timeoutIdsRef: { current: number[] }) {
   timeoutIdsRef.current.forEach((timeoutId) => {
@@ -106,6 +124,7 @@ export function AnimatedTerminalText({
 }: {
   segments: TerminalTextSegment[]
 }) {
+  const pathname = usePathname()
   const containerRef = useRef<HTMLSpanElement>(null)
   const timeoutIdsRef = useRef<number[]>([])
   const startedRef = useRef(false)
@@ -130,6 +149,10 @@ export function AnimatedTerminalText({
     () => segmentData.map((segment) => segment.text).join(''),
     [segmentData],
   )
+  const sessionStorageKey = useMemo(
+    () => `${SESSION_STORAGE_PREFIX}${pathname ?? '/'}:${fullText}`,
+    [fullText, pathname],
+  )
 
   const [status, setStatus] = useState<AnimationStatus>('ready')
   const [displayedCharacters, setDisplayedCharacters] =
@@ -151,6 +174,12 @@ export function AnimatedTerminalText({
         return
       }
 
+      if (hasSeenAnimation(sessionStorageKey)) {
+        setDisplayedCharacters(totalCharacters)
+        setStatus('done')
+        return
+      }
+
       setDisplayedCharacters(0)
       setStatus('pending')
     })
@@ -159,7 +188,7 @@ export function AnimatedTerminalText({
       window.cancelAnimationFrame(frameId)
       clearScheduledFrames(timeoutIdsRef)
     }
-  }, [totalCharacters])
+  }, [sessionStorageKey, totalCharacters])
 
   useEffect(() => {
     if (status !== 'pending') {
@@ -179,6 +208,7 @@ export function AnimatedTerminalText({
       }
 
       startedRef.current = true
+      markAnimationSeen(sessionStorageKey)
       setStatus('animating')
 
       let totalDelay = 0
@@ -245,7 +275,7 @@ export function AnimatedTerminalText({
       observer.disconnect()
       mediaQuery.removeEventListener('change', handleReducedMotionChange)
     }
-  }, [segmentData, status, totalCharacters])
+  }, [segmentData, sessionStorageKey, status, totalCharacters])
 
   return (
     <span ref={containerRef} className="inline-grid max-w-full align-baseline">
