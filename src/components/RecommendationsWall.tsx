@@ -218,13 +218,19 @@ export function RecommendationsWall({
     }
   })
 
+  const headingId = 'recommendations-wall-heading'
+  const headingLabel = headerLabel ?? 'Recommendations'
+
   return (
-    <div className="space-y-6">
+    <section className="space-y-6" aria-labelledby={headingId}>
       {allowSorting || headerLabel ? (
         <div className="flex items-center justify-between gap-3">
-          <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
-            {headerLabel}
-          </div>
+          <h2
+            id={headingId}
+            className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300"
+          >
+            {headingLabel}
+          </h2>
           {allowSorting ? (
             <button
               type="button"
@@ -249,7 +255,11 @@ export function RecommendationsWall({
             </button>
           ) : null}
         </div>
-      ) : null}
+      ) : (
+        <h2 id={headingId} className="sr-only">
+          {headingLabel}
+        </h2>
+      )}
 
       {sortMode === 'recent' ? (
         <div className="space-y-4">
@@ -298,6 +308,6 @@ export function RecommendationsWall({
           ) : null}
         </>
       )}
-    </div>
+    </section>
   )
 }

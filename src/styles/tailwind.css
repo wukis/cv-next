@@ -38,6 +38,26 @@
   animation: scrollLogs 25s linear infinite;
 }
 
+@keyframes gitHeadPulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+
+  30% {
+    opacity: 0.3;
+  }
+
+  100% {
+    transform: scale(1.45);
+    opacity: 0;
+  }
+}
+
+.animate-git-head-pulse {
+  animation: gitHeadPulse 3.6s ease-out infinite;
+}
+
 /* Animation focus mode - makes content transparent to show background animation */
 @layer utilities {
   .animation-focus main,
@@ -55,6 +75,12 @@
   main,
   footer {
     transition: opacity 0.3s ease-in;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-git-head-pulse {
+    animation: none;
   }
 }
 

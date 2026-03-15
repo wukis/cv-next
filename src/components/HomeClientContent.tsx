@@ -90,7 +90,7 @@ function Highlights() {
 
               <div className="mt-4 border-t border-neutral-200 pt-5 dark:border-neutral-700">
                 <article className="grid grid-cols-1 gap-4 md:grid-cols-[2.75rem_minmax(0,1fr)]">
-                  <div className="font-mono text-2xl text-neutral-300 dark:text-neutral-700">
+                  <div className="font-mono text-2xl text-neutral-500 dark:text-neutral-400">
                     01
                   </div>
                   <div>
@@ -115,7 +115,7 @@ function Highlights() {
                     key={story.title}
                     className="grid grid-cols-1 gap-4 border-b border-neutral-200 py-5 last:border-b-0 last:pb-0 md:grid-cols-[2.75rem_minmax(0,1fr)] dark:border-neutral-700"
                   >
-                    <div className="font-mono text-2xl text-neutral-300 dark:text-neutral-700">
+                    <div className="font-mono text-2xl text-neutral-500 dark:text-neutral-400">
                       {String(index + 2).padStart(2, '0')}
                     </div>
                     <article>

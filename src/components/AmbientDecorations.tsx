@@ -24,44 +24,7 @@ const ConsoleEasterEgg = dynamic(
   { ssr: false },
 )
 
-type AmbientState = {
-  enableConsole: boolean
-  enableVisuals: boolean
-}
-
-function getAmbientState(): AmbientState {
-  if (typeof window === 'undefined') {
-    return { enableConsole: false, enableVisuals: false }
-  }
-
-  const navigatorWithConnection = navigator as Navigator & {
-    connection?: { saveData?: boolean }
-  }
-  const prefersReducedMotion = window.matchMedia(
-    '(prefers-reduced-motion: reduce)',
-  ).matches
-  const saveData =
-    typeof navigatorWithConnection.connection?.saveData === 'boolean' &&
-    navigatorWithConnection.connection.saveData
-
-  if (prefersReducedMotion || saveData) {
-    return { enableConsole: false, enableVisuals: false }
-  }
-
-  const { innerWidth: width, innerHeight: height } = window
-  const isLargeViewport = width >= 1280 && width / Math.max(height, 1) > 1.2
-
-  return {
-    enableConsole: width >= 1024,
-    enableVisuals: isLargeViewport,
-  }
-}
-
 export default function AmbientDecorations() {
-  const [ambientState, setAmbientState] = useState<AmbientState>({
-    enableConsole: false,
-    enableVisuals: false,
-  })
   const [shouldRender, setShouldRender] = useState(false)
 
   useEffect(() => {
@@ -70,7 +33,6 @@ export default function AmbientDecorations() {
 
     const scheduleActivation = () => {
       const activate = () => {
-        setAmbientState(getAmbientState())
         setShouldRender(true)
       }
 
@@ -107,14 +69,10 @@ export default function AmbientDecorations() {
 
   return (
     <>
-      {ambientState.enableConsole && <ConsoleEasterEgg />}
-      {ambientState.enableVisuals && (
-        <>
-          <HexagonServiceNetwork />
-          <MetricWidgets />
-          <LogTerminal />
-        </>
-      )}
+      <ConsoleEasterEgg />
+      <HexagonServiceNetwork />
+      <MetricWidgets />
+      <LogTerminal />
     </>
   )
 }

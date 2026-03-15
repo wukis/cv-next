@@ -1,29 +1,16 @@
-import { type Metadata } from 'next';
-import dynamic from 'next/dynamic';
+import { type Metadata } from 'next'
 
-// Dynamically import the heavy ExperienceClientPage component to improve initial page load
-// This ensures the component is code-split and only loaded when needed
-const ExperienceClientContent = dynamic(
-  () => import('@/components/ExperienceClientPage'),
-  {
-    loading: () => (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-neutral-600 dark:text-neutral-400 font-mono">Loading experience...</div>
-      </div>
-    ),
-    ssr: true, // Keep SSR for SEO
-  }
-);
+import ExperienceClientContent from '@/components/ExperienceClientPage'
 
 export const metadata: Metadata = {
-    title: 'Experience',
-    description:
-      'Professional experience of Jonas Petrik across checkout, backend systems, platform reliability, search, and engineering leadership.',
-    alternates: {
-        canonical: '/experience',
-    },
-};
+  title: 'Experience',
+  description:
+    'Professional experience of Jonas Petrik across checkout, backend systems, platform reliability, search, and engineering leadership.',
+  alternates: {
+    canonical: '/experience',
+  },
+}
 
 export default function ExperiencePage() {
-  return <ExperienceClientContent />;
+  return <ExperienceClientContent />
 }

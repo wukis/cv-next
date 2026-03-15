@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -11,6 +11,9 @@ import { DownloadIcon } from '@/components/Button'
 import { Container } from '@/components/Container'
 import { surfaceHoverMotionClassName } from '@/components/interactionStyles'
 import { recommendationsCopy } from '@/lib/recommendationsCopy'
+import { useAmbientEligibility } from '@/components/useAmbientEligibility'
+
+const headerControlClassName = `group inline-flex min-h-11 items-center justify-center rounded-lg bg-white/90 text-neutral-800 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-300/70 backdrop-blur transition-colors hover:text-emerald-800 hover:ring-emerald-400/50 dark:bg-neutral-800/90 dark:text-neutral-200 dark:ring-neutral-700/70 dark:hover:text-emerald-200 dark:hover:ring-emerald-400/50 ${surfaceHoverMotionClassName}`
 
 function CloseIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
@@ -59,28 +62,13 @@ function MoonIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   )
 }
 
-function TerminalIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path
-        d="M7 15l5-5-5-5M13 19h6"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
-
 function AnimatedTerminalIcon({ className }: { className?: string }) {
   const [cursorVisible, setCursorVisible] = useState(true)
 
-  // Blinking cursor effect
   useEffect(() => {
     const blinkInterval = setInterval(() => {
-      setCursorVisible((v) => !v)
-    }, 530) // Classic terminal blink rate
+      setCursorVisible((visible) => !visible)
+    }, 530)
 
     return () => clearInterval(blinkInterval)
   }, [])
@@ -93,7 +81,6 @@ function AnimatedTerminalIcon({ className }: { className?: string }) {
         aria-hidden="true"
         className="h-4 w-4 text-emerald-500"
       >
-        {/* Chevron > */}
         <path
           d="M7 15l5-5-5-5"
           stroke="currentColor"
@@ -101,7 +88,6 @@ function AnimatedTerminalIcon({ className }: { className?: string }) {
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        {/* Blinking cursor _ */}
         <path
           d="M13 19h6"
           stroke="currentColor"
@@ -142,16 +128,16 @@ function MobileNavItem({
         href={href}
         onClick={close}
         className={clsx(
-          'flex items-center gap-3 rounded-lg px-3 py-2.5 font-mono text-sm transition-colors',
+          'flex min-h-11 items-center gap-3 rounded-lg px-4 py-2.5 font-mono text-sm font-medium transition-colors',
           isActive
-            ? 'bg-emerald-500/15 text-emerald-800 dark:bg-emerald-400/20 dark:text-emerald-200'
-            : 'text-neutral-700 hover:bg-neutral-100 hover:text-emerald-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-emerald-300',
+            ? 'bg-emerald-500/15 text-emerald-900 dark:bg-emerald-400/20 dark:text-emerald-100'
+            : 'text-neutral-800 hover:bg-neutral-100 hover:text-emerald-800 dark:text-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-emerald-200',
         )}
       >
         <span
           className={clsx(
             'h-1.5 w-1.5 rounded-full',
-            isActive ? 'bg-current' : 'bg-neutral-300 dark:bg-neutral-600',
+            isActive ? 'bg-current' : 'bg-neutral-400 dark:bg-neutral-500',
           )}
         />
         <span>~/{label}</span>
@@ -167,11 +153,11 @@ function MobileNavigation({ className }: { className?: string }) {
 
   const close = () => setIsOpen(false)
 
-  // Close on escape key
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsOpen(false)
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsOpen(false)
     }
+
     if (isOpen) {
       document.addEventListener('keydown', handleEscape)
       return () => document.removeEventListener('keydown', handleEscape)
@@ -181,13 +167,14 @@ function MobileNavigation({ className }: { className?: string }) {
   return (
     <div className={className}>
       <button
+        type="button"
         onClick={() => setIsOpen(true)}
-        className={`group flex items-center gap-2 rounded-lg bg-white/80 px-3 py-2 font-mono text-sm text-neutral-700 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 backdrop-blur hover:text-emerald-700 hover:ring-emerald-400/40 dark:bg-neutral-800/80 dark:text-neutral-300 dark:ring-neutral-700/50 dark:hover:text-emerald-300 dark:hover:ring-emerald-400/40 ${surfaceHoverMotionClassName}`}
+        className={`${headerControlClassName} gap-2 px-4 py-2 font-mono text-sm font-medium`}
       >
         <AnimatedTerminalIcon />
         <span>menu</span>
         <svg
-          className="h-3 w-3 text-neutral-400"
+          className="h-3 w-3 text-neutral-500 dark:text-neutral-400"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -204,37 +191,34 @@ function MobileNavigation({ className }: { className?: string }) {
         isOpen &&
         createPortal(
           <>
-            {/* Backdrop */}
             <div
               className="fixed inset-0 z-[60] bg-neutral-900/60 backdrop-blur-sm"
               onClick={close}
               aria-hidden="true"
             />
-            {/* Panel */}
             <div className="fixed inset-x-4 top-4 z-[70] overflow-hidden rounded-lg bg-white shadow-2xl ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-700">
-              {/* Terminal header */}
-              <div className="flex h-6 items-center justify-between border-b border-neutral-200 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
+              <div className="flex min-h-11 items-center justify-between border-b border-neutral-200 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
                 <Link
                   href="/"
                   onClick={close}
-                  className="-ml-1 flex items-center gap-2 rounded px-1 py-0.5 transition-all hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                  className="-ml-1 inline-flex min-h-11 items-center gap-2 rounded px-2 py-1 transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-700"
                   aria-label="Go to home"
                 >
                   <AnimatedTerminalIcon />
-                  <span className="font-mono text-[10px] text-neutral-600 dark:text-neutral-300">
+                  <span className="font-mono text-[10px] text-neutral-700 dark:text-neutral-200">
                     ~/navigation
                   </span>
                 </Link>
                 <button
+                  type="button"
                   onClick={close}
                   aria-label="Close menu"
-                  className="rounded p-1 transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                  className="inline-flex h-11 w-11 items-center justify-center rounded transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-700"
                 >
-                  <CloseIcon className="h-5 w-5 text-neutral-600 dark:text-neutral-300" />
+                  <CloseIcon className="h-5 w-5 text-neutral-700 dark:text-neutral-200" />
                 </button>
               </div>
 
-              {/* Navigation items */}
               <nav className="p-3">
                 <ul className="space-y-1">
                   {navItems.map((item) => (
@@ -264,16 +248,16 @@ function NavItem({ href, label }: { href: string; label: string }) {
       <Link
         href={href}
         className={clsx(
-          'relative flex items-center gap-1.5 rounded-md px-3 py-1.5 font-mono text-sm transition-all',
+          'relative inline-flex min-h-11 items-center gap-1.5 rounded-md px-4 py-2 font-mono text-sm font-medium transition-all',
           isActive
-            ? 'bg-emerald-500/15 text-emerald-700 dark:bg-emerald-400/20 dark:text-emerald-300'
-            : 'text-neutral-700 hover:bg-neutral-100 hover:text-emerald-700 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-emerald-300',
+            ? 'bg-emerald-500/15 text-emerald-900 dark:bg-emerald-400/20 dark:text-emerald-100'
+            : 'text-neutral-800 hover:bg-neutral-100 hover:text-emerald-800 dark:text-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-emerald-200',
         )}
       >
         <span
           className={clsx(
             'h-1.5 w-1.5 rounded-full transition-colors',
-            isActive ? 'bg-current' : 'bg-neutral-300 dark:bg-neutral-600',
+            isActive ? 'bg-current' : 'bg-neutral-400 dark:bg-neutral-500',
           )}
         />
         {label}
@@ -285,14 +269,12 @@ function NavItem({ href, label }: { href: string; label: string }) {
 function DesktopNavigation(props: React.ComponentPropsWithoutRef<'nav'>) {
   return (
     <nav {...props}>
-      <div className="flex items-center overflow-hidden rounded-lg bg-white/80 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 backdrop-blur dark:bg-neutral-800/80 dark:ring-neutral-700/50">
-        {/* Nav items including home terminal icon */}
+      <div className="flex items-center overflow-hidden rounded-lg bg-white/90 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-300/70 backdrop-blur dark:bg-neutral-800/90 dark:ring-neutral-700/70">
         <ul className="flex items-center gap-1 px-2 py-1">
-          {/* Terminal prompt icon - links to home (never shows active state) */}
           <li>
             <Link
               href="/"
-              className="relative flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-all hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-neutral-800 transition-colors hover:bg-neutral-100 hover:text-emerald-800 dark:text-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-emerald-200"
               aria-label="Go to home"
             >
               <AnimatedTerminalIcon />
@@ -315,11 +297,11 @@ function ThemeToggle() {
     <button
       type="button"
       aria-label="Toggle theme"
-      className={`group flex h-10 w-10 items-center justify-center rounded-lg bg-white/80 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 backdrop-blur hover:ring-emerald-400/40 dark:bg-neutral-800/80 dark:ring-neutral-700/50 dark:hover:ring-emerald-400/40 ${surfaceHoverMotionClassName}`}
+      className={`${headerControlClassName} h-11 w-11`}
       onClick={() => setTheme(otherTheme)}
     >
-      <SunIcon className="h-5 w-5 fill-amber-100 stroke-amber-500 transition group-hover:fill-amber-200 group-hover:stroke-amber-600 dark:hidden" />
-      <MoonIcon className="hidden h-5 w-5 fill-sky-100 stroke-sky-500 transition group-hover:fill-sky-200 group-hover:stroke-sky-400 dark:block dark:fill-sky-400/20 dark:stroke-sky-400" />
+      <SunIcon className="h-5 w-5 fill-amber-100 stroke-amber-600 transition group-hover:fill-amber-200 group-hover:stroke-amber-700 dark:hidden" />
+      <MoonIcon className="hidden h-5 w-5 fill-sky-100 stroke-sky-600 transition group-hover:fill-sky-200 group-hover:stroke-sky-500 dark:block dark:fill-sky-400/20 dark:stroke-sky-300" />
     </button>
   )
 }
@@ -331,32 +313,28 @@ function CvDownloadButton() {
       download
       aria-label="Download CV PDF"
       title="Download CV PDF"
-      className={`group flex h-10 w-10 items-center justify-center rounded-lg bg-white/80 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 backdrop-blur hover:ring-emerald-400/40 dark:bg-neutral-800/80 dark:ring-neutral-700/50 dark:hover:ring-emerald-400/40 ${surfaceHoverMotionClassName}`}
+      className={`${headerControlClassName} h-11 w-11`}
     >
-      <DownloadIcon className="h-5 w-5 text-neutral-600 transition group-hover:text-emerald-700 dark:text-neutral-300 dark:group-hover:text-emerald-300" />
+      <DownloadIcon className="h-5 w-5 text-neutral-700 transition group-hover:text-emerald-800 dark:text-neutral-200 dark:group-hover:text-emerald-200" />
     </a>
   )
 }
 
-// Hexagon icon for the animation focus element
 function HexagonNetworkIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      {/* Central hexagon */}
       <path
         d="M12 3L17.196 6V12L12 15L6.804 12V6L12 3Z"
         stroke="currentColor"
         strokeWidth="1.2"
         strokeLinejoin="round"
       />
-      {/* Connection dots */}
       <circle cx="12" cy="3" r="1.2" fill="currentColor" />
       <circle cx="17.196" cy="6" r="1.2" fill="currentColor" />
       <circle cx="17.196" cy="12" r="1.2" fill="currentColor" />
       <circle cx="12" cy="15" r="1.2" fill="currentColor" />
       <circle cx="6.804" cy="12" r="1.2" fill="currentColor" />
       <circle cx="6.804" cy="6" r="1.2" fill="currentColor" />
-      {/* Data flow lines */}
       <path
         d="M12 15V19M6.804 12L3 14M17.196 12L21 14"
         stroke="currentColor"
@@ -365,7 +343,6 @@ function HexagonNetworkIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
         strokeDasharray="2 2"
         className="opacity-60"
       />
-      {/* Bottom connection dots */}
       <circle
         cx="12"
         cy="20"
@@ -391,14 +368,12 @@ function HexagonNetworkIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   )
 }
 
-// Animation focus element - makes content transparent on hover to show background
 function AnimationFocus() {
   const [isHovering, setIsHovering] = useState(false)
 
   useEffect(() => {
     if (isHovering) {
       document.documentElement.classList.add('animation-focus')
-      // Dispatch event to hide back to top button
       window.dispatchEvent(
         new CustomEvent('animation-focus-hover', {
           detail: { isHovering: true },
@@ -406,7 +381,6 @@ function AnimationFocus() {
       )
     } else {
       document.documentElement.classList.remove('animation-focus')
-      // Dispatch event to show back to top button
       window.dispatchEvent(
         new CustomEvent('animation-focus-hover', {
           detail: { isHovering: false },
@@ -424,207 +398,89 @@ function AnimationFocus() {
     }
   }, [isHovering])
 
-  const triggerEmergency = () => {
-    // Dispatch event to trigger emergency animation
-    window.dispatchEvent(new CustomEvent('trigger-emergency'))
-  }
-
   return (
-    <div
-      className={`group relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg bg-white/80 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 backdrop-blur hover:ring-emerald-400/50 dark:bg-neutral-800/80 dark:ring-neutral-700/50 dark:hover:ring-emerald-400/50 ${surfaceHoverMotionClassName}`}
+    <button
+      type="button"
+      className={`${headerControlClassName} h-11 w-11 cursor-pointer`}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
-      onClick={triggerEmergency}
+      onClick={() => window.dispatchEvent(new CustomEvent('trigger-emergency'))}
       title="Hover to see background animation, click to trigger emergency"
+      aria-label="Preview background animation"
     >
       <HexagonNetworkIcon
         className={clsx(
           'h-5 w-5 transition-all duration-300',
           isHovering
             ? 'scale-110 text-emerald-500 dark:text-emerald-400'
-            : 'text-neutral-500 dark:text-neutral-400',
+            : 'text-neutral-600 dark:text-neutral-300',
         )}
       />
-      {/* Subtle pulse indicator when hovering */}
       <span
         className={clsx(
           'absolute inset-0 rounded-lg ring-2 ring-emerald-400/50 transition-all duration-500',
           isHovering ? 'scale-100 opacity-100' : 'scale-95 opacity-0',
         )}
       />
-    </div>
+    </button>
   )
 }
 
-function clamp(number: number, a: number, b: number) {
-  const min = Math.min(a, b)
-  const max = Math.max(a, b)
-  return Math.min(Math.max(number, min), max)
-}
-
 export function Header() {
-  const isHomePage = usePathname() === '/'
+  const pathname = usePathname()
   const [isVisible, setIsVisible] = useState(true)
-  const lastScrollY = useRef(0)
-  const headerRef = useRef<React.ElementRef<'div'>>(null)
-  const isInitial = useRef(true)
+  const isAmbientEligible = useAmbientEligibility()
 
-  // Handle scroll direction for hide/show animation
   useEffect(() => {
+    let lastScrollY = window.scrollY
+
     const handleScroll = () => {
       const currentScrollY = window.scrollY
-      const scrollThreshold = 100 // Don't hide until scrolled past this point
+      const scrollThreshold = 100
 
       if (currentScrollY < scrollThreshold) {
-        // Always show near the top
         setIsVisible(true)
-      } else if (currentScrollY > lastScrollY.current + 5) {
-        // Scrolling down (with 5px threshold to avoid jitter)
+      } else if (currentScrollY > lastScrollY + 5) {
         setIsVisible(false)
-      } else if (currentScrollY < lastScrollY.current - 5) {
-        // Scrolling up
+      } else if (currentScrollY < lastScrollY) {
         setIsVisible(true)
       }
 
-      lastScrollY.current = currentScrollY
+      lastScrollY = currentScrollY
     }
 
+    handleScroll()
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
-  useEffect(() => {
-    const downDelay = 0
-    const upDelay = 64
-
-    function setProperty(property: string, value: string) {
-      document.documentElement.style.setProperty(property, value)
-    }
-
-    function removeProperty(property: string) {
-      document.documentElement.style.removeProperty(property)
-    }
-
-    function updateHeaderStyles() {
-      if (!headerRef.current) {
-        return
-      }
-
-      const { top, height } = headerRef.current.getBoundingClientRect()
-      const scrollY = clamp(
-        window.scrollY,
-        0,
-        document.body.scrollHeight - window.innerHeight,
-      )
-
-      if (isInitial.current) {
-        setProperty('--header-position', 'sticky')
-      }
-
-      setProperty('--content-offset', `${downDelay}px`)
-
-      if (isInitial.current || scrollY < downDelay) {
-        setProperty('--header-height', `${downDelay + height}px`)
-        setProperty('--header-mb', `${-downDelay}px`)
-      } else if (top + height < -upDelay) {
-        const offset = Math.max(height, scrollY - upDelay)
-        setProperty('--header-height', `${offset}px`)
-        setProperty('--header-mb', `${height - offset}px`)
-      } else if (top === 0) {
-        setProperty('--header-height', `${scrollY + height}px`)
-        setProperty('--header-mb', `${-scrollY}px`)
-      }
-
-      if (top === 0 && scrollY > 0 && scrollY >= downDelay) {
-        setProperty('--header-inner-position', 'fixed')
-        removeProperty('--header-top')
-      } else {
-        removeProperty('--header-inner-position')
-        setProperty('--header-top', '0px')
-      }
-    }
-
-    function updateStyles() {
-      updateHeaderStyles()
-      isInitial.current = false
-    }
-
-    updateStyles()
-    window.addEventListener('scroll', updateStyles, { passive: true })
-    window.addEventListener('resize', updateStyles)
-
-    return () => {
-      window.removeEventListener('scroll', updateStyles)
-      window.removeEventListener('resize', updateStyles)
-    }
-  }, [isHomePage])
+  }, [pathname])
 
   return (
-    <>
-      <header
-        className="pointer-events-none relative z-50 flex flex-none flex-col"
-        style={{
-          height: 'var(--header-height)',
-          marginBottom: 'var(--header-mb)',
-        }}
-      >
-        {isHomePage && (
-          <>
-            <Container
-              className="top-0 order-last -mb-3 pt-3"
-              style={{
-                position:
-                  'var(--header-position)' as React.CSSProperties['position'],
-              }}
-            ></Container>
-          </>
-        )}
-        <div
-          ref={headerRef}
-          className="top-0 z-10 h-16 pt-6"
-          style={{
-            position:
-              'var(--header-position)' as React.CSSProperties['position'],
-          }}
-        >
-          <Container
-            className="top-[var(--header-top,theme(spacing.6))] w-full"
-            style={{
-              position:
-                'var(--header-inner-position)' as React.CSSProperties['position'],
-            }}
+    <header className="pointer-events-none relative z-50 flex-none">
+      <div className="h-[5.5rem]" />
+      <div className="fixed inset-x-0 top-0 z-50 pt-6">
+        <Container>
+          <div
+            className={clsx(
+              'relative flex items-start gap-4 transition-all duration-300',
+              isVisible
+                ? 'translate-y-0 opacity-100'
+                : 'pointer-events-none -translate-y-4 opacity-0',
+            )}
           >
-            <div
-              className={clsx(
-                'relative flex gap-4 transition-all duration-300',
-                isVisible
-                  ? 'translate-y-0 opacity-100'
-                  : 'pointer-events-none -translate-y-4 opacity-0',
-              )}
-            >
-              <div className="flex flex-1">
-                <MobileNavigation className="pointer-events-auto md:hidden" />
-                <DesktopNavigation className="pointer-events-auto hidden md:block" />
-              </div>
-              <div className="flex justify-end md:flex-1">
-                <div className="pointer-events-auto flex items-center gap-2">
-                  <CvDownloadButton />
-                  <div className="hidden md:block">
-                    <AnimationFocus />
-                  </div>
-                  <ThemeToggle />
-                </div>
+            <div className="flex flex-1">
+              <MobileNavigation className="pointer-events-auto md:hidden" />
+              <DesktopNavigation className="pointer-events-auto hidden md:block" />
+            </div>
+            <div className="flex justify-end md:flex-1">
+              <div className="pointer-events-auto flex items-center gap-2">
+                <CvDownloadButton />
+                {isAmbientEligible ? <AnimationFocus /> : null}
+                <ThemeToggle />
               </div>
             </div>
-          </Container>
-        </div>
-      </header>
-      {isHomePage && (
-        <div
-          className="flex-none"
-          style={{ height: 'var(--content-offset)' }}
-        />
-      )}
-    </>
+          </div>
+        </Container>
+      </div>
+    </header>
   )
 }

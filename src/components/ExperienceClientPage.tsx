@@ -1,4 +1,3 @@
-'use client'
 import React from 'react'
 
 import { Container } from '@/components/Container'
@@ -134,22 +133,6 @@ const groupedWorkExperiences = groupWorkExperiences(work as WorkInterface[])
 const totalExperience = calculateTotalExperience(groupedWorkExperiences)
 const totalExperienceYears =
   totalExperience.years + Math.floor(totalExperience.months / 12)
-
-// Get role type for branch coloring
-const getRoleType = (
-  position: string,
-): 'lead' | 'senior' | 'mid' | 'junior' => {
-  const lower = position.toLowerCase()
-  if (
-    lower.includes('lead') ||
-    lower.includes('manager') ||
-    lower.includes('head')
-  )
-    return 'lead'
-  if (lower.includes('senior')) return 'senior'
-  if (lower.includes('junior') || lower.includes('intern')) return 'junior'
-  return 'mid'
-}
 
 // Get diff between two arrays (what's new in arr1 compared to arr2)
 const getNewItems = (current: string[], previous: string[]): string[] => {
@@ -309,51 +292,6 @@ function CompanyProjects({
   )
 }
 
-const getBranchColors = (roleType: 'lead' | 'senior' | 'mid' | 'junior') => {
-  switch (roleType) {
-    case 'lead':
-      return {
-        node: 'bg-emerald-500 dark:bg-emerald-400',
-        ring: 'ring-emerald-500/30 dark:ring-emerald-400/30',
-        glow: 'shadow-emerald-500/40 dark:shadow-emerald-400/40',
-        ping: 'bg-emerald-500/40 dark:bg-emerald-400/40',
-        border: 'border-emerald-300 dark:border-emerald-700',
-        text: 'text-emerald-950 dark:text-emerald-100',
-        bg: 'bg-emerald-100 dark:bg-emerald-950/60',
-      }
-    case 'senior':
-      return {
-        node: 'bg-sky-500 dark:bg-sky-400',
-        ring: 'ring-sky-500/30 dark:ring-sky-400/30',
-        glow: 'shadow-sky-500/40 dark:shadow-sky-400/40',
-        ping: 'bg-sky-500/40 dark:bg-sky-400/40',
-        border: 'border-sky-300 dark:border-sky-700',
-        text: 'text-sky-950 dark:text-sky-100',
-        bg: 'bg-sky-100 dark:bg-sky-950/60',
-      }
-    case 'mid':
-      return {
-        node: 'bg-violet-500 dark:bg-violet-400',
-        ring: 'ring-violet-500/30 dark:ring-violet-400/30',
-        glow: 'shadow-violet-500/40 dark:shadow-violet-400/40',
-        ping: 'bg-violet-500/40 dark:bg-violet-400/40',
-        border: 'border-violet-300 dark:border-violet-700',
-        text: 'text-violet-950 dark:text-violet-100',
-        bg: 'bg-violet-100 dark:bg-violet-950/60',
-      }
-    case 'junior':
-      return {
-        node: 'bg-amber-500 dark:bg-amber-400',
-        ring: 'ring-amber-500/30 dark:ring-amber-400/30',
-        glow: 'shadow-amber-500/40 dark:shadow-amber-400/40',
-        ping: 'bg-amber-500/40 dark:bg-amber-400/40',
-        border: 'border-amber-300 dark:border-amber-700',
-        text: 'text-amber-950 dark:text-amber-100',
-        bg: 'bg-amber-100 dark:bg-amber-950/60',
-      }
-  }
-}
-
 function Education({
   education,
   isLast,
@@ -361,7 +299,6 @@ function Education({
   education: EducationInterface
   isLast: boolean
 }) {
-  const colors = getBranchColors('junior')
   const duration = getDuration(education.startDate, education.endDate)
 
   return (
@@ -370,14 +307,12 @@ function Education({
       <div className="relative hidden flex-col items-center sm:flex">
         {/* Vertical line */}
         {!isLast && (
-          <div className="absolute bottom-0 top-6 w-px bg-neutral-300 dark:bg-neutral-600" />
+          <div className="absolute bottom-0 top-6 w-px bg-amber-200 dark:bg-amber-900/80" />
         )}
 
         <div className="relative flex h-6 w-6 flex-shrink-0 items-center justify-center">
-          <div className="absolute inset-0 rounded-full ring-2 ring-neutral-300 dark:ring-neutral-700" />
-          <div
-            className="relative h-4 w-4 rounded-full bg-neutral-400 ring-2 ring-white dark:bg-neutral-500 dark:ring-neutral-900"
-          />
+          <div className="absolute inset-[1px] rounded-full ring-2 ring-amber-200/80 dark:ring-amber-900/70" />
+          <div className="relative h-3.5 w-3.5 rounded-full bg-amber-300/65 ring-2 ring-white opacity-75 dark:bg-amber-200/35 dark:ring-neutral-900" />
         </div>
       </div>
 
@@ -467,7 +402,7 @@ function Education({
 
           <div className="p-4">
             <div className="flex items-start gap-3">
-              <div className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-neutral-400 dark:bg-neutral-500" />
+              <div className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-amber-300/65 dark:bg-amber-200/45" />
 
               <div className="min-w-0 flex-1">
                 <div className="flex flex-col items-start gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
@@ -523,21 +458,6 @@ function Work({
           companyData.experiences.map((exp) => exp.projects),
         )
 
-        // Determine primary role type from the most senior position
-        const primaryRole = companyData.experiences.reduce(
-          (acc, exp) => {
-            const type = getRoleType(exp.position)
-            if (type === 'lead') return 'lead'
-            if (type === 'senior' && acc !== 'lead') return 'senior'
-            if (type === 'mid' && acc !== 'lead' && acc !== 'senior')
-              return 'mid'
-            return acc
-          },
-          'junior' as 'lead' | 'senior' | 'mid' | 'junior',
-        )
-
-        const colors = getBranchColors(primaryRole)
-
         return (
           <div
             key={company}
@@ -547,24 +467,28 @@ function Work({
             <div className="relative hidden flex-col items-center sm:flex">
               {/* Vertical line */}
               {!isLast && (
-                <div className="absolute bottom-0 top-6 w-px bg-neutral-300 dark:bg-neutral-600" />
+                <div
+                  className={`absolute bottom-0 top-6 w-px ${
+                    isFirst
+                      ? 'bg-gradient-to-b from-emerald-200 via-amber-200 to-amber-200 dark:from-emerald-800/70 dark:via-amber-900/80 dark:to-amber-900/80'
+                      : 'bg-amber-200 dark:bg-amber-900/80'
+                  }`}
+                />
               )}
 
               <div className="relative flex h-6 w-6 flex-shrink-0 items-center justify-center">
-                <div
-                  className={`absolute inset-0 rounded-full ${
-                    isFirst
-                      ? `ring-4 ${colors.ring}`
-                      : 'ring-2 ring-neutral-300 dark:ring-neutral-700'
-                  }`}
-                />
-                <div
-                  className={`relative h-4 w-4 rounded-full ring-2 ring-white dark:ring-neutral-900 ${
-                    isFirst
-                      ? colors.node
-                      : 'bg-neutral-400 dark:bg-neutral-500'
-                  }`}
-                />
+                {isFirst ? (
+                  <>
+                    <div className="animate-git-head-pulse absolute -inset-1 rounded-full border border-emerald-400/50 bg-emerald-400/8 dark:border-emerald-300/45 dark:bg-emerald-300/10" />
+                    <div className="absolute inset-[1px] rounded-full ring-2 ring-emerald-500/30 dark:ring-emerald-300/35" />
+                    <div className="relative h-4 w-4 rounded-full bg-emerald-500 ring-2 ring-white shadow-sm dark:bg-emerald-400 dark:ring-neutral-900" />
+                  </>
+                ) : (
+                  <>
+                    <div className="absolute inset-[1px] rounded-full ring-2 ring-amber-200/80 dark:ring-amber-900/70" />
+                    <div className="relative h-3.5 w-3.5 rounded-full bg-amber-300/65 ring-2 ring-white dark:bg-amber-200/40 dark:ring-neutral-900" />
+                  </>
+                )}
               </div>
             </div>
 
@@ -624,13 +548,13 @@ function Work({
                       alt={companyData.company}
                     />
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100">
+                      <h2 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100">
                         {companyData.url ? (
                           <a
                             href={companyData.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 transition-colors hover:text-sky-500 dark:hover:text-sky-400"
+                            className="inline-flex items-center gap-1 text-neutral-900 transition-colors hover:text-sky-700 dark:text-neutral-100 dark:hover:text-sky-300"
                           >
                             {companyData.company}
                             <svg
@@ -650,7 +574,7 @@ function Work({
                         ) : (
                           companyData.company
                         )}
-                      </h3>
+                      </h2>
                       <div className="mt-1 flex flex-col items-start gap-1 text-sm text-neutral-700 dark:text-neutral-200 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-1">
                         <span className="font-mono text-neutral-500 dark:text-neutral-400">
                           {formatDuration(companyData.totalDuration)}
@@ -713,8 +637,6 @@ function Work({
 
                 <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
                   {companyData.experiences.map((experience, index) => {
-                    const roleType = getRoleType(experience.position)
-                    const roleColors = getBranchColors(roleType)
                     const previousExperience =
                       index < companyData.experiences.length - 1
                         ? companyData.experiences[index + 1]
@@ -742,9 +664,9 @@ function Work({
 
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-col items-start gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
-                              <h4 className="font-medium text-neutral-900 dark:text-neutral-100">
+                              <h3 className="font-medium text-neutral-900 dark:text-neutral-100">
                                 {experience.position}
-                              </h4>
+                              </h3>
                               <div className="flex flex-wrap items-center gap-2">
                                 <span className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                                   {formatDuration(

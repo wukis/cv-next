@@ -1,12 +1,12 @@
 import { type Metadata } from 'next'
 
 import { Providers } from '@/app/providers'
+import { DesktopAmbientGate } from '@/components/DesktopAmbientGate'
 import { Layout } from '@/components/Layout'
 import linkedin from '@/data/linkedin.json'
 import { seoDescription, seoKeywords, siteUrl } from '@/lib/siteProfile'
 
 import '@/styles/tailwind.css'
-import AmbientDecorations from '@/components/AmbientDecorations'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -76,7 +76,7 @@ export default function RootLayout({
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
       <body className="flex h-full bg-neutral-50 print:bg-white dark:bg-black">
         <div className="print:hidden">
-          <AmbientDecorations />
+          <DesktopAmbientGate />
         </div>
         <Providers>
           <div className="flex w-full">
