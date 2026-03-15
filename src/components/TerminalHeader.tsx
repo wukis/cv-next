@@ -96,7 +96,7 @@ export function TerminalSectionHeader({
         as={as}
         command={command}
         argument={argument}
-        className="text-lg font-bold tracking-tight sm:text-xl"
+        className="text-base font-semibold tracking-tight sm:text-xl sm:font-bold"
       />
       {description ? (
         <p className="mt-2 font-mono text-xs text-neutral-600 dark:text-neutral-400 sm:text-sm">

@@ -4,7 +4,10 @@ import Link from 'next/link'
 import { Button, CodeFileIcon, DownloadIcon } from '@/components/Button'
 import { Container } from '@/components/Container'
 import { TerminalPageHeader } from '@/components/TerminalHeader'
-import { calculateTotalExperienceYears } from '@/lib/experience'
+import {
+  calculateTotalExperienceYears,
+  type WorkInterface,
+} from '@/lib/experience'
 import {
   cvSummary,
   publicBasics,
@@ -35,68 +38,178 @@ function formatMonth(date: string) {
   })
 }
 
-function WorkEntry({
-  role,
-}: {
-  role: (typeof publicWork)[number]
-}) {
+function dedupeItems(items: string[]) {
+  const seen = new Set<string>()
+  const uniqueItems: string[] = []
+
+  for (const item of items) {
+    const normalized = item.trim().toLowerCase()
+    if (!normalized || seen.has(normalized)) continue
+
+    seen.add(normalized)
+    uniqueItems.push(item)
+  }
+
+  return uniqueItems
+}
+
+type WorkGroup = {
+  company: string
+  roles: WorkInterface[]
+  startDate: string
+  endDate: string
+  technologies: string[]
+}
+
+function groupRolesByCompany(work: WorkInterface[]) {
+  const groups: WorkGroup[] = []
+
+  for (const role of work) {
+    const currentGroup = groups[groups.length - 1]
+
+    if (currentGroup && currentGroup.company === role.name) {
+      currentGroup.roles.push(role)
+      currentGroup.startDate = role.startDate
+      currentGroup.technologies = dedupeItems([
+        ...currentGroup.technologies,
+        ...role.technologies,
+      ])
+      continue
+    }
+
+    groups.push({
+      company: role.name,
+      roles: [role],
+      startDate: role.startDate,
+      endDate: role.endDate,
+      technologies: [...role.technologies],
+    })
+  }
+
+  return groups
+}
+
+function getSharedLocation(roles: WorkInterface[]) {
+  const locations = dedupeItems(
+    roles.map((role) => role.location ?? '').filter(Boolean),
+  )
+
+  return locations.length === 1 ? locations[0] : null
+}
+
+function getRoleProgression(roles: WorkInterface[]) {
+  return [...roles]
+    .reverse()
+    .map((role) => role.position)
+    .join(' -> ')
+}
+
+const groupedPublicWork = groupRolesByCompany(publicWork)
+
+function CompanyWorkEntry({ company }: { company: WorkGroup }) {
+  const sharedLocation = getSharedLocation(company.roles)
+  const hasPromotion = company.roles.length > 1
+
   return (
-    <article className="rounded-lg border border-neutral-200 bg-white p-5 print:break-inside-avoid dark:border-neutral-700 dark:bg-neutral-900">
+    <article className="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-700 dark:bg-neutral-900 print:break-inside-auto">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-            {role.position}
+            {company.company}
           </h2>
-          <p className="text-sm text-neutral-700 dark:text-neutral-200">
-            {role.name}
-          </p>
+          {hasPromotion ? (
+            <>
+              <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+                promoted internally
+              </p>
+              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
+                {getRoleProgression(company.roles)}
+              </p>
+            </>
+          ) : null}
         </div>
-        <div className="text-sm text-neutral-600 dark:text-neutral-300 sm:text-right">
+        <div className="text-sm text-neutral-600 sm:text-right dark:text-neutral-300">
           <p>
-            {formatMonth(role.startDate)} - {formatMonth(role.endDate)}
+            {formatMonth(company.startDate)} - {formatMonth(company.endDate)}
           </p>
-          {role.location ? <p>{role.location}</p> : null}
+          {sharedLocation ? <p>{sharedLocation}</p> : null}
         </div>
       </div>
 
-      {role.scope ? (
-        <p className="mt-4 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
-          {role.scope}
-        </p>
-      ) : null}
+      <div className="mt-5 space-y-5">
+        {company.roles.map((role, index) => (
+          <section
+            key={`${role.position}-${role.startDate}`}
+            className={[
+              'print:break-inside-avoid',
+              index > 0
+                ? 'border-t border-neutral-200 pt-5 dark:border-neutral-700'
+                : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+          >
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                  {role.position}
+                </h3>
+              </div>
+              <div className="text-sm text-neutral-600 sm:text-right dark:text-neutral-300">
+                <p>
+                  {formatMonth(role.startDate)} - {formatMonth(role.endDate)}
+                </p>
+                {!sharedLocation && role.location ? (
+                  <p>{role.location}</p>
+                ) : null}
+              </div>
+            </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div>
-          <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
-            highlights
-          </h3>
-          <ul className="mt-2 space-y-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
-            {role.highlights.map((item) => (
-              <li key={item} className="flex gap-2">
-                <span className="text-emerald-600 dark:text-emerald-400">-</span>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+            {role.scope ? (
+              <p className="mt-4 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
+                {role.scope}
+              </p>
+            ) : null}
 
-        <div>
-          <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
-            scope
-          </h3>
-          <ul className="mt-2 space-y-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
-            {role.responsibilities.map((item) => (
-              <li key={item} className="flex gap-2">
-                <span className="text-neutral-500 dark:text-neutral-400">-</span>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div>
+                <h4 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+                  highlights
+                </h4>
+                <ul className="mt-2 space-y-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
+                  {role.highlights.map((item) => (
+                    <li key={item} className="flex gap-2">
+                      <span className="text-emerald-600 dark:text-emerald-400">
+                        -
+                      </span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+                  scope
+                </h4>
+                <ul className="mt-2 space-y-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
+                  {role.responsibilities.map((item) => (
+                    <li key={item} className="flex gap-2">
+                      <span className="text-neutral-500 dark:text-neutral-400">
+                        -
+                      </span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </section>
+        ))}
       </div>
 
       <p className="mt-4 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
-        {role.technologies.join(' · ')}
+        {company.technologies.join(' · ')}
       </p>
     </article>
   )
@@ -114,7 +227,7 @@ export default function CvPage() {
       </div>
 
       <div className="rounded-lg border border-neutral-200 bg-white/95 p-6 shadow-sm dark:border-neutral-700 dark:bg-neutral-900/95 print:border-none print:bg-white print:p-0 print:shadow-none">
-        <div className="flex flex-col gap-6 border-b border-neutral-200 pb-6 print:gap-4 dark:border-neutral-700">
+        <div className="flex flex-col gap-6 border-b border-neutral-200 pb-6 dark:border-neutral-700 print:gap-4">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
               <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
@@ -135,7 +248,7 @@ export default function CvPage() {
             <div className="space-y-2 text-sm text-neutral-700 dark:text-neutral-200">
               <Link
                 href={`mailto:${publicEmail}`}
-                className="block hover:text-emerald-700 print:hidden dark:hover:text-emerald-300"
+                className="block hover:text-emerald-700 dark:hover:text-emerald-300 print:hidden"
               >
                 {publicEmail}
               </Link>
@@ -146,7 +259,7 @@ export default function CvPage() {
                   href={profile.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block hover:text-emerald-700 print:hidden dark:hover:text-emerald-300"
+                  className="block hover:text-emerald-700 dark:hover:text-emerald-300 print:hidden"
                 >
                   {profile.label}
                 </Link>
@@ -174,7 +287,7 @@ export default function CvPage() {
             {selectedImpactStories.map((story) => (
               <article
                 key={story.title}
-                className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 print:break-inside-avoid dark:border-neutral-700 dark:bg-neutral-950/60"
+                className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-950/60 print:break-inside-avoid"
               >
                 <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
                   {story.title}
@@ -194,8 +307,11 @@ export default function CvPage() {
             experience
           </h2>
           <div className="mt-4 space-y-4">
-            {publicWork.map((role) => (
-              <WorkEntry key={`${role.name}-${role.position}-${role.startDate}`} role={role} />
+            {groupedPublicWork.map((company) => (
+              <CompanyWorkEntry
+                key={`${company.company}-${company.startDate}`}
+                company={company}
+              />
             ))}
           </div>
         </section>
@@ -209,7 +325,9 @@ export default function CvPage() {
               Vilniaus Universitetas
             </p>
             <p>Bachelor&apos;s degree in Software Engineering</p>
-            <p className="text-neutral-600 dark:text-neutral-300">2011 - 2015</p>
+            <p className="text-neutral-600 dark:text-neutral-300">
+              2011 - 2015
+            </p>
           </div>
         </section>
       </div>

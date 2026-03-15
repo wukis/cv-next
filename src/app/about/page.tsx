@@ -145,7 +145,7 @@ export default function About() {
                   If you want a cleaner summary of experience or prefer to reach
                   out directly, both are available here.
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap justify-center gap-2">
                   <Button
                     href="/cv"
                     variant="secondary"

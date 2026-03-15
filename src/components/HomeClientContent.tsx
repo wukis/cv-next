@@ -151,7 +151,6 @@ function RecommendationsPreview() {
         <TerminalSectionHeader
           command="cat"
           argument="testimonials --limit 6 --short"
-          description="A quick scan of selected recommendations."
         />
       </div>
 
