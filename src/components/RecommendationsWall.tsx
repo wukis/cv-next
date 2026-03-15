@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { RecommendationInterface } from '@/lib/recommendations'
 import { recommendationsCopy } from '@/lib/recommendationsCopy'
 
-const testimonialAccent = {
+const recommendationAccent = {
   hoverBorder: 'hover:border-emerald-300 dark:hover:border-emerald-700',
   quote: 'text-amber-600 dark:text-amber-400',
   ring: 'ring-emerald-500/40 dark:ring-emerald-400/40',
@@ -35,14 +35,20 @@ function Recommendation({
   return (
     <article id={recommendation.slug} className="scroll-mt-20">
       <div
-        className={`relative overflow-hidden rounded-xl border border-neutral-200 bg-white/85 backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-900/85 ${testimonialAccent.hoverBorder} ${
+        className={`relative overflow-hidden rounded-xl border border-neutral-200 bg-white/85 backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-900/85 ${recommendationAccent.hoverBorder} ${
           isHighlighted
-            ? `ring-2 ${testimonialAccent.ring} scale-[1.02] shadow-lg`
+            ? `border-emerald-400 bg-emerald-50/85 ring-4 ring-emerald-300/65 scale-[1.02] shadow-xl shadow-emerald-500/15 dark:border-emerald-600 dark:bg-emerald-950/28 dark:ring-emerald-700/55`
             : ''
         }`}
       >
         {/* Terminal header */}
-        <div className="flex h-6 items-center gap-2 border-b border-neutral-300 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
+        <div
+          className={`flex h-6 items-center gap-2 border-b px-4 ${
+            isHighlighted
+              ? 'border-emerald-300 bg-emerald-100/80 dark:border-emerald-800 dark:bg-emerald-950/60'
+              : 'border-neutral-300 bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-800'
+          }`}
+        >
           <span className="truncate font-mono text-[10px] text-neutral-700 dark:text-neutral-100">
             ~/{recommendationsCopy.directoryName}/{recommendation.slug}.md
           </span>
@@ -52,19 +58,35 @@ function Recommendation({
           {/* Quote */}
           <blockquote className="relative mb-4">
             <span
-              className={`absolute -left-1 -top-1 font-serif text-3xl ${testimonialAccent.quote} opacity-40`}
+              className={`absolute -left-1 -top-1 font-serif text-3xl ${recommendationAccent.quote} opacity-40`}
             >
               &ldquo;
             </span>
-            <p className="pl-4 pr-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
+            <p
+              className={`pl-4 pr-2 text-sm leading-relaxed ${
+                isHighlighted
+                  ? 'font-medium text-neutral-900 dark:text-neutral-50'
+                  : 'text-neutral-700 dark:text-neutral-200'
+              }`}
+            >
               {recommendation.body}
             </p>
           </blockquote>
 
           {/* Author info */}
-          <div className="flex items-center gap-3 border-t border-neutral-200 pt-4 dark:border-neutral-700">
+          <div
+            className={`flex items-center gap-3 border-t pt-4 ${
+              isHighlighted
+                ? 'border-emerald-300 dark:border-emerald-800'
+                : 'border-neutral-200 dark:border-neutral-700'
+            }`}
+          >
             <Image
-              className="h-10 w-10 flex-shrink-0 rounded-lg object-cover ring-2 ring-white dark:ring-neutral-800"
+              className={`h-10 w-10 flex-shrink-0 rounded-lg object-cover ring-2 ${
+                isHighlighted
+                  ? 'ring-emerald-300 dark:ring-emerald-700'
+                  : 'ring-white dark:ring-neutral-800'
+              }`}
               width={40}
               height={40}
               src={
@@ -91,7 +113,7 @@ function Recommendation({
   )
 }
 
-export function TestimonialsWall({
+export function RecommendationsWall({
   recommendations,
   allowSorting = false,
   headerLabel,
@@ -100,38 +122,79 @@ export function TestimonialsWall({
   allowSorting?: boolean
   headerLabel?: string
 }) {
-  const [highlightedSlug, setHighlightedSlug] = useState<string | null>(() =>
-    typeof window === 'undefined' ? null : window.location.hash.slice(1) || null,
-  )
+  const [highlightedSlug, setHighlightedSlug] = useState<string | null>(null)
   const [sortMode, setSortMode] = useState<'natural' | 'recent'>('natural')
+  const autoScrollUntilRef = useRef(0)
+  const interactionUnlockAtRef = useRef(0)
+
+  const clearHighlight = () => {
+    if (Date.now() <= interactionUnlockAtRef.current) return
+
+    setHighlightedSlug(null)
+
+    if (!window.location.hash) return
+
+    const url = new URL(window.location.href)
+    url.hash = ''
+    window.history.replaceState(window.history.state, '', url)
+  }
 
   useEffect(() => {
     if (highlightedSlug) {
+      interactionUnlockAtRef.current = Date.now() + 500
+      autoScrollUntilRef.current = Date.now() + 2000
+
       // Scroll to the element after a brief delay to ensure render
-      setTimeout(() => {
+      const timer = window.setTimeout(() => {
         const element = document.getElementById(highlightedSlug)
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' })
         }
       }, 100)
 
-      // Remove highlight after animation
-      const timer = setTimeout(() => {
-        setHighlightedSlug(null)
-      }, 3000)
-
-      return () => clearTimeout(timer)
+      return () => window.clearTimeout(timer)
     }
   }, [highlightedSlug])
 
-  // Listen for hash changes
   useEffect(() => {
-    const handleHashChange = () => {
+    if (!highlightedSlug) return
+
+    const clearHighlightOnScroll = () => {
+      if (Date.now() <= autoScrollUntilRef.current) return
+      clearHighlight()
+    }
+
+    window.addEventListener('pointerdown', clearHighlight)
+    window.addEventListener('click', clearHighlight)
+    window.addEventListener('wheel', clearHighlight, { passive: true })
+    window.addEventListener('touchmove', clearHighlight, { passive: true })
+    window.addEventListener('keydown', clearHighlight)
+    window.addEventListener('scroll', clearHighlightOnScroll, {
+      passive: true,
+    })
+
+    return () => {
+      window.removeEventListener('pointerdown', clearHighlight)
+      window.removeEventListener('click', clearHighlight)
+      window.removeEventListener('wheel', clearHighlight)
+      window.removeEventListener('touchmove', clearHighlight)
+      window.removeEventListener('keydown', clearHighlight)
+      window.removeEventListener('scroll', clearHighlightOnScroll)
+    }
+  }, [highlightedSlug])
+
+  useEffect(() => {
+    const syncHighlightFromHash = () => {
       setHighlightedSlug(window.location.hash.slice(1) || null)
     }
 
-    window.addEventListener('hashchange', handleHashChange)
-    return () => window.removeEventListener('hashchange', handleHashChange)
+    const timer = window.setTimeout(syncHighlightFromHash, 0)
+    window.addEventListener('hashchange', syncHighlightFromHash)
+
+    return () => {
+      window.clearTimeout(timer)
+      window.removeEventListener('hashchange', syncHighlightFromHash)
+    }
   }, [])
 
   const displayedRecommendations =

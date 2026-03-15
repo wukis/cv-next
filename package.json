@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build && node scripts/obfuscate.mjs",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "cv:pdf": "npx playwright install chromium && npm run build && node scripts/generate-cv-pdf.mjs"
   },
   "browserslist": "defaults, not ie <= 11",
   "dependencies": {

@@ -24,14 +24,43 @@
     transition: opacity 0.5s ease-out;
     pointer-events: none;
   }
-  
+
   .animation-focus header {
     /* Keep header visible but slightly faded */
   }
-  
+
   /* Ensure smooth transition back */
   main,
   footer {
     transition: opacity 0.3s ease-in;
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 9mm;
+  }
+
+  html,
+  body {
+    background: white !important;
+    color-scheme: light;
+  }
+
+  .cv-company-card {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  .cv-role-section {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  .cv-role-section + .cv-role-section {
+    border-top-width: 0 !important;
+    padding-top: 0 !important;
+    margin-top: 8px !important;
   }
 }

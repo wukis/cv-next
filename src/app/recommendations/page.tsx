@@ -2,7 +2,7 @@ import { type Metadata } from 'next'
 
 import { Container } from '@/components/Container'
 import { TerminalPageHeader } from '@/components/TerminalHeader'
-import { TestimonialsWall } from '@/components/TestimonialsWall'
+import { RecommendationsWall } from '@/components/RecommendationsWall'
 import recommendations from '@/data/recommendations.json'
 import { recommendationsCopy } from '@/lib/recommendationsCopy'
 
@@ -25,7 +25,7 @@ export default async function RecommendationsPage() {
       />
 
       {/* Recommendations wall */}
-      <TestimonialsWall
+      <RecommendationsWall
         recommendations={recommendations}
         allowSorting
         headerLabel={recommendationsCopy.countLabel(recommendations.length)}

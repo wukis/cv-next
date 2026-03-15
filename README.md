@@ -1,42 +1,42 @@
-# Spotlight
+# Jonas Petrik CV Site
 
-Spotlight is a [Tailwind UI](https://tailwindui.com) site template built using [Tailwind CSS](https://tailwindcss.com) and [Next.js](https://nextjs.org).
+This repository contains the personal site, recruiter-friendly CV page, and the checked-in PDF export.
 
 ## Getting started
 
-To get started with this template, first install the npm dependencies:
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-Next, create a `.env.local` file in the root of your project and set the `NEXT_PUBLIC_SITE_URL` variable to your site's public URL:
-
-```
-NEXT_PUBLIC_SITE_URL=https://example.com
-```
-
-Next, run the development server:
+Run the local development server:
 
 ```bash
 npm run dev
 ```
 
-Finally, open [http://localhost:3000](http://localhost:3000) in your browser to view the website.
+Open [http://localhost:3000](http://localhost:3000) to preview the site.
 
-## Customizing
+## Regenerate the CV PDF
 
-You can start editing this template by modifying the files in the `/src` folder. The site will auto-update as you edit these files.
+Use the dedicated export command:
 
-## License
+```bash
+npm run cv:pdf
+```
 
-This site template is a commercial product and is licensed under the [Tailwind UI license](https://tailwindui.com/license).
+What it does:
 
-## Learn more
+- Installs the Playwright Chromium browser if it is not already available.
+- Builds the site in production mode.
+- Starts the built app locally.
+- Renders `/cv` in print mode with a fixed light theme.
+- Writes the result to `public/jonas-petrik-cv.pdf`.
 
-To learn more about the technologies used in this site template, see the following resources:
+The PDF export intentionally excludes the ambient background animation, top navigation, footer, back-to-top button, and other elements wrapped in `print:hidden`.
 
-- [Tailwind CSS](https://tailwindcss.com/docs) - the official Tailwind CSS documentation
-- [Next.js](https://nextjs.org/docs) - the official Next.js documentation
-- [Headless UI](https://headlessui.dev) - the official Headless UI documentation
-- [MDX](https://mdxjs.com) - the MDX documentation
+## Notes
+
+- The CV page itself lives at `/cv`.
+- The static PDF committed to the repo lives at `public/jonas-petrik-cv.pdf`.

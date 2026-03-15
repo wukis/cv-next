@@ -150,7 +150,7 @@ function RecommendationsPreview() {
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <TerminalSectionHeader
           command="cat"
-          argument="testimonials --limit 6 --short"
+          argument="recommendations --limit 6 --short"
         />
       </div>
 

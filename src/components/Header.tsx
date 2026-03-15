@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import clsx from 'clsx'
 
+import { DownloadIcon } from '@/components/Button'
 import { Container } from '@/components/Container'
 import { surfaceHoverMotionClassName } from '@/components/interactionStyles'
 import { recommendationsCopy } from '@/lib/recommendationsCopy'
@@ -323,6 +324,20 @@ function ThemeToggle() {
   )
 }
 
+function CvDownloadButton() {
+  return (
+    <a
+      href="/jonas-petrik-cv.pdf"
+      download
+      aria-label="Download CV PDF"
+      title="Download CV PDF"
+      className={`group flex h-10 w-10 items-center justify-center rounded-lg bg-white/80 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-200/50 backdrop-blur hover:ring-emerald-400/40 dark:bg-neutral-800/80 dark:ring-neutral-700/50 dark:hover:ring-emerald-400/40 ${surfaceHoverMotionClassName}`}
+    >
+      <DownloadIcon className="h-5 w-5 text-neutral-600 transition group-hover:text-emerald-700 dark:text-neutral-300 dark:group-hover:text-emerald-300" />
+    </a>
+  )
+}
+
 // Hexagon icon for the animation focus element
 function HexagonNetworkIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
@@ -593,6 +608,7 @@ export function Header() {
               </div>
               <div className="flex justify-end md:flex-1">
                 <div className="pointer-events-auto flex items-center gap-2">
+                  <CvDownloadButton />
                   <div className="hidden md:block">
                     <AnimationFocus />
                   </div>

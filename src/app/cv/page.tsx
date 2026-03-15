@@ -111,10 +111,10 @@ function CompanyWorkEntry({ company }: { company: WorkGroup }) {
   const hasPromotion = company.roles.length > 1
 
   return (
-    <article className="rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-700 dark:bg-neutral-900 print:break-inside-auto">
+    <article className="cv-company-card rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-700 dark:bg-neutral-900 print:break-inside-avoid print:p-3.5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+          <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 print:text-[16px]">
             {company.company}
           </h2>
           {hasPromotion ? (
@@ -122,13 +122,13 @@ function CompanyWorkEntry({ company }: { company: WorkGroup }) {
               <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
                 promoted internally
               </p>
-              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
+              <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300 print:mt-1 print:text-[12px]">
                 {getRoleProgression(company.roles)}
               </p>
             </>
           ) : null}
         </div>
-        <div className="text-sm text-neutral-600 sm:text-right dark:text-neutral-300">
+        <div className="text-sm text-neutral-600 sm:text-right dark:text-neutral-300 print:text-[12px]">
           <p>
             {formatMonth(company.startDate)} - {formatMonth(company.endDate)}
           </p>
@@ -136,14 +136,14 @@ function CompanyWorkEntry({ company }: { company: WorkGroup }) {
         </div>
       </div>
 
-      <div className="mt-5 space-y-5">
+      <div className="mt-5 space-y-5 print:mt-3 print:space-y-3">
         {company.roles.map((role, index) => (
           <section
             key={`${role.position}-${role.startDate}`}
             className={[
-              'print:break-inside-avoid',
+              'cv-role-section print:break-inside-avoid',
               index > 0
-                ? 'border-t border-neutral-200 pt-5 dark:border-neutral-700'
+                ? 'border-t border-neutral-200 pt-5 dark:border-neutral-700 print:pt-3'
                 : '',
             ]
               .filter(Boolean)
@@ -151,11 +151,11 @@ function CompanyWorkEntry({ company }: { company: WorkGroup }) {
           >
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100 print:text-[14px]">
                   {role.position}
                 </h3>
               </div>
-              <div className="text-sm text-neutral-600 sm:text-right dark:text-neutral-300">
+              <div className="text-sm text-neutral-600 sm:text-right dark:text-neutral-300 print:text-[12px]">
                 <p>
                   {formatMonth(role.startDate)} - {formatMonth(role.endDate)}
                 </p>
@@ -166,17 +166,17 @@ function CompanyWorkEntry({ company }: { company: WorkGroup }) {
             </div>
 
             {role.scope ? (
-              <p className="mt-4 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
+              <p className="mt-4 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 print:mt-2.5 print:text-[12px] print:leading-[1.35]">
                 {role.scope}
               </p>
             ) : null}
 
-            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2 print:mt-2.5 print:gap-2.5">
               <div>
                 <h4 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
                   highlights
                 </h4>
-                <ul className="mt-2 space-y-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
+                <ul className="mt-2 space-y-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 print:mt-1 print:space-y-1 print:text-[12px] print:leading-[1.3]">
                   {role.highlights.map((item) => (
                     <li key={item} className="flex gap-2">
                       <span className="text-emerald-600 dark:text-emerald-400">
@@ -192,7 +192,7 @@ function CompanyWorkEntry({ company }: { company: WorkGroup }) {
                 <h4 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
                   scope
                 </h4>
-                <ul className="mt-2 space-y-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
+                <ul className="mt-2 space-y-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 print:mt-1 print:space-y-1 print:text-[12px] print:leading-[1.3]">
                   {role.responsibilities.map((item) => (
                     <li key={item} className="flex gap-2">
                       <span className="text-neutral-500 dark:text-neutral-400">
@@ -208,7 +208,7 @@ function CompanyWorkEntry({ company }: { company: WorkGroup }) {
         ))}
       </div>
 
-      <p className="mt-4 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
+      <p className="mt-4 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400 print:mt-2.5 print:text-[9px] print:leading-[1.2]">
         {company.technologies.join(' · ')}
       </p>
     </article>
@@ -227,39 +227,61 @@ export default function CvPage() {
       </div>
 
       <div className="rounded-lg border border-neutral-200 bg-white/95 p-6 shadow-sm dark:border-neutral-700 dark:bg-neutral-900/95 print:border-none print:bg-white print:p-0 print:shadow-none">
-        <div className="flex flex-col gap-6 border-b border-neutral-200 pb-6 dark:border-neutral-700 print:gap-4">
+        <div className="flex flex-col gap-6 border-b border-neutral-200 pb-6 dark:border-neutral-700 print:gap-3 print:pb-3">
+          <div className="hidden border-b border-neutral-200 pb-4 dark:border-neutral-700 print:block print:pb-2.5">
+            <div className="grid grid-cols-2 gap-4 text-sm text-neutral-700 print:gap-2 print:text-[12px]">
+              <div>
+                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500">
+                  email
+                </p>
+                <p className="mt-1">{publicEmail}</p>
+              </div>
+              <div>
+                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500">
+                  portfolio
+                </p>
+                <p className="mt-1">{publicBasics.url}</p>
+              </div>
+            </div>
+          </div>
+
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
               <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
                 {publicBasics.label}
               </p>
-              <h1 className="mt-2 text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+              <h1 className="mt-2 text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 print:mt-1 print:text-[26px]">
                 {publicBasics.name}
               </h1>
-              <p className="mt-3 text-base leading-relaxed text-neutral-700 dark:text-neutral-200">
+              <p className="mt-3 text-base leading-relaxed text-neutral-700 dark:text-neutral-200 print:mt-1.5 print:text-[13px] print:leading-[1.35]">
                 {cvSummary}
               </p>
-              <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-300">
+              <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-300 print:mt-1.5 print:text-[12px]">
                 {totalExperienceYears}+ years of experience · Based in{' '}
                 {publicBasics.location}
               </p>
             </div>
 
-            <div className="space-y-2 text-sm text-neutral-700 dark:text-neutral-200">
+            <div className="space-y-2 text-sm text-neutral-700 dark:text-neutral-200 print:hidden">
               <Link
                 href={`mailto:${publicEmail}`}
-                className="block hover:text-emerald-700 dark:hover:text-emerald-300 print:hidden"
+                className="block hover:text-emerald-700 dark:hover:text-emerald-300"
               >
                 {publicEmail}
               </Link>
-              <p className="hidden print:block">{publicEmail}</p>
+              <Link
+                href={publicBasics.url}
+                className="block hover:text-emerald-700 dark:hover:text-emerald-300"
+              >
+                {publicBasics.url}
+              </Link>
               {publicProfileLinks.map((profile) => (
                 <Link
                   key={profile.href}
                   href={profile.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block hover:text-emerald-700 dark:hover:text-emerald-300 print:hidden"
+                  className="block hover:text-emerald-700 dark:hover:text-emerald-300"
                 >
                   {profile.label}
                 </Link>
@@ -279,20 +301,20 @@ export default function CvPage() {
           </div>
         </div>
 
-        <section className="mt-8">
+        <section className="mt-8 print:mt-5">
           <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
             selected impact
           </h2>
-          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3 print:mt-2.5 print:gap-2">
             {selectedImpactStories.map((story) => (
               <article
                 key={story.title}
-                className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-950/60 print:break-inside-avoid"
+                className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-950/60 print:break-inside-avoid print:p-2.5"
               >
-                <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100 print:text-[14px]">
                   {story.title}
                 </h3>
-                <div className="mt-3 space-y-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
+                <div className="mt-3 space-y-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 print:mt-1.5 print:space-y-1 print:text-[12px] print:leading-[1.3]">
                   <p>{story.context}</p>
                   <p>{story.role}</p>
                   <p>{story.impact}</p>
@@ -302,11 +324,11 @@ export default function CvPage() {
           </div>
         </section>
 
-        <section className="mt-8">
-          <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+        <section className="mt-8 print:mt-5">
+          <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400 print:hidden">
             experience
           </h2>
-          <div className="mt-4 space-y-4">
+          <div className="mt-4 space-y-4 print:mt-2.5 print:space-y-2.5">
             {groupedPublicWork.map((company) => (
               <CompanyWorkEntry
                 key={`${company.company}-${company.startDate}`}
@@ -316,11 +338,11 @@ export default function CvPage() {
           </div>
         </section>
 
-        <section className="mt-8 border-t border-neutral-200 pt-6 dark:border-neutral-700">
+        <section className="mt-8 border-t border-neutral-200 pt-6 dark:border-neutral-700 print:mt-5 print:pt-3">
           <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
             education
           </h2>
-          <div className="mt-4 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
+          <div className="mt-4 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 print:mt-2.5 print:text-[12px] print:leading-[1.3]">
             <p className="font-medium text-neutral-900 dark:text-neutral-100">
               Vilniaus Universitetas
             </p>
