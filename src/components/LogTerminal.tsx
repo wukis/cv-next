@@ -3,12 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import {
-  DEFAULT_CLUSTER_SNAPSHOT,
-  NETWORK_CLUSTER_STATE_EVENT,
   type ClusterEventEntry,
-  type ClusterSnapshot,
-  type EmergencyState,
+  useAmbientClusterSnapshot,
 } from '@/lib/ambientCluster'
+import {
+  deriveAmbientMonitoringState,
+} from '@/lib/ambientMonitoring'
 
 type LogEntry = {
   id: string
@@ -75,43 +75,46 @@ function mapClusterEventToLog(event: ClusterEventEntry): LogEntry {
   }
 }
 
-function createHeartbeatLog(cluster: ClusterSnapshot) {
-  const emergencySuffix =
-    cluster.emergencyState === 'emergency'
-      ? ' incident=active'
-      : cluster.emergencyState === 'recovery'
-        ? ' incident=recovering'
-        : ''
-
+function createHeartbeatLog(
+  cluster: ReturnType<typeof useAmbientClusterSnapshot>,
+  heartbeatLevel: ReturnType<typeof deriveAmbientMonitoringState>['heartbeatLevel'],
+  heartbeatSuffix: ReturnType<typeof deriveAmbientMonitoringState>['heartbeatSuffix'],
+) {
   return {
     id: `heartbeat-${Date.now()}`,
-    level: cluster.readyReplicas < cluster.replicaTarget ? 'WARN' : 'DEBUG',
+    level: heartbeatLevel,
     message:
       `Cluster heartbeat ready=${cluster.readyReplicas}/${cluster.replicaTarget}` +
-      ` targets=${cluster.loadBalancerTargets.length} queue_depth=${cluster.queueDepth}${emergencySuffix}`,
+      ` targets=${cluster.loadBalancerTargets.length}` +
+      ` queue_depth=${cluster.queueDepth}${heartbeatSuffix}`,
     timestamp: Date.now(),
   } satisfies LogEntry
 }
 
 export default function LogTerminal() {
   const [shouldRender, setShouldRender] = useState(getShouldRenderLogTerminal)
-  const [isFocused, setIsFocused] = useState(false)
-  const [cluster, setCluster] = useState<ClusterSnapshot>(DEFAULT_CLUSTER_SNAPSHOT)
+  const cluster = useAmbientClusterSnapshot()
   const [isDark, setIsDark] = useState(true)
   const [logEntries, setLogEntries] = useState<LogEntry[]>(() => createInitialLogs())
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const animationRef = useRef<number>(0)
   const lastEventIdRef = useRef<number>(0)
   const lastHeartbeatRef = useRef<number>(0)
+  const lastStateKeyRef = useRef<string | null>(null)
   const scrollStateRef = useRef({
     currentOffset: 0,
     currentSpeed: 0,
     targetSpeed: 0,
     lastTime: 0,
   })
+  const monitoring = deriveAmbientMonitoringState(cluster)
 
   const checkScreenSize = useCallback(() => {
     setShouldRender(getShouldRenderLogTerminal())
+  }, [])
+
+  const appendLog = useCallback((entry: LogEntry) => {
+    setLogEntries((previous) => [...previous, entry].slice(-32))
   }, [])
 
   useEffect(() => {
@@ -136,72 +139,77 @@ export default function LogTerminal() {
   }, [])
 
   useEffect(() => {
-    const checkFocusClass = () => {
-      setIsFocused(document.documentElement.classList.contains('animation-focus'))
+    let frameId = 0
+
+    if (
+      cluster.recentEvent &&
+      cluster.recentEvent.id !== lastEventIdRef.current
+    ) {
+      lastEventIdRef.current = cluster.recentEvent.id
+      frameId = window.requestAnimationFrame(() => {
+        appendLog(mapClusterEventToLog(cluster.recentEvent!))
+      })
+      return () => window.cancelAnimationFrame(frameId)
     }
 
-    checkFocusClass()
+    const now = Date.now()
+    if (now - lastHeartbeatRef.current > 8500) {
+      lastHeartbeatRef.current = now
+      frameId = window.requestAnimationFrame(() => {
+        appendLog(
+          createHeartbeatLog(
+            cluster,
+            monitoring.heartbeatLevel,
+            monitoring.heartbeatSuffix,
+          ),
+        )
+      })
+    }
 
-    const observer = new MutationObserver(checkFocusClass)
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class'],
-    })
-
-    return () => observer.disconnect()
-  }, [])
+    return () => {
+      if (frameId) {
+        window.cancelAnimationFrame(frameId)
+      }
+    }
+  }, [appendLog, cluster, monitoring.heartbeatLevel, monitoring.heartbeatSuffix])
 
   useEffect(() => {
-    const appendLog = (entry: LogEntry) => {
-      setLogEntries((previous) => [...previous, entry].slice(-32))
+    let frameId = 0
+
+    if (lastStateKeyRef.current === monitoring.stateKey) {
+      return
     }
 
-    const handleClusterUpdate = (event: Event) => {
-      const customEvent = event as CustomEvent<ClusterSnapshot>
-      const snapshot = customEvent.detail
-      if (!snapshot) {
-        return
-      }
-
-      setCluster(snapshot)
-
-      if (
-        snapshot.recentEvent &&
-        snapshot.recentEvent.id !== lastEventIdRef.current
-      ) {
-        lastEventIdRef.current = snapshot.recentEvent.id
-        appendLog(mapClusterEventToLog(snapshot.recentEvent))
-        return
-      }
-
-      const now = Date.now()
-      if (now - lastHeartbeatRef.current > 8500) {
-        lastHeartbeatRef.current = now
-        appendLog(createHeartbeatLog(snapshot))
-      }
+    lastStateKeyRef.current = monitoring.stateKey
+    if (monitoring.mode === 'steady') {
+      return
     }
 
-    window.addEventListener(NETWORK_CLUSTER_STATE_EVENT, handleClusterUpdate)
-    return () => window.removeEventListener(NETWORK_CLUSTER_STATE_EVENT, handleClusterUpdate)
-  }, [])
+    frameId = window.requestAnimationFrame(() => {
+      appendLog({
+        id: `mode-${monitoring.stateKey}-${Date.now()}`,
+        level: monitoring.modeAnnouncementLevel,
+        message: monitoring.terminalSummary,
+        timestamp: Date.now(),
+      })
+    })
+
+    return () => {
+      if (frameId) {
+        window.cancelAnimationFrame(frameId)
+      }
+    }
+  }, [
+    appendLog,
+    monitoring.mode,
+    monitoring.modeAnnouncementLevel,
+    monitoring.stateKey,
+    monitoring.terminalSummary,
+  ])
 
   const getTargetScrollSpeed = useCallback(() => {
-    const emergencyState: EmergencyState = cluster.emergencyState
-    const durationMs =
-      emergencyState === 'emergency'
-        ? isFocused
-          ? 11000
-          : 32000
-        : emergencyState === 'recovery'
-          ? isFocused
-            ? 16000
-            : 42000
-          : isFocused
-            ? 19000
-            : 60000
-
-    return 50 / durationMs
-  }, [cluster.emergencyState, isFocused])
+    return 50 / monitoring.scrollDurationMs
+  }, [monitoring.scrollDurationMs])
 
   useEffect(() => {
     scrollStateRef.current.targetSpeed = getTargetScrollSpeed()
@@ -253,14 +261,26 @@ export default function LogTerminal() {
   const emergencyRedLight = '#cc0000'
   const recoveryGreenDark = '#33ff66'
   const recoveryGreenLight = '#009933'
+  const previewCyanDark = '#4df5ff'
+  const previewCyanLight = '#0f766e'
+  const surgeSkyDark = '#38bdf8'
+  const surgeSkyLight = '#0369a1'
 
   const getLogColor = (entry: LogEntry) => {
-    if (cluster.emergencyState === 'emergency' && entry.level !== 'OK') {
+    if (monitoring.accent === 'incident' && entry.level !== 'OK') {
       return isDark ? emergencyRedDark : emergencyRedLight
     }
 
-    if (cluster.emergencyState === 'recovery' && entry.level === 'OK') {
+    if (monitoring.accent === 'recovery' && entry.level === 'OK') {
       return isDark ? recoveryGreenDark : recoveryGreenLight
+    }
+
+    if (monitoring.accent === 'preview' && entry.level === 'INFO') {
+      return isDark ? previewCyanDark : previewCyanLight
+    }
+
+    if (monitoring.accent === 'surge' && (entry.level === 'INFO' || entry.level === 'WARN')) {
+      return isDark ? surgeSkyDark : surgeSkyLight
     }
 
     if (entry.level === 'ERROR') return isDark ? '#ff6666' : '#cc0000'
@@ -270,27 +290,62 @@ export default function LogTerminal() {
     return isDark ? '#00cccc' : '#008888'
   }
 
-  const containerOpacity = isFocused ? 1 : isDark ? 0.15 : 0.2
+  const isFocused = monitoring.terminalVisible
+  const isActive = isFocused && monitoring.mode !== 'steady'
+  const containerOpacity =
+    !isFocused
+      ? 0
+      : monitoring.mode === 'preview' || monitoring.mode === 'incident'
+        ? 1
+        : monitoring.mode === 'recovery'
+          ? 0.92
+          : monitoring.mode === 'surge'
+            ? 0.8
+            : isDark
+              ? 0.15
+              : 0.2
   const bgColor = isDark ? 'rgba(17, 17, 17, 0.82)' : 'rgba(255, 255, 255, 0.88)'
   const borderColor =
-    cluster.emergencyState === 'emergency'
+    monitoring.mode === 'incident'
       ? isDark
         ? 'rgba(255, 51, 51, 0.5)'
         : 'rgba(204, 0, 0, 0.6)'
-      : cluster.emergencyState === 'recovery'
+      : monitoring.mode === 'recovery'
         ? isDark
           ? 'rgba(51, 255, 102, 0.5)'
           : 'rgba(0, 153, 51, 0.6)'
+        : monitoring.mode === 'preview'
+          ? isDark
+            ? 'rgba(77, 245, 255, 0.45)'
+            : 'rgba(15, 118, 110, 0.55)'
+          : monitoring.mode === 'surge'
+            ? isDark
+              ? 'rgba(56, 189, 248, 0.45)'
+              : 'rgba(3, 105, 161, 0.55)'
         : isDark
           ? 'rgba(64, 64, 64, 0.3)'
           : 'rgba(180, 180, 180, 0.5)'
   const headerDotColor = isDark ? '#555' : '#ccc'
-  const terminalTitle =
-    cluster.emergencyState === 'emergency'
-      ? 'cluster://prod failover'
-      : cluster.emergencyState === 'recovery'
-        ? 'cluster://prod healing'
-        : 'cluster://prod steady-state'
+  const titleColor =
+    monitoring.mode === 'incident'
+      ? isDark
+        ? '#fecaca'
+        : '#b91c1c'
+      : monitoring.mode === 'recovery'
+        ? isDark
+          ? '#bbf7d0'
+          : '#166534'
+        : monitoring.mode === 'preview'
+          ? isDark
+            ? '#a5f3fc'
+            : '#115e59'
+          : monitoring.mode === 'surge'
+            ? isDark
+              ? '#bae6fd'
+              : '#075985'
+            : isDark
+              ? '#94a3b8'
+              : '#475569'
 
   const formattedLogs = logEntries.map((entry) => ({
     id: entry.id,
@@ -310,10 +365,14 @@ export default function LogTerminal() {
           opacity: containerOpacity,
           transition: isFocused ? 'opacity 0.3s ease-in' : 'opacity 0.5s ease-out',
           boxShadow:
-            cluster.emergencyState === 'emergency' && isFocused
+            monitoring.mode === 'incident' && isActive
               ? `0 0 20px ${isDark ? 'rgba(255, 51, 51, 0.3)' : 'rgba(204, 0, 0, 0.2)'}`
-              : cluster.emergencyState === 'recovery' && isFocused
+              : monitoring.mode === 'recovery' && isActive
                 ? `0 0 20px ${isDark ? 'rgba(51, 255, 102, 0.28)' : 'rgba(0, 153, 51, 0.18)'}`
+                : monitoring.mode === 'preview' && isActive
+                  ? `0 0 20px ${isDark ? 'rgba(77, 245, 255, 0.22)' : 'rgba(15, 118, 110, 0.14)'}`
+                  : monitoring.mode === 'surge' && isActive
+                    ? `0 0 20px ${isDark ? 'rgba(56, 189, 248, 0.22)' : 'rgba(3, 105, 161, 0.14)'}`
                 : 'none',
         }}
       >
@@ -328,7 +387,7 @@ export default function LogTerminal() {
               className="h-2.5 w-2.5 rounded-full"
               style={{
                 backgroundColor:
-                  cluster.emergencyState === 'emergency'
+                  monitoring.mode === 'incident'
                     ? isDark
                       ? emergencyRedDark
                       : emergencyRedLight
@@ -339,33 +398,48 @@ export default function LogTerminal() {
               className="h-2.5 w-2.5 rounded-full"
               style={{
                 backgroundColor:
-                  cluster.emergencyState === 'recovery'
+                  monitoring.mode === 'recovery'
                     ? isDark
                       ? recoveryGreenDark
                       : recoveryGreenLight
                     : headerDotColor,
               }}
             />
-            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: headerDotColor }} />
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{
+                backgroundColor:
+                  monitoring.mode === 'preview'
+                    ? isDark
+                      ? previewCyanDark
+                      : previewCyanLight
+                    : monitoring.mode === 'surge'
+                      ? isDark
+                        ? surgeSkyDark
+                        : surgeSkyLight
+                      : headerDotColor,
+              }}
+            />
           </div>
-          <span
-            className="font-mono text-[10px] uppercase tracking-[0.18em]"
-            style={{
-              color: cluster.emergencyState === 'emergency'
-                ? isDark
-                  ? '#fecaca'
-                  : '#b91c1c'
-                : cluster.emergencyState === 'recovery'
-                  ? isDark
-                    ? '#bbf7d0'
-                    : '#166534'
-                  : isDark
-                    ? '#94a3b8'
-                    : '#475569',
-            }}
-          >
-            {terminalTitle}
-          </span>
+          <div className="flex items-center gap-3">
+            <span
+              className="font-mono text-[10px] uppercase tracking-[0.18em]"
+              style={{ color: titleColor }}
+            >
+              {monitoring.terminalTitle}
+            </span>
+            {monitoring.mode !== 'steady' ? (
+              <span
+                className="font-mono text-[9px] uppercase tracking-[0.18em]"
+                style={{
+                  color: titleColor,
+                  opacity: 0.75,
+                }}
+              >
+                {monitoring.statusPill}
+              </span>
+            ) : null}
+          </div>
         </div>
 
         <div className="relative overflow-hidden" style={{ height: 'calc(100% - 33px)' }}>
@@ -383,11 +457,15 @@ export default function LogTerminal() {
                     style={{
                       color: entry.color,
                       textShadow:
-                        isFocused && isDark && cluster.emergencyState !== 'normal'
+                        isActive && isDark
                           ? `0 0 4px ${
-                              cluster.emergencyState === 'emergency'
+                              monitoring.mode === 'incident'
                                 ? emergencyRedDark
-                                : recoveryGreenDark
+                                : monitoring.mode === 'recovery'
+                                  ? recoveryGreenDark
+                                  : monitoring.mode === 'surge'
+                                    ? surgeSkyDark
+                                    : previewCyanDark
                             }`
                           : 'none',
                     }}

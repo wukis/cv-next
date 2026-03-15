@@ -7,7 +7,10 @@ import {
   type ClusterNodeLifecycle,
   type ClusterNodeRole,
   type ClusterSnapshot,
+  type EmergencyScenarioKey,
   type EmergencyState,
+  type TriggerSource,
+  TRIGGER_NETWORK_EMERGENCY_EVENT,
   dispatchClusterSnapshot,
 } from '@/lib/ambientCluster'
 
@@ -33,11 +36,6 @@ type ConnectionKind =
   | 'service'
   | 'storage'
   | 'telemetry'
-type EmergencyScenarioKey =
-  | 'failover'
-  | 'dbDown'
-  | 'cacheReload'
-  | 'queueFull'
 
 const APP_SERVICE_ORDER = [
   'edge',
@@ -682,190 +680,6 @@ function wrapCanvasText(
   return lines
 }
 
-function getEventBannerMetrics(
-  ctx: CanvasRenderingContext2D,
-  options: {
-    title: string
-    subtitle: string
-    mode: 'emergency' | 'recovery' | 'autoscale'
-    maxWidth: number
-  },
-) {
-  const { subtitle, maxWidth } = options
-  const subtitleFont = '12px ui-monospace, monospace'
-  const fixedWidth = clamp(320, 280, maxWidth)
-  const sidePadding = 78
-
-  ctx.save()
-  ctx.font = subtitleFont
-  const width = fixedWidth
-  const subtitleMaxWidth = Math.max(168, width - sidePadding)
-  const subtitleLines = wrapCanvasText(ctx, subtitle, subtitleMaxWidth)
-  const height = 44 + subtitleLines.length * 14 + 18
-  ctx.restore()
-
-  return { width, height, subtitleLines }
-}
-
-function drawEventBanner(
-  ctx: CanvasRenderingContext2D,
-  options: {
-    x: number
-    y: number
-    width: number
-    height: number
-    radius?: number
-    isDark: boolean
-    opacity: number
-    accentColor: string
-    title: string
-    subtitle: string
-    subtitleLines?: string[]
-    mode: 'emergency' | 'recovery' | 'autoscale'
-  },
-) {
-  const {
-    x,
-    y,
-    width,
-    height,
-    radius = 14,
-    isDark,
-    opacity,
-    accentColor,
-    title,
-    subtitle,
-    subtitleLines = [subtitle],
-    mode,
-  } = options
-
-  const panelIsDark = isDark
-  const titleColor = panelIsDark
-    ? `rgba(248, 250, 252, ${opacity * 0.98})`
-    : `rgba(15, 23, 42, ${opacity * 0.98})`
-  const subtitleColor =
-    mode === 'emergency'
-      ? panelIsDark
-        ? `rgba(254, 202, 202, ${opacity * 0.92})`
-        : `rgba(153, 27, 27, ${opacity * 0.92})`
-      : mode === 'recovery'
-        ? panelIsDark
-          ? `rgba(187, 247, 208, ${opacity * 0.92})`
-          : `rgba(21, 128, 61, ${opacity * 0.9})`
-        : panelIsDark
-          ? `rgba(191, 219, 254, ${opacity * 0.92})`
-          : `rgba(30, 64, 175, ${opacity * 0.92})`
-  const metaColor = panelIsDark
-    ? `rgba(226, 232, 240, ${opacity * 0.78})`
-    : `rgba(71, 85, 105, ${opacity * 0.82})`
-  const shellFill = panelIsDark
-    ? `rgba(2, 6, 23, ${opacity * 0.94})`
-    : `rgba(255, 255, 255, ${opacity * 0.97})`
-  const innerFill = panelIsDark
-    ? `rgba(15, 23, 42, ${opacity * 0.84})`
-    : `rgba(248, 250, 252, ${opacity * 0.98})`
-
-  ctx.save()
-  ctx.shadowColor =
-    mode === 'emergency'
-      ? `rgba(127, 29, 29, ${opacity * 0.16})`
-      : `rgba(20, 83, 45, ${opacity * 0.16})`
-  ctx.shadowBlur = 18
-  ctx.shadowOffsetY = 8
-  drawRoundedRectPath(ctx, x, y, width, height, radius)
-  ctx.fillStyle = shellFill
-  ctx.fill()
-
-  ctx.shadowColor = 'transparent'
-  ctx.shadowBlur = 0
-  ctx.shadowOffsetY = 0
-  drawRoundedRectPath(ctx, x + 1, y + 1, width - 2, height - 2, Math.max(8, radius - 1))
-  ctx.fillStyle = innerFill
-  ctx.fill()
-
-  drawRoundedRectPath(ctx, x + 1, y + 1, 5, height - 2, Math.max(4, radius - 5))
-  ctx.fillStyle = accentColor
-  ctx.fill()
-
-  ctx.lineWidth = 1.1
-  ctx.strokeStyle = accentColor
-  ctx.stroke()
-
-  ctx.font = 'bold 9px ui-monospace, monospace'
-  ctx.textAlign = 'left'
-  ctx.textBaseline = 'middle'
-  ctx.fillStyle = metaColor
-  ctx.fillText(
-    mode === 'emergency'
-      ? 'CLUSTER ALERT'
-      : mode === 'recovery'
-        ? 'RECOVERY NOTICE'
-        : 'AUTOSCALER',
-    x + 18,
-    y + 15,
-  )
-
-  const iconCx = x + 24
-  const iconCy = y + 35
-  const textX = x + 44
-  ctx.beginPath()
-  ctx.arc(iconCx, iconCy, 10, 0, Math.PI * 2)
-  ctx.fillStyle = panelIsDark
-    ? `rgba(15, 23, 42, ${opacity * 0.95})`
-    : `rgba(255, 255, 255, ${opacity * 0.96})`
-  ctx.fill()
-  ctx.lineWidth = 1.8
-  ctx.strokeStyle = accentColor
-  ctx.stroke()
-
-  ctx.strokeStyle = panelIsDark
-    ? `rgba(248, 250, 252, ${opacity * 0.95})`
-    : `rgba(15, 23, 42, ${opacity * 0.92})`
-  ctx.lineCap = 'round'
-  ctx.lineJoin = 'round'
-  if (mode === 'emergency') {
-    ctx.beginPath()
-    ctx.moveTo(iconCx - 3.5, iconCy - 3.5)
-    ctx.lineTo(iconCx + 3.5, iconCy + 3.5)
-    ctx.moveTo(iconCx + 3.5, iconCy - 3.5)
-    ctx.lineTo(iconCx - 3.5, iconCy + 3.5)
-    ctx.stroke()
-  } else if (mode === 'recovery') {
-    ctx.beginPath()
-    ctx.moveTo(iconCx - 4.5, iconCy)
-    ctx.lineTo(iconCx - 1, iconCy + 3.5)
-    ctx.lineTo(iconCx + 5, iconCy - 4)
-    ctx.stroke()
-  } else {
-    ctx.beginPath()
-    ctx.moveTo(iconCx - 4, iconCy + 3)
-    ctx.lineTo(iconCx - 4, iconCy - 1)
-    ctx.moveTo(iconCx, iconCy + 3)
-    ctx.lineTo(iconCx, iconCy - 4)
-    ctx.moveTo(iconCx + 4, iconCy + 3)
-    ctx.lineTo(iconCx + 4, iconCy - 7)
-    ctx.stroke()
-  }
-
-  drawPanelText(ctx, {
-    text: title,
-    x: textX,
-    y: y + 35,
-    font: `bold ${mode === 'emergency' ? 16 : 15}px ui-monospace, monospace`,
-    fillStyle: titleColor,
-    plateIsDark: panelIsDark,
-    emphasis: 'title',
-  })
-
-  ctx.font = '12px ui-monospace, monospace'
-  ctx.fillStyle = subtitleColor
-  ctx.textBaseline = 'alphabetic'
-  subtitleLines.forEach((line, index) => {
-    ctx.fillText(line, textX, y + 56 + index * 14)
-  })
-  ctx.restore()
-}
-
 function getBasePacketInterval(kind: ConnectionKind) {
   const [min, max] = CONNECTION_INTERVALS[kind]
   return randomInRange(min, max)
@@ -1061,68 +875,197 @@ function getHoneycombSlot(slotIndex: number) {
   return { q: 0, r: 0 }
 }
 
-function drawNodeLifecycleMark(
+function getServiceClusterColorKey(
+  service: AppServiceConfig,
+  emergencyState: EmergencyState,
+  emergencyScenarioKey: EmergencyScenarioKey,
+  counts: {
+    starting: number
+    draining: number
+    unhealthy: number
+  },
+): ColorKey {
+  const scenario = getEmergencyScenario(emergencyScenarioKey)
+  const scenarioAffectsCluster =
+    (emergencyState === 'emergency' || emergencyState === 'recovery') &&
+    scenario.affectedRoles.includes('appPod')
+
+  if (emergencyState === 'recovery' && scenarioAffectsCluster) {
+    return 'emerald'
+  }
+
+  if (counts.unhealthy > 0 || (emergencyState === 'emergency' && scenarioAffectsCluster)) {
+    if (emergencyScenarioKey === 'cacheReload') {
+      return 'amber'
+    }
+
+    if (emergencyScenarioKey === 'queueFull') {
+      return 'orange'
+    }
+
+    return emergencyScenarioKey === 'dbDown' ? 'indigo' : 'red'
+  }
+
+  if (counts.draining > 0) {
+    return 'amber'
+  }
+
+  if (counts.starting > 0) {
+    return 'sky'
+  }
+
+  return service.color
+}
+
+function drawServiceClusterHoneycomb(
   ctx: CanvasRenderingContext2D,
-  node: ServiceNode,
-  size: number,
-  isDark: boolean,
-  opacity: number,
-  time: number,
+  options: {
+    service: AppServiceConfig
+    x: number
+    y: number
+    scale: number
+    time: number
+    isDark: boolean
+    emergencyState: EmergencyState
+    emergencyScenarioKey: EmergencyScenarioKey
+    bounceEnergy: number
+    bouncePhase: number
+    counts: {
+      ready: number
+      starting: number
+      draining: number
+      unhealthy: number
+      total: number
+      desired: number
+      capacity: number
+    }
+  },
 ) {
-  if (node.role !== 'appPod') {
+  const {
+    service,
+    x,
+    y,
+    scale,
+    time,
+    isDark,
+    emergencyState,
+    emergencyScenarioKey,
+    bounceEnergy,
+    bouncePhase,
+    counts,
+  } = options
+
+  if (counts.total <= 0 || scale < 0.36) {
     return
   }
 
-  const markerX = node.screenX + size * 0.38
-  const markerY = node.screenY - size * 0.34
-  const markerSize = Math.max(2.8, size * 0.18)
+  const colorKey = getServiceClusterColorKey(
+    service,
+    emergencyState,
+    emergencyScenarioKey,
+    counts,
+  )
+  const palette = COLORS[colorKey]
+  const cellCount = Math.min(counts.total, 10)
+  const ghostCount = Math.min(Math.max(counts.desired, counts.total), 10)
+  const pressure = clamp(
+    counts.starting * 0.18 +
+      counts.draining * 0.16 +
+      counts.unhealthy * 0.24 +
+      Math.max(counts.desired - counts.total, 0) * 0.08,
+    0,
+    1,
+  )
+  const bounce =
+    1 +
+    Math.sin(time * (5.4 + bounceEnergy * 3.6) + bouncePhase + x * 0.012 + y * 0.014) *
+      bounceEnergy *
+      0.22
+  const density = clamp(counts.total / counts.capacity, 0.2, 1)
+  const cellSize = clamp((6.4 + counts.total * 0.22 + scale * 6.5) * bounce, 8, 17.5)
+  const stepX = cellSize * 1.58
+  const stepY = cellSize * 1.36
+  const shellRadius = cellSize * (2.2 + density * 1.2)
+  const fillOpacity = isDark ? 0.16 + density * 0.12 : 0.18 + density * 0.1
+  const strokeOpacity = isDark ? 0.68 + density * 0.18 : 0.72 + density * 0.12
+  const ghostOpacity = isDark ? 0.14 : 0.18
 
   ctx.save()
+  ctx.translate(x, y)
 
-  if (node.lifecycleState === 'ready') {
-    ctx.fillStyle = isDark
-      ? `rgba(52, 211, 153, ${opacity})`
-      : `rgba(5, 150, 105, ${opacity})`
-    ctx.beginPath()
-    ctx.arc(markerX, markerY, markerSize * 0.55, 0, Math.PI * 2)
-    ctx.fill()
-  } else if (node.lifecycleState === 'starting') {
-    ctx.strokeStyle = isDark
-      ? `rgba(251, 191, 36, ${opacity})`
-      : `rgba(202, 138, 4, ${opacity})`
-    ctx.lineWidth = 1.4
-    ctx.beginPath()
-    ctx.arc(
-      markerX,
-      markerY,
-      markerSize * 0.9,
-      -Math.PI / 2,
-      -Math.PI / 2 + Math.PI * (0.9 + Math.sin(time * 6 + node.id) * 0.08),
+  ctx.beginPath()
+  ctx.arc(0, 0, shellRadius, 0, Math.PI * 2)
+  ctx.fillStyle = withOpacity(palette.glow, isDark ? 0.09 + pressure * 0.07 : 0.08 + pressure * 0.05)
+  ctx.fill()
+
+  for (let index = 0; index < ghostCount; index += 1) {
+    const slot = getHoneycombSlot(index)
+    const cellX = (slot.q + slot.r / 2) * stepX
+    const cellY = slot.r * stepY
+
+    drawHexagon(
+      ctx,
+      cellX,
+      cellY,
+      cellSize * 0.72,
+      withOpacity(palette.main, ghostOpacity),
+      null,
+      1,
     )
-    ctx.stroke()
-  } else if (node.lifecycleState === 'draining') {
-    ctx.strokeStyle = isDark
-      ? `rgba(251, 191, 36, ${opacity})`
-      : `rgba(180, 83, 9, ${opacity})`
-    ctx.lineWidth = 1.35
-    ctx.lineCap = 'round'
-    ctx.beginPath()
-    ctx.moveTo(markerX - markerSize * 0.75, markerY - markerSize * 0.2)
-    ctx.lineTo(markerX + markerSize * 0.75, markerY + markerSize * 0.45)
-    ctx.stroke()
-  } else {
-    ctx.strokeStyle = isDark
-      ? `rgba(248, 113, 113, ${opacity})`
-      : `rgba(220, 38, 38, ${opacity})`
-    ctx.lineWidth = 1.3
-    ctx.lineCap = 'round'
-    ctx.beginPath()
-    ctx.moveTo(markerX - markerSize * 0.65, markerY - markerSize * 0.65)
-    ctx.lineTo(markerX + markerSize * 0.65, markerY + markerSize * 0.65)
-    ctx.moveTo(markerX + markerSize * 0.65, markerY - markerSize * 0.65)
-    ctx.lineTo(markerX - markerSize * 0.65, markerY + markerSize * 0.65)
-    ctx.stroke()
   }
+
+  for (let index = 0; index < cellCount; index += 1) {
+    const slot = getHoneycombSlot(index)
+    const cellX = (slot.q + slot.r / 2) * stepX
+    const cellY = slot.r * stepY
+    const pulse =
+      1 +
+      Math.sin(time * 6.2 + bouncePhase + index * 0.8 + service.centerX * 0.01) *
+        (0.012 + bounceEnergy * 0.055)
+    const currentSize = cellSize * 0.78 * pulse
+
+    drawHexagon(
+      ctx,
+      cellX,
+      cellY,
+      currentSize * 1.14,
+      withOpacity(palette.glow, isDark ? 0.18 : 0.15),
+      withOpacity(palette.fill, isDark ? 0.06 : 0.07),
+      0.9,
+    )
+    drawHexagon(
+      ctx,
+      cellX,
+      cellY,
+      currentSize,
+      withOpacity(palette.main, strokeOpacity),
+      withOpacity(palette.fill, fillOpacity),
+      1.4,
+    )
+    drawHexagon(
+      ctx,
+      cellX,
+      cellY,
+      currentSize * 0.42,
+      withOpacity(palette.main, isDark ? 0.26 : 0.22),
+      null,
+      0.8,
+    )
+  }
+
+  ctx.beginPath()
+  ctx.arc(0, 0, shellRadius * 0.72, 0, Math.PI * 2)
+  ctx.strokeStyle = withOpacity(
+    palette.main,
+    isDark ? 0.24 + pressure * 0.14 : 0.2 + pressure * 0.1,
+  )
+  ctx.lineWidth = 1.1
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.arc(0, 0, Math.max(3.5, cellSize * 0.26), 0, Math.PI * 2)
+  ctx.fillStyle = withOpacity(palette.glow, isDark ? 0.5 : 0.36)
+  ctx.fill()
 
   ctx.restore()
 }
@@ -1457,6 +1400,7 @@ const HexagonServiceNetwork: React.FC = () => {
   const appServicesRef = useRef<AppServiceConfig[]>([])
   const toastQueueRef = useRef<EventToast[]>([])
   const activeToastRef = useRef<EventToast[]>([])
+  const toastSignatureRef = useRef('')
   const serviceInstanceCounterRef = useRef<Record<AppServiceGroup, number>>({
     edge: 0,
     auth: 0,
@@ -1465,8 +1409,31 @@ const HexagonServiceNetwork: React.FC = () => {
     checkout: 0,
     warehouse: 0,
   })
+  const serviceClusterMotionRef = useRef(
+    APP_SERVICE_ORDER.reduce(
+      (accumulator, serviceName, index) => {
+        accumulator[serviceName] = {
+          energy: 0,
+          activeCount: 0,
+          totalCount: 0,
+          phase: index * 0.82,
+        }
+        return accumulator
+      },
+      {} as Record<
+        AppServiceGroup,
+        {
+          energy: number
+          activeCount: number
+          totalCount: number
+          phase: number
+        }
+      >,
+    ),
+  )
   const [isDark, setIsDark] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
+  const [visibleToasts, setVisibleToasts] = useState<EventToast[]>([])
   const mounted = typeof window !== 'undefined'
 
   const clusterRef = useRef({
@@ -1500,6 +1467,7 @@ const HexagonServiceNetwork: React.FC = () => {
     isActive: false,
     isRecovery: false,
     scenarioKey: 'failover' as EmergencyScenarioKey,
+    triggerSource: null as TriggerSource,
     startTime: 0,
     duration: 9,
     recoveryStartTime: 0,
@@ -1641,6 +1609,12 @@ const HexagonServiceNetwork: React.FC = () => {
 
       return {
         emergencyState,
+        focusMode: isFocusedRef.current ? 'preview' : 'idle',
+        scenarioKey:
+          emergencyState === 'normal' ? null : emergencyRef.current.scenarioKey,
+        isTrafficSpike: clusterRef.current.isTrafficSpike,
+        triggerSource:
+          emergencyState === 'normal' ? null : emergencyRef.current.triggerSource,
         replicaTarget,
         liveReplicas: appPods.length,
         readyReplicas,
@@ -1751,6 +1725,22 @@ const HexagonServiceNetwork: React.FC = () => {
     [],
   )
 
+  const syncVisibleToasts = useCallback(() => {
+    const nextToasts = [...activeToastRef.current].sort(
+      (left, right) => left.shownAt - right.shownAt,
+    )
+    const nextSignature = nextToasts
+      .map((toast) => `${toast.id}:${toast.mode}:${toast.shownAt}`)
+      .join('|')
+
+    if (nextSignature === toastSignatureRef.current) {
+      return
+    }
+
+    toastSignatureRef.current = nextSignature
+    setVisibleToasts(nextToasts)
+  }, [])
+
   const enqueueAutoscalerToast = useCallback(
     (title: string, subtitle: string, accentColor: string) => {
       if (timeRef.current - lastAutoscaleToastAtRef.current < 1.2) {
@@ -1818,6 +1808,68 @@ const HexagonServiceNetwork: React.FC = () => {
         node.lifecycleState !== 'terminating',
     ).length
   }, [])
+
+  const getMostVisibleServiceGroups = useCallback((limit = 3) => {
+    const canvas = canvasRef.current
+    const services = appServicesRef.current
+
+    if (!canvas || services.length === 0) {
+      return APP_SERVICE_ORDER.slice(0, limit) as AppServiceGroup[]
+    }
+
+    const width = canvas.clientWidth || canvas.width || 1
+    const height = canvas.clientHeight || canvas.height || 1
+    const centerX = width / 2
+    const centerY = height / 2
+    const { x: rotX, y: rotY } = rotationRef.current
+
+    return [...services]
+      .map((service) => {
+        const projected = project3D(
+          service.centerX,
+          service.centerY,
+          service.centerZ,
+          centerX,
+          centerY,
+          rotX,
+          rotY,
+        )
+        const normalizedDx = (projected.screenX - centerX) / (width * 0.48)
+        const normalizedDy = (projected.screenY - centerY) / (height * 0.48)
+        const centrality = clamp(1 - Math.hypot(normalizedDx, normalizedDy), 0, 1)
+        const depthWeight = clamp(projected.scale, 0.35, 1.35)
+        const score = depthWeight * 0.7 + centrality * 0.9
+
+        return {
+          name: service.name,
+          score,
+        }
+      })
+      .sort((serviceA, serviceB) => serviceB.score - serviceA.score)
+      .slice(0, limit)
+      .map((service) => service.name)
+  }, [])
+
+  const sortServicesByVisibility = useCallback(
+    (serviceNames: AppServiceGroup[]) => {
+      const visibleServiceNames = getMostVisibleServiceGroups(3)
+      const visibleRank = new Map(
+        visibleServiceNames.map((serviceName, index) => [serviceName, index]),
+      )
+
+      return [...serviceNames].sort((serviceA, serviceB) => {
+        const rankA = visibleRank.get(serviceA) ?? Number.POSITIVE_INFINITY
+        const rankB = visibleRank.get(serviceB) ?? Number.POSITIVE_INFINITY
+
+        if (rankA !== rankB) {
+          return rankA - rankB
+        }
+
+        return APP_SERVICE_ORDER.indexOf(serviceA) - APP_SERVICE_ORDER.indexOf(serviceB)
+      })
+    },
+    [getMostVisibleServiceGroups],
+  )
 
   const getServicePodPlacement = useCallback(
     (serviceName: AppServiceGroup, slotIndex: number, totalSlots: number) => {
@@ -2096,7 +2148,15 @@ const HexagonServiceNetwork: React.FC = () => {
         return false
       }
 
-      const pod = candidates[Math.floor(Math.random() * candidates.length)]
+      const visibleServices = new Set(getMostVisibleServiceGroups(3))
+      const preferredCandidates = candidates.filter((candidate) =>
+        candidate.replicaGroup
+          ? visibleServices.has(candidate.replicaGroup as AppServiceGroup)
+          : false,
+      )
+      const selectionPool =
+        preferredCandidates.length > 0 ? preferredCandidates : candidates
+      const pod = selectionPool[Math.floor(Math.random() * selectionPool.length)]
       pod.lifecycleState = 'draining'
       pod.acceptingTraffic = false
       pod.statusSince = timeRef.current
@@ -2111,7 +2171,7 @@ const HexagonServiceNetwork: React.FC = () => {
       emitClusterSnapshot(true)
       return true
     },
-    [emitClusterSnapshot, getReadyAppPods, pushClusterEvent],
+    [emitClusterSnapshot, getMostVisibleServiceGroups, getReadyAppPods, pushClusterEvent],
   )
 
   const createScaleUpPod = useCallback(
@@ -2194,9 +2254,11 @@ const HexagonServiceNetwork: React.FC = () => {
 
   const runAutoscaler = useCallback(() => {
     const cluster = clusterRef.current
-    const maxConcurrentScalingPods = cluster.isTrafficSpike ? 4 : 3
-    const maxConcurrentScalingServices = cluster.isTrafficSpike ? 2 : 1
+    const maxConcurrentScalingPods = cluster.isTrafficSpike ? 5 : 4
+    const maxConcurrentScalingServices = 3
     const activeScalingServices = getActiveScalingServices()
+    const visibleServiceNames = getMostVisibleServiceGroups(3)
+    const visibleServiceSet = new Set(visibleServiceNames)
     if (
       timeRef.current < cluster.nextScaleActionTime ||
       getScalingActivityCount() >= maxConcurrentScalingPods ||
@@ -2207,43 +2269,44 @@ const HexagonServiceNetwork: React.FC = () => {
 
     const canScaleService = (serviceName: AppServiceGroup) =>
       activeScalingServices.has(serviceName) ||
-      activeScalingServices.size < maxConcurrentScalingServices
+      (visibleServiceSet.has(serviceName) &&
+        activeScalingServices.size < maxConcurrentScalingServices)
 
-    const scaleUpOrder: AppServiceGroup[] = [
+    const scaleUpOrder = sortServicesByVisibility([
       'edge',
       'basket',
       'checkout',
       'warehouse',
       'catalog',
       'auth',
-    ]
+    ])
     for (const serviceName of scaleUpOrder) {
       const currentReplicas = getServiceReplicaCount(serviceName)
       const desiredReplicas = cluster.desiredServiceReplicas[serviceName]
 
       if (currentReplicas < desiredReplicas && canScaleService(serviceName)) {
         if (createScaleUpPod(serviceName)) {
-          cluster.nextScaleActionTime = timeRef.current + 0.72 + Math.random() * 0.55
+          cluster.nextScaleActionTime = timeRef.current + 0.42 + Math.random() * 0.35
           return true
         }
       }
     }
 
-    const scaleDownOrder: AppServiceGroup[] = [
+    const scaleDownOrder = sortServicesByVisibility([
       'catalog',
       'warehouse',
       'checkout',
       'basket',
       'edge',
       'auth',
-    ]
+    ])
     for (const serviceName of scaleDownOrder) {
       const currentReplicas = getServiceReplicaCount(serviceName)
       const desiredReplicas = cluster.desiredServiceReplicas[serviceName]
 
       if (currentReplicas > desiredReplicas && canScaleService(serviceName)) {
         if (requestScaleDownPod(serviceName)) {
-          cluster.nextScaleActionTime = timeRef.current + 0.92 + Math.random() * 0.65
+          cluster.nextScaleActionTime = timeRef.current + 0.58 + Math.random() * 0.4
           return true
         }
       }
@@ -2253,13 +2316,18 @@ const HexagonServiceNetwork: React.FC = () => {
   }, [
     createScaleUpPod,
     getActiveScalingServices,
+    getMostVisibleServiceGroups,
     getServiceReplicaCount,
     getScalingActivityCount,
     requestScaleDownPod,
+    sortServicesByVisibility,
   ])
 
   const startEmergency = useCallback(
-    (scenarioKey?: EmergencyScenarioKey) => {
+    (
+      scenarioKey?: EmergencyScenarioKey,
+      triggerSource: TriggerSource = null,
+    ) => {
       const emergency = emergencyRef.current
       if (emergency.isActive || emergency.isRecovery) {
         return
@@ -2269,6 +2337,7 @@ const HexagonServiceNetwork: React.FC = () => {
       const scenario = getEmergencyScenario(nextScenarioKey)
       emergency.isActive = true
       emergency.scenarioKey = nextScenarioKey
+      emergency.triggerSource = triggerSource
       emergency.startTime = timeRef.current
       emergency.hasTriggeredFirstEmergency = true
       emergency.nextFailureTime = timeRef.current + 0.4
@@ -3046,15 +3115,27 @@ const HexagonServiceNetwork: React.FC = () => {
 
   useEffect(() => {
     isFocusedRef.current = isFocused
-  }, [isFocused])
+    emitClusterSnapshot(true)
+  }, [emitClusterSnapshot, isFocused])
 
   useEffect(() => {
-    const handleTriggerEmergency = () => {
-      startEmergency()
+    const handleTriggerEmergency = (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        scenarioKey?: EmergencyScenarioKey
+        triggerSource?: TriggerSource
+      }>
+      startEmergency(
+        customEvent.detail?.scenarioKey,
+        customEvent.detail?.triggerSource ?? null,
+      )
     }
 
-    window.addEventListener('trigger-emergency', handleTriggerEmergency)
-    return () => window.removeEventListener('trigger-emergency', handleTriggerEmergency)
+    window.addEventListener(TRIGGER_NETWORK_EMERGENCY_EVENT, handleTriggerEmergency)
+    return () =>
+      window.removeEventListener(
+        TRIGGER_NETWORK_EMERGENCY_EVENT,
+        handleTriggerEmergency,
+      )
   }, [startEmergency])
 
   useEffect(() => {
@@ -3095,6 +3176,8 @@ const HexagonServiceNetwork: React.FC = () => {
       statusIndicatorsRef.current = []
       toastQueueRef.current = []
       activeToastRef.current = []
+      toastSignatureRef.current = ''
+      setVisibleToasts([])
       syncConnections()
       emitClusterSnapshot(true)
     }
@@ -3204,7 +3287,7 @@ const HexagonServiceNetwork: React.FC = () => {
         !emergency.isRecovery &&
         emergency.accumulatedFocusTime > emergency.firstEmergencyDelay
       ) {
-        startEmergency()
+        startEmergency(undefined, 'hover-auto')
       } else if (
         emergency.hasTriggeredFirstEmergency &&
         !emergency.isActive &&
@@ -3270,6 +3353,7 @@ const HexagonServiceNetwork: React.FC = () => {
         if (timeRef.current - emergency.recoveryStartTime > emergency.recoveryDuration) {
           emergency.isRecovery = false
           emergency.lastEmergencyTime = timeRef.current
+          emergency.triggerSource = null
           emergency.nextEmergencyInterval = isFocusedRef.current
             ? 60
             : 60 + Math.random() * 120
@@ -3294,6 +3378,8 @@ const HexagonServiceNetwork: React.FC = () => {
           activeToastRef.current.push(nextToast)
         }
       }
+
+      syncVisibleToasts()
 
       nodesRef.current = nodesRef.current.flatMap((node) => {
         if (node.role !== 'appPod') {
@@ -3785,6 +3871,22 @@ const HexagonServiceNetwork: React.FC = () => {
           return
         }
 
+        if (node.role === 'appPod') {
+          const microSize = currentSize * 0.46
+          const microOpacity = pulseOpacity * 0.28
+
+          drawHexagon(
+            ctx,
+            node.screenX,
+            node.screenY,
+            microSize,
+            withOpacity(palette.main, microOpacity * 0.9),
+            withOpacity(palette.fill, microOpacity * 0.16),
+            0.9 * depthFade,
+          )
+          return
+        }
+
         drawHexagon(
           ctx,
           node.screenX,
@@ -3811,14 +3913,6 @@ const HexagonServiceNetwork: React.FC = () => {
           withOpacity(palette.main, pulseOpacity * 0.36),
           null,
           0.58 * depthFade,
-        )
-        drawNodeLifecycleMark(
-          ctx,
-          node,
-          currentSize,
-          isDark,
-          pulseOpacity * 0.95,
-          timeRef.current,
         )
 
         if (depthFade > 0.6) {
@@ -3885,6 +3979,31 @@ const HexagonServiceNetwork: React.FC = () => {
             node.lifecycleState === 'unhealthy' ||
             node.lifecycleState === 'terminating',
         ).length
+        const activeLifecycleCount = startingPods + drainingPods + unhealthyPods
+        const motionState = serviceClusterMotionRef.current[service.name]
+        const activeDelta = Math.abs(activeLifecycleCount - motionState.activeCount)
+        const totalDelta = Math.abs(servicePods.length - motionState.totalCount)
+        const impactTarget = clamp(
+          activeLifecycleCount * 0.22 +
+            activeDelta * 0.28 +
+            totalDelta * 0.2 +
+            (activeLifecycleCount >= 2 ? 0.12 : 0),
+          0,
+          1,
+        )
+
+        if (activeLifecycleCount > 0 || totalDelta > 0) {
+          motionState.energy = clamp(
+            motionState.energy * 0.82 + impactTarget * 0.42,
+            0,
+            1,
+          )
+        } else {
+          motionState.energy *= 0.93
+        }
+
+        motionState.activeCount = activeLifecycleCount
+        motionState.totalCount = servicePods.length
         const statusDisplay = getServiceStatusDisplay(
           service.name,
           {
@@ -3902,6 +4021,38 @@ const HexagonServiceNetwork: React.FC = () => {
             metaOpacity,
           },
         )
+
+        const clusterProjected = project3D(
+          service.centerX,
+          service.centerY + 4,
+          service.centerZ,
+          centerX,
+          centerY,
+          rotX,
+          rotY,
+        )
+        drawServiceClusterHoneycomb(ctx, {
+          service,
+          x: clusterProjected.screenX,
+          y: clusterProjected.screenY,
+          scale: clusterProjected.scale,
+          time: timeRef.current,
+          isDark,
+          emergencyState: currentEmergencyState,
+          emergencyScenarioKey: emergencyRef.current.scenarioKey,
+          bounceEnergy: motionState.energy,
+          bouncePhase: motionState.phase,
+          counts: {
+            ready: readyPods,
+            starting: startingPods,
+            draining: drainingPods,
+            unhealthy: unhealthyPods,
+            total: servicePods.length,
+            desired: desiredPods,
+            capacity: capacityPods,
+          },
+        })
+
         const panelOpacity = clamp((isDark ? 0.96 : 0.88) * depthFade + 0.08, 0.86, 1)
         const titleFont = `bold ${Math.max(10, Math.round(10 * depthFade))}px ui-monospace, monospace`
         const metaFont = `${Math.max(9, Math.round(9 * depthFade))}px ui-monospace, monospace`
@@ -3989,53 +4140,6 @@ const HexagonServiceNetwork: React.FC = () => {
         ctx.fillRect(0, 0, width, height)
       }
 
-      const stackedToasts = [...activeToastRef.current].sort(
-        (left, right) => left.shownAt - right.shownAt,
-      )
-      let toastBottomOffset = 26
-      stackedToasts.forEach((activeToast) => {
-        const toastMetrics = getEventBannerMetrics(ctx, {
-          title: activeToast.title,
-          subtitle: activeToast.subtitle,
-          mode: activeToast.mode,
-          maxWidth: Math.min(width * 0.3, 360),
-        })
-        const toastAge = timeRef.current - activeToast.shownAt
-        const enter = clamp(toastAge / 0.22, 0, 1)
-        const remaining = activeToast.duration - toastAge
-        const exit = remaining < 0.45 ? clamp(remaining / 0.45, 0, 1) : 1
-        const toastOpacity = enter * exit
-        const toastX = width - toastMetrics.width - 24
-        const toastY =
-          height -
-          toastMetrics.height -
-          toastBottomOffset +
-          (1 - enter) * 16 +
-          (1 - exit) * 8
-
-        ctx.save()
-        drawEventBanner(ctx, {
-          x: toastX,
-          y: toastY,
-          width: toastMetrics.width,
-          height: toastMetrics.height,
-          radius: 14,
-          isDark,
-          opacity: toastOpacity * 0.96,
-          accentColor:
-            activeToast.mode === 'emergency'
-              ? `rgba(248, 113, 113, ${toastOpacity * 0.92})`
-              : `rgba(74, 222, 128, ${toastOpacity * 0.82})`,
-          title: activeToast.title,
-          subtitle: activeToast.subtitle,
-          subtitleLines: toastMetrics.subtitleLines,
-          mode: activeToast.mode,
-        })
-        ctx.restore()
-
-        toastBottomOffset += toastMetrics.height + 12
-      })
-
       emitClusterSnapshot()
       animationRef.current = requestAnimationFrame(animate)
     }
@@ -4065,6 +4169,7 @@ const HexagonServiceNetwork: React.FC = () => {
     relayoutServicePods,
     runAutoscaler,
     startEmergency,
+    syncVisibleToasts,
     syncConnections,
     triggerPodFailure,
   ])
@@ -4073,15 +4178,86 @@ const HexagonServiceNetwork: React.FC = () => {
     return null
   }
 
-  const canvasOpacity = isFocused ? 0.92 : 0.34
+  const canvasOpacity = isFocused ? 0.92 : 0
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 -z-10 pointer-events-none transition-opacity duration-500"
-      style={{ opacity: canvasOpacity }}
-      aria-hidden="true"
-    />
+    <>
+      <canvas
+        ref={canvasRef}
+        className="fixed inset-0 -z-10 pointer-events-none transition-opacity duration-500"
+        style={{ opacity: canvasOpacity }}
+        aria-hidden="true"
+      />
+
+      {isFocused && visibleToasts.length > 0 ? (
+        <div className="pointer-events-none fixed bottom-6 right-6 z-10 flex max-w-[360px] flex-col-reverse items-end gap-3">
+          {visibleToasts.map((toast) => {
+            const accentColor =
+              toast.mode === 'emergency'
+                ? isDark
+                  ? 'rgba(248, 113, 113, 0.92)'
+                  : 'rgba(220, 38, 38, 0.9)'
+                : isDark
+                  ? 'rgba(74, 222, 128, 0.84)'
+                  : 'rgba(22, 163, 74, 0.84)'
+
+            return (
+              <div
+                key={toast.id}
+                className="w-full overflow-hidden rounded-2xl border px-4 py-3 shadow-2xl backdrop-blur-md"
+                style={{
+                  backgroundColor: isDark
+                    ? 'rgba(10, 14, 24, 0.92)'
+                    : 'rgba(255, 255, 255, 0.94)',
+                  borderColor: isDark
+                    ? 'rgba(148, 163, 184, 0.14)'
+                    : 'rgba(148, 163, 184, 0.28)',
+                  boxShadow: `0 0 0 1px ${accentColor}, 0 18px 44px ${
+                    isDark ? 'rgba(2, 6, 23, 0.35)' : 'rgba(15, 23, 42, 0.12)'
+                  }`,
+                }}
+              >
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <span
+                    className="font-mono text-[11px] uppercase tracking-[0.18em]"
+                    style={{ color: accentColor }}
+                  >
+                    {toast.mode === 'emergency'
+                      ? 'Incident'
+                      : toast.mode === 'recovery'
+                        ? 'Recovery'
+                        : 'Autoscale'}
+                  </span>
+                  <span
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{
+                      backgroundColor: accentColor,
+                      boxShadow: `0 0 10px ${accentColor}`,
+                    }}
+                  />
+                </div>
+                <div
+                  className="font-mono text-[13px] font-semibold uppercase tracking-[0.08em]"
+                  style={{
+                    color: isDark ? 'rgba(248, 250, 252, 0.96)' : 'rgba(15, 23, 42, 0.92)',
+                  }}
+                >
+                  {toast.title}
+                </div>
+                <div
+                  className="mt-1 text-sm leading-5"
+                  style={{
+                    color: isDark ? 'rgba(226, 232, 240, 0.78)' : 'rgba(51, 65, 85, 0.8)',
+                  }}
+                >
+                  {toast.subtitle}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      ) : null}
+    </>
   )
 }
 

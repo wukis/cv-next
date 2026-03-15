@@ -1,8 +1,18 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+
 export const NETWORK_CLUSTER_STATE_EVENT = 'network-cluster-state'
+export const TRIGGER_NETWORK_EMERGENCY_EVENT = 'trigger-emergency'
 
 export type EmergencyState = 'normal' | 'emergency' | 'recovery'
+export type FocusMode = 'idle' | 'preview'
+export type TriggerSource = 'hover-auto' | 'button-click' | null
+export type EmergencyScenarioKey =
+  | 'failover'
+  | 'dbDown'
+  | 'cacheReload'
+  | 'queueFull'
 
 export type ClusterNodeRole =
   | 'ingress'
@@ -33,6 +43,10 @@ export interface ClusterEventEntry {
 
 export interface ClusterSnapshot {
   emergencyState: EmergencyState
+  focusMode: FocusMode
+  scenarioKey: EmergencyScenarioKey | null
+  isTrafficSpike: boolean
+  triggerSource: TriggerSource
   replicaTarget: number
   liveReplicas: number
   readyReplicas: number
@@ -52,6 +66,10 @@ export interface ClusterSnapshot {
 
 export const DEFAULT_CLUSTER_SNAPSHOT: ClusterSnapshot = {
   emergencyState: 'normal',
+  focusMode: 'idle',
+  scenarioKey: null,
+  isTrafficSpike: false,
+  triggerSource: null,
   replicaTarget: 4,
   liveReplicas: 4,
   readyReplicas: 4,
@@ -78,4 +96,22 @@ export function dispatchClusterSnapshot(snapshot: ClusterSnapshot) {
       detail: snapshot,
     }),
   )
+}
+
+export function useAmbientClusterSnapshot() {
+  const [snapshot, setSnapshot] = useState<ClusterSnapshot>(DEFAULT_CLUSTER_SNAPSHOT)
+
+  useEffect(() => {
+    const handleClusterUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent<ClusterSnapshot>
+      if (customEvent.detail) {
+        setSnapshot(customEvent.detail)
+      }
+    }
+
+    window.addEventListener(NETWORK_CLUSTER_STATE_EVENT, handleClusterUpdate)
+    return () => window.removeEventListener(NETWORK_CLUSTER_STATE_EVENT, handleClusterUpdate)
+  }, [])
+
+  return snapshot
 }

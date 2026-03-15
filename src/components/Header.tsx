@@ -10,6 +10,11 @@ import clsx from 'clsx'
 import { DownloadIcon } from '@/components/Button'
 import { Container } from '@/components/Container'
 import { surfaceHoverMotionClassName } from '@/components/interactionStyles'
+import {
+  TRIGGER_NETWORK_EMERGENCY_EVENT,
+  useAmbientClusterSnapshot,
+} from '@/lib/ambientCluster'
+import { deriveAmbientMonitoringState } from '@/lib/ambientMonitoring'
 import { recommendationsCopy } from '@/lib/recommendationsCopy'
 import { useAmbientEligibility } from '@/components/useAmbientEligibility'
 
@@ -460,6 +465,11 @@ function HexagonNetworkIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
 
 function AnimationFocus() {
   const [isHovering, setIsHovering] = useState(false)
+  const cluster = useAmbientClusterSnapshot()
+  const monitoring = deriveAmbientMonitoringState(cluster)
+  const tooltipDescription = isHovering
+    ? monitoring.buttonDescription
+    : 'Hover to preview cluster pressure paths like surge scaling, reroute pressure, cache warmup misses, and queue buildup. Click to start a failover drill immediately.'
 
   useEffect(() => {
     if (isHovering) {
@@ -490,8 +500,8 @@ function AnimationFocus() {
 
   return (
     <DesktopTooltip
-      label="Background preview"
-      description="Hover to spotlight the ambient cluster. Click to trigger a failover drill."
+      label={monitoring.buttonLabel}
+      description={tooltipDescription}
     >
       <button
         type="button"
@@ -499,7 +509,14 @@ function AnimationFocus() {
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
         onClick={() =>
-          window.dispatchEvent(new CustomEvent('trigger-emergency'))
+          window.dispatchEvent(
+            new CustomEvent(TRIGGER_NETWORK_EMERGENCY_EVENT, {
+              detail: {
+                scenarioKey: 'failover',
+                triggerSource: 'button-click',
+              },
+            }),
+          )
         }
         aria-label="Preview background animation"
       >
