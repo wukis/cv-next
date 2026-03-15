@@ -2,6 +2,28 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
+@layer base {
+  :root {
+    --selection-background: rgba(16, 185, 129, 0.28);
+    --selection-color: #022c22;
+  }
+
+  .dark {
+    --selection-background: rgba(52, 211, 153, 0.38);
+    --selection-color: #ecfdf5;
+  }
+
+  ::selection {
+    background: var(--selection-background);
+    color: var(--selection-color);
+  }
+
+  ::-moz-selection {
+    background: var(--selection-background);
+    color: var(--selection-color);
+  }
+}
+
 /* Log terminal scrolling animation */
 @keyframes scrollLogs {
   0% {
