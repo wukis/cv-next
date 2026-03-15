@@ -15,6 +15,78 @@ import { useAmbientEligibility } from '@/components/useAmbientEligibility'
 
 const headerControlClassName = `group inline-flex min-h-11 items-center justify-center rounded-lg bg-white/90 text-neutral-800 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-300/70 backdrop-blur transition-colors hover:text-emerald-800 hover:ring-emerald-400/50 dark:bg-neutral-800/90 dark:text-neutral-200 dark:ring-neutral-700/70 dark:hover:text-emerald-200 dark:hover:ring-emerald-400/50 ${surfaceHoverMotionClassName}`
 
+function useDesktopTooltipEnabled() {
+  const [isEnabled, setIsEnabled] = useState(false)
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(
+      '(min-width: 768px) and (hover: hover) and (pointer: fine)',
+    )
+
+    const update = () => setIsEnabled(mediaQuery.matches)
+
+    update()
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', update)
+      return () => mediaQuery.removeEventListener('change', update)
+    }
+
+    mediaQuery.addListener(update)
+    return () => mediaQuery.removeListener(update)
+  }, [])
+
+  return isEnabled
+}
+
+function DesktopTooltip({
+  align = 'center',
+  label,
+  description,
+  children,
+}: {
+  align?: 'left' | 'center' | 'right'
+  label: string
+  description: string
+  children: React.ReactNode
+}) {
+  const isEnabled = useDesktopTooltipEnabled()
+
+  return (
+    <span className="group/tooltip relative inline-flex">
+      {children}
+      {isEnabled ? (
+        <span
+          aria-hidden="true"
+          className={clsx(
+            'pointer-events-none absolute top-full z-30 mt-3 hidden md:block',
+            align === 'left' && 'left-0',
+            align === 'center' && 'left-1/2 -translate-x-1/2',
+            align === 'right' && 'right-0',
+          )}
+        >
+          <span
+            className={clsx(
+              'flex min-w-[11rem] max-w-64 flex-col gap-1 rounded-xl border border-emerald-500/15 bg-white/95 px-3 py-2 text-left shadow-xl shadow-neutral-900/10 ring-1 ring-neutral-200/60 backdrop-blur-md transition-all duration-200 ease-out dark:border-emerald-400/15 dark:bg-neutral-900/95 dark:ring-neutral-700/70',
+              'translate-y-1 scale-[0.98] opacity-0 group-hover/tooltip:translate-y-0 group-hover/tooltip:scale-100 group-hover/tooltip:opacity-100',
+              align === 'left' && 'origin-top-left',
+              align === 'center' && 'origin-top',
+              align === 'right' && 'origin-top-right',
+            )}
+          >
+            <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">
+              {label}
+            </span>
+            <span className="text-xs leading-5 text-neutral-600 dark:text-neutral-300">
+              {description}
+            </span>
+          </span>
+        </span>
+      ) : null}
+    </span>
+  )
+}
+
 function CloseIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
@@ -272,13 +344,19 @@ function DesktopNavigation(props: React.ComponentPropsWithoutRef<'nav'>) {
       <div className="flex items-center overflow-hidden rounded-lg bg-white/90 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-300/70 backdrop-blur dark:bg-neutral-800/90 dark:ring-neutral-700/70">
         <ul className="flex items-center gap-1 px-2 py-1">
           <li>
-            <Link
-              href="/"
-              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-neutral-800 transition-colors hover:bg-neutral-100 hover:text-emerald-800 dark:text-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-emerald-200"
-              aria-label="Go to home"
+            <DesktopTooltip
+              align="left"
+              label="Home"
+              description="Jump back to the main landing page."
             >
-              <AnimatedTerminalIcon />
-            </Link>
+              <Link
+                href="/"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-neutral-800 transition-colors hover:bg-neutral-100 hover:text-emerald-800 dark:text-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-emerald-200"
+                aria-label="Go to home"
+              >
+                <AnimatedTerminalIcon />
+              </Link>
+            </DesktopTooltip>
           </li>
           {navItems.map((item) => (
             <NavItem key={item.href} href={item.href} label={item.label} />
@@ -292,31 +370,43 @@ function DesktopNavigation(props: React.ComponentPropsWithoutRef<'nav'>) {
 function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme()
   const otherTheme = resolvedTheme === 'dark' ? 'light' : 'dark'
+  const tooltipLabel =
+    otherTheme === 'dark' ? 'Switch to dark mode' : 'Switch to light mode'
 
   return (
-    <button
-      type="button"
-      aria-label="Toggle theme"
-      className={`${headerControlClassName} h-11 w-11`}
-      onClick={() => setTheme(otherTheme)}
+    <DesktopTooltip
+      align="right"
+      label={tooltipLabel}
+      description="Change the site appearance for day or night reading."
     >
-      <SunIcon className="h-5 w-5 fill-amber-100 stroke-amber-600 transition group-hover:fill-amber-200 group-hover:stroke-amber-700 dark:hidden" />
-      <MoonIcon className="hidden h-5 w-5 fill-sky-100 stroke-sky-600 transition group-hover:fill-sky-200 group-hover:stroke-sky-500 dark:block dark:fill-sky-400/20 dark:stroke-sky-300" />
-    </button>
+      <button
+        type="button"
+        aria-label={tooltipLabel}
+        className={`${headerControlClassName} h-11 w-11`}
+        onClick={() => setTheme(otherTheme)}
+      >
+        <SunIcon className="h-5 w-5 fill-amber-100 stroke-amber-600 transition group-hover:fill-amber-200 group-hover:stroke-amber-700 dark:hidden" />
+        <MoonIcon className="hidden h-5 w-5 fill-sky-100 stroke-sky-600 transition group-hover:fill-sky-200 group-hover:stroke-sky-500 dark:block dark:fill-sky-400/20 dark:stroke-sky-300" />
+      </button>
+    </DesktopTooltip>
   )
 }
 
 function CvDownloadButton() {
   return (
-    <a
-      href="/jonas-petrik-cv.pdf"
-      download
-      aria-label="Download CV PDF"
-      title="Download CV PDF"
-      className={`${headerControlClassName} h-11 w-11`}
+    <DesktopTooltip
+      label="Download CV"
+      description="Save the latest PDF version of the resume."
     >
-      <DownloadIcon className="h-5 w-5 text-neutral-700 transition group-hover:text-emerald-800 dark:text-neutral-200 dark:group-hover:text-emerald-200" />
-    </a>
+      <a
+        href="/jonas-petrik-cv.pdf"
+        download
+        aria-label="Download CV PDF"
+        className={`${headerControlClassName} h-11 w-11`}
+      >
+        <DownloadIcon className="h-5 w-5 text-neutral-700 transition group-hover:text-emerald-800 dark:text-neutral-200 dark:group-hover:text-emerald-200" />
+      </a>
+    </DesktopTooltip>
   )
 }
 
@@ -399,30 +489,36 @@ function AnimationFocus() {
   }, [isHovering])
 
   return (
-    <button
-      type="button"
-      className={`${headerControlClassName} h-11 w-11 cursor-pointer`}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
-      onClick={() => window.dispatchEvent(new CustomEvent('trigger-emergency'))}
-      title="Hover to see background animation, click to trigger emergency"
-      aria-label="Preview background animation"
+    <DesktopTooltip
+      label="Background preview"
+      description="Hover to spotlight the ambient network. Click to trigger emergency mode."
     >
-      <HexagonNetworkIcon
-        className={clsx(
-          'h-5 w-5 transition-all duration-300',
-          isHovering
-            ? 'scale-110 text-emerald-500 dark:text-emerald-400'
-            : 'text-neutral-600 dark:text-neutral-300',
-        )}
-      />
-      <span
-        className={clsx(
-          'absolute inset-0 rounded-lg ring-2 ring-emerald-400/50 transition-all duration-500',
-          isHovering ? 'scale-100 opacity-100' : 'scale-95 opacity-0',
-        )}
-      />
-    </button>
+      <button
+        type="button"
+        className={`${headerControlClassName} h-11 w-11 cursor-pointer`}
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
+        onClick={() =>
+          window.dispatchEvent(new CustomEvent('trigger-emergency'))
+        }
+        aria-label="Preview background animation"
+      >
+        <HexagonNetworkIcon
+          className={clsx(
+            'h-5 w-5 transition-all duration-300',
+            isHovering
+              ? 'scale-110 text-emerald-500 dark:text-emerald-400'
+              : 'text-neutral-600 dark:text-neutral-300',
+          )}
+        />
+        <span
+          className={clsx(
+            'absolute inset-0 rounded-lg ring-2 ring-emerald-400/50 transition-all duration-500',
+            isHovering ? 'scale-100 opacity-100' : 'scale-95 opacity-0',
+          )}
+        />
+      </button>
+    </DesktopTooltip>
   )
 }
 
