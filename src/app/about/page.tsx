@@ -70,7 +70,7 @@ export default function About() {
         description="A deeper look into who I am"
       />
 
-      <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white/90 dark:border-neutral-700 dark:bg-neutral-900/90">
+      <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white/95 dark:border-neutral-700 dark:bg-neutral-900/95">
         <div className="flex h-6 items-center gap-2 border-b border-neutral-300 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
           <span className="truncate font-mono text-[10px] text-neutral-700 dark:text-neutral-100">
             ~/about.md
@@ -94,7 +94,7 @@ export default function About() {
                 <ProfileSocialLinks />
 
                 <div className="mt-5">
-                  <div className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+                  <div className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
                     Staff Engineer / Team Lead
                   </div>
@@ -112,7 +112,7 @@ export default function About() {
               </div>
 
               <section className="border-b border-neutral-200 pb-8 dark:border-neutral-700">
-                <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+                <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
                   current role
                 </h3>
                 <p className="mt-3 text-sm font-semibold text-neutral-900 dark:text-neutral-100">
@@ -127,7 +127,7 @@ export default function About() {
               </section>
 
               <section className="border-b border-neutral-200 pb-8 dark:border-neutral-700">
-                <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+                <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
                   how I work
                 </h3>
                 <ul className="mt-4 space-y-3 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
@@ -168,7 +168,7 @@ export default function About() {
 
             <div className="space-y-10">
               <section>
-                <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+                <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
                   background
                 </h3>
                 <div className="mt-4 space-y-4 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 sm:text-base">
@@ -179,7 +179,7 @@ export default function About() {
               </section>
 
               <section className="border-t border-neutral-200 pt-8 dark:border-neutral-700">
-                <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+                <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
                   current focus
                 </h3>
                 <p className="mt-4 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 sm:text-base">
@@ -200,7 +200,7 @@ export default function About() {
               </section>
 
               <section className="border-t border-neutral-200 pt-8 dark:border-neutral-700">
-                <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+                <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
                   different kinds of systems
                 </h3>
                 <p className="mt-4 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 sm:text-base">
@@ -228,7 +228,7 @@ export default function About() {
               </section>
 
               <section className="border-t border-neutral-200 pt-8 dark:border-neutral-700">
-                <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+                <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
                   what matters to me
                 </h3>
                 <div className="mt-4 space-y-4 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 sm:text-base">
@@ -241,7 +241,11 @@ export default function About() {
           </div>
         </div>
 
-        <TechStack technologies={currentEmployment.technologies} tone="plain" />
+        <TechStack
+          technologies={currentEmployment.technologies}
+          tone="plain"
+          contentId="about-tech-stack"
+        />
       </div>
     </Container>
   )

@@ -1,10 +1,42 @@
-import { type ElementType } from 'react'
+import { Fragment, type ElementType } from 'react'
 
 type TerminalPromptProps = {
   command: string
   argument?: string
   as?: ElementType
   className?: string
+}
+
+function getArgumentTokenClassName(token: string) {
+  if (token.startsWith('--')) {
+    return 'font-medium text-amber-700/80 dark:text-amber-300/75'
+  }
+
+  if (
+    token.includes('/') ||
+    /\.[a-z0-9]+$/i.test(token)
+  ) {
+    return 'font-medium text-stone-700 dark:text-stone-300'
+  }
+
+  return 'text-neutral-600 dark:text-neutral-300'
+}
+
+function renderArgument(argument: string) {
+  return argument.split(/(\s+)/).map((token, index) => {
+    if (token.trim().length === 0) {
+      return <Fragment key={`space-${index}`}>{token}</Fragment>
+    }
+
+    return (
+      <span
+        key={`token-${index}`}
+        className={getArgumentTokenClassName(token)}
+      >
+        {token}
+      </span>
+    )
+  })
 }
 
 export function TerminalPrompt({
@@ -24,12 +56,14 @@ export function TerminalPrompt({
         </span>
         <span className="flex min-w-0 items-center px-2.5 py-1.5 sm:px-3 sm:py-2">
           <span className="block min-w-0 font-mono font-semibold leading-tight tracking-tight text-neutral-800 dark:text-neutral-100">
-            {command}
+            <span className="text-neutral-900 dark:text-neutral-50">
+              {command}
+            </span>
             {argument ? (
               <>
                 {' '}
-                <span className="font-normal break-words text-neutral-500 dark:text-neutral-400">
-                  {argument}
+                <span className="font-normal break-words">
+                  {renderArgument(argument)}
                 </span>
               </>
             ) : null}
@@ -58,7 +92,7 @@ export function TerminalPageHeader({
   return (
     <div className="mb-8 sm:mb-10">
       {eyebrow ? (
-        <div className="mb-3 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-neutral-500 dark:text-neutral-400 sm:mb-4 sm:text-[11px] sm:tracking-[0.2em]">
+        <div className="mb-3 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-neutral-600 dark:text-neutral-300 sm:mb-4 sm:text-[11px] sm:tracking-[0.2em]">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
           {eyebrow}
         </div>
@@ -69,8 +103,8 @@ export function TerminalPageHeader({
         argument={argument}
         className="text-lg font-semibold tracking-tight sm:text-4xl sm:font-bold lg:text-5xl"
       />
-      <p className="mt-2 font-mono text-xs text-neutral-600 dark:text-neutral-400 sm:mt-3 sm:text-lg">
-        <span className="text-neutral-500 dark:text-neutral-400"># </span>
+      <p className="mt-2 font-mono text-xs text-neutral-700 dark:text-neutral-300 sm:mt-3 sm:text-lg">
+        <span className="text-neutral-600 dark:text-neutral-300"># </span>
         {description}
       </p>
     </div>
@@ -99,8 +133,8 @@ export function TerminalSectionHeader({
         className="text-base font-semibold tracking-tight sm:text-xl sm:font-bold"
       />
       {description ? (
-        <p className="mt-2 font-mono text-xs text-neutral-600 dark:text-neutral-400 sm:text-sm">
-          <span className="text-neutral-500 dark:text-neutral-400"># </span>
+        <p className="mt-2 font-mono text-xs text-neutral-700 dark:text-neutral-300 sm:text-sm">
+          <span className="text-neutral-600 dark:text-neutral-300"># </span>
           {description}
         </p>
       ) : null}

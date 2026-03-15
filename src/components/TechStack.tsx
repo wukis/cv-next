@@ -1,5 +1,5 @@
 'use client'
-import React, { useId, useState } from 'react'
+import React, { useState } from 'react'
 import { surfaceHoverMotionClassName } from '@/components/interactionStyles'
 
 // Tech stack icons
@@ -373,12 +373,13 @@ export function TechIconButton({
 export function TechStack({
   technologies,
   tone = 'default',
+  contentId,
 }: {
   technologies: string[]
   tone?: 'default' | 'plain'
+  contentId?: string
 }) {
   const [isExpanded, setIsExpanded] = useState(false)
-  const contentId = useId()
 
   if (technologies.length === 0) return null
 
@@ -386,11 +387,18 @@ export function TechStack({
   const visibleTechs = technologies.slice(0, VISIBLE_COUNT)
   const hiddenCount = technologies.length - VISIBLE_COUNT
   const groupedTechs = groupTechByCategory(technologies)
+  const resolvedContentId =
+    contentId ??
+    `tech-stack-${technologies
+      .slice(0, 3)
+      .join('-')
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, '-')}`
 
   const toggleExpand = () => setIsExpanded(!isExpanded)
 
   return (
-    <div className="border-t border-neutral-200 bg-neutral-100/90 dark:border-neutral-700 dark:bg-neutral-800/70">
+    <div className="border-t border-neutral-200 bg-neutral-100/95 dark:border-neutral-700 dark:bg-neutral-800/85">
       <button
         type="button"
         className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-black ${surfaceHoverMotionClassName} ${
@@ -400,13 +408,13 @@ export function TechStack({
         }`}
         onClick={toggleExpand}
         aria-expanded={isExpanded}
-        aria-controls={contentId}
+        aria-controls={resolvedContentId}
       >
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <div
             className={`flex flex-shrink-0 items-center gap-2 ${
               tone === 'plain'
-                ? 'text-[11px] text-neutral-500 dark:text-neutral-400'
+                ? 'text-[11px] text-neutral-600 dark:text-neutral-300'
                 : 'font-mono text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-100'
             }`}
           >
@@ -438,7 +446,7 @@ export function TechStack({
                 <span
                   className={`font-mono text-xs ${
                     tone === 'plain'
-                      ? 'text-neutral-500 dark:text-neutral-400'
+                      ? 'text-neutral-600 dark:text-neutral-300'
                       : 'rounded bg-neutral-200 px-1.5 py-0.5 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-100'
                   }`}
                 >
@@ -468,7 +476,7 @@ export function TechStack({
       </button>
 
       <div
-        id={contentId}
+        id={resolvedContentId}
         className={`transition-all duration-300 ease-in-out ${
           isExpanded
             ? 'max-h-[1000px] opacity-100'
@@ -493,7 +501,7 @@ export function TechStack({
                 <div
                   className={`mb-2 ${
                     tone === 'plain'
-                      ? 'text-[11px] text-neutral-500 dark:text-neutral-400'
+                      ? 'text-[11px] text-neutral-600 dark:text-neutral-300'
                       : 'font-mono text-[10px] uppercase tracking-wider text-neutral-700 dark:text-neutral-200'
                   }`}
                 >

@@ -40,7 +40,7 @@ function Highlights() {
 
   return (
     <Container className="mt-8">
-      <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white/90 dark:border-neutral-700 dark:bg-neutral-900/90">
+      <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white/95 dark:border-neutral-700 dark:bg-neutral-900/95">
         <div className="flex h-6 items-center gap-2 border-b border-neutral-300 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
           <span className="truncate font-mono text-[10px] text-neutral-700 dark:text-neutral-100">
             ~/impact-report.md
@@ -60,7 +60,7 @@ function Highlights() {
 
           <div className="mt-8 grid grid-cols-1 gap-10 xl:grid-cols-[18rem_minmax(0,1fr)]">
             <aside>
-              <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+              <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
                 impact at a glance
               </h3>
               <dl className="mt-4 border-t border-neutral-200 dark:border-neutral-700">
@@ -84,13 +84,13 @@ function Highlights() {
             </aside>
 
             <section>
-              <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+              <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
                 selected impact
               </h3>
 
               <div className="mt-4 border-t border-neutral-200 pt-5 dark:border-neutral-700">
                 <article className="grid grid-cols-1 gap-4 md:grid-cols-[2.75rem_minmax(0,1fr)]">
-                  <div className="font-mono text-2xl text-neutral-500 dark:text-neutral-400">
+                  <div className="font-mono text-2xl text-neutral-600 dark:text-neutral-300">
                     01
                   </div>
                   <div>
@@ -115,7 +115,7 @@ function Highlights() {
                     key={story.title}
                     className="grid grid-cols-1 gap-4 border-b border-neutral-200 py-5 last:border-b-0 last:pb-0 md:grid-cols-[2.75rem_minmax(0,1fr)] dark:border-neutral-700"
                   >
-                    <div className="font-mono text-2xl text-neutral-500 dark:text-neutral-400">
+                    <div className="font-mono text-2xl text-neutral-600 dark:text-neutral-300">
                       {String(index + 2).padStart(2, '0')}
                     </div>
                     <article>
@@ -150,7 +150,7 @@ function RecommendationsPreview() {
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <TerminalSectionHeader
           command="cat"
-          argument="recommendations --limit 6 --short"
+          argument={`${recommendationsCopy.fileName} --limit 6 --short`}
         />
       </div>
 
@@ -251,7 +251,7 @@ export default function HomeClientContent() {
     <>
       <Container className="mt-10 sm:mt-16">
         {/* Main hero card - combines portrait and bio on mobile */}
-        <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white/90 dark:border-neutral-700 dark:bg-neutral-900/90">
+        <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white/95 dark:border-neutral-700 dark:bg-neutral-900/95">
           {/* Terminal header */}
           <div className="flex h-6 items-center gap-2 border-b border-neutral-300 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
             <span className="truncate font-mono text-[10px] text-neutral-700 dark:text-neutral-100">
@@ -280,7 +280,7 @@ export default function HomeClientContent() {
               {/* Bio content */}
               <div className="min-w-0 flex-1 text-center sm:text-left">
                 <div className="mb-3">
-                  <span className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+                  <span className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
                     {linkedin.basics.label}
                   </span>
@@ -326,6 +326,7 @@ export default function HomeClientContent() {
           <TechStack
             technologies={currentEmployment.technologies}
             tone="plain"
+            contentId="home-tech-stack"
           />
         </div>
       </Container>

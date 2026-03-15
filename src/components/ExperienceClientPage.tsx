@@ -772,7 +772,14 @@ function Work({
                 </div>
 
                 <CompanyProjects projects={allProjects} />
-                <TechStack technologies={allTechnologies} tone="plain" />
+                <TechStack
+                  technologies={allTechnologies}
+                  tone="plain"
+                  contentId={`tech-stack-${companyData.company
+                    .toLowerCase()
+                    .replace(/\s+/g, '-')
+                    .replace(/[^a-z0-9-]/g, '')}`}
+                />
               </div>
             </div>
           </div>
