@@ -15,7 +15,7 @@ If you are new to React and Next.js, the most useful mental model is:
 - [`src/components`](../src/components) contains reusable UI and interactive pieces.
 - [`src/lib`](../src/lib) contains shared content, data shaping, and helper logic.
 - [`src/data`](../src/data) contains structured source data and LinkedIn sync state.
-- [`scripts`](../scripts) contains Node-based maintenance workflows such as PDF generation, obfuscation, and LinkedIn sync.
+- [`scripts`](../scripts) contains Node-based maintenance workflows such as PDF generation and LinkedIn sync.
 
 The key content entrypoint is [`src/lib/profileContent.ts`](../src/lib/profileContent.ts). When you want to change public profile content, start there first.
 
@@ -59,14 +59,9 @@ Blocking checks:
 npm run format:check
 npm run lint
 npm run typecheck
-npm run build
-```
-
-Advisory checks:
-
-```bash
 npm run typecheck:strict
 npm run knip
+npm run build
 ```
 
 ### PDF export

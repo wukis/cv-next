@@ -28,7 +28,7 @@ This repository is a content-heavy personal site built with Next.js App Router, 
 - Preserve the staged-content PDF hook in `scripts/ensure-cv-pdf-staged.mjs`.
 - Preserve the LinkedIn sync flow in `scripts/linkedin-sync.ts`.
 - Do not commit `.generated/`.
-- Keep build-time behavior in `next.config.mjs` and `scripts/obfuscate.mjs` intact unless the task explicitly targets them.
+- Keep build-time behavior in `next.config.mjs` intact unless the task explicitly targets it.
 
 ## Quality baseline
 
@@ -42,6 +42,7 @@ This repository is a content-heavy personal site built with Next.js App Router, 
 - The app is intentionally content-first: many edits are data and presentation changes rather than framework-heavy feature work.
 - Use the typed image registry in `src/lib/imageAssets.ts` instead of dynamic `require(...)`.
 - `src/app/global-error.tsx` is part of the typed app surface and should stay TypeScript.
+- Do not add post-build client chunk rewriting or custom obfuscation back into the pipeline unless there is a very specific deployment reason.
 
 ## Future Next.js docs integration
 

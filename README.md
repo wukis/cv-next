@@ -59,6 +59,7 @@ When a commit includes staged portfolio content changes, the pre-commit hook als
 
 - The CV page itself lives at `/cv`.
 - The static PDF committed to the repo lives at `public/jonas-petrik-cv.pdf`.
+- Production builds rely on Next.js minification and hidden source maps, not custom post-build obfuscation.
 
 ## LinkedIn sync
 
