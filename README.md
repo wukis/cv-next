@@ -49,7 +49,6 @@ The LinkedIn sync tooling uses:
 
 - `src/lib/profileContent.ts` as the desired state
 - `src/data/linkedin-sync/` for tracked baselines, snapshots, and rollback history
-- `public/linkedin-sync/status.json` for the minimal public deploy artifact
 - `.generated/linkedin/` for local working outputs
 
 Commands:
@@ -67,11 +66,11 @@ npm run linkedin:restore -- <snapshot-id>
 - `src/data/linkedin-sync/history/<snapshot-id>.json`: versioned backup snapshot containing baseline, desired state, and diff summary
 - `src/data/linkedin-sync/latest.json`: pointer to the newest snapshot
 - `src/data/linkedin-sync/applied.json`: pointer to the last snapshot confirmed as manually applied on LinkedIn
+- `src/data/linkedin-sync/status.json`: tracked local status summary
 - `.generated/linkedin/payload.json`: current desired LinkedIn payload
 - `.generated/linkedin/diff.json`: diff between imported baseline and desired payload
 - `.generated/linkedin/copy-pack.md`: manual update pack to apply in LinkedIn
 - `.generated/linkedin/restore-pack.md`: rollback pack generated from a saved snapshot baseline
-- `public/linkedin-sync/status.json`: minimal public status artifact for deployment
 
 ### Backup-first workflow
 
@@ -128,8 +127,8 @@ An agent making LinkedIn sync changes should follow this sequence:
 6. Confirm that the tracked backup files changed as expected:
    - `src/data/linkedin-sync/imported.json`
    - `src/data/linkedin-sync/latest.json`
+   - `src/data/linkedin-sync/status.json`
    - `src/data/linkedin-sync/history/`
-   - `public/linkedin-sync/status.json`
 7. Do not commit `.generated/linkedin/`.
 8. After the user manually updates LinkedIn and verifies the result, run `npm run linkedin:accept`.
 9. Re-run `npm run lint` if any tracked files changed afterward.
@@ -142,7 +141,7 @@ After the snapshot and status files are correct:
 git status
 git add README.md package.json package-lock.json yarn.lock \
   src/lib/profileContent.ts src/lib/linkedinSync.ts scripts/linkedin-sync.ts \
-  src/data/linkedin-sync public/linkedin-sync .gitignore
+  src/data/linkedin-sync .gitignore
 git commit -m "Add backup-first LinkedIn sync workflow"
 git push
 ```
@@ -154,5 +153,5 @@ If the branch name matters, create or use a branch with the `codex/` prefix befo
 - `linkedin:sync` must not be used without a fresh import baseline.
 - Never commit the raw LinkedIn export ZIP or extracted raw export files.
 - Only the sanitized files under `src/data/linkedin-sync/` should be tracked.
-- Only `public/linkedin-sync/status.json` should be deployed publicly.
+- Nothing in the LinkedIn sync flow should be exposed through `public/` or imported into the app runtime.
 - `.generated/linkedin/` is local working output and must stay untracked.

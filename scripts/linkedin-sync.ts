@@ -92,13 +92,13 @@ const historyDir = path.join(trackedDir, 'history')
 const importedPath = path.join(trackedDir, 'imported.json')
 const latestPath = path.join(trackedDir, 'latest.json')
 const appliedPath = path.join(trackedDir, 'applied.json')
+const trackedStatusPath = path.join(trackedDir, 'status.json')
 const generatedDir = path.join(storageRoot, '.generated', 'linkedin')
 const payloadPath = path.join(generatedDir, 'payload.json')
 const diffPath = path.join(generatedDir, 'diff.json')
 const copyPackPath = path.join(generatedDir, 'copy-pack.md')
 const restorePayloadPath = path.join(generatedDir, 'restore-payload.json')
 const restorePackPath = path.join(generatedDir, 'restore-pack.md')
-const statusPath = path.join(storageRoot, 'public', 'linkedin-sync', 'status.json')
 
 const defaultImportedBaseline: ImportedBaseline = {
   schemaVersion: LINKEDIN_SYNC_SCHEMA_VERSION,
@@ -144,11 +144,10 @@ const defaultStatusArtifact: PublicStatusArtifact = {
 async function ensurePaths() {
   await fs.mkdir(historyDir, { recursive: true })
   await fs.mkdir(generatedDir, { recursive: true })
-  await fs.mkdir(path.dirname(statusPath), { recursive: true })
   await ensureFile(importedPath, defaultImportedBaseline)
   await ensureFile(latestPath, defaultLatestSnapshotPointer)
   await ensureFile(appliedPath, defaultAppliedSnapshotPointer)
-  await ensureFile(statusPath, defaultStatusArtifact)
+  await ensureFile(trackedStatusPath, defaultStatusArtifact)
 }
 
 function stableHash(value: unknown) {
@@ -784,7 +783,7 @@ async function writeStatusArtifact(warnings: string[] = []) {
     warnings: [...new Set([...imported.warnings, ...warnings])],
   }
 
-  await writeJsonFile(statusPath, status)
+  await writeJsonFile(trackedStatusPath, status)
 }
 
 async function commandImport(inputPath: string | undefined) {

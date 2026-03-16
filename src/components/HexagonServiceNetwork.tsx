@@ -384,8 +384,10 @@ const STARTING_DURATION = 3.2
 const SNAPSHOT_INTERVAL = 0.45
 const POD_LAYOUT_STIFFNESS = 0.09
 const POD_LAYOUT_DAMPING = 0.76
-const CAMERA_ZOOM_MIN = -260
-const CAMERA_ZOOM_MAX = 320
+const CAMERA_BASE_ZOOM_IDLE = 92
+const CAMERA_BASE_ZOOM_FOCUSED = 54
+const CAMERA_ZOOM_MIN = -340
+const CAMERA_ZOOM_MAX = 420
 
 let cameraZoomOffset = 0
 
@@ -4606,7 +4608,12 @@ const HexagonServiceNetwork: React.FC = () => {
       ) {
         zoomState.current = 0
       }
-      cameraZoomOffset = zoomState.current
+      const baseZoomOffset = lerp(
+        CAMERA_BASE_ZOOM_IDLE,
+        CAMERA_BASE_ZOOM_FOCUSED,
+        focusLevel,
+      )
+      cameraZoomOffset = baseZoomOffset + zoomState.current
 
       const rotationSpeed =
         ROTATION_SPEED_NORMAL +

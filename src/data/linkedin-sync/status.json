@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": null,
+  "baselineImportedAt": null,
+  "baselineSourceType": null,
+  "latestSnapshotId": null,
+  "appliedSnapshotId": null,
+  "pendingChanges": false,
+  "restoreAvailable": false,
+  "diffSummary": null,
+  "warnings": [
+    "LinkedIn sync has not been initialized yet. Run linkedin:import first."
+  ]
+}

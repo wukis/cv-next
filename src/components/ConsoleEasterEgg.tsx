@@ -198,11 +198,13 @@ function formatAmbientHistoryTime(timestamp: number) {
 }
 
 function formatAmbientHistoryEntry(entry: AmbientCallHistoryEntry) {
+  const incidentPrefix = entry.incidentId ? `[${entry.incidentId}] ` : ''
+
   if (entry.kind === 'status') {
-    return `${formatAmbientHistoryTime(entry.timestamp)} system: ${entry.text}`
+    return `${formatAmbientHistoryTime(entry.timestamp)} ${incidentPrefix}system: ${entry.text}`
   }
 
-  return `${formatAmbientHistoryTime(entry.timestamp)} ${entry.speakerLabel.toLowerCase()}: ${entry.text}`
+  return `${formatAmbientHistoryTime(entry.timestamp)} ${incidentPrefix}${entry.speakerLabel.toLowerCase()}: ${entry.text}`
 }
 
 function getAmbientHistoryColor(entry: AmbientCallHistoryEntry) {

@@ -69,6 +69,7 @@ export interface AmbientCallHistoryEntry {
   text: string
   timestamp: number
   scenarioKey: EmergencyScenarioKey | null
+  incidentId?: string
 }
 
 export interface ClusterSnapshot {

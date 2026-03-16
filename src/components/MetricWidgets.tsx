@@ -1134,6 +1134,8 @@ function CompositeMetricWidget({
   const compositeMeta = getCompositeWidgetMeta(id, cluster, mode)
   const trafficCounter = getCounterDisplay('traffic', cluster, mode)
   const podsCounter = getCounterDisplay('pods', cluster, mode)
+  const podCounterFontSizePx =
+    podsCounter.length >= 7 ? 14 : podsCounter.length >= 6 ? 15 : 18
   const k8sStatus = getStatusDisplay('k8s', cluster, mode)
   const statusHealthyColor = isDark ? '#00ff88' : '#009955'
   const statusDegradedColor = isDark ? '#ffaa00' : '#cc7700'
@@ -1268,8 +1270,11 @@ function CompositeMetricWidget({
               pod set
             </span>
             <span
-              className="whitespace-nowrap font-mono text-[18px] font-semibold tabular-nums"
+              className="whitespace-nowrap font-mono font-semibold tabular-nums"
               style={{
+                fontSize: `${podCounterFontSizePx}px`,
+                lineHeight: 1.1,
+                letterSpacing: podCounterFontSizePx <= 15 ? '-0.02em' : '-0.01em',
                 color: effectiveColor,
                 opacity: isPreviewing ? 1 : isDark ? 0.42 : 0.56,
                 textShadow: isPreviewing && isDark ? `0 0 8px ${effectiveColor}` : 'none',

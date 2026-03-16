@@ -1,6 +1,13 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 
 import {
   appendAmbientCallHistoryEntry,
@@ -45,11 +52,20 @@ type CallBubble = {
   durationMs?: number
 }
 
+type SystemNotice = {
+  id: string
+  participantId: string
+  initials: string
+  text: string
+  durationMs: number
+}
+
 type CallSession = {
   startedAt: number
   holdUntil: number
   scenarioKey: EmergencyScenarioKey
   triggerSource: TriggerSource
+  incidentId: string
   cycleStartedAt: number
   scenarioParticipants: {
     core: string[]
@@ -75,6 +91,14 @@ const REJOIN_COOLDOWN_MS = 8_000
 const OPTIONAL_JOIN_DELAY_MS = 4_500
 const PARTICIPANT_EXIT_ANIMATION_MS = 1_200
 const SPEAKER_CHAT_DEBOUNCE_MS = 1_500
+const WINDING_FINAL_OWNER_CHAT_DEBOUNCE_MS = 8_500
+const SYSTEM_NOTICE_FADE_MS = 280
+const CALL_PANEL_WIDTH_REM = 19
+const MANUAL_REPEAT_WINDOW_MS = 45_000
+const WINDING_FIRST_DROP_DELAY_MS = 8_000
+const WINDING_DROP_SPACING_MS = 6_500
+const WINDING_FINAL_OWNER_LINGER_MS = 11_000
+const FINAL_OWNER_ID = 'jp'
 
 const PARTICIPANTS: CallParticipant[] = [
   {
@@ -391,6 +415,25 @@ const RESTART_REACTIONS: Record<EmergencyScenarioKey, ScriptLine[]> = {
     },
   ],
 }
+
+const MANUAL_REPEAT_REACTIONS: ScriptLine[] = [
+  {
+    speakerId: 'td',
+    text: 'What is happening?',
+  },
+  {
+    speakerId: 'ic',
+    text: 'One after another... really?',
+  },
+  {
+    speakerId: 'jp',
+    text: 'Okay, who is farming emergencies now?',
+  },
+  {
+    speakerId: 'sr',
+    text: 'I was literally about to close the tabs.',
+  },
+]
 
 const CALL_SCRIPT: Record<
   EmergencyScenarioKey,
@@ -783,6 +826,87 @@ function resolveScriptLineText(line: ScriptLine, variationSeed: number) {
   return options[Math.abs(variationSeed) % options.length]
 }
 
+function createSystemNotice(
+  participant: CallParticipant,
+  text: string,
+  durationMs = 2_400,
+): SystemNotice {
+  return {
+    id: `system-${Date.now()}-${participant.id}-${text}`,
+    participantId: participant.id,
+    initials: participant.initials,
+    text,
+    durationMs,
+  }
+}
+
+function getCallRowLayout(tileCount: number) {
+  if (tileCount <= 1) {
+    return [1]
+  }
+
+  if (tileCount === 2) {
+    return [2]
+  }
+
+  if (tileCount === 3) {
+    return [3]
+  }
+
+  if (tileCount === 4) {
+    return [2, 2]
+  }
+
+  if (tileCount === 5) {
+    return [2, 3]
+  }
+
+  if (tileCount === 6) {
+    return [3, 3]
+  }
+
+  if (tileCount === 7) {
+    return [3, 4]
+  }
+
+  if (tileCount === 8) {
+    return [4, 4]
+  }
+
+  const firstRow = Math.ceil(tileCount / 2)
+  return [firstRow, tileCount - firstRow]
+}
+
+function getBubbleTypography(text: string) {
+  if (text.length > 95) {
+    return {
+      fontSizePx: 8,
+      lineHeight: '0.9rem',
+      heightRem: 2.7,
+    }
+  }
+
+  if (text.length > 72) {
+    return {
+      fontSizePx: 8.5,
+      lineHeight: '0.95rem',
+      heightRem: 2.62,
+    }
+  }
+
+  return {
+    fontSizePx: 9,
+    lineHeight: '1rem',
+    heightRem: 2.55,
+  }
+}
+
+function createEmergencyIncidentId(scenarioKey: EmergencyScenarioKey) {
+  const scenarioCode = scenarioKey.replace(/[^a-z]/gi, '').slice(0, 3).toUpperCase()
+  const randomCode = Math.random().toString(36).slice(2, 6).toUpperCase()
+  return `${scenarioCode || 'EMG'}-${randomCode}`
+}
+
 function chooseScenarioParticipants(scenarioKey: EmergencyScenarioKey) {
   const scenario = SCENARIO_PARTICIPANT_POOLS[scenarioKey]
   const shuffledPool = [...scenario.optionalPool].sort(
@@ -847,6 +971,39 @@ function buildParticipantSchedule(
     ...scenarioParticipants.core,
     ...scenarioParticipants.optional,
   ])
+  const includedParticipants = PARTICIPANTS.filter((participant) =>
+    includedIds.has(participant.id),
+  )
+  const leaveOrder = [...includedParticipants].sort((left, right) => {
+    if (left.id === FINAL_OWNER_ID) {
+      return 1
+    }
+
+    if (right.id === FINAL_OWNER_ID) {
+      return -1
+    }
+
+    return left.leaveAfterHoldMs - right.leaveAfterHoldMs
+  })
+  const leaveOffsetsByParticipantId = new Map<string, number>()
+  let previousLeaveOffset = 0
+
+  leaveOrder.forEach((participant, index) => {
+    const minimumOffset =
+      index === 0
+        ? WINDING_FIRST_DROP_DELAY_MS
+        : previousLeaveOffset + WINDING_DROP_SPACING_MS
+    const targetOffset =
+      participant.id === FINAL_OWNER_ID
+        ? Math.max(
+            participant.leaveAfterHoldMs,
+            minimumOffset + WINDING_FINAL_OWNER_LINGER_MS,
+          )
+        : Math.max(participant.leaveAfterHoldMs, minimumOffset)
+
+    leaveOffsetsByParticipantId.set(participant.id, targetOffset)
+    previousLeaveOffset = targetOffset
+  })
 
   return Object.fromEntries(
     PARTICIPANTS.map((participant, index) => {
@@ -889,7 +1046,10 @@ function buildParticipantSchedule(
           included: true,
           optional: isOptional,
           joinAt,
-          leaveAt: holdUntil + participant.leaveAfterHoldMs,
+          leaveAt:
+            holdUntil +
+            (leaveOffsetsByParticipantId.get(participant.id) ??
+              participant.leaveAfterHoldMs),
         },
       ]
     }),
@@ -908,6 +1068,11 @@ export default function EmergencyCallOverlay() {
   const [transientBubble, setTransientBubble] = useState<CallBubble | null>(
     null,
   )
+  const [activeSystemNotice, setActiveSystemNotice] = useState<SystemNotice | null>(
+    null,
+  )
+  const [isSystemNoticeVisible, setIsSystemNoticeVisible] = useState(false)
+  const [systemNoticeVersion, setSystemNoticeVersion] = useState(0)
   const previousEmergencyRef = useRef<{
     state: typeof cluster.emergencyState
     scenarioKey: EmergencyScenarioKey | null
@@ -920,10 +1085,35 @@ export default function EmergencyCallOverlay() {
   const lastBubbleShownAtRef = useRef<Record<string, number>>({})
   const displayedBubbleTimeoutRef = useRef<number | null>(null)
   const lastHistorySignatureRef = useRef<string | null>(null)
+  const systemNoticeQueueRef = useRef<SystemNotice[]>([])
+  const activeSystemNoticeTimeoutRef = useRef<number | null>(null)
+  const systemNoticeFadeTimeoutRef = useRef<number | null>(null)
+  const participantTileRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const previousParticipantRectsRef = useRef<Record<string, DOMRect>>({})
+  const lastEmergencyEndedAtRef = useRef<number | null>(null)
+  const consecutiveManualEmergencyCountRef = useRef(0)
 
   const checkScreenSize = useCallback(() => {
     setShouldRender(getShouldRenderEmergencyCall())
   }, [])
+
+  const enqueueSystemNotice = useCallback((notice: SystemNotice) => {
+    const lastQueuedNotice =
+      systemNoticeQueueRef.current[systemNoticeQueueRef.current.length - 1]
+    const isDuplicateOfActive =
+      activeSystemNotice?.participantId === notice.participantId &&
+      activeSystemNotice.text === notice.text
+    const isDuplicateOfQueued =
+      lastQueuedNotice?.participantId === notice.participantId &&
+      lastQueuedNotice.text === notice.text
+
+    if (isDuplicateOfActive || isDuplicateOfQueued) {
+      return
+    }
+
+    systemNoticeQueueRef.current = [...systemNoticeQueueRef.current, notice]
+    setSystemNoticeVersion((version) => version + 1)
+  }, [activeSystemNotice])
 
   useEffect(() => {
     window.addEventListener('resize', checkScreenSize)
@@ -963,13 +1153,27 @@ export default function EmergencyCallOverlay() {
       lastBubbleByParticipantRef.current = {}
       lastBubbleShownAtRef.current = {}
       lastHistorySignatureRef.current = null
+      systemNoticeQueueRef.current = []
+      previousParticipantRectsRef.current = {}
 
       if (displayedBubbleTimeoutRef.current !== null) {
         window.clearTimeout(displayedBubbleTimeoutRef.current)
         displayedBubbleTimeoutRef.current = null
       }
 
+      if (activeSystemNoticeTimeoutRef.current !== null) {
+        window.clearTimeout(activeSystemNoticeTimeoutRef.current)
+        activeSystemNoticeTimeoutRef.current = null
+      }
+
+      if (systemNoticeFadeTimeoutRef.current !== null) {
+        window.clearTimeout(systemNoticeFadeTimeoutRef.current)
+        systemNoticeFadeTimeoutRef.current = null
+      }
+
       const timeoutId = window.setTimeout(() => {
+        setActiveSystemNotice(null)
+        setIsSystemNoticeVisible(false)
         setDisplayedBubble(null)
       }, 0)
 
@@ -982,8 +1186,12 @@ export default function EmergencyCallOverlay() {
       return
     }
 
-    const latestEndAt =
-      session.holdUntil + PARTICIPANTS[0].leaveAfterHoldMs + LEAVE_BUFFER_MS
+    const latestLeaveAt = Object.values(session.participantSchedule).reduce(
+      (latest, schedule) =>
+        schedule.included ? Math.max(latest, schedule.leaveAt) : latest,
+      session.holdUntil,
+    )
+    const latestEndAt = latestLeaveAt + LEAVE_BUFFER_MS
     if (now >= latestEndAt) {
       const timeoutId = window.setTimeout(() => {
         setSession(null)
@@ -1072,6 +1280,51 @@ export default function EmergencyCallOverlay() {
     [participants],
   )
 
+  useLayoutEffect(() => {
+    const nextRects = Object.fromEntries(
+      visibleParticipants
+        .map((participant) => {
+          const node = participantTileRefs.current[participant.id]
+          return node ? ([participant.id, node.getBoundingClientRect()] as const) : null
+        })
+        .filter((entry): entry is readonly [string, DOMRect] => entry !== null),
+    ) as Record<string, DOMRect>
+
+    visibleParticipants.forEach((participant) => {
+      const node = participantTileRefs.current[participant.id]
+      const previousRect = previousParticipantRectsRef.current[participant.id]
+      const nextRect = nextRects[participant.id]
+
+      if (!node || !previousRect || !nextRect) {
+        return
+      }
+
+      const deltaX = previousRect.left - nextRect.left
+      const deltaY = previousRect.top - nextRect.top
+
+      if (Math.abs(deltaX) < 1 && Math.abs(deltaY) < 1) {
+        return
+      }
+
+      node.animate(
+        [
+          {
+            transform: `translate(${deltaX}px, ${deltaY}px)`,
+          },
+          {
+            transform: 'translate(0, 0)',
+          },
+        ],
+        {
+          duration: 460,
+          easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+        },
+      )
+    })
+
+    previousParticipantRectsRef.current = nextRects
+  }, [visibleParticipants])
+
   const connectedParticipantIds = useMemo(
     () => connectedParticipants.map((participant) => participant.id),
     [connectedParticipants],
@@ -1098,11 +1351,62 @@ export default function EmergencyCallOverlay() {
       cluster.emergencyState !== 'normal' &&
       (previous.state === 'normal' || scenarioChanged)
 
+    if (previous.state !== 'normal' && cluster.emergencyState === 'normal') {
+      lastEmergencyEndedAtRef.current = getNow()
+    }
+
     if (enteredIncident && cluster.scenarioKey) {
       const scenarioKey = cluster.scenarioKey
       const sessionNow = getNow()
+      const isFreshIncident = previous.state === 'normal'
+      const isRapidManualRepeat =
+        cluster.triggerSource === 'button-click' &&
+        session !== null &&
+        isFreshIncident &&
+        lastEmergencyEndedAtRef.current !== null &&
+        sessionNow - lastEmergencyEndedAtRef.current <= MANUAL_REPEAT_WINDOW_MS
+      const nextIncidentId =
+        session && !isFreshIncident
+          ? session.incidentId
+          : createEmergencyIncidentId(scenarioKey)
       const timeoutId = window.setTimeout(() => {
-        if (session && previous.state !== 'normal') {
+        if (isRapidManualRepeat) {
+          const reactionIndex = Math.min(
+            consecutiveManualEmergencyCountRef.current,
+            MANUAL_REPEAT_REACTIONS.length - 1,
+          )
+          const seededReaction = MANUAL_REPEAT_REACTIONS[reactionIndex]
+          const availableReaction =
+            connectedParticipantIds.includes(seededReaction.speakerId)
+              ? seededReaction
+              : MANUAL_REPEAT_REACTIONS.find((line) =>
+                  connectedParticipantIds.includes(line.speakerId),
+                ) ?? seededReaction
+          const reactionParticipant =
+            PARTICIPANT_LOOKUP[availableReaction.speakerId] ??
+            connectedParticipants[0]
+
+          if (reactionParticipant) {
+            setTransientBubble((current) => {
+              if (
+                lastBubbleByParticipantRef.current[reactionParticipant.id] ===
+                  availableReaction.text ||
+                (current?.participantId === reactionParticipant.id &&
+                  current.text === availableReaction.text)
+              ) {
+                return current
+              }
+
+              return {
+                kind: 'chat',
+                participantId: reactionParticipant.id,
+                initials: reactionParticipant.initials,
+                text: availableReaction.text,
+                durationMs: 3_400,
+              }
+            })
+          }
+        } else if (session && previous.state !== 'normal') {
           const reactionPool = RESTART_REACTIONS[scenarioKey]
           const seededReaction =
             reactionPool[Math.floor(sessionNow / 1000) % reactionPool.length]
@@ -1136,6 +1440,39 @@ export default function EmergencyCallOverlay() {
           }
         }
 
+        if (cluster.triggerSource === 'button-click') {
+          consecutiveManualEmergencyCountRef.current = isRapidManualRepeat
+            ? consecutiveManualEmergencyCountRef.current + 1
+            : 0
+        } else {
+          consecutiveManualEmergencyCountRef.current = 0
+        }
+
+        if (isFreshIncident) {
+          appendAmbientCallHistoryEntry({
+            id: `call-${nextIncidentId}-started`,
+            kind: 'status',
+            participantId: 'system',
+            initials: 'SYS',
+            speakerLabel: 'system',
+            text: 'Emergency call started.',
+            timestamp: Date.now(),
+            scenarioKey,
+            incidentId: nextIncidentId,
+          })
+          appendAmbientCallHistoryEntry({
+            id: `call-${nextIncidentId}-waiting`,
+            kind: 'status',
+            participantId: 'system',
+            initials: 'SYS',
+            speakerLabel: 'system',
+            text: 'Waiting for participants...',
+            timestamp: Date.now() + 1,
+            scenarioKey,
+            incidentId: nextIncidentId,
+          })
+        }
+
         setSession((current) => {
           const chosenScenarioParticipants =
             chooseScenarioParticipants(scenarioKey)
@@ -1157,6 +1494,7 @@ export default function EmergencyCallOverlay() {
             scenarioKey,
             triggerSource:
               cluster.triggerSource ?? current?.triggerSource ?? null,
+            incidentId: current && !isFreshIncident ? current.incidentId : nextIncidentId,
             cycleStartedAt: sessionNow,
             scenarioParticipants,
             participantSchedule: buildParticipantSchedule(
@@ -1205,9 +1543,28 @@ export default function EmergencyCallOverlay() {
     return nextOptionalId ? PARTICIPANT_LOOKUP[nextOptionalId] : null
   }, [currentTime, phase, session])
 
+  const finalOwnerParticipant = useMemo(
+    () =>
+      connectedParticipants.find(
+        (participant) => participant.id === FINAL_OWNER_ID,
+      ) ?? null,
+    [connectedParticipants],
+  )
+
   const scriptLine = useMemo(() => {
     if (!session || !phase || connectedParticipants.length === 0) {
       return null
+    }
+
+    if (
+      phase === 'winding' &&
+      connectedParticipants.length === 1 &&
+      finalOwnerParticipant
+    ) {
+      return {
+        speakerId: finalOwnerParticipant.id,
+        text: 'I am staying on checkout a little longer, then I will write the post-mortem.',
+      }
     }
 
     const script = CALL_SCRIPT[session.scenarioKey][phase]
@@ -1280,6 +1637,7 @@ export default function EmergencyCallOverlay() {
   }, [
     connectedParticipants,
     currentTime,
+    finalOwnerParticipant,
     pendingOptionalParticipant,
     phase,
     session,
@@ -1321,21 +1679,7 @@ export default function EmergencyCallOverlay() {
       const participant = PARTICIPANT_LOOKUP[joinedId]
       const text = `${participant.title ?? participant.name} joined the call.`
       const timeoutId = window.setTimeout(() => {
-        setTransientBubble((current) => {
-          if (
-            lastBubbleByParticipantRef.current[participant.id] === text ||
-            (current?.participantId === participant.id && current.text === text)
-          ) {
-            return current
-          }
-
-          return {
-            kind: 'status',
-            participantId: participant.id,
-            initials: participant.initials,
-            text,
-          }
-        })
+        enqueueSystemNotice(createSystemNotice(participant, text))
       }, 0)
 
       previousConnectedIdsRef.current = currentConnectedIds
@@ -1346,21 +1690,7 @@ export default function EmergencyCallOverlay() {
       const participant = PARTICIPANT_LOOKUP[leftId]
       const text = `${participant.title ?? participant.name} left the call.`
       const timeoutId = window.setTimeout(() => {
-        setTransientBubble((current) => {
-          if (
-            lastBubbleByParticipantRef.current[participant.id] === text ||
-            (current?.participantId === participant.id && current.text === text)
-          ) {
-            return current
-          }
-
-          return {
-            kind: 'status',
-            participantId: participant.id,
-            initials: participant.initials,
-            text,
-          }
-        })
+        enqueueSystemNotice(createSystemNotice(participant, text))
       }, 0)
 
       previousConnectedIdsRef.current = currentConnectedIds
@@ -1368,7 +1698,7 @@ export default function EmergencyCallOverlay() {
     }
 
     previousConnectedIdsRef.current = currentConnectedIds
-  }, [connectedParticipants, session])
+  }, [connectedParticipants, enqueueSystemNotice, session])
 
   useEffect(() => {
     if (!transientBubble) {
@@ -1381,6 +1711,46 @@ export default function EmergencyCallOverlay() {
 
     return () => window.clearTimeout(timeoutId)
   }, [transientBubble])
+
+  useEffect(() => {
+    if (activeSystemNotice || systemNoticeQueueRef.current.length === 0) {
+      return
+    }
+
+    const [nextNotice, ...remainingQueue] = systemNoticeQueueRef.current
+    systemNoticeQueueRef.current = remainingQueue
+    setActiveSystemNotice(nextNotice)
+    setIsSystemNoticeVisible(true)
+  }, [activeSystemNotice, systemNoticeVersion])
+
+  useEffect(() => {
+    if (!activeSystemNotice) {
+      return
+    }
+
+    activeSystemNoticeTimeoutRef.current = window.setTimeout(() => {
+      setIsSystemNoticeVisible(false)
+
+      systemNoticeFadeTimeoutRef.current = window.setTimeout(() => {
+        setActiveSystemNotice(null)
+        systemNoticeFadeTimeoutRef.current = null
+      }, SYSTEM_NOTICE_FADE_MS)
+
+      activeSystemNoticeTimeoutRef.current = null
+    }, activeSystemNotice.durationMs)
+
+    return () => {
+      if (activeSystemNoticeTimeoutRef.current !== null) {
+        window.clearTimeout(activeSystemNoticeTimeoutRef.current)
+        activeSystemNoticeTimeoutRef.current = null
+      }
+
+      if (systemNoticeFadeTimeoutRef.current !== null) {
+        window.clearTimeout(systemNoticeFadeTimeoutRef.current)
+        systemNoticeFadeTimeoutRef.current = null
+      }
+    }
+  }, [activeSystemNotice])
 
   const nextBubble: CallBubble | null = useMemo(() => {
     if (transientBubble) {
@@ -1434,8 +1804,12 @@ export default function EmergencyCallOverlay() {
     const shouldDebounceSpeaker =
       displayedBubble?.participantId === nextBubble.participantId &&
       displayedBubble.text !== nextBubble.text
+    const speakerDebounceMs =
+      phase === 'winding' && nextBubble.participantId === FINAL_OWNER_ID
+        ? WINDING_FINAL_OWNER_CHAT_DEBOUNCE_MS
+        : SPEAKER_CHAT_DEBOUNCE_MS
     const delay = shouldDebounceSpeaker
-      ? Math.max(0, SPEAKER_CHAT_DEBOUNCE_MS - (getNow() - lastShownAt))
+      ? Math.max(0, speakerDebounceMs - (getNow() - lastShownAt))
       : 0
 
     const timeoutId = window.setTimeout(() => {
@@ -1454,7 +1828,7 @@ export default function EmergencyCallOverlay() {
         displayedBubbleTimeoutRef.current = null
       }
     }
-  }, [displayedBubble, nextBubble])
+  }, [displayedBubble, nextBubble, phase])
 
   useEffect(() => {
     if (!displayedBubble || !session) {
@@ -1467,7 +1841,7 @@ export default function EmergencyCallOverlay() {
         : (PARTICIPANT_LOOKUP[displayedBubble.participantId]?.title ??
           PARTICIPANT_LOOKUP[displayedBubble.participantId]?.name ??
           displayedBubble.initials)
-    const historySignature = `${displayedBubble.kind}:${displayedBubble.participantId}:${displayedBubble.text}`
+    const historySignature = `${session.incidentId}:${displayedBubble.kind}:${displayedBubble.participantId}:${displayedBubble.text}`
 
     if (lastHistorySignatureRef.current === historySignature) {
       return
@@ -1484,14 +1858,44 @@ export default function EmergencyCallOverlay() {
       text: displayedBubble.text,
       timestamp: Date.now(),
       scenarioKey: session.scenarioKey,
+      incidentId: session.incidentId,
     })
   }, [displayedBubble, session])
 
+  useEffect(() => {
+    if (!activeSystemNotice || !session) {
+      return
+    }
+
+    const historySignature = `${session.incidentId}:status:${activeSystemNotice.participantId}:${activeSystemNotice.text}`
+    if (lastHistorySignatureRef.current === historySignature) {
+      return
+    }
+
+    lastHistorySignatureRef.current = historySignature
+
+    appendAmbientCallHistoryEntry({
+      id: activeSystemNotice.id,
+      kind: 'status',
+      participantId: activeSystemNotice.participantId,
+      initials: activeSystemNotice.initials,
+      speakerLabel: 'system',
+      text: activeSystemNotice.text,
+      timestamp: Date.now(),
+      scenarioKey: session.scenarioKey,
+      incidentId: session.incidentId,
+    })
+  }, [activeSystemNotice, session])
+
   const activeSpeakerId = displayedBubble
-    ? displayedBubble.kind === 'status'
-      ? null
-      : displayedBubble.participantId
+    ? displayedBubble.participantId
     : (speaker?.id ?? null)
+  const bubbleParticipant = displayedBubble
+    ? PARTICIPANT_LOOKUP[displayedBubble.participantId] ?? speaker ?? null
+    : speaker
+  const bubbleTypography = displayedBubble
+    ? getBubbleTypography(displayedBubble.text)
+    : getBubbleTypography('')
 
   const liveAssignments = useMemo<AmbientCallAssignment[]>(() => {
     if (!session) {
@@ -1555,13 +1959,34 @@ export default function EmergencyCallOverlay() {
     return null
   }
 
+  const hasVisibleParticipants = visibleParticipants.length > 0
   const tileCount = Math.max(1, visibleParticipants.length)
-  const gridColumns = tileCount <= 1 ? 1 : tileCount <= 4 ? 2 : 3
-  const isDenseCallGrid = tileCount > 4
-  const tileOuterSizeRem = isDenseCallGrid ? 3.7 : 4.35
-  const tileInnerInsetRem = isDenseCallGrid ? 0.24 : 0.32
-  const tileCoreSizeRem = isDenseCallGrid ? 2.72 : 3.2
-  const tileInitialsFontSizePx = isDenseCallGrid ? 11 : 13
+  const rowLayout = getCallRowLayout(tileCount)
+  const maxRowCount = Math.max(...rowLayout)
+  const participantRows = rowLayout.reduce(
+    (rows, rowCount) => {
+      const nextIndex = rows.flat().length
+      rows.push(visibleParticipants.slice(nextIndex, nextIndex + rowCount))
+      return rows
+    },
+    [] as Array<typeof visibleParticipants>,
+  )
+  const isDenseCallGrid = tileCount > 6 || maxRowCount >= 4
+  const gridColumnGapRem = maxRowCount >= 4 ? 0.48 : isDenseCallGrid ? 0.55 : 0.75
+  const gridRowGapRem = isDenseCallGrid ? 0.7 : 0.92
+  const participantContentWidthRem = CALL_PANEL_WIDTH_REM - 3.2
+  const tileOuterSizeRem = Math.min(
+    isDenseCallGrid ? 3.7 : 4.35,
+    (participantContentWidthRem -
+      Math.max(0, maxRowCount - 1) * gridColumnGapRem) /
+      maxRowCount,
+  )
+  const tileInnerInsetRem = tileOuterSizeRem <= 3.6 ? 0.22 : isDenseCallGrid ? 0.24 : 0.32
+  const tileCoreSizeRem = tileOuterSizeRem * 0.74
+  const tileInitialsFontSizePx = Math.round(tileCoreSizeRem * 4.1)
+  const participantStageMinHeightRem =
+    rowLayout.length * tileOuterSizeRem +
+    Math.max(0, rowLayout.length - 1) * gridRowGapRem
   const accentColor =
     phase === 'active'
       ? isDark
@@ -1574,14 +1999,13 @@ export default function EmergencyCallOverlay() {
         : isDark
           ? 'rgba(74, 222, 128, 0.8)'
           : 'rgba(22, 163, 74, 0.76)'
-  const isStatusBubble = displayedBubble?.kind === 'status'
 
   return (
     <div className="pointer-events-none fixed bottom-5 left-5 z-10 hidden origin-bottom-left scale-[0.8] xl:block">
       <div
         className="overflow-hidden rounded-[1.4rem] border shadow-2xl backdrop-blur-xl"
         style={{
-          width: '19rem',
+          width: `${CALL_PANEL_WIDTH_REM}rem`,
           backgroundColor: isDark
             ? 'rgba(8, 12, 20, 0.9)'
             : 'rgba(255, 255, 255, 0.88)',
@@ -1619,101 +2043,214 @@ export default function EmergencyCallOverlay() {
 
         <div className="px-3.5 py-3">
           <div
-            className="grid"
+            className="relative flex items-center justify-center rounded-[1rem] border px-2 py-1"
             style={{
-              columnGap: isDenseCallGrid ? '0.55rem' : '0.75rem',
-              rowGap: isDenseCallGrid ? '0.75rem' : '1rem',
-              gridTemplateColumns: `repeat(${gridColumns}, minmax(0, 1fr))`,
+              minHeight: `${participantStageMinHeightRem}rem`,
+              backgroundColor: isDark
+                ? 'rgba(15, 23, 42, 0.28)'
+                : 'rgba(248, 250, 252, 0.82)',
+              borderColor: isDark
+                ? 'rgba(148, 163, 184, 0.12)'
+                : 'rgba(148, 163, 184, 0.16)',
             }}
           >
-            {visibleParticipants.map((participant) => {
-              const isSpeaker = participant.id === activeSpeakerId
-              const accentTone = participant.isDropping
-                ? isDark
-                  ? 'rgba(148, 163, 184, 0.68)'
-                  : 'rgba(100, 116, 139, 0.72)'
-                : participant.accent
-              const isFullyLeaving =
-                phase === 'winding' && currentTime >= participant.leaveAt
-
-              return (
+            <div
+              className="pointer-events-none absolute inset-0 flex items-center justify-center px-4 text-center transition-all duration-300"
+              style={{
+                opacity: hasVisibleParticipants ? 0 : 1,
+                transform: hasVisibleParticipants
+                  ? 'scale(0.98)'
+                  : 'scale(1)',
+                color: isDark
+                  ? 'rgba(226, 232, 240, 0.72)'
+                  : 'rgba(71, 85, 105, 0.82)',
+              }}
+            >
+              <div className="space-y-2">
                 <div
-                  key={participant.id}
-                  className="flex flex-col items-center text-center transition-all duration-500"
+                  className="font-mono text-[10px] uppercase tracking-[0.2em]"
+                  style={{ color: accentColor }}
+                >
+                  Bridge opening
+                </div>
+                <div className="font-mono text-[12px]">
+                  Waiting for participants ...
+                </div>
+              </div>
+            </div>
+
+            <div
+              className="relative flex w-full flex-col justify-center transition-all duration-300"
+              style={{
+                rowGap: `${gridRowGapRem}rem`,
+                opacity: hasVisibleParticipants ? 1 : 0,
+                transform: hasVisibleParticipants
+                  ? 'translateY(0) scale(1)'
+                  : 'translateY(3px) scale(0.985)',
+              }}
+            >
+              {participantRows.map((rowParticipants, rowIndex) => (
+                <div
+                  key={`row-${rowIndex}-${rowParticipants.length}`}
+                  className="flex justify-center"
                   style={{
-                    opacity: isFullyLeaving
-                      ? 0
-                      : participant.isDropping
-                        ? 0.72
-                        : 1,
-                    transform: isFullyLeaving ? 'scale(0.78)' : 'scale(1)',
+                    columnGap: `${gridColumnGapRem}rem`,
                   }}
                 >
-                  <div
-                    className="relative flex items-center justify-center"
+                  {rowParticipants.map((participant) => {
+                    const isSpeaker = participant.id === activeSpeakerId
+                    const accentTone = participant.isDropping
+                      ? isDark
+                        ? 'rgba(148, 163, 184, 0.68)'
+                        : 'rgba(100, 116, 139, 0.72)'
+                      : participant.accent
+                    const isFullyLeaving =
+                      phase === 'winding' && currentTime >= participant.leaveAt
+
+                    return (
+                      <div
+                        key={participant.id}
+                        ref={(node) => {
+                          participantTileRefs.current[participant.id] = node
+                        }}
+                        className="flex flex-col items-center text-center will-change-transform"
+                      >
+                        <div
+                          className="transition-all duration-500"
+                          style={{
+                            opacity: isFullyLeaving
+                              ? 0
+                              : participant.isDropping
+                                ? 0.72
+                                : 1,
+                            transform: isFullyLeaving
+                              ? 'scale(0.78)'
+                              : participant.isJoining
+                                ? 'scale(0.94)'
+                                : 'scale(1)',
+                          }}
+                        >
+                          <div
+                            className="relative flex items-center justify-center"
+                            style={{
+                              height: `${tileOuterSizeRem}rem`,
+                              width: `${tileOuterSizeRem}rem`,
+                            }}
+                          >
+                            <div
+                              className={`absolute inset-0 rounded-full transition-all duration-500 ${
+                                isSpeaker || participant.isJoining
+                                  ? 'animate-pulse'
+                                  : ''
+                              }`}
+                              style={{
+                                background: `radial-gradient(circle, ${softenAccent(
+                                  participant.accent,
+                                  isSpeaker ? '0.28' : '0.18',
+                                )}, transparent 68%)`,
+                                transform: isFullyLeaving
+                                  ? 'scale(0.86)'
+                                  : isSpeaker
+                                    ? 'scale(1.3)'
+                                    : 'scale(1.02)',
+                                opacity: isFullyLeaving
+                                  ? 0.18
+                                  : isSpeaker
+                                    ? 1
+                                    : 0.82,
+                              }}
+                            />
+                            <div
+                              className="absolute rounded-full border transition-all duration-500"
+                              style={{
+                                inset: `${tileInnerInsetRem}rem`,
+                                borderColor: accentTone,
+                                opacity: isSpeaker ? 1 : 0.84,
+                                boxShadow: isSpeaker
+                                  ? `0 0 0 1px ${accentTone}, 0 0 30px ${softenAccent(
+                                      participant.accent,
+                                      '0.34',
+                                    )}`
+                                  : 'none',
+                              }}
+                            />
+                            <div
+                              className="relative flex items-center justify-center rounded-full border font-mono font-semibold transition-all duration-500"
+                              style={{
+                                height: `${tileCoreSizeRem}rem`,
+                                width: `${tileCoreSizeRem}rem`,
+                                backgroundColor: isDark
+                                  ? 'rgba(15, 23, 42, 0.94)'
+                                  : 'rgba(255, 255, 255, 0.96)',
+                                borderColor: softenAccent(accentTone, '0.78'),
+                                color: isDark
+                                  ? 'rgba(248, 250, 252, 0.96)'
+                                  : 'rgba(15, 23, 42, 0.92)',
+                                fontSize: `${tileInitialsFontSizePx}px`,
+                              }}
+                            >
+                              {participant.initials}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-2 min-h-[2.1rem]">
+            <div
+              className="rounded-[0.9rem] border px-2.5 py-1.5 transition-all duration-300"
+              style={{
+                opacity: activeSystemNotice && isSystemNoticeVisible ? 1 : 0,
+                transform:
+                  activeSystemNotice && isSystemNoticeVisible
+                    ? 'translateY(0) scale(1)'
+                    : 'translateY(6px) scale(0.98)',
+                backgroundColor: isDark
+                  ? 'rgba(30, 41, 59, 0.3)'
+                  : 'rgba(255, 255, 255, 0.68)',
+                borderColor: isDark
+                  ? 'rgba(148, 163, 184, 0.12)'
+                  : 'rgba(148, 163, 184, 0.14)',
+                color: isDark
+                  ? 'rgba(191, 219, 254, 0.82)'
+                  : 'rgba(71, 85, 105, 0.84)',
+              }}
+            >
+              {activeSystemNotice ? (
+                <div className="flex items-center gap-2">
+                  <span
+                    className="inline-flex h-5 min-w-5 items-center justify-center rounded-full border font-mono text-[8px] font-semibold uppercase"
                     style={{
-                      height: `${tileOuterSizeRem}rem`,
-                      width: `${tileOuterSizeRem}rem`,
+                      backgroundColor: isDark
+                        ? 'rgba(15, 23, 42, 0.94)'
+                        : 'rgba(248, 250, 252, 0.96)',
+                      borderColor: isDark
+                        ? 'rgba(148, 163, 184, 0.22)'
+                        : 'rgba(148, 163, 184, 0.2)',
+                      color: isDark
+                        ? 'rgba(191, 219, 254, 0.9)'
+                        : 'rgba(71, 85, 105, 0.86)',
                     }}
                   >
-                    <div
-                      className={`absolute inset-0 rounded-full transition-all duration-500 ${
-                        isSpeaker || participant.isJoining
-                          ? 'animate-pulse'
-                          : ''
-                      }`}
-                      style={{
-                        background: `radial-gradient(circle, ${softenAccent(
-                          participant.accent,
-                          isSpeaker ? '0.28' : '0.18',
-                        )}, transparent 68%)`,
-                        transform: isFullyLeaving
-                          ? 'scale(0.86)'
-                          : isSpeaker
-                            ? 'scale(1.3)'
-                            : 'scale(1.02)',
-                        opacity: isFullyLeaving ? 0.18 : isSpeaker ? 1 : 0.82,
-                      }}
-                    />
-                    <div
-                      className="absolute rounded-full border"
-                      style={{
-                        inset: `${tileInnerInsetRem}rem`,
-                        borderColor: accentTone,
-                        opacity: isSpeaker ? 1 : 0.84,
-                        boxShadow: isSpeaker
-                          ? `0 0 0 1px ${accentTone}, 0 0 30px ${softenAccent(
-                              participant.accent,
-                              '0.34',
-                            )}`
-                          : 'none',
-                      }}
-                    />
-                    <div
-                      className="relative flex items-center justify-center rounded-full border font-mono font-semibold"
-                      style={{
-                        height: `${tileCoreSizeRem}rem`,
-                        width: `${tileCoreSizeRem}rem`,
-                        backgroundColor: isDark
-                          ? 'rgba(15, 23, 42, 0.94)'
-                          : 'rgba(255, 255, 255, 0.96)',
-                        borderColor: softenAccent(accentTone, '0.78'),
-                        color: isDark
-                          ? 'rgba(248, 250, 252, 0.96)'
-                          : 'rgba(15, 23, 42, 0.92)',
-                        fontSize: `${tileInitialsFontSizePx}px`,
-                      }}
-                    >
-                      {participant.initials}
-                    </div>
-                  </div>
+                    {activeSystemNotice.initials}
+                  </span>
+                  <span className="line-clamp-1 block min-w-0 font-mono text-[9px] uppercase tracking-[0.12em]">
+                    {activeSystemNotice.text}
+                  </span>
                 </div>
-              )
-            })}
+              ) : (
+                <div className="h-[1.1rem]" />
+              )}
+            </div>
           </div>
 
           <div
-            className="mt-2 h-[3.75rem] rounded-[0.95rem] border px-2 py-1.5"
+            className="mt-1 h-[3.75rem] rounded-[0.95rem] border px-2 py-1.5"
             style={{
               backgroundColor: isDark
                 ? 'rgba(15, 23, 42, 0.44)'
@@ -1724,84 +2261,54 @@ export default function EmergencyCallOverlay() {
             }}
           >
             {displayedBubble ? (
-              isStatusBubble ? (
-                <div
-                  className="flex h-full items-center justify-center rounded-[0.9rem] border px-2.5 text-center"
+              <div className="grid h-full grid-cols-[1.55rem_minmax(0,1fr)] items-center gap-2">
+                <span
+                  className="inline-flex h-5 min-w-5 items-center justify-center rounded-full border font-mono text-[8px] font-semibold uppercase"
                   style={{
-                    backgroundColor: isDark
-                      ? 'rgba(30, 41, 59, 0.34)'
-                      : 'rgba(255, 255, 255, 0.62)',
-                    borderColor: isDark
-                      ? 'rgba(148, 163, 184, 0.12)'
-                      : 'rgba(148, 163, 184, 0.12)',
-                    color: isDark
-                      ? 'rgba(191, 219, 254, 0.78)'
-                      : 'rgba(71, 85, 105, 0.82)',
+                    backgroundColor: bubbleParticipant?.accent ?? accentColor,
+                    borderColor: softenAccent(
+                      bubbleParticipant?.accent ?? accentColor,
+                      '0.5',
+                    ),
+                    color: 'rgba(15, 23, 42, 0.94)',
+                    boxShadow: `0 0 0 1px ${softenAccent(
+                      bubbleParticipant?.accent ?? accentColor,
+                      '0.22',
+                    )}`,
                   }}
                 >
-                  <span className="line-clamp-2 block text-[9px] uppercase tracking-[0.14em]">
-                    {displayedBubble.text}
-                  </span>
-                </div>
-              ) : (
-                <div className="grid h-full grid-cols-[1.55rem_minmax(0,1fr)] items-center gap-2">
-                  <span
-                    className="inline-flex h-5 min-w-5 items-center justify-center rounded-full border font-mono text-[8px] font-semibold uppercase"
+                  {displayedBubble.initials}
+                </span>
+                <div className="flex h-full min-w-0 items-center">
+                  <div
+                    className="flex w-full items-center rounded-[0.95rem] px-2.5"
                     style={{
-                      backgroundColor: speaker?.accent ?? accentColor,
-                      borderColor:
-                        displayedBubble.kind === 'hint'
-                          ? isDark
-                            ? 'rgba(250, 204, 21, 0.3)'
-                            : 'rgba(217, 119, 6, 0.24)'
-                          : softenAccent(speaker?.accent ?? accentColor, '0.5'),
-                      color: 'rgba(15, 23, 42, 0.94)',
-                      boxShadow: `0 0 0 1px ${softenAccent(
-                        speaker?.accent ?? accentColor,
-                        '0.22',
-                      )}`,
+                      height: `${bubbleTypography.heightRem}rem`,
+                      backgroundColor: isDark
+                        ? 'rgba(30, 41, 59, 0.64)'
+                        : 'rgba(255, 255, 255, 0.7)',
+                      border: `1px solid ${
+                        isDark
+                          ? 'rgba(148, 163, 184, 0.16)'
+                          : 'rgba(148, 163, 184, 0.14)'
+                      }`,
+                      color: isDark
+                        ? 'rgba(226, 232, 240, 0.84)'
+                        : 'rgba(30, 41, 59, 0.84)',
                     }}
                   >
-                    {displayedBubble.initials}
-                  </span>
-                  <div className="flex h-full min-w-0 items-center">
-                    <div
-                      className="flex h-[2.55rem] w-full items-center rounded-[0.95rem] px-2.5"
+                    <span
+                      className="line-clamp-2 block min-w-0 tracking-[0.01em]"
                       style={{
-                        backgroundColor:
-                          displayedBubble.kind === 'hint'
-                            ? isDark
-                              ? 'rgba(250, 204, 21, 0.08)'
-                              : 'rgba(245, 158, 11, 0.06)'
-                            : isDark
-                              ? 'rgba(30, 41, 59, 0.64)'
-                              : 'rgba(255, 255, 255, 0.7)',
-                        border: `1px solid ${
-                          displayedBubble.kind === 'hint'
-                            ? isDark
-                              ? 'rgba(250, 204, 21, 0.18)'
-                              : 'rgba(217, 119, 6, 0.16)'
-                            : isDark
-                              ? 'rgba(148, 163, 184, 0.16)'
-                              : 'rgba(148, 163, 184, 0.14)'
-                        }`,
-                        color:
-                          displayedBubble.kind === 'hint'
-                            ? isDark
-                              ? 'rgba(254, 240, 138, 0.92)'
-                              : 'rgba(146, 64, 14, 0.86)'
-                            : isDark
-                              ? 'rgba(226, 232, 240, 0.84)'
-                              : 'rgba(30, 41, 59, 0.84)',
+                        fontSize: `${bubbleTypography.fontSizePx}px`,
+                        lineHeight: bubbleTypography.lineHeight,
                       }}
                     >
-                      <span className="line-clamp-2 block min-w-0 text-[9px] leading-[1rem] tracking-[0.01em]">
-                        {displayedBubble.text}
-                      </span>
-                    </div>
+                      {displayedBubble.text}
+                    </span>
                   </div>
                 </div>
-              )
+              </div>
             ) : null}
           </div>
         </div>
