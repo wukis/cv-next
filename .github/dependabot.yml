@@ -1,0 +1,29 @@
+version: 2
+updates:
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    groups:
+      next-stack:
+        patterns:
+          - 'next'
+          - 'eslint-config-next'
+          - 'react'
+          - 'react-dom'
+      tooling:
+        patterns:
+          - 'eslint*'
+          - 'prettier*'
+          - 'typescript*'
+          - 'knip'
+          - 'lint-staged'
+          - 'husky'
+          - 'tsx'
+      observability:
+        patterns:
+          - '@sentry/*'
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'

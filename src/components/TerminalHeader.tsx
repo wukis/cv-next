@@ -83,7 +83,7 @@ function renderSegments(segments: TerminalTextSegment[]) {
   })
 }
 
-export function TerminalPrompt({
+function TerminalPrompt({
   command,
   argument,
   as: Component = 'p',
@@ -94,7 +94,7 @@ export function TerminalPrompt({
 
   return (
     <Component className={className}>
-      <span className="inline-flex max-w-full items-stretch overflow-hidden rounded-lg border border-neutral-200/80 bg-white/80 align-middle shadow-sm shadow-neutral-800/5 dark:border-neutral-700 dark:bg-neutral-900/75">
+      <span className="inline-flex max-w-full items-stretch overflow-hidden rounded-lg border border-neutral-200/80 bg-white/80 align-middle shadow-xs shadow-neutral-800/5 dark:border-neutral-700 dark:bg-neutral-900/75">
         <span className="flex items-center gap-1.5 border-r border-neutral-200 bg-neutral-100 px-2 py-1 text-emerald-700 sm:gap-2 sm:px-3 sm:py-2 dark:border-neutral-800 dark:bg-neutral-950 dark:text-emerald-300">
           <span className="font-mono text-[0.56em] leading-none sm:text-[0.72em]">
             &gt;
@@ -102,7 +102,7 @@ export function TerminalPrompt({
           <span className="h-[0.56em] w-0.5 rounded-[1px] bg-current opacity-70 sm:h-[0.72em] sm:w-1" />
         </span>
         <span className="flex min-w-0 items-center px-2.5 py-1.5 sm:px-3 sm:py-2">
-          <span className="block min-w-0 font-mono font-semibold leading-tight tracking-tight text-neutral-800 dark:text-neutral-100">
+          <span className="block min-w-0 font-mono leading-tight font-semibold tracking-tight text-neutral-800 dark:text-neutral-100">
             {animateOnFirstView ? (
               <AnimatedTerminalText segments={segments} />
             ) : (
@@ -135,7 +135,7 @@ export function TerminalPageHeader({
   return (
     <div className="mb-8 sm:mb-10">
       {eyebrow ? (
-        <div className="mb-3 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-neutral-600 sm:mb-4 sm:text-[11px] sm:tracking-[0.2em] dark:text-neutral-300">
+        <div className="mb-3 inline-flex items-center gap-2 font-mono text-[10px] tracking-[0.18em] text-neutral-600 uppercase sm:mb-4 sm:text-[11px] sm:tracking-[0.2em] dark:text-neutral-300">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
           {eyebrow}
         </div>
@@ -143,7 +143,7 @@ export function TerminalPageHeader({
       <TerminalPrompt
         as={as}
         command={command}
-        argument={argument}
+        {...(argument ? { argument } : {})}
         animateOnFirstView={animateOnFirstView}
         className="text-lg font-semibold tracking-tight sm:text-4xl sm:font-bold lg:text-5xl"
       />
@@ -175,7 +175,7 @@ export function TerminalSectionHeader({
       <TerminalPrompt
         as={as}
         command={command}
-        argument={argument}
+        {...(argument ? { argument } : {})}
         animateOnFirstView={animateOnFirstView}
         className="text-base font-semibold tracking-tight sm:text-xl sm:font-bold"
       />

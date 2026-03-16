@@ -36,7 +36,7 @@ function getTriggerLabel(triggerSource: TriggerSource) {
   return 'ambient'
 }
 
-export function getAmbientSemanticMode(
+function getAmbientSemanticMode(
   snapshot: ClusterSnapshot,
 ): AmbientSemanticMode {
   if (snapshot.emergencyState === 'emergency') {

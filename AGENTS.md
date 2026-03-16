@@ -25,21 +25,23 @@ This repository is a content-heavy personal site built with Next.js App Router, 
 ## Workflow safeguards
 
 - Preserve the CV PDF export flow in `scripts/generate-cv-pdf.mjs`.
+- Preserve the staged-content PDF hook in `scripts/ensure-cv-pdf-staged.mjs`.
 - Preserve the LinkedIn sync flow in `scripts/linkedin-sync.ts`.
 - Do not commit `.generated/`.
 - Keep build-time behavior in `next.config.mjs` and `scripts/obfuscate.mjs` intact unless the task explicitly targets them.
 
 ## Quality baseline
 
-- Run `npm run format:check`, `npm run lint`, `npm run typecheck`, and `npm run build` before finishing substantial changes.
-- `npm run typecheck:strict` and `npm run knip` are advisory for now and should inform cleanup work, not block routine edits unless the task asks for it.
+- Run `npm run quality` before finishing substantial changes. It includes format, lint, both typecheck lanes, Knip, and build.
+- Treat `npm run typecheck:strict` and `npm run knip` failures as stop-the-line issues. Do not leave them behind as “future cleanup.”
 - Use `npm`, not Yarn, for all package management in this repo.
+- If staged portfolio content changes, refresh `public/jonas-petrik-cv.pdf` before finishing work. The pre-commit hook enforces this and will block if there are unstaged content edits that would make the PDF ambiguous.
 
 ## Agent context notes
 
 - The app is intentionally content-first: many edits are data and presentation changes rather than framework-heavy feature work.
-- Dynamic image `require(...)` callsites exist today; do not refactor them opportunistically unless the task is about asset loading or component cleanup.
-- `src/app/global-error.jsx` is legacy JavaScript and can stay that way unless there is a reason to modernize it.
+- Use the typed image registry in `src/lib/imageAssets.ts` instead of dynamic `require(...)`.
+- `src/app/global-error.tsx` is part of the typed app surface and should stay TypeScript.
 
 ## Future Next.js docs integration
 

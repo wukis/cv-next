@@ -17,7 +17,7 @@ import { ThemeToggleButton } from '@/components/ThemeToggleButton'
 function DesktopNavigation(props: React.ComponentPropsWithoutRef<'nav'>) {
   return (
     <nav {...props}>
-      <div className="flex items-center overflow-hidden rounded-lg bg-white/90 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-300/70 backdrop-blur dark:bg-neutral-800/90 dark:ring-neutral-700/70">
+      <div className="flex items-center overflow-hidden rounded-lg bg-white/90 shadow-lg ring-1 shadow-neutral-800/5 ring-neutral-300/70 backdrop-blur-sm dark:bg-neutral-800/90 dark:ring-neutral-700/70">
         <ul className="flex items-center gap-1 px-2 py-1">
           <li>
             <DesktopTooltip
@@ -69,7 +69,7 @@ function CvDownloadButton() {
 export function Header() {
   return (
     <header className="pointer-events-none relative z-50 flex-none">
-      <div className="h-[5.5rem]" />
+      <div className="h-22" />
       <div className="fixed inset-x-0 top-0 z-50 pt-6">
         <Container>
           <HeaderVisibility>

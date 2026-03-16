@@ -54,7 +54,7 @@ const config = [
       'no-undef': 'off',
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-misused-promises': 'warn',
-      '@typescript-eslint/no-require-imports': 'off',
+      '@typescript-eslint/no-require-imports': 'error',
       '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
     },
   },

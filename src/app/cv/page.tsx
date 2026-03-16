@@ -119,7 +119,7 @@ function CompanyWorkEntry({ company }: { company: WorkGroup }) {
           </h2>
           {hasPromotion ? (
             <>
-              <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+              <p className="mt-1 font-mono text-[11px] tracking-[0.18em] text-emerald-700 uppercase dark:text-emerald-300">
                 promoted internally
               </p>
               <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300 print:mt-1 print:text-[12px]">
@@ -173,7 +173,7 @@ function CompanyWorkEntry({ company }: { company: WorkGroup }) {
 
             <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2 print:mt-2.5 print:gap-2.5">
               <div>
-                <h4 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+                <h4 className="font-mono text-[11px] tracking-[0.2em] text-neutral-500 uppercase dark:text-neutral-400">
                   highlights
                 </h4>
                 <ul className="mt-2 space-y-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 print:mt-1 print:space-y-1 print:text-[12px] print:leading-[1.3]">
@@ -189,7 +189,7 @@ function CompanyWorkEntry({ company }: { company: WorkGroup }) {
               </div>
 
               <div>
-                <h4 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+                <h4 className="font-mono text-[11px] tracking-[0.2em] text-neutral-500 uppercase dark:text-neutral-400">
                   scope
                 </h4>
                 <ul className="mt-2 space-y-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 print:mt-1 print:space-y-1 print:text-[12px] print:leading-[1.3]">
@@ -226,18 +226,18 @@ export default function CvPage() {
         />
       </div>
 
-      <div className="rounded-lg border border-neutral-200 bg-white/95 p-6 shadow-sm dark:border-neutral-700 dark:bg-neutral-900/95 print:border-none print:bg-white print:p-0 print:shadow-none">
+      <div className="rounded-lg border border-neutral-200 bg-white/95 p-6 shadow-xs dark:border-neutral-700 dark:bg-neutral-900/95 print:border-none print:bg-white print:p-0 print:shadow-none">
         <div className="flex flex-col gap-6 border-b border-neutral-200 pb-6 dark:border-neutral-700 print:gap-3 print:pb-3">
           <div className="hidden border-b border-neutral-200 pb-4 dark:border-neutral-700 print:block print:pb-2.5">
             <div className="grid grid-cols-2 gap-4 text-sm text-neutral-700 print:gap-2 print:text-[12px]">
               <div>
-                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500">
+                <p className="font-mono text-[11px] tracking-[0.2em] text-neutral-500 uppercase">
                   email
                 </p>
                 <p className="mt-1">{publicEmail}</p>
               </div>
               <div>
-                <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500">
+                <p className="font-mono text-[11px] tracking-[0.2em] text-neutral-500 uppercase">
                   portfolio
                 </p>
                 <p className="mt-1">{publicBasics.url}</p>
@@ -247,7 +247,7 @@ export default function CvPage() {
 
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-3xl">
-              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+              <p className="font-mono text-[11px] tracking-[0.2em] text-neutral-500 uppercase dark:text-neutral-400">
                 {publicBasics.label}
               </p>
               <h1 className="mt-2 text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 print:mt-1 print:text-[26px]">
@@ -302,7 +302,7 @@ export default function CvPage() {
         </div>
 
         <section className="mt-8 print:mt-5">
-          <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+          <h2 className="font-mono text-[11px] tracking-[0.2em] text-neutral-500 uppercase dark:text-neutral-400">
             selected impact
           </h2>
           <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3 print:mt-2.5 print:gap-2">
@@ -325,7 +325,7 @@ export default function CvPage() {
         </section>
 
         <section className="mt-8 print:mt-5">
-          <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400 print:hidden">
+          <h2 className="font-mono text-[11px] tracking-[0.2em] text-neutral-500 uppercase dark:text-neutral-400 print:hidden">
             experience
           </h2>
           <div className="mt-4 space-y-4 print:mt-2.5 print:space-y-2.5">
@@ -339,7 +339,7 @@ export default function CvPage() {
         </section>
 
         <section className="mt-8 border-t border-neutral-200 pt-6 dark:border-neutral-700 print:mt-5 print:pt-3">
-          <h2 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-500 dark:text-neutral-400">
+          <h2 className="font-mono text-[11px] tracking-[0.2em] text-neutral-500 uppercase dark:text-neutral-400">
             education
           </h2>
           <div className="mt-4 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 print:mt-2.5 print:text-[12px] print:leading-[1.3]">

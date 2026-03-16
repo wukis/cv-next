@@ -91,10 +91,7 @@ function padToVisualWidth(str: string, targetWidth: number): string {
  * @param options Configuration options
  * @returns The formatted line with proper padding
  */
-export function createBoxLine(
-  content: string,
-  options: BoxLineOptions = {},
-): string {
+function createBoxLine(content: string, options: BoxLineOptions = {}): string {
   const { leadingSpaces = 2, width = 61 } = options
   const trailingSpace = 1
   // For emoji lines, reduce target width by 1 to compensate for extra padding

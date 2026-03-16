@@ -1,15 +1,9 @@
 import {
-  curatedHomepageRecommendationSlugs,
   getHomepageRecommendations,
   profileContent,
-  sortRecommendationsForDefaultView,
 } from '@/lib/profileContent'
 
-export {
-  curatedHomepageRecommendationSlugs,
-  getHomepageRecommendations,
-  sortRecommendationsForDefaultView,
-}
+export { getHomepageRecommendations }
 
 export const siteUrl = profileContent.site.url
 export const publicEmail = profileContent.site.email
@@ -24,7 +18,6 @@ export const aboutNarrative = profileContent.narratives.aboutNarrative
 export const publicWork = profileContent.work
 export const currentPublicRole = profileContent.currentRole
 export const totalPublicExperienceYears = profileContent.experienceYears
-export const allRecommendations = profileContent.recommendations
 export const publicProfileLinks = profileContent.links
 export const cvSummary = profileContent.person.summary
 export const publicLocationSummary = profileContent.person.locationSummary

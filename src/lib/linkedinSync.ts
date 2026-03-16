@@ -1,4 +1,5 @@
 import overrides from '@/data/linkedin-sync/overrides.json'
+import { getRequiredValue } from '@/lib/assert'
 import { type EducationInterface, type WorkInterface } from '@/lib/experience'
 import { profileContent } from '@/lib/profileContent'
 
@@ -140,7 +141,7 @@ function uniqueStrings(input: string[]) {
   })
 }
 
-export function normalizeLinkedInDate(date: string) {
+export function normalizeLinkedInDate(date: string): string {
   const trimmed = date.trim()
   const lowered = trimmed.toLowerCase()
 
@@ -155,13 +156,15 @@ export function normalizeLinkedInDate(date: string) {
   const isoMonth = trimmed.match(/^(\d{4})-(\d{2})(?:-\d{2})?$/)
 
   if (isoMonth) {
-    return `${isoMonth[1]}-${isoMonth[2]}`
+    const year = getRequiredValue(isoMonth[1], 'Expected ISO year capture.')
+    const month = getRequiredValue(isoMonth[2], 'Expected ISO month capture.')
+    return `${year}-${month}`
   }
 
   const yearOnly = trimmed.match(/^(\d{4})$/)
 
   if (yearOnly) {
-    return yearOnly[1]
+    return getRequiredValue(yearOnly[1], 'Expected year capture.')
   }
 
   const monthYear = Date.parse(`1 ${trimmed}`)

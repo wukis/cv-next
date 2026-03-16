@@ -23,7 +23,7 @@ export function TechStackDisclosure({
     <div className="border-t border-neutral-200 bg-neutral-100/95 dark:border-neutral-700 dark:bg-neutral-800/85">
       <button
         type="button"
-        className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-black ${surfaceHoverMotionClassName} ${
+        className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden dark:focus-visible:ring-offset-black ${surfaceHoverMotionClassName} ${
           tone === 'plain'
             ? 'hover:bg-neutral-100/50 focus-visible:ring-neutral-400 focus-visible:ring-offset-white dark:hover:bg-neutral-800/20'
             : 'hover:bg-neutral-200/80 focus-visible:ring-emerald-500 focus-visible:ring-offset-white dark:hover:bg-neutral-700/60'
@@ -34,10 +34,10 @@ export function TechStackDisclosure({
       >
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <div
-            className={`flex flex-shrink-0 items-center gap-2 ${
+            className={`flex shrink-0 items-center gap-2 ${
               tone === 'plain'
                 ? 'text-[11px] text-neutral-600 dark:text-neutral-300'
-                : 'font-mono text-xs uppercase tracking-wider text-neutral-700 dark:text-neutral-100'
+                : 'font-mono text-xs tracking-wider text-neutral-700 uppercase dark:text-neutral-100'
             }`}
           >
             <svg
@@ -63,7 +63,7 @@ export function TechStackDisclosure({
         </div>
 
         <svg
-          className={`h-4 w-4 flex-shrink-0 text-neutral-600 transition-transform duration-200 dark:text-neutral-200 ${
+          className={`h-4 w-4 shrink-0 text-neutral-600 transition-transform duration-200 dark:text-neutral-200 ${
             isExpanded ? 'rotate-180' : ''
           }`}
           fill="none"

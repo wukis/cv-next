@@ -14,7 +14,9 @@ import {
   type GroupedWorkExperience,
   groupWorkExperiencesForDisplay,
 } from '@/lib/experienceContent'
+import { getCompanyImage, universityImages } from '@/lib/imageAssets'
 import { profileContent } from '@/lib/profileContent'
+
 const groupedWorkExperiences = groupWorkExperiencesForDisplay(
   profileContent.work,
 )
@@ -35,14 +37,14 @@ function PromotionDiff({
   return (
     <div className="mt-3">
       <div className="mb-2 flex items-center gap-2">
-        <span className="font-mono text-[10px] uppercase tracking-wider text-sky-700 dark:text-sky-300">
+        <span className="font-mono text-[10px] tracking-wider text-sky-700 uppercase dark:text-sky-300">
           +{newItems.length} {label}
         </span>
       </div>
       <div className="space-y-1.5 border-l-2 border-sky-200 pl-2 dark:border-sky-900/70">
         {newItems.map((item, i) => (
           <div key={i} className="flex items-baseline gap-2 text-sm">
-            <span className="flex-shrink-0 select-none font-mono text-sky-600 dark:text-sky-400">
+            <span className="shrink-0 font-mono text-sky-600 select-none dark:text-sky-400">
               +
             </span>
             <span className="text-neutral-700 dark:text-neutral-200">
@@ -62,7 +64,7 @@ function RoleHighlights({ highlights }: { highlights: string[] }) {
   return (
     <div className="mt-3">
       <div className="mb-2 flex items-center gap-2">
-        <span className="font-mono text-[10px] uppercase tracking-wider text-amber-700 dark:text-amber-300">
+        <span className="font-mono text-[10px] tracking-wider text-amber-700 uppercase dark:text-amber-300">
           <svg
             className="mr-1 inline h-2.5 w-2.5"
             fill="currentColor"
@@ -76,7 +78,7 @@ function RoleHighlights({ highlights }: { highlights: string[] }) {
       <div className="space-y-1.5 border-l-2 border-amber-200 pl-2 dark:border-amber-900/70">
         {highlights.map((item, i) => (
           <div key={i} className="flex items-baseline gap-2 text-sm">
-            <span className="flex-shrink-0 select-none font-mono text-amber-600 dark:text-amber-400">
+            <span className="shrink-0 font-mono text-amber-600 select-none dark:text-amber-400">
               ★
             </span>
             <span className="text-neutral-700 dark:text-neutral-300">
@@ -115,7 +117,7 @@ function CompanyProjects({ projects }: { projects: string[] }) {
       <div className="space-y-1.5 border-l border-neutral-200 pl-3 dark:border-neutral-700">
         {projects.map((item, i) => (
           <div key={i} className="flex items-baseline gap-2 text-sm">
-            <span className="flex-shrink-0 select-none font-mono text-neutral-400 dark:text-neutral-500">
+            <span className="shrink-0 font-mono text-neutral-400 select-none dark:text-neutral-500">
               -
             </span>
             <span className="text-neutral-700 dark:text-neutral-200">
@@ -143,11 +145,11 @@ function Education({
       <div className="relative hidden flex-col items-center sm:flex">
         {/* Vertical line */}
         {!isLast && (
-          <div className="absolute bottom-0 top-6 w-px bg-amber-200 dark:bg-amber-900/80" />
+          <div className="absolute top-6 bottom-0 w-px bg-amber-200 dark:bg-amber-900/80" />
         )}
 
-        <div className="relative flex h-6 w-6 flex-shrink-0 items-center justify-center">
-          <div className="absolute inset-[1px] rounded-full ring-2 ring-amber-200/80 dark:ring-amber-900/70" />
+        <div className="relative flex h-6 w-6 shrink-0 items-center justify-center">
+          <div className="absolute inset-px rounded-full ring-2 ring-amber-200/80 dark:ring-amber-900/70" />
           <div className="relative h-3.5 w-3.5 rounded-full bg-amber-300/65 opacity-75 ring-2 ring-white dark:bg-amber-200/35 dark:ring-neutral-900" />
         </div>
       </div>
@@ -159,7 +161,7 @@ function Education({
               ~/education/
               {education.studyType.toLowerCase().replace(/\s+/g, '-')}.md
             </span>
-            <div className="flex items-center gap-1 whitespace-nowrap font-mono text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+            <div className="flex items-center gap-1 font-mono text-[10px] tracking-wider whitespace-nowrap text-neutral-500 uppercase dark:text-neutral-400">
               <svg
                 className="h-3 w-3"
                 fill="none"
@@ -187,13 +189,10 @@ function Education({
           <div className="border-b border-neutral-200 p-4 dark:border-neutral-700">
             <div className="flex items-start gap-4">
               <Image
-                className="h-12 w-12 flex-shrink-0 rounded-lg bg-white object-contain p-1 ring-1 ring-neutral-200 dark:ring-neutral-700"
+                className="h-12 w-12 shrink-0 rounded-lg bg-white object-contain p-1 ring-1 ring-neutral-200 dark:ring-neutral-700"
                 width={48}
                 height={48}
-                src={
-                  require(`@/images/universities/vilniaus-universitetas.png`)
-                    .default
-                }
+                src={universityImages.vilniausUniversitetas}
                 alt={education.institution}
               />
               <div className="min-w-0 flex-1">
@@ -236,14 +235,14 @@ function Education({
 
           <div className="p-4">
             <div className="flex items-start gap-3">
-              <div className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-amber-300/65 dark:bg-amber-200/45" />
+              <div className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-amber-300/65 dark:bg-amber-200/45" />
 
               <div className="min-w-0 flex-1">
                 <div className="flex flex-col items-start gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
                   <h4 className="font-medium text-neutral-800 dark:text-neutral-100">
                     {education.studyType} in {education.area}
                   </h4>
-                  <span className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                  <span className="font-mono text-[10px] tracking-wider text-neutral-500 uppercase dark:text-neutral-400">
                     {education.startDate} → {education.endDate}
                   </span>
                 </div>
@@ -261,12 +260,11 @@ function Work({
 }: {
   groupedWorkExperiences: Record<string, GroupedWorkExperience>
 }) {
-  const companies = Object.keys(groupedWorkExperiences)
+  const companies = Object.entries(groupedWorkExperiences)
 
   return (
     <div className="relative">
-      {companies.map((company, companyIndex) => {
-        const companyData = groupedWorkExperiences[company]
+      {companies.map(([company, companyData], companyIndex) => {
         const formattedEndDate = `${companyData.endDate.getFullYear()}-${String(companyData.endDate.getMonth() + 1).padStart(2, '0')}`
         const isFirst = companyIndex === 0
         const isLast = companyIndex === companies.length - 1
@@ -290,24 +288,24 @@ function Work({
               {/* Vertical line */}
               {!isLast && (
                 <div
-                  className={`absolute bottom-0 top-6 w-px ${
+                  className={`absolute top-6 bottom-0 w-px ${
                     isFirst
-                      ? 'bg-gradient-to-b from-emerald-200 via-amber-200 to-amber-200 dark:from-emerald-800/70 dark:via-amber-900/80 dark:to-amber-900/80'
+                      ? 'bg-linear-to-b from-emerald-200 via-amber-200 to-amber-200 dark:from-emerald-800/70 dark:via-amber-900/80 dark:to-amber-900/80'
                       : 'bg-amber-200 dark:bg-amber-900/80'
                   }`}
                 />
               )}
 
-              <div className="relative flex h-6 w-6 flex-shrink-0 items-center justify-center">
+              <div className="relative flex h-6 w-6 shrink-0 items-center justify-center">
                 {isFirst ? (
                   <>
-                    <div className="animate-git-head-pulse bg-emerald-400/8 absolute -inset-1 rounded-full border border-emerald-400/50 dark:border-emerald-300/45 dark:bg-emerald-300/10" />
-                    <div className="absolute inset-[1px] rounded-full ring-2 ring-emerald-500/30 dark:ring-emerald-300/35" />
-                    <div className="relative h-4 w-4 rounded-full bg-emerald-500 shadow-sm ring-2 ring-white dark:bg-emerald-400 dark:ring-neutral-900" />
+                    <div className="animate-git-head-pulse absolute -inset-1 rounded-full border border-emerald-400/50 bg-emerald-400/8 dark:border-emerald-300/45 dark:bg-emerald-300/10" />
+                    <div className="absolute inset-px rounded-full ring-2 ring-emerald-500/30 dark:ring-emerald-300/35" />
+                    <div className="relative h-4 w-4 rounded-full bg-emerald-500 shadow-xs ring-2 ring-white dark:bg-emerald-400 dark:ring-neutral-900" />
                   </>
                 ) : (
                   <>
-                    <div className="absolute inset-[1px] rounded-full ring-2 ring-amber-200/80 dark:ring-amber-900/70" />
+                    <div className="absolute inset-px rounded-full ring-2 ring-amber-200/80 dark:ring-amber-900/70" />
                     <div className="relative h-3.5 w-3.5 rounded-full bg-amber-300/65 ring-2 ring-white dark:bg-amber-200/40 dark:ring-neutral-900" />
                   </>
                 )}
@@ -325,7 +323,7 @@ function Work({
                       .replace(/[^a-z0-9-]/g, '')}
                     .md
                   </span>
-                  <div className="flex items-center gap-1 whitespace-nowrap font-mono text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                  <div className="flex items-center gap-1 font-mono text-[10px] tracking-wider whitespace-nowrap text-neutral-500 uppercase dark:text-neutral-400">
                     {isFirst ? (
                       <>
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
@@ -358,13 +356,10 @@ function Work({
                 <div className="border-b border-neutral-200 p-4 dark:border-neutral-700">
                   <div className="flex items-start gap-4">
                     <Image
-                      className="h-12 w-12 flex-shrink-0 rounded-lg bg-white object-contain p-1 ring-1 ring-neutral-200 dark:ring-neutral-700"
+                      className="h-12 w-12 shrink-0 rounded-lg bg-white object-contain p-1 ring-1 ring-neutral-200 dark:ring-neutral-700"
                       width={48}
                       height={48}
-                      src={
-                        require(`@/images/companies/${companyData.image}`)
-                          .default
-                      }
+                      src={getCompanyImage(companyData.image)}
                       alt={companyData.company}
                     />
                     <div className="min-w-0 flex-1">
@@ -459,7 +454,7 @@ function Work({
                   {companyData.experiences.map((experience, index) => {
                     const previousExperience =
                       index < companyData.experiences.length - 1
-                        ? companyData.experiences[index + 1]
+                        ? (companyData.experiences[index + 1] ?? null)
                         : null
                     const isPromoted =
                       hasMultipleRoles &&
@@ -480,7 +475,7 @@ function Work({
                     return (
                       <div key={index} className="p-4">
                         <div className="flex items-start gap-3">
-                          <div className="mt-[7px] h-2 w-2 flex-shrink-0 rounded-full bg-neutral-400 dark:bg-neutral-500" />
+                          <div className="mt-[7px] h-2 w-2 shrink-0 rounded-full bg-neutral-400 dark:bg-neutral-500" />
 
                           <div className="min-w-0 flex-1">
                             <div className="flex flex-col items-start gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
@@ -488,7 +483,7 @@ function Work({
                                 {experience.position}
                               </h3>
                               <div className="flex flex-wrap items-center gap-2">
-                                <span className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                                <span className="font-mono text-[10px] tracking-wider text-neutral-500 uppercase dark:text-neutral-400">
                                   {formatDuration(
                                     getDuration(
                                       experience.startDate,
@@ -497,7 +492,7 @@ function Work({
                                   )}
                                 </span>
                                 {isPromoted && (
-                                  <span className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                                  <span className="inline-flex items-center gap-1 font-mono text-[10px] tracking-wider text-neutral-500 uppercase dark:text-neutral-400">
                                     <svg
                                       className="h-2.5 w-2.5"
                                       fill="none"
@@ -542,7 +537,7 @@ function Work({
                               responsibilitiesToShow.length > 0 && (
                                 <div className="mt-3">
                                   <div className="mb-2 flex items-center gap-2">
-                                    <span className="font-mono text-[10px] uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                                    <span className="font-mono text-[10px] tracking-wider text-neutral-500 uppercase dark:text-neutral-400">
                                       core scope
                                     </span>
                                   </div>
@@ -552,7 +547,7 @@ function Work({
                                         key={i}
                                         className="flex items-baseline gap-2 text-sm"
                                       >
-                                        <span className="flex-shrink-0 select-none font-mono text-neutral-500 dark:text-neutral-400">
+                                        <span className="shrink-0 font-mono text-neutral-500 select-none dark:text-neutral-400">
                                           •
                                         </span>
                                         <span className="text-neutral-700 dark:text-neutral-200">
@@ -573,7 +568,7 @@ function Work({
                                         key={i}
                                         className="flex items-baseline gap-2 text-sm"
                                       >
-                                        <span className="flex-shrink-0 select-none font-mono text-neutral-500 dark:text-neutral-400">
+                                        <span className="shrink-0 font-mono text-neutral-500 select-none dark:text-neutral-400">
                                           •
                                         </span>
                                         <span className="text-neutral-700 dark:text-neutral-200">
@@ -611,10 +606,10 @@ function Work({
 
 function RecruiterCvHint() {
   return (
-    <div className="mb-8 rounded-2xl border border-neutral-200 bg-white/90 p-4 shadow-sm shadow-neutral-900/5 backdrop-blur-sm sm:p-5 dark:border-neutral-700 dark:bg-neutral-900/90 dark:shadow-none">
+    <div className="mb-8 rounded-2xl border border-neutral-200 bg-white/90 p-4 shadow-xs shadow-neutral-900/5 backdrop-blur-xs sm:p-5 dark:border-neutral-700 dark:bg-neutral-900/90 dark:shadow-none">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-300">
+          <p className="font-mono text-[11px] tracking-[0.2em] text-emerald-700 uppercase dark:text-emerald-300">
             recruiter view
           </p>
           <p className="mt-2 text-sm leading-relaxed text-neutral-700 sm:text-[15px] dark:text-neutral-200">
@@ -677,7 +672,7 @@ export default function ExperiencePageContent() {
 
           {/* End marker - hidden on mobile */}
           <div className="relative hidden items-center gap-6 sm:flex">
-            <div className="relative flex h-6 w-6 flex-shrink-0 items-center justify-center">
+            <div className="relative flex h-6 w-6 shrink-0 items-center justify-center">
               <div className="h-3 w-3 rounded-full bg-neutral-300 ring-2 ring-white dark:bg-neutral-600 dark:ring-neutral-900" />
             </div>
             <span className="font-mono text-sm text-neutral-600 dark:text-neutral-300">

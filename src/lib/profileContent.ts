@@ -1,6 +1,7 @@
 import linkedin from '@/data/linkedin.json'
 import recommendations from '@/data/recommendations.json'
 import work from '@/data/work.json'
+import { getRequiredValue } from '@/lib/assert'
 import {
   calculateTotalExperienceYears,
   type EducationInterface,
@@ -29,9 +30,13 @@ export interface ImpactStory {
 
 const publicWork = work as WorkInterface[]
 const education = linkedin.education as EducationInterface[]
-const allRecommendations = recommendations as RecommendationInterface[]
+const recommendationEntries = recommendations as RecommendationInterface[]
+const currentRole = getRequiredValue(
+  publicWork[0],
+  'Expected at least one work entry in profile content.',
+)
 
-export const curatedHomepageRecommendationSlugs = [
+const curatedHomepageRecommendationSlugs = [
   'daniel-motzev',
   'simon-sattes',
   'martin-will',
@@ -188,10 +193,10 @@ export const profileContent = {
     },
   ] as const satisfies readonly ProfileLink[],
   work: publicWork,
-  currentRole: publicWork[0],
+  currentRole,
   experienceYears: calculateTotalExperienceYears(publicWork),
   education,
-  recommendations: allRecommendations,
+  recommendations: recommendationEntries,
 }
 
 export function getHomepageRecommendations() {
@@ -207,21 +212,4 @@ export function getHomepageRecommendations() {
     .filter((recommendation): recommendation is RecommendationInterface =>
       Boolean(recommendation),
     )
-}
-
-export function sortRecommendationsForDefaultView(
-  input: RecommendationInterface[],
-) {
-  return [...input].sort((left, right) => {
-    const leftPriority =
-      recommendationPriority.get(left.slug) ?? Number.MAX_SAFE_INTEGER
-    const rightPriority =
-      recommendationPriority.get(right.slug) ?? Number.MAX_SAFE_INTEGER
-
-    if (leftPriority !== rightPriority) {
-      return leftPriority - rightPriority
-    }
-
-    return new Date(right.date).getTime() - new Date(left.date).getTime()
-  })
 }

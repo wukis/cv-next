@@ -7,6 +7,7 @@ import { ProfileSocialLinks } from '@/components/ProfileSocialLinks'
 import { TechStack } from '@/components/TechStack'
 import { TerminalSectionHeader } from '@/components/TerminalHeader'
 import portraitImage from '@/images/jonas-petrik-portrait.png'
+import { getRecommendationImage } from '@/lib/imageAssets'
 import { type RecommendationInterface } from '@/lib/recommendations'
 import { recommendationsCopy } from '@/lib/recommendationsCopy'
 import {
@@ -52,7 +53,7 @@ function Highlights() {
 
           <div className="mt-8 grid grid-cols-1 gap-10 xl:grid-cols-[18rem_minmax(0,1fr)]">
             <aside>
-              <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
+              <h3 className="font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:text-neutral-300">
                 impact at a glance
               </h3>
               <dl className="mt-4 border-t border-neutral-200 dark:border-neutral-700">
@@ -64,7 +65,7 @@ function Highlights() {
                     <dt className="font-mono text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
                       {highlight.value}
                     </dt>
-                    <dd className="mt-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-600 dark:text-neutral-300">
+                    <dd className="mt-2 text-[11px] font-semibold tracking-[0.18em] text-neutral-600 uppercase dark:text-neutral-300">
                       {highlight.label}
                     </dd>
                     <dd className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-300">
@@ -76,7 +77,7 @@ function Highlights() {
             </aside>
 
             <section>
-              <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
+              <h3 className="font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:text-neutral-300">
                 selected impact
               </h3>
 
@@ -211,13 +212,10 @@ function Recommendation({
           </blockquote>
           <figcaption className="mt-4 flex items-center gap-3">
             <Image
-              className="h-9 w-9 flex-shrink-0 rounded-lg object-cover ring-2 ring-white dark:ring-neutral-800"
+              className="h-9 w-9 shrink-0 rounded-lg object-cover ring-2 ring-white dark:ring-neutral-800"
               width={36}
               height={36}
-              src={
-                require(`@/images/recommendations/${recommendation.image}`)
-                  .default
-              }
+              src={getRecommendationImage(recommendation.image)}
               alt={recommendation.fullName}
             />
             <div className="min-w-0 flex-1">
@@ -250,7 +248,7 @@ function HomeHeroCard() {
 
         <div className="p-5 sm:p-6">
           <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <div className="h-36 w-36 overflow-hidden rounded-xl shadow-lg ring-4 ring-white sm:h-40 sm:w-40 lg:h-48 lg:w-48 dark:ring-neutral-800">
                 <Image
                   src={portraitImage}
@@ -266,7 +264,7 @@ function HomeHeroCard() {
 
             <div className="min-w-0 flex-1 text-center sm:text-left">
               <div className="mb-3">
-                <span className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
+                <span className="inline-flex items-center gap-2 font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:text-neutral-300">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
                   {publicBasics.label}
                 </span>

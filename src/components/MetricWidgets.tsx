@@ -8,6 +8,7 @@ import {
   type AmbientSemanticMode,
   deriveAmbientMonitoringState,
 } from '@/lib/ambientMonitoring'
+import { getRequiredArrayItem } from '@/lib/assert'
 
 const darkModeColors = [
   '#00ffff',
@@ -837,7 +838,11 @@ function MetricWidget({
       if (type === 'sparkline') {
         setData((previous) => {
           const next = [...previous.slice(1)]
-          const current = previous[previous.length - 1]
+          const current = getRequiredArrayItem(
+            previous,
+            previous.length - 1,
+            'Expected a previous sparkline point.',
+          )
           const drift =
             (targetValue - current) * 0.32 + (Math.random() - 0.5) * 5
           next.push(clamp(current + drift, 4, 98))
@@ -861,8 +866,16 @@ function MetricWidget({
   }, [delay, id, type])
 
   const baseColor = isDark
-    ? darkModeColors[colorIndex]
-    : lightModeColors[colorIndex]
+    ? getRequiredArrayItem(
+        darkModeColors,
+        colorIndex,
+        `Missing dark widget color at index ${colorIndex}.`,
+      )
+    : getRequiredArrayItem(
+        lightModeColors,
+        colorIndex,
+        `Missing light widget color at index ${colorIndex}.`,
+      )
   const gaugeNormalColor =
     type === 'gauge' && id === 'cpu'
       ? isDark
@@ -911,7 +924,7 @@ function MetricWidget({
 
   return (
     <div
-      className={`flex w-[124px] flex-col gap-1.5 rounded-xl border px-2.5 py-2 backdrop-blur-sm transition-all duration-300 ease-out ${visible ? 'translate-y-0' : 'translate-y-2 opacity-0'} ${borderColor} ${bgColor} ${isPreviewing && visualState === 'error' ? 'animate-pulse' : ''} `}
+      className={`flex w-[124px] flex-col gap-1.5 rounded-xl border px-2.5 py-2 backdrop-blur-xs transition-all duration-300 ease-out ${visible ? 'translate-y-0' : 'translate-y-2 opacity-0'} ${borderColor} ${bgColor} ${isPreviewing && visualState === 'error' ? 'animate-pulse' : ''} `}
       style={{
         boxShadow: isDark
           ? 'inset 0 1px 0 rgba(148, 163, 184, 0.08)'
@@ -923,7 +936,7 @@ function MetricWidget({
     >
       <div className="min-w-0">
         <span
-          className={`block h-[10px] truncate font-mono text-[8px] uppercase tracking-wider transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
+          className={`block h-[10px] truncate font-mono text-[8px] tracking-wider uppercase transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
           style={{
             opacity: textOpacity,
             color:
@@ -937,7 +950,7 @@ function MetricWidget({
           {label}
         </span>
         <span
-          className={`block h-[10px] truncate whitespace-nowrap font-mono text-[7px] uppercase tracking-[0.16em] ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
+          className={`block h-[10px] truncate font-mono text-[7px] tracking-[0.16em] whitespace-nowrap uppercase ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
           style={{
             opacity: isPreviewing ? 0.7 : 0.42,
             color: effectiveColor,
@@ -983,10 +996,10 @@ function MetricWidget({
             size={28}
             isFocused={isPreviewing}
             isDark={isDark}
-            label={id === 'uptime' ? undefined : `${Math.round(value)}%`}
+            {...(id === 'uptime' ? {} : { label: `${Math.round(value)}%` })}
           />
           <span
-            className="min-w-[52px] whitespace-nowrap text-right font-mono text-[9px] tabular-nums transition-all duration-300"
+            className="min-w-[52px] text-right font-mono text-[9px] whitespace-nowrap tabular-nums transition-all duration-300"
             style={{
               color: effectiveColor,
               opacity: isPreviewing ? 1 : isDark ? 0.34 : 0.48,
@@ -1002,7 +1015,7 @@ function MetricWidget({
 
       {type === 'counter' ? (
         <span
-          className="min-h-[16px] whitespace-nowrap font-mono text-[13px] font-medium tabular-nums transition-all duration-300"
+          className="min-h-[16px] font-mono text-[13px] font-medium whitespace-nowrap tabular-nums transition-all duration-300"
           style={{
             color: effectiveColor,
             opacity: isPreviewing ? 1 : isDark ? 0.34 : 0.48,
@@ -1027,7 +1040,7 @@ function MetricWidget({
             }}
           />
           <span
-            className={`min-w-[44px] whitespace-nowrap font-mono text-[9px] transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
+            className={`min-w-[44px] font-mono text-[9px] whitespace-nowrap transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
             style={{
               opacity: isPreviewing ? 0.82 : isDark ? 0.3 : 0.42,
               color: statusColor,
@@ -1040,7 +1053,7 @@ function MetricWidget({
       ) : null}
 
       <div
-        className={`leading-3.5 h-[29px] overflow-hidden border-t pt-1 font-mono text-[8px] ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
+        className={`h-[29px] overflow-hidden border-t pt-1 font-mono text-[8px] leading-3.5 ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
         style={{
           opacity: isPreviewing ? 0.9 : isDark ? 0.42 : 0.56,
           color: visualState === 'normal' ? undefined : effectiveColor,
@@ -1118,7 +1131,11 @@ function CompositeMetricWidget({
 
         setReqData((previous) => {
           const next = [...previous.slice(1)]
-          const current = previous[previous.length - 1]
+          const current = getRequiredArrayItem(
+            previous,
+            previous.length - 1,
+            'Expected a previous request-rate point.',
+          )
           const drift =
             (requestTarget - current) * 0.46 +
             Math.sin(requestPace.phase * 1.3) * 2.4 +
@@ -1129,7 +1146,11 @@ function CompositeMetricWidget({
 
         setLatencyData((previous) => {
           const next = [...previous.slice(1)]
-          const current = previous[previous.length - 1]
+          const current = getRequiredArrayItem(
+            previous,
+            previous.length - 1,
+            'Expected a previous latency point.',
+          )
           const drift =
             (latencyTarget - current) * 0.3 + (Math.random() - 0.5) * 3
           next.push(clamp(current + drift, 4, 98))
@@ -1157,8 +1178,16 @@ function CompositeMetricWidget({
 
   const isPreviewing = isFocused
   const baseColor = isDark
-    ? darkModeColors[colorIndex]
-    : lightModeColors[colorIndex]
+    ? getRequiredArrayItem(
+        darkModeColors,
+        colorIndex,
+        `Missing dark widget color at index ${colorIndex}.`,
+      )
+    : getRequiredArrayItem(
+        lightModeColors,
+        colorIndex,
+        `Missing light widget color at index ${colorIndex}.`,
+      )
   const cpuNormalColor = isDark ? '#38bdf8' : '#0369a1'
   const memoryNormalColor = isDark ? '#f59e0b' : '#c2410c'
   const latencyNormalColor = isDark ? '#f472b6' : '#be185d'
@@ -1212,7 +1241,7 @@ function CompositeMetricWidget({
 
   return (
     <div
-      className={`flex w-[258px] flex-col gap-2 rounded-xl border px-3 py-2.5 backdrop-blur-sm transition-all duration-300 ease-out ${visible ? 'translate-y-0' : 'translate-y-2 opacity-0'} ${borderColor} ${bgColor} ${isPreviewing && visualState === 'error' ? 'animate-pulse' : ''} `}
+      className={`flex w-[258px] flex-col gap-2 rounded-xl border px-3 py-2.5 backdrop-blur-xs transition-all duration-300 ease-out ${visible ? 'translate-y-0' : 'translate-y-2 opacity-0'} ${borderColor} ${bgColor} ${isPreviewing && visualState === 'error' ? 'animate-pulse' : ''} `}
       style={{
         boxShadow: isDark
           ? 'inset 0 1px 0 rgba(148, 163, 184, 0.08)'
@@ -1224,7 +1253,7 @@ function CompositeMetricWidget({
     >
       <div className="min-w-0">
         <span
-          className={`block h-[10px] truncate font-mono text-[8px] uppercase tracking-wider transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
+          className={`block h-[10px] truncate font-mono text-[8px] tracking-wider uppercase transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
           style={{
             opacity: textOpacity,
             color:
@@ -1238,7 +1267,7 @@ function CompositeMetricWidget({
           {label}
         </span>
         <span
-          className={`block h-[10px] truncate whitespace-nowrap font-mono text-[7px] uppercase tracking-[0.16em] ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
+          className={`block h-[10px] truncate font-mono text-[7px] tracking-[0.16em] whitespace-nowrap uppercase ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
           style={{
             opacity: isPreviewing ? 0.7 : 0.42,
             color: effectiveColor,
@@ -1252,7 +1281,7 @@ function CompositeMetricWidget({
         <div className="grid grid-cols-[72px_minmax(0,1fr)] gap-3">
           <div className="flex flex-col justify-between rounded-lg border border-white/5 bg-black/5 px-2.5 py-2">
             <span
-              className="font-mono text-[7px] uppercase tracking-[0.16em]"
+              className="font-mono text-[7px] tracking-[0.16em] uppercase"
               style={{
                 color: effectiveColor,
                 opacity: isPreviewing ? 0.8 : 0.5,
@@ -1282,13 +1311,13 @@ function CompositeMetricWidget({
             <div className="rounded-lg border border-white/5 bg-black/5 px-2 py-1.5">
               <div className="mb-1 flex items-center justify-between gap-2">
                 <span
-                  className="font-mono text-[7px] uppercase tracking-[0.16em]"
+                  className="font-mono text-[7px] tracking-[0.16em] uppercase"
                   style={{ color: effectiveColor, opacity: 0.78 }}
                 >
                   request pace
                 </span>
                 <span
-                  className="min-w-[52px] whitespace-nowrap text-right font-mono text-[8px] tabular-nums"
+                  className="min-w-[52px] text-right font-mono text-[8px] whitespace-nowrap tabular-nums"
                   style={{ color: effectiveColor, opacity: 0.72 }}
                 >
                   {Math.round(cluster.requestRate)}
@@ -1306,13 +1335,13 @@ function CompositeMetricWidget({
             <div className="rounded-lg border border-white/5 bg-black/5 px-2 py-1.5">
               <div className="mb-1 flex items-center justify-between gap-2">
                 <span
-                  className="font-mono text-[7px] uppercase tracking-[0.16em]"
+                  className="font-mono text-[7px] tracking-[0.16em] uppercase"
                   style={{ color: latencyTraceColor, opacity: 0.82 }}
                 >
                   tail latency
                 </span>
                 <span
-                  className="min-w-[52px] whitespace-nowrap text-right font-mono text-[8px] tabular-nums"
+                  className="min-w-[52px] text-right font-mono text-[8px] whitespace-nowrap tabular-nums"
                   style={{ color: latencyTraceColor, opacity: 0.78 }}
                 >
                   {Math.round(cluster.latencyMs)}ms
@@ -1335,7 +1364,7 @@ function CompositeMetricWidget({
         <div className="grid grid-cols-[84px_minmax(0,1fr)] gap-3">
           <div className="flex flex-col justify-between rounded-lg border border-white/5 bg-black/5 px-2.5 py-2">
             <span
-              className="font-mono text-[7px] uppercase tracking-[0.16em]"
+              className="font-mono text-[7px] tracking-[0.16em] uppercase"
               style={{
                 color: effectiveColor,
                 opacity: isPreviewing ? 0.8 : 0.5,
@@ -1344,7 +1373,7 @@ function CompositeMetricWidget({
               pod set
             </span>
             <span
-              className="whitespace-nowrap font-mono font-semibold tabular-nums"
+              className="font-mono font-semibold whitespace-nowrap tabular-nums"
               style={{
                 fontSize: `${podCounterFontSizePx}px`,
                 lineHeight: 1.1,
@@ -1381,7 +1410,7 @@ function CompositeMetricWidget({
             <div className="rounded-lg border border-white/5 bg-black/5 px-2 py-1.5">
               <div className="mb-1 flex items-center gap-2">
                 <span
-                  className="font-mono text-[7px] uppercase tracking-[0.16em]"
+                  className="font-mono text-[7px] tracking-[0.16em] uppercase"
                   style={{ color: cpuGaugeColor, opacity: 0.82 }}
                 >
                   cpu
@@ -1402,7 +1431,7 @@ function CompositeMetricWidget({
             <div className="rounded-lg border border-white/5 bg-black/5 px-2 py-1.5">
               <div className="mb-1 flex items-center gap-2">
                 <span
-                  className="font-mono text-[7px] uppercase tracking-[0.16em]"
+                  className="font-mono text-[7px] tracking-[0.16em] uppercase"
                   style={{ color: memoryGaugeColor, opacity: 0.82 }}
                 >
                   memory
@@ -1425,7 +1454,7 @@ function CompositeMetricWidget({
       ) : null}
 
       <div
-        className={`leading-3.5 h-[29px] overflow-hidden border-t pt-1 font-mono text-[8px] ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
+        className={`h-[29px] overflow-hidden border-t pt-1 font-mono text-[8px] leading-3.5 ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
         style={{
           opacity: isPreviewing ? 0.9 : isDark ? 0.42 : 0.56,
           color: visualState === 'normal' ? undefined : effectiveColor,
@@ -1558,7 +1587,7 @@ export default function MetricWidgets() {
 
   return (
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-      <div className="absolute left-5 top-1/2 flex max-h-[80vh] -translate-y-1/2 flex-col gap-3 overflow-hidden">
+      <div className="absolute top-1/2 left-5 flex max-h-[80vh] -translate-y-1/2 flex-col gap-3 overflow-hidden">
         {leftWidgetGroups.map((group, groupIndex) => (
           <div
             key={`left-group-${groupIndex}`}
@@ -1591,7 +1620,7 @@ export default function MetricWidgets() {
         ))}
       </div>
 
-      <div className="absolute right-5 top-1/2 flex max-h-[80vh] -translate-y-1/2 flex-col gap-3 overflow-hidden">
+      <div className="absolute top-1/2 right-5 flex max-h-[80vh] -translate-y-1/2 flex-col gap-3 overflow-hidden">
         {rightWidgetGroups.map((group, groupIndex) => (
           <div
             key={`right-group-${groupIndex}`}

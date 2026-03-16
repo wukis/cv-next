@@ -485,14 +485,14 @@ export default function LogTerminal() {
           </div>
           <div className="flex items-center gap-3">
             <span
-              className="font-mono text-[10px] uppercase tracking-[0.18em]"
+              className="font-mono text-[10px] tracking-[0.18em] uppercase"
               style={{ color: titleColor }}
             >
               {monitoring.terminalTitle}
             </span>
             {monitoring.mode !== 'steady' ? (
               <span
-                className="font-mono text-[9px] uppercase tracking-[0.18em]"
+                className="font-mono text-[9px] tracking-[0.18em] uppercase"
                 style={{
                   color: titleColor,
                   opacity: 0.75,
@@ -543,7 +543,7 @@ export default function LogTerminal() {
           </div>
 
           <div
-            className="pointer-events-none absolute bottom-0 left-0 right-0 h-12"
+            className="pointer-events-none absolute right-0 bottom-0 left-0 h-12"
             style={{
               background: isDark
                 ? 'linear-gradient(to top, rgba(17, 17, 17, 1) 0%, rgba(17, 17, 17, 0) 100%)'

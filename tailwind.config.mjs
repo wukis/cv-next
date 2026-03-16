@@ -1,7 +1,5 @@
 import typographyPlugin from '@tailwindcss/typography'
-import { type Config, type PluginUtils } from 'tailwindcss/types/config'
-
-function typographyStyles({ theme }: PluginUtils) {
+function typographyStyles({ theme }) {
   return {
     invert: {
       css: {
@@ -283,7 +281,7 @@ function typographyStyles({ theme }: PluginUtils) {
   }
 }
 
-export default {
+const config = {
   content: ['./src/**/*.{js,jsx,ts,tsx}'],
   darkMode: 'selector',
   plugins: [typographyPlugin],
@@ -305,4 +303,6 @@ export default {
     },
     typography: typographyStyles,
   },
-} satisfies Config
+}
+
+export default config

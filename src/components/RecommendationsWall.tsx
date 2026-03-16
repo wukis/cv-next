@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 
+import { getRecommendationImage } from '@/lib/imageAssets'
 import { RecommendationInterface } from '@/lib/recommendations'
 import { recommendationsCopy } from '@/lib/recommendationsCopy'
 
@@ -36,9 +37,9 @@ function Recommendation({
   return (
     <article id={recommendation.slug} className="scroll-mt-20">
       <div
-        className={`relative overflow-hidden rounded-xl border border-neutral-200 bg-white/85 backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-900/85 ${recommendationAccent.hoverBorder} ${
+        className={`relative overflow-hidden rounded-xl border border-neutral-200 bg-white/85 backdrop-blur-xs transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-900/85 ${recommendationAccent.hoverBorder} ${
           isHighlighted
-            ? `dark:bg-emerald-950/28 scale-[1.02] border-emerald-400 bg-emerald-50/85 shadow-xl shadow-emerald-500/15 ring-4 ring-emerald-300/65 dark:border-emerald-600 dark:ring-emerald-700/55`
+            ? `scale-[1.02] border-emerald-400 bg-emerald-50/85 shadow-xl ring-4 shadow-emerald-500/15 ring-emerald-300/65 dark:border-emerald-600 dark:bg-emerald-950/28 dark:ring-emerald-700/55`
             : ''
         }`}
       >
@@ -59,12 +60,12 @@ function Recommendation({
           {/* Quote */}
           <blockquote className="relative mb-4">
             <span
-              className={`absolute -left-1 -top-1 font-serif text-3xl ${recommendationAccent.quote} opacity-40`}
+              className={`absolute -top-1 -left-1 font-serif text-3xl ${recommendationAccent.quote} opacity-40`}
             >
               &ldquo;
             </span>
             <p
-              className={`pl-4 pr-2 text-sm leading-relaxed ${
+              className={`pr-2 pl-4 text-sm leading-relaxed ${
                 isHighlighted
                   ? 'font-medium text-neutral-900 dark:text-neutral-50'
                   : 'text-neutral-700 dark:text-neutral-200'
@@ -83,17 +84,14 @@ function Recommendation({
             }`}
           >
             <Image
-              className={`h-10 w-10 flex-shrink-0 rounded-lg object-cover ring-2 ${
+              className={`h-10 w-10 shrink-0 rounded-lg object-cover ring-2 ${
                 isHighlighted
                   ? 'ring-emerald-300 dark:ring-emerald-700'
                   : 'ring-white dark:ring-neutral-800'
               }`}
               width={40}
               height={40}
-              src={
-                require(`@/images/recommendations/${recommendation.image}`)
-                  .default
-              }
+              src={getRecommendationImage(recommendation.image)}
               alt={recommendation.fullName}
             />
             <div className="min-w-0 flex-1">
@@ -228,7 +226,7 @@ export function RecommendationsWall({
         <div className="flex items-center justify-between gap-3">
           <h2
             id={headingId}
-            className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300"
+            className="font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:text-neutral-300"
           >
             {headingLabel}
           </h2>
@@ -242,7 +240,7 @@ export function RecommendationsWall({
               }}
               className={`hidden items-center gap-1.5 rounded-full border px-3 py-1.5 font-mono text-xs transition-all sm:inline-flex ${
                 sortMode === 'recent'
-                  ? 'border-emerald-300 bg-emerald-50 text-emerald-800 shadow-sm dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200'
+                  ? 'border-emerald-300 bg-emerald-50 text-emerald-800 shadow-xs dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200'
                   : 'border-neutral-200 text-neutral-500 hover:border-emerald-300 hover:bg-emerald-50/70 hover:text-emerald-700 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-300'
               }`}
               aria-pressed={sortMode === 'recent'}

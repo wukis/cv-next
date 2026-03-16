@@ -63,7 +63,7 @@ export function AnimationPreviewButton() {
       align="right"
       label={monitoring.buttonLabel}
       description={tooltipDescription}
-      panelClassName="min-w-[20rem] max-w-[26rem]"
+      panelClassName="min-w-[20rem] max-w-104"
     >
       <button
         type="button"

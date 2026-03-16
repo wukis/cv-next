@@ -3,6 +3,8 @@
 import { usePathname } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+import { getRequiredArrayItem } from '@/lib/assert'
+
 type TerminalTextSegment = {
   text: string
   className?: string
@@ -64,8 +66,11 @@ function buildTypingFrames(segments: SegmentWithCharacters[]) {
 
     for (let index = 0; index < typedCharacters; index += 1) {
       revealedCharacters += 1
-      const rhythmOffset =
-        TYPING_RHYTHM_PATTERN[rhythmIndex % TYPING_RHYTHM_PATTERN.length]
+      const rhythmOffset = getRequiredArrayItem(
+        TYPING_RHYTHM_PATTERN,
+        rhythmIndex % TYPING_RHYTHM_PATTERN.length,
+        'Expected typing rhythm value.',
+      )
       rhythmIndex += 1
 
       frames.push({
@@ -281,13 +286,13 @@ export function AnimatedTerminalText({
     <span ref={containerRef} className="inline-grid max-w-full align-baseline">
       <span
         aria-hidden="true"
-        className="invisible col-start-1 row-start-1 whitespace-pre-wrap break-words"
+        className="invisible col-start-1 row-start-1 wrap-break-word whitespace-pre-wrap"
       >
         {renderVisibleSegments(segmentData, totalCharacters)}
       </span>
       <span
         aria-hidden="true"
-        className="col-start-1 row-start-1 whitespace-pre-wrap break-words"
+        className="col-start-1 row-start-1 wrap-break-word whitespace-pre-wrap"
       >
         {renderVisibleSegments(segmentData, displayedCharacters)}
         {status === 'animating' || status === 'settling' ? (

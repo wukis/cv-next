@@ -3,7 +3,6 @@ import { withSentryConfig } from '@sentry/nextjs'
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   productionBrowserSourceMaps: false,
-  pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'mdx'],
   // Performance optimizations
   compress: true,
   // Optimize images

@@ -15,6 +15,7 @@ import {
   TRIGGER_NETWORK_EMERGENCY_EVENT,
   type TriggerSource,
 } from '@/lib/ambientCluster'
+import { getRequiredArrayItem } from '@/lib/assert'
 
 type ColorKey =
   | 'emerald'
@@ -543,10 +544,20 @@ function drawHexagon(
   lineWidth: number,
 ) {
   const points = getHexPoints(cx, cy, size)
+  const firstPoint = getRequiredArrayItem(
+    points,
+    0,
+    'Expected the first hexagon point.',
+  )
   ctx.beginPath()
-  ctx.moveTo(points[0][0], points[0][1])
+  ctx.moveTo(firstPoint[0], firstPoint[1])
   for (let index = 1; index < points.length; index += 1) {
-    ctx.lineTo(points[index][0], points[index][1])
+    const point = getRequiredArrayItem(
+      points,
+      index,
+      'Expected a hexagon point.',
+    )
+    ctx.lineTo(point[0], point[1])
   }
   ctx.closePath()
 
@@ -863,17 +874,22 @@ function wrapCanvasText(
   }
 
   const lines: string[] = []
-  let currentLine = words[0]
+  let currentLine = getRequiredArrayItem(words, 0, 'Expected a word to wrap.')
 
   for (let index = 1; index < words.length; index += 1) {
-    const nextLine = `${currentLine} ${words[index]}`
+    const nextWord = getRequiredArrayItem(
+      words,
+      index,
+      'Expected a wrapped word.',
+    )
+    const nextLine = `${currentLine} ${nextWord}`
     if (ctx.measureText(nextLine).width <= maxWidth) {
       currentLine = nextLine
       continue
     }
 
     lines.push(currentLine)
-    currentLine = words[index]
+    currentLine = nextWord
   }
 
   lines.push(currentLine)
@@ -942,7 +958,7 @@ function createStatusIndicator(
     scale: 0,
     startTime,
     duration: 1.8 + Math.random() * 0.5,
-    label,
+    ...(label ? { label } : {}),
   }
 }
 
@@ -1056,12 +1072,17 @@ function getHoneycombSlot(slotIndex: number) {
   let offset = slotIndex - ringStart
 
   for (let side = 0; side < directions.length; side += 1) {
+    const direction = getRequiredArrayItem(
+      directions,
+      side,
+      'Expected a honeycomb direction.',
+    )
     for (let step = 0; step < ring; step += 1) {
       if (offset === 0) {
         return { q, r }
       }
-      q += directions[side].q
-      r += directions[side].r
+      q += direction.q
+      r += direction.r
       offset -= 1
     }
   }
@@ -1435,7 +1456,11 @@ function chooseServicePanelPlacement(options: {
     { x: clusterX - panelWidth - offset * 0.84, y: clusterY + offset * 0.16 },
   ]
 
-  let bestCandidate = candidates[0]
+  let bestCandidate = getRequiredArrayItem(
+    candidates,
+    0,
+    'Expected at least one service panel placement candidate.',
+  )
   let bestScore = Number.NEGATIVE_INFINITY
 
   candidates.forEach((candidate) => {
@@ -1827,7 +1852,11 @@ function pickRandomEmergencyScenario(): EmergencyScenarioKey {
   const scenarioKeys = Object.keys(
     EMERGENCY_SCENARIOS,
   ) as EmergencyScenarioKey[]
-  return scenarioKeys[Math.floor(Math.random() * scenarioKeys.length)]
+  return getRequiredArrayItem(
+    scenarioKeys,
+    Math.floor(Math.random() * scenarioKeys.length),
+    'Expected at least one emergency scenario.',
+  )
 }
 
 function getNodePalette(
@@ -2465,7 +2494,7 @@ const HexagonServiceNetwork: React.FC = () => {
           0,
           1,
         ),
-        recentEvent,
+        ...(recentEvent ? { recentEvent } : {}),
       }
     },
     [getEmergencyState],
@@ -3048,8 +3077,11 @@ const HexagonServiceNetwork: React.FC = () => {
           : scenarioCandidates.length > 0
             ? scenarioCandidates
             : candidates
-      const pod =
-        selectionPool[Math.floor(Math.random() * selectionPool.length)]
+      const pod = getRequiredArrayItem(
+        selectionPool,
+        Math.floor(Math.random() * selectionPool.length),
+        'Expected a pod candidate to drain.',
+      )
       pod.lifecycleState = 'draining'
       pod.acceptingTraffic = false
       pod.statusSince = timeRef.current
@@ -3145,12 +3177,17 @@ const HexagonServiceNetwork: React.FC = () => {
 
       const count = Math.max(1, Math.floor(requestedCount))
       const drainingPods = candidates.slice(0, count)
+      const firstDrainingPod = getRequiredArrayItem(
+        drainingPods,
+        0,
+        'Expected at least one pod to drain.',
+      )
 
       drainingPods.forEach((pod) => {
         pod.scaleDownTarget = true
         pod.acceptingTraffic = false
         pod.replacementLaunched = true
-        pod.replacementFor = undefined
+        delete pod.replacementFor
         pod.lifecycleState = 'draining'
         pod.statusSince = timeRef.current
       })
@@ -3158,13 +3195,13 @@ const HexagonServiceNetwork: React.FC = () => {
       pushClusterEvent(
         'warn',
         drainingPods.length === 1
-          ? `autoscaler is draining surplus ${drainingPods[0].label} from ${serviceName}`
+          ? `autoscaler is draining surplus ${firstDrainingPod.label} from ${serviceName}`
           : `autoscaler is draining ${drainingPods.length} surplus pods from ${serviceName}`,
       )
       enqueueAutoscalerToast(
         'AUTOSCALER SCALE IN',
         drainingPods.length === 1
-          ? `draining ${drainingPods[0].label} from ${serviceName}`
+          ? `draining ${firstDrainingPod.label} from ${serviceName}`
           : `draining ${drainingPods.length} pods from ${serviceName}`,
         'rgba(251, 191, 36, 0.9)',
       )
@@ -4333,18 +4370,20 @@ const HexagonServiceNetwork: React.FC = () => {
       }
     })
 
-    if (redisMaster && queues[0]) {
+    const primaryQueue = queues[0]
+
+    if (redisMaster && primaryQueue) {
       desiredConnections.push({
         fromNodeId: redisMaster.id,
-        toNodeId: queues[0].id,
+        toNodeId: primaryQueue.id,
         kind: 'service',
       })
     }
 
-    if (queues[0]) {
+    if (primaryQueue) {
       workers.forEach((worker) => {
         desiredConnections.push({
-          fromNodeId: queues[0].id,
+          fromNodeId: primaryQueue.id,
           toNodeId: worker.id,
           kind: 'service',
         })
@@ -5859,7 +5898,7 @@ const HexagonServiceNetwork: React.FC = () => {
       />
 
       {isFocused && visibleToasts.length > 0 ? (
-        <div className="pointer-events-none fixed bottom-6 right-6 z-10 flex max-w-[360px] flex-col-reverse items-end gap-3">
+        <div className="pointer-events-none fixed right-6 bottom-6 z-10 flex max-w-[360px] flex-col-reverse items-end gap-3">
           {visibleToasts.map((toast) => {
             const accentColor =
               toast.mode === 'emergency'
@@ -5888,7 +5927,7 @@ const HexagonServiceNetwork: React.FC = () => {
               >
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <span
-                    className="font-mono text-[11px] uppercase tracking-[0.18em]"
+                    className="font-mono text-[11px] tracking-[0.18em] uppercase"
                     style={{ color: accentColor }}
                   >
                     {toast.mode === 'emergency'
@@ -5906,7 +5945,7 @@ const HexagonServiceNetwork: React.FC = () => {
                   />
                 </div>
                 <div
-                  className="font-mono text-[13px] font-semibold uppercase tracking-[0.08em]"
+                  className="font-mono text-[13px] font-semibold tracking-[0.08em] uppercase"
                   style={{
                     color: isDark
                       ? 'rgba(248, 250, 252, 0.96)'

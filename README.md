@@ -28,14 +28,9 @@ Run the blocking quality commands before finishing changes:
 npm run format:check
 npm run lint
 npm run typecheck
-npm run build
-```
-
-Advisory cleanup commands:
-
-```bash
 npm run typecheck:strict
 npm run knip
+npm run build
 ```
 
 Project guidance for contributors and AI agents lives in [`AGENTS.md`](./AGENTS.md) and [`docs/stack-and-workflows.md`](./docs/stack-and-workflows.md).
@@ -57,6 +52,8 @@ What it does:
 - Writes the result to `public/jonas-petrik-cv.pdf`.
 
 The PDF export intentionally excludes the ambient background animation, top navigation, footer, back-to-top button, and other elements wrapped in `print:hidden`.
+
+When a commit includes staged portfolio content changes, the pre-commit hook also regenerates `public/jonas-petrik-cv.pdf` and stages it automatically. If you have unstaged content edits at the same time, the hook stops so the committed PDF cannot drift from the committed source.
 
 ## Notes
 
@@ -143,15 +140,18 @@ An agent making LinkedIn sync changes should follow this sequence:
 2. Run `npm run linkedin:import -- /path/to/linkedin-export`.
 3. Run `npm run linkedin:sync`.
 4. Run `npm run lint`.
-5. Run `npm run build`.
-6. Confirm that the tracked backup files changed as expected:
+5. Run `npm run typecheck`.
+6. Run `npm run typecheck:strict`.
+7. Run `npm run knip`.
+8. Run `npm run build`.
+9. Confirm that the tracked backup files changed as expected:
    - `src/data/linkedin-sync/imported.json`
    - `src/data/linkedin-sync/latest.json`
    - `src/data/linkedin-sync/status.json`
    - `src/data/linkedin-sync/history/`
-7. Do not commit `.generated/linkedin/`.
-8. After the user manually updates LinkedIn and verifies the result, run `npm run linkedin:accept`.
-9. Re-run `npm run lint` if any tracked files changed afterward.
+10. Do not commit `.generated/linkedin/`.
+11. After the user manually updates LinkedIn and verifies the result, run `npm run linkedin:accept`.
+12. Re-run `npm run quality` if any tracked files changed afterward.
 
 ### Commit and push latest changes
 
@@ -159,7 +159,7 @@ After the snapshot and status files are correct:
 
 ```bash
 git status
-git add README.md package.json package-lock.json yarn.lock \
+git add README.md package.json package-lock.json \
   src/lib/profileContent.ts src/lib/linkedinSync.ts scripts/linkedin-sync.ts \
   src/data/linkedin-sync .gitignore
 git commit -m "Add backup-first LinkedIn sync workflow"

@@ -45,7 +45,7 @@ export const getDuration = (
 }
 
 // Group work experiences by company
-export const groupWorkExperiences = (workExperiences: WorkInterface[]) => {
+const groupWorkExperiences = (workExperiences: WorkInterface[]) => {
   return workExperiences.reduce(
     (acc, experience) => {
       const { name, startDate, endDate } = experience

@@ -25,7 +25,7 @@ export function Footer() {
   return (
     <footer className="mt-16 flex-none sm:mt-24">
       <ContainerOuter>
-        <div className="border-t border-neutral-200/80 pb-12 pt-8 dark:border-neutral-700/50">
+        <div className="border-t border-neutral-200/80 pt-8 pb-12 dark:border-neutral-700/50">
           <ContainerInner>
             <div className="flex flex-col items-center justify-between gap-5 sm:flex-row">
               <nav className="flex flex-wrap justify-center gap-x-3 gap-y-2 text-sm font-medium">

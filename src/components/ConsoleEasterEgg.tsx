@@ -7,6 +7,7 @@ import {
   getAmbientCallHistory,
   NETWORK_CALL_HISTORY_EVENT,
 } from '@/lib/ambientCluster'
+import { getRequiredArrayItem } from '@/lib/assert'
 import { createBoxLineWithBorders, createEmptyBoxLine } from '@/lib/consoleBox'
 
 type IncidentScenario = {
@@ -160,11 +161,16 @@ function pickRandomIndex(length: number): number {
 }
 
 function createNonRepeatingPicker<T>(items: T[]) {
+  const firstItem = getRequiredArrayItem(
+    items,
+    0,
+    'Expected at least one item in picker.',
+  )
   let lastIndex = -1
 
-  return () => {
+  return (): T => {
     if (items.length === 1) {
-      return items[0]
+      return firstItem
     }
 
     let nextIndex = pickRandomIndex(items.length)
@@ -173,7 +179,11 @@ function createNonRepeatingPicker<T>(items: T[]) {
     }
 
     lastIndex = nextIndex
-    return items[nextIndex]
+    return getRequiredArrayItem(
+      items,
+      nextIndex,
+      'Expected picker item at generated index.',
+    )
   }
 }
 

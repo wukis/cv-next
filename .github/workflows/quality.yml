@@ -32,25 +32,11 @@ jobs:
       - name: Run typecheck
         run: npm run typecheck
 
+      - name: Run strict typecheck
+        run: npm run typecheck:strict
+
+      - name: Run knip
+        run: npm run knip
+
       - name: Run build
         run: npm run build
-
-  knip:
-    runs-on: ubuntu-latest
-    continue-on-error: true
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run knip advisory scan
-        run: npm run knip

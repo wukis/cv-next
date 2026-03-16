@@ -98,16 +98,16 @@ export function MobileNavigation({ className }: { className?: string }) {
         createPortal(
           <>
             <div
-              className="fixed inset-0 z-[60] bg-neutral-900/60 backdrop-blur-sm"
+              className="fixed inset-0 z-60 bg-neutral-900/60 backdrop-blur-xs"
               onClick={close}
               aria-hidden="true"
             />
-            <div className="fixed inset-x-4 top-4 z-[70] overflow-hidden rounded-lg bg-white shadow-2xl ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-700">
+            <div className="fixed inset-x-4 top-4 z-70 overflow-hidden rounded-lg bg-white shadow-2xl ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-700">
               <div className="flex min-h-11 items-center justify-between border-b border-neutral-200 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
                 <Link
                   href="/"
                   onClick={close}
-                  className="-ml-1 inline-flex min-h-11 items-center gap-2 rounded px-2 py-1 transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                  className="-ml-1 inline-flex min-h-11 items-center gap-2 rounded-sm px-2 py-1 transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-700"
                   aria-label="Go to home"
                 >
                   <TerminalPromptIcon className="h-4 w-4 text-emerald-500" />
@@ -119,7 +119,7 @@ export function MobileNavigation({ className }: { className?: string }) {
                   type="button"
                   onClick={close}
                   aria-label="Close menu"
-                  className="inline-flex h-11 w-11 items-center justify-center rounded transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-sm transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-700"
                 >
                   <CloseIcon className="h-5 w-5 text-neutral-700 dark:text-neutral-200" />
                 </button>

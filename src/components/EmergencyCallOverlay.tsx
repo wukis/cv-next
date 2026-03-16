@@ -18,6 +18,7 @@ import {
   type TriggerSource,
 } from '@/lib/ambientCluster'
 import { useAmbientClusterSnapshot } from '@/lib/ambientClusterClient'
+import { getRequiredArrayItem, getRequiredValue } from '@/lib/assert'
 
 type CallPhase = 'active' | 'holding' | 'winding'
 
@@ -818,9 +819,16 @@ function softenAccent(accent: string, alpha: string) {
   return accent.replace(/0\.\d+\)/, `${alpha})`)
 }
 
-function resolveScriptLineText(line: ScriptLine, variationSeed: number) {
+function resolveScriptLineText(
+  line: ScriptLine,
+  variationSeed: number,
+): string {
   const options = [line.text, ...(line.variants ?? [])]
-  return options[Math.abs(variationSeed) % options.length]
+  return getRequiredArrayItem(
+    options,
+    Math.abs(variationSeed) % options.length,
+    'Expected a script line variant.',
+  )
 }
 
 function createSystemNotice(
@@ -1379,7 +1387,11 @@ export default function EmergencyCallOverlay() {
             consecutiveManualEmergencyCountRef.current,
             MANUAL_REPEAT_REACTIONS.length - 1,
           )
-          const seededReaction = MANUAL_REPEAT_REACTIONS[reactionIndex]
+          const seededReaction = getRequiredArrayItem(
+            MANUAL_REPEAT_REACTIONS,
+            reactionIndex,
+            'Expected a seeded manual repeat reaction.',
+          )
           const availableReaction = connectedParticipantIds.includes(
             seededReaction.speakerId,
           )
@@ -1413,8 +1425,11 @@ export default function EmergencyCallOverlay() {
           }
         } else if (session && previous.state !== 'normal') {
           const reactionPool = RESTART_REACTIONS[scenarioKey]
-          const seededReaction =
-            reactionPool[Math.floor(sessionNow / 1000) % reactionPool.length]
+          const seededReaction = getRequiredArrayItem(
+            reactionPool,
+            Math.floor(sessionNow / 1000) % reactionPool.length,
+            'Expected a seeded restart reaction.',
+          )
           const availableReaction =
             reactionPool.find((line) =>
               connectedParticipantIds.includes(line.speakerId),
@@ -1613,10 +1628,15 @@ export default function EmergencyCallOverlay() {
       for (let offset = 1; offset < script.length; offset += 1) {
         const previousIndex =
           (scriptIndex - offset + script.length) % script.length
+        const previousScriptLine = getRequiredArrayItem(
+          script,
+          previousIndex,
+          'Expected a previous script line.',
+        )
         const previousLine = {
-          ...script[previousIndex],
+          ...previousScriptLine,
           text: resolveScriptLineText(
-            script[previousIndex],
+            previousScriptLine,
             variationBase + previousIndex,
           ),
         }
@@ -1638,7 +1658,7 @@ export default function EmergencyCallOverlay() {
         return previousSpeakerText !== `${line.text}${optionalHint}`
       })?.line ??
       connectedEntries[0]?.line ??
-      script[0]
+      getRequiredArrayItem(script, 0, 'Expected a fallback script line.')
     )
   }, [
     connectedParticipants,
@@ -1682,7 +1702,14 @@ export default function EmergencyCallOverlay() {
     )
 
     if (joinedId) {
-      const participant = PARTICIPANT_LOOKUP[joinedId]
+      const participant =
+        connectedParticipants.find(
+          (connectedParticipant) => connectedParticipant.id === joinedId,
+        ) ??
+        getRequiredValue(
+          PARTICIPANT_LOOKUP[joinedId],
+          `Missing participant for joined id: ${joinedId}`,
+        )
       const text = `${participant.title ?? participant.name} joined the call.`
       const timeoutId = window.setTimeout(() => {
         enqueueSystemNotice(createSystemNotice(participant, text))
@@ -1693,7 +1720,10 @@ export default function EmergencyCallOverlay() {
     }
 
     if (leftId) {
-      const participant = PARTICIPANT_LOOKUP[leftId]
+      const participant = getRequiredValue(
+        PARTICIPANT_LOOKUP[leftId],
+        `Missing participant for left id: ${leftId}`,
+      )
       const text = `${participant.title ?? participant.name} left the call.`
       const timeoutId = window.setTimeout(() => {
         enqueueSystemNotice(createSystemNotice(participant, text))
@@ -1723,7 +1753,12 @@ export default function EmergencyCallOverlay() {
       return
     }
 
-    const [nextNotice, ...remainingQueue] = systemNoticeQueueRef.current
+    const nextNotice = getRequiredArrayItem(
+      systemNoticeQueueRef.current,
+      0,
+      'Expected a queued system notice.',
+    )
+    const remainingQueue = systemNoticeQueueRef.current.slice(1)
     systemNoticeQueueRef.current = remainingQueue
     setActiveSystemNotice(nextNotice)
     setIsSystemNoticeVisible(true)
@@ -2029,7 +2064,7 @@ export default function EmergencyCallOverlay() {
         <div className="flex items-start justify-between gap-3 border-b border-white/10 px-3.5 py-3">
           <div>
             <div
-              className="font-mono text-[10px] uppercase tracking-[0.22em]"
+              className="font-mono text-[10px] tracking-[0.22em] uppercase"
               style={{ color: accentColor }}
             >
               Emergency call
@@ -2037,7 +2072,7 @@ export default function EmergencyCallOverlay() {
           </div>
           <div className="text-right">
             <div
-              className="font-mono text-[10px] uppercase tracking-[0.18em]"
+              className="font-mono text-[10px] tracking-[0.18em] uppercase"
               style={{
                 color: isDark
                   ? 'rgba(248, 250, 252, 0.92)'
@@ -2051,7 +2086,7 @@ export default function EmergencyCallOverlay() {
 
         <div className="px-3.5 py-3">
           <div
-            className="relative flex items-center justify-center rounded-[1rem] border px-2 py-1"
+            className="relative flex items-center justify-center rounded-2xl border px-2 py-1"
             style={{
               minHeight: `${participantStageMinHeightRem}rem`,
               backgroundColor: isDark
@@ -2074,7 +2109,7 @@ export default function EmergencyCallOverlay() {
             >
               <div className="space-y-2">
                 <div
-                  className="font-mono text-[10px] uppercase tracking-[0.2em]"
+                  className="font-mono text-[10px] tracking-[0.2em] uppercase"
                   style={{ color: accentColor }}
                 >
                   Bridge opening
@@ -2245,7 +2280,7 @@ export default function EmergencyCallOverlay() {
                   >
                     {activeSystemNotice.initials}
                   </span>
-                  <span className="line-clamp-1 block min-w-0 font-mono text-[9px] uppercase tracking-[0.12em]">
+                  <span className="line-clamp-1 block min-w-0 font-mono text-[9px] tracking-[0.12em] uppercase">
                     {activeSystemNotice.text}
                   </span>
                 </div>
@@ -2256,7 +2291,7 @@ export default function EmergencyCallOverlay() {
           </div>
 
           <div
-            className="mt-1 h-[3.75rem] rounded-[0.95rem] border px-2 py-1.5"
+            className="mt-1 h-15 rounded-[0.95rem] border px-2 py-1.5"
             style={{
               backgroundColor: isDark
                 ? 'rgba(15, 23, 42, 0.44)'

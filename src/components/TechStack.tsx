@@ -1,12 +1,11 @@
 // Tech stack icons
+import { FaAmazon } from 'react-icons/fa'
 import {
   SiAlgolia,
-  SiAmazonwebservices,
-  SiAwslambda,
   SiBitbucket,
   SiBootstrap,
   SiCakephp,
-  SiCss3,
+  SiCss,
   SiCypress,
   SiDatadog,
   SiDocker,
@@ -46,6 +45,7 @@ import {
   VscBeaker,
   VscBell,
   VscChecklist,
+  VscCloud,
   VscCode,
   VscDatabase,
   VscDebugAll,
@@ -217,7 +217,7 @@ function TechIcon({
     ruby: SiRuby,
     'c#': SiSharp,
     html: SiHtml5,
-    css: SiCss3,
+    css: SiCss,
     // Frameworks
     laravel: SiLaravel,
     symfony: SiSymfony,
@@ -237,7 +237,7 @@ function TechIcon({
     // Infrastructure & DevOps
     docker: SiDocker,
     kubernetes: SiKubernetes,
-    aws: SiAmazonwebservices,
+    aws: FaAmazon,
     datadog: SiDatadog,
     'gitlab ci': SiGitlab,
     bitbucket: SiBitbucket,
@@ -260,7 +260,7 @@ function TechIcon({
     sass: SiSass,
     // Tools
     jquery: SiJquery,
-    lambda: SiAwslambda,
+    lambda: VscCloud,
   }
 
   // VSCode icons for concepts/methods (monoline style)
@@ -336,7 +336,7 @@ function TechPill({
           : 'border-neutral-300 bg-neutral-100 text-neutral-800 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100'
       }`}
     >
-      <TechIcon tech={tech} className="h-3.5 w-3.5 flex-shrink-0 opacity-80" />
+      <TechIcon tech={tech} className="h-3.5 w-3.5 shrink-0 opacity-80" />
       {tech}
     </span>
   )
@@ -352,7 +352,7 @@ function TechIconButton({
 }) {
   return (
     <span
-      className={`inline-flex aspect-square h-7 w-7 flex-shrink-0 items-center justify-center rounded border ${
+      className={`inline-flex aspect-square h-7 w-7 shrink-0 items-center justify-center rounded border ${
         tone === 'plain'
           ? 'border-neutral-200 bg-transparent text-neutral-600 dark:border-neutral-700 dark:text-neutral-300'
           : 'border-neutral-300 bg-neutral-100 text-neutral-700 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200'
@@ -360,7 +360,7 @@ function TechIconButton({
       role="img"
       aria-label={tech}
     >
-      <TechIcon tech={tech} className="h-4 w-4 flex-shrink-0" />
+      <TechIcon tech={tech} className="h-4 w-4 shrink-0" />
     </span>
   )
 }
@@ -384,7 +384,7 @@ function TechStackPreview({
           className={`font-mono text-xs ${
             tone === 'plain'
               ? 'text-neutral-600 dark:text-neutral-300'
-              : 'rounded bg-neutral-200 px-1.5 py-0.5 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-100'
+              : 'rounded-sm bg-neutral-200 px-1.5 py-0.5 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-100'
           }`}
         >
           +{hiddenCount} more
@@ -411,7 +411,7 @@ function TechStackDetails({
               className={`mb-2 ${
                 tone === 'plain'
                   ? 'text-[11px] text-neutral-600 dark:text-neutral-300'
-                  : 'font-mono text-[10px] uppercase tracking-wider text-neutral-700 dark:text-neutral-200'
+                  : 'font-mono text-[10px] tracking-wider text-neutral-700 uppercase dark:text-neutral-200'
               }`}
             >
               {category}

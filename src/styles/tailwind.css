@@ -1,6 +1,41 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+@import 'tailwindcss';
+
+@config '../../tailwind.config.mjs';
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility animation-focus {
+  & main {
+    opacity: 0.03;
+    transition: opacity 0.5s ease-out;
+    pointer-events: none;
+  }
+  & footer {
+    opacity: 0.03;
+    transition: opacity 0.5s ease-out;
+    pointer-events: none;
+  }
+
+  & header {
+    /* Keep header visible but slightly faded */
+  }
+}
 
 @layer base {
   :root {
@@ -24,69 +59,60 @@
   }
 }
 
-/* Log terminal scrolling animation */
-@keyframes scrollLogs {
-  0% {
-    transform: translateY(0);
-  }
-  100% {
-    transform: translateY(-50%);
-  }
-}
-
-.animate-scrollLogs {
-  animation: scrollLogs 25s linear infinite;
-}
-
-@keyframes gitHeadPulse {
-  0% {
-    transform: scale(0.9);
-    opacity: 0;
-  }
-
-  30% {
-    opacity: 0.3;
-  }
-
-  100% {
-    transform: scale(1.45);
-    opacity: 0;
-  }
-}
-
-.animate-git-head-pulse {
-  animation: gitHeadPulse 3.6s ease-out infinite;
-}
-
-@keyframes terminalCaretBlink {
-  0%,
-  49% {
-    opacity: 1;
-  }
-
-  50%,
-  100% {
-    opacity: 0;
-  }
-}
-
-.animate-terminal-caret {
-  animation: terminalCaretBlink 0.65s steps(1, end) infinite;
-}
-
-/* Animation focus mode - makes content transparent to show background animation */
 @layer utilities {
-  .animation-focus main,
-  .animation-focus footer {
-    opacity: 0.03;
-    transition: opacity 0.5s ease-out;
-    pointer-events: none;
+  /* Log terminal scrolling animation */
+  @keyframes scrollLogs {
+    0% {
+      transform: translateY(0);
+    }
+    100% {
+      transform: translateY(-50%);
+    }
   }
 
-  .animation-focus header {
-    /* Keep header visible but slightly faded */
+  .animate-scrollLogs {
+    animation: scrollLogs 25s linear infinite;
   }
 
+  @keyframes gitHeadPulse {
+    0% {
+      transform: scale(0.9);
+      opacity: 0;
+    }
+
+    30% {
+      opacity: 0.3;
+    }
+
+    100% {
+      transform: scale(1.45);
+      opacity: 0;
+    }
+  }
+
+  .animate-git-head-pulse {
+    animation: gitHeadPulse 3.6s ease-out infinite;
+  }
+
+  @keyframes terminalCaretBlink {
+    0%,
+    49% {
+      opacity: 1;
+    }
+
+    50%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  .animate-terminal-caret {
+    animation: terminalCaretBlink 0.65s steps(1, end) infinite;
+  }
+
+  /* Animation focus mode - makes content transparent to show background animation */
+}
+@layer utilities {
   /* Ensure smooth transition back */
   main,
   footer {
