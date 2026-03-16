@@ -10,11 +10,11 @@ import {
 } from 'react'
 
 import {
-  appendAmbientCallHistoryEntry,
-  NETWORK_CALL_ASSIGNMENTS_EVENT,
   type AmbientCallAssignment,
   type AmbientServiceName,
+  appendAmbientCallHistoryEntry,
   type EmergencyScenarioKey,
+  NETWORK_CALL_ASSIGNMENTS_EVENT,
   type TriggerSource,
 } from '@/lib/ambientCluster'
 import { useAmbientClusterSnapshot } from '@/lib/ambientClusterClient'
@@ -457,10 +457,7 @@ const CALL_SCRIPT: Record<
       {
         speakerId: 'be',
         text: 'Errors are easing off.',
-        variants: [
-          'Pushing a tiny hotfix now.',
-          'Quick revert is rolling.',
-        ],
+        variants: ['Pushing a tiny hotfix now.', 'Quick revert is rolling.'],
       },
       {
         speakerId: 'ed',
@@ -902,7 +899,10 @@ function getBubbleTypography(text: string) {
 }
 
 function createEmergencyIncidentId(scenarioKey: EmergencyScenarioKey) {
-  const scenarioCode = scenarioKey.replace(/[^a-z]/gi, '').slice(0, 3).toUpperCase()
+  const scenarioCode = scenarioKey
+    .replace(/[^a-z]/gi, '')
+    .slice(0, 3)
+    .toUpperCase()
   const randomCode = Math.random().toString(36).slice(2, 6).toUpperCase()
   return `${scenarioCode || 'EMG'}-${randomCode}`
 }
@@ -1068,9 +1068,8 @@ export default function EmergencyCallOverlay() {
   const [transientBubble, setTransientBubble] = useState<CallBubble | null>(
     null,
   )
-  const [activeSystemNotice, setActiveSystemNotice] = useState<SystemNotice | null>(
-    null,
-  )
+  const [activeSystemNotice, setActiveSystemNotice] =
+    useState<SystemNotice | null>(null)
   const [isSystemNoticeVisible, setIsSystemNoticeVisible] = useState(false)
   const [systemNoticeVersion, setSystemNoticeVersion] = useState(0)
   const previousEmergencyRef = useRef<{
@@ -1097,23 +1096,26 @@ export default function EmergencyCallOverlay() {
     setShouldRender(getShouldRenderEmergencyCall())
   }, [])
 
-  const enqueueSystemNotice = useCallback((notice: SystemNotice) => {
-    const lastQueuedNotice =
-      systemNoticeQueueRef.current[systemNoticeQueueRef.current.length - 1]
-    const isDuplicateOfActive =
-      activeSystemNotice?.participantId === notice.participantId &&
-      activeSystemNotice.text === notice.text
-    const isDuplicateOfQueued =
-      lastQueuedNotice?.participantId === notice.participantId &&
-      lastQueuedNotice.text === notice.text
+  const enqueueSystemNotice = useCallback(
+    (notice: SystemNotice) => {
+      const lastQueuedNotice =
+        systemNoticeQueueRef.current[systemNoticeQueueRef.current.length - 1]
+      const isDuplicateOfActive =
+        activeSystemNotice?.participantId === notice.participantId &&
+        activeSystemNotice.text === notice.text
+      const isDuplicateOfQueued =
+        lastQueuedNotice?.participantId === notice.participantId &&
+        lastQueuedNotice.text === notice.text
 
-    if (isDuplicateOfActive || isDuplicateOfQueued) {
-      return
-    }
+      if (isDuplicateOfActive || isDuplicateOfQueued) {
+        return
+      }
 
-    systemNoticeQueueRef.current = [...systemNoticeQueueRef.current, notice]
-    setSystemNoticeVersion((version) => version + 1)
-  }, [activeSystemNotice])
+      systemNoticeQueueRef.current = [...systemNoticeQueueRef.current, notice]
+      setSystemNoticeVersion((version) => version + 1)
+    },
+    [activeSystemNotice],
+  )
 
   useEffect(() => {
     window.addEventListener('resize', checkScreenSize)
@@ -1285,7 +1287,9 @@ export default function EmergencyCallOverlay() {
       visibleParticipants
         .map((participant) => {
           const node = participantTileRefs.current[participant.id]
-          return node ? ([participant.id, node.getBoundingClientRect()] as const) : null
+          return node
+            ? ([participant.id, node.getBoundingClientRect()] as const)
+            : null
         })
         .filter((entry): entry is readonly [string, DOMRect] => entry !== null),
     ) as Record<string, DOMRect>
@@ -1376,12 +1380,13 @@ export default function EmergencyCallOverlay() {
             MANUAL_REPEAT_REACTIONS.length - 1,
           )
           const seededReaction = MANUAL_REPEAT_REACTIONS[reactionIndex]
-          const availableReaction =
-            connectedParticipantIds.includes(seededReaction.speakerId)
-              ? seededReaction
-              : MANUAL_REPEAT_REACTIONS.find((line) =>
-                  connectedParticipantIds.includes(line.speakerId),
-                ) ?? seededReaction
+          const availableReaction = connectedParticipantIds.includes(
+            seededReaction.speakerId,
+          )
+            ? seededReaction
+            : (MANUAL_REPEAT_REACTIONS.find((line) =>
+                connectedParticipantIds.includes(line.speakerId),
+              ) ?? seededReaction)
           const reactionParticipant =
             PARTICIPANT_LOOKUP[availableReaction.speakerId] ??
             connectedParticipants[0]
@@ -1494,7 +1499,8 @@ export default function EmergencyCallOverlay() {
             scenarioKey,
             triggerSource:
               cluster.triggerSource ?? current?.triggerSource ?? null,
-            incidentId: current && !isFreshIncident ? current.incidentId : nextIncidentId,
+            incidentId:
+              current && !isFreshIncident ? current.incidentId : nextIncidentId,
             cycleStartedAt: sessionNow,
             scenarioParticipants,
             participantSchedule: buildParticipantSchedule(
@@ -1891,7 +1897,7 @@ export default function EmergencyCallOverlay() {
     ? displayedBubble.participantId
     : (speaker?.id ?? null)
   const bubbleParticipant = displayedBubble
-    ? PARTICIPANT_LOOKUP[displayedBubble.participantId] ?? speaker ?? null
+    ? (PARTICIPANT_LOOKUP[displayedBubble.participantId] ?? speaker ?? null)
     : speaker
   const bubbleTypography = displayedBubble
     ? getBubbleTypography(displayedBubble.text)
@@ -1972,7 +1978,8 @@ export default function EmergencyCallOverlay() {
     [] as Array<typeof visibleParticipants>,
   )
   const isDenseCallGrid = tileCount > 6 || maxRowCount >= 4
-  const gridColumnGapRem = maxRowCount >= 4 ? 0.48 : isDenseCallGrid ? 0.55 : 0.75
+  const gridColumnGapRem =
+    maxRowCount >= 4 ? 0.48 : isDenseCallGrid ? 0.55 : 0.75
   const gridRowGapRem = isDenseCallGrid ? 0.7 : 0.92
   const participantContentWidthRem = CALL_PANEL_WIDTH_REM - 3.2
   const tileOuterSizeRem = Math.min(
@@ -1981,7 +1988,8 @@ export default function EmergencyCallOverlay() {
       Math.max(0, maxRowCount - 1) * gridColumnGapRem) /
       maxRowCount,
   )
-  const tileInnerInsetRem = tileOuterSizeRem <= 3.6 ? 0.22 : isDenseCallGrid ? 0.24 : 0.32
+  const tileInnerInsetRem =
+    tileOuterSizeRem <= 3.6 ? 0.22 : isDenseCallGrid ? 0.24 : 0.32
   const tileCoreSizeRem = tileOuterSizeRem * 0.74
   const tileInitialsFontSizePx = Math.round(tileCoreSizeRem * 4.1)
   const participantStageMinHeightRem =
@@ -2058,9 +2066,7 @@ export default function EmergencyCallOverlay() {
               className="pointer-events-none absolute inset-0 flex items-center justify-center px-4 text-center transition-all duration-300"
               style={{
                 opacity: hasVisibleParticipants ? 0 : 1,
-                transform: hasVisibleParticipants
-                  ? 'scale(0.98)'
-                  : 'scale(1)',
+                transform: hasVisibleParticipants ? 'scale(0.98)' : 'scale(1)',
                 color: isDark
                   ? 'rgba(226, 232, 240, 0.72)'
                   : 'rgba(71, 85, 105, 0.82)',

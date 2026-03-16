@@ -1,4 +1,5 @@
 import { type Metadata } from 'next'
+
 import HomePageContent from '@/components/HomePageContent'
 import { profileContent } from '@/lib/profileContent'
 import { personKnowsAbout, seoDescription, siteUrl } from '@/lib/siteProfile'

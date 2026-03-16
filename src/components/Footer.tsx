@@ -38,8 +38,7 @@ export function Footer() {
                 </NavLink>
               </nav>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                &copy; <CurrentYear /> Jonas Petrik. All rights
-                reserved.
+                &copy; <CurrentYear /> Jonas Petrik. All rights reserved.
               </p>
             </div>
           </ContainerInner>

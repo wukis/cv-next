@@ -3,17 +3,17 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import {
-  NETWORK_CALL_ASSIGNMENTS_EVENT,
   type AmbientCallAssignment,
   type ClusterEventEntry,
   type ClusterNodeLifecycle,
   type ClusterNodeRole,
   type ClusterSnapshot,
+  dispatchClusterSnapshot,
   type EmergencyScenarioKey,
   type EmergencyState,
-  type TriggerSource,
+  NETWORK_CALL_ASSIGNMENTS_EVENT,
   TRIGGER_NETWORK_EMERGENCY_EVENT,
-  dispatchClusterSnapshot,
+  type TriggerSource,
 } from '@/lib/ambientCluster'
 
 type ColorKey =
@@ -1362,7 +1362,8 @@ function getServiceClusterRippleOffset(options: {
   const unitX = x / distance
   const unitY = y / distance
   const angle = Math.atan2(y, x)
-  const impactAngle = bouncePhase * 0.92 + Math.sin(time * 0.34 + bouncePhase) * 0.24
+  const impactAngle =
+    bouncePhase * 0.92 + Math.sin(time * 0.34 + bouncePhase) * 0.24
   const angularDistance = Math.atan2(
     Math.sin(angle - impactAngle),
     Math.cos(angle - impactAngle),
@@ -1382,8 +1383,7 @@ function getServiceClusterRippleOffset(options: {
     (3.2 + normalizedDistance * 6.4) *
     (0.46 + normalizedDistance * 0.74) *
     (0.36 + directionalFocus * 1.1)
-  const radialOffset =
-    travelWave * amplitude + settleWave * amplitude * 0.42
+  const radialOffset = travelWave * amplitude + settleWave * amplitude * 0.42
   const tangentialOffset =
     crossWave *
     amplitude *
@@ -1540,8 +1540,7 @@ function drawServiceClusterHoneycomb(
     getRenderedHoneycombCellCount(counts.ready + counts.starting) -
       readyCellCount,
   )
-  const warmCellCount =
-    counts.starting > 0 ? Math.max(1, warmCellCountBase) : 0
+  const warmCellCount = counts.starting > 0 ? Math.max(1, warmCellCountBase) : 0
   const footprintCellCount = Math.max(
     readyCellCount + warmCellCount,
     getRenderedHoneycombCellCount(footprintCount),
@@ -1672,19 +1671,13 @@ function drawServiceClusterHoneycomb(
     ctx.beginPath()
     ctx.moveTo(0, 0)
     ctx.lineTo(cellX, cellY)
-    ctx.strokeStyle = withOpacity(
-      palette.glow,
-      (isDark ? 0.18 : 0.14) * reveal,
-    )
+    ctx.strokeStyle = withOpacity(palette.glow, (isDark ? 0.18 : 0.14) * reveal)
     ctx.lineWidth = 1
     ctx.stroke()
 
     ctx.beginPath()
     ctx.arc(cellX, cellY, currentSize * 1.45, 0, Math.PI * 2)
-    ctx.fillStyle = withOpacity(
-      palette.glow,
-      (isDark ? 0.16 : 0.14) * reveal,
-    )
+    ctx.fillStyle = withOpacity(palette.glow, (isDark ? 0.16 : 0.14) * reveal)
     ctx.fill()
 
     drawHexagon(
@@ -2649,7 +2642,7 @@ const HexagonServiceNetwork: React.FC = () => {
     const services = appServicesRef.current
 
     if (!canvas || services.length === 0) {
-      return APP_SERVICE_ORDER.slice(0, limit) as AppServiceGroup[]
+      return APP_SERVICE_ORDER.slice(0, limit)
     }
 
     const width = canvas.clientWidth || canvas.width || 1
@@ -3493,8 +3486,7 @@ const HexagonServiceNetwork: React.FC = () => {
     cluster.desiredReplicas = Object.values(
       cluster.desiredServiceReplicas,
     ).reduce((sum, count) => sum + count, 0)
-    cluster.nextScaleCooldownTime =
-      timeRef.current + 0.55 + Math.random() * 0.7
+    cluster.nextScaleCooldownTime = timeRef.current + 0.55 + Math.random() * 0.7
     cluster.nextScaleActionTime = Math.max(
       cluster.nextScaleActionTime,
       timeRef.current + 0.14,
@@ -3536,8 +3528,8 @@ const HexagonServiceNetwork: React.FC = () => {
         const effectiveSeverity = clamp(
           cluster.trafficSpikeSeverity +
             randomInRange(-0.1, 0.12) +
-            Math.max(0, currentDesired - currentReplicas) /
-              Math.max(service.maxReplicas, 1) *
+            (Math.max(0, currentDesired - currentReplicas) /
+              Math.max(service.maxReplicas, 1)) *
               0.18,
           0.32,
           1,
@@ -5584,9 +5576,7 @@ const HexagonServiceNetwork: React.FC = () => {
         const footprintDelta = Math.abs(
           footprintPods - motionState.footprintCount,
         )
-        const degradedDelta = Math.abs(
-          degradedPods - motionState.degradedCount,
-        )
+        const degradedDelta = Math.abs(degradedPods - motionState.degradedCount)
         const desiredDelta = Math.abs(desiredPods - motionState.desiredCount)
         const scaleOutStarted = desiredPods > motionState.desiredCount
         const scaleInStarted = desiredPods < motionState.desiredCount

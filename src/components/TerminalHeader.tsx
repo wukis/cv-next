@@ -1,4 +1,4 @@
-import { Fragment, type ElementType } from 'react'
+import { type ElementType, Fragment } from 'react'
 
 import { AnimatedTerminalText } from '@/components/AnimatedTerminalText'
 

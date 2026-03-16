@@ -2,13 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import {
-  type ClusterSnapshot,
-} from '@/lib/ambientCluster'
+import { type ClusterSnapshot } from '@/lib/ambientCluster'
 import { useAmbientClusterSnapshot } from '@/lib/ambientClusterClient'
 import {
-  deriveAmbientMonitoringState,
   type AmbientSemanticMode,
+  deriveAmbientMonitoringState,
 } from '@/lib/ambientMonitoring'
 
 const darkModeColors = [
@@ -151,7 +149,8 @@ function Sparkline({
         strokeWidth={strokeWidth}
         points={points}
         style={{
-          filter: glowSize > 0 ? `drop-shadow(0 0 ${glowSize}px ${color})` : 'none',
+          filter:
+            glowSize > 0 ? `drop-shadow(0 0 ${glowSize}px ${color})` : 'none',
           transition: 'filter 0.5s ease',
         }}
       />
@@ -199,7 +198,9 @@ function MiniBarChart({
               width={barWidth}
               height={height}
               rx={barWidth * 0.3}
-              fill={isDark ? 'rgba(31, 41, 55, 0.48)' : 'rgba(203, 213, 225, 0.62)'}
+              fill={
+                isDark ? 'rgba(31, 41, 55, 0.48)' : 'rgba(203, 213, 225, 0.62)'
+              }
             />
             <rect
               x={x}
@@ -210,7 +211,10 @@ function MiniBarChart({
               fill={color}
               opacity={0.72 + (value / 100) * 0.28}
               style={{
-                filter: glowSize > 0 ? `drop-shadow(0 0 ${glowSize}px ${color})` : 'none',
+                filter:
+                  glowSize > 0
+                    ? `drop-shadow(0 0 ${glowSize}px ${color})`
+                    : 'none',
                 transition: 'filter 0.5s ease',
               }}
             />
@@ -278,7 +282,8 @@ function CircularGauge({
           strokeDashoffset={offset}
           strokeLinecap="round"
           style={{
-            filter: glowSize > 0 ? `drop-shadow(0 0 ${glowSize}px ${color})` : 'none',
+            filter:
+              glowSize > 0 ? `drop-shadow(0 0 ${glowSize}px ${color})` : 'none',
             transition: 'filter 0.5s ease',
           }}
         />
@@ -297,7 +302,8 @@ function CircularGauge({
             fill={color}
             style={{
               opacity: isFocused ? 0.98 : isDark ? 0.82 : 0.9,
-              filter: isFocused && isDark ? `drop-shadow(0 0 4px ${color})` : 'none',
+              filter:
+                isFocused && isDark ? `drop-shadow(0 0 4px ${color})` : 'none',
             }}
           >
             {label}
@@ -323,13 +329,9 @@ function getWidgetAppearance(
       ? emergencyRed
       : visualState === 'recovered'
         ? recoveryGreen
-        : normalColorOverride ?? baseColor
+        : (normalColorOverride ?? baseColor)
 
-  const containerOpacity = isPreviewing
-    ? 1
-    : isDark
-      ? 0.16
-      : 0.24
+  const containerOpacity = isPreviewing ? 1 : isDark ? 0.16 : 0.24
 
   const textOpacity = isPreviewing
     ? isDark
@@ -377,7 +379,10 @@ function getWidgetAppearance(
   }
 }
 
-function isScenario(cluster: ClusterSnapshot, scenarioKey: ClusterSnapshot['scenarioKey']) {
+function isScenario(
+  cluster: ClusterSnapshot,
+  scenarioKey: ClusterSnapshot['scenarioKey'],
+) {
   return cluster.scenarioKey === scenarioKey
 }
 
@@ -400,7 +405,11 @@ function getTargetValue(
 ) {
   switch (widgetId) {
     case 'req_rate':
-      return clamp(cluster.requestRate / 24 + (mode === 'preview' ? 4 : 0), 16, 98)
+      return clamp(
+        cluster.requestRate / 24 + (mode === 'preview' ? 4 : 0),
+        16,
+        98,
+      )
     case 'latency':
       return clamp(
         cluster.latencyMs * 1.45 +
@@ -498,10 +507,14 @@ function getStatusDisplay(
       if (mode === 'recovery' && isScenario(cluster, 'failover')) {
         return { text: 'REJOIN', tone: 'healthy' as const }
       }
-      if (!cluster.loadBalancerHealthy || cluster.readyReplicas < Math.max(2, cluster.replicaTarget - 1)) {
+      if (
+        !cluster.loadBalancerHealthy ||
+        cluster.readyReplicas < Math.max(2, cluster.replicaTarget - 1)
+      ) {
         return {
           text: mode === 'preview' ? 'WATCH' : 'SHIFT',
-          tone: mode === 'preview' ? ('preview' as const) : ('degraded' as const),
+          tone:
+            mode === 'preview' ? ('preview' as const) : ('degraded' as const),
         }
       }
       if (mode === 'preview') {
@@ -593,7 +606,7 @@ function getCounterDisplay(
           ? `${cluster.loadBalancerTargets.length} heal`
           : mode === 'preview'
             ? `${cluster.loadBalancerTargets.length} watch`
-        : String(cluster.loadBalancerTargets.length)
+            : String(cluster.loadBalancerTargets.length)
     default:
       return mode === 'incident' ? '!ERR' : `${cluster.liveReplicas}`
   }
@@ -648,18 +661,23 @@ function getWidgetMeta(
     case 'cpu':
       return {
         lead:
-          cluster.trafficIntensity > 0.72 ? 'cpu pressure rising' : 'compute headroom ok',
+          cluster.trafficIntensity > 0.72
+            ? 'cpu pressure rising'
+            : 'compute headroom ok',
         detail: `${Math.round(36 + cluster.trafficIntensity * 26)}% active load`,
       }
     case 'memory':
       return {
         lead:
-          cluster.startingReplicas > 0 ? 'warm pods reserving' : 'memory envelope calm',
+          cluster.startingReplicas > 0
+            ? 'warm pods reserving'
+            : 'memory envelope calm',
         detail: `${cluster.startingReplicas} pods warming`,
       }
     case 'uptime':
       return {
-        lead: mode === 'recovery' ? 'availability healing' : 'availability target',
+        lead:
+          mode === 'recovery' ? 'availability healing' : 'availability target',
         detail: `${cluster.readyReplicas}/${cluster.replicaTarget} ready`,
       }
     case 'traffic':
@@ -675,7 +693,8 @@ function getWidgetMeta(
     case 'targets':
       return {
         lead:
-          cluster.loadBalancerTargets.length < Math.max(2, cluster.replicaTarget - 1)
+          cluster.loadBalancerTargets.length <
+          Math.max(2, cluster.replicaTarget - 1)
             ? 'target pool narrowed'
             : 'target pool healthy',
         detail: `${cluster.loadBalancerTargets.join(', ') || 'none ready'}`,
@@ -702,7 +721,10 @@ function getWidgetMeta(
           mode === 'incident' && isScenario(cluster, 'dbDown')
             ? 'writes backing off'
             : 'primary replica in sync',
-        detail: cluster.errorRate > 6 ? 'replication lag visible' : 'commit path healthy',
+        detail:
+          cluster.errorRate > 6
+            ? 'replication lag visible'
+            : 'commit path healthy',
       }
     case 'redis':
       return {
@@ -710,7 +732,10 @@ function getWidgetMeta(
           mode === 'incident' && isScenario(cluster, 'cacheReload')
             ? 'cache warming keys'
             : 'hit ratio holding',
-        detail: cluster.queueDepth > 40 ? 'miss pressure elevated' : 'misses within budget',
+        detail:
+          cluster.queueDepth > 40
+            ? 'miss pressure elevated'
+            : 'misses within budget',
       }
     case 'k8s':
       return {
@@ -789,8 +814,12 @@ function MetricWidget({
   isDark = true,
   mode,
 }: MetricWidgetProps) {
-  const [data, setData] = useState<number[]>(() => Array.from({ length: 20 }, () => 40))
-  const [bars, setBars] = useState<number[]>(() => Array.from({ length: 6 }, () => 28))
+  const [data, setData] = useState<number[]>(() =>
+    Array.from({ length: 20 }, () => 40),
+  )
+  const [bars, setBars] = useState<number[]>(() =>
+    Array.from({ length: 6 }, () => 28),
+  )
   const [value, setValue] = useState(() => getTargetValue(id, cluster, mode))
   const [visible, setVisible] = useState(false)
   const stateRef = useRef({ cluster, mode })
@@ -809,7 +838,8 @@ function MetricWidget({
         setData((previous) => {
           const next = [...previous.slice(1)]
           const current = previous[previous.length - 1]
-          const drift = (targetValue - current) * 0.32 + (Math.random() - 0.5) * 5
+          const drift =
+            (targetValue - current) * 0.32 + (Math.random() - 0.5) * 5
           next.push(clamp(current + drift, 4, 98))
           return next
         })
@@ -830,7 +860,9 @@ function MetricWidget({
     }
   }, [delay, id, type])
 
-  const baseColor = isDark ? darkModeColors[colorIndex] : lightModeColors[colorIndex]
+  const baseColor = isDark
+    ? darkModeColors[colorIndex]
+    : lightModeColors[colorIndex]
   const gaugeNormalColor =
     type === 'gauge' && id === 'cpu'
       ? isDark
@@ -854,7 +886,13 @@ function MetricWidget({
     textOpacity,
     borderColor,
     bgColor,
-  } = getWidgetAppearance(cluster, isDark, isPreviewing, baseColor, gaugeNormalColor)
+  } = getWidgetAppearance(
+    cluster,
+    isDark,
+    isPreviewing,
+    baseColor,
+    gaugeNormalColor,
+  )
 
   const statusDisplay = getStatusDisplay(id, cluster, mode)
   const statusColor =
@@ -862,24 +900,18 @@ function MetricWidget({
       ? statusHealthyColor
       : visualState === 'error'
         ? statusCriticalColor
-      : visualState === 'recovered'
-        ? statusHealthyColor
-      : statusDisplay.tone === 'degraded'
-        ? statusDegradedColor
-        : statusCriticalColor
+        : visualState === 'recovered'
+          ? statusHealthyColor
+          : statusDisplay.tone === 'degraded'
+            ? statusDegradedColor
+            : statusCriticalColor
   const counterText = getCounterDisplay(id, cluster, mode)
   const uptimeDisplay = `${value.toFixed(2)}%`
   const widgetMeta = getWidgetMeta(id, cluster, mode)
 
   return (
     <div
-      className={`
-        flex w-[124px] flex-col gap-1.5 rounded-xl border px-2.5 py-2
-        backdrop-blur-sm transition-all duration-300 ease-out
-        ${visible ? 'translate-y-0' : 'translate-y-2 opacity-0'}
-        ${borderColor} ${bgColor}
-        ${isPreviewing && visualState === 'error' ? 'animate-pulse' : ''}
-      `}
+      className={`flex w-[124px] flex-col gap-1.5 rounded-xl border px-2.5 py-2 backdrop-blur-sm transition-all duration-300 ease-out ${visible ? 'translate-y-0' : 'translate-y-2 opacity-0'} ${borderColor} ${bgColor} ${isPreviewing && visualState === 'error' ? 'animate-pulse' : ''} `}
       style={{
         boxShadow: isDark
           ? 'inset 0 1px 0 rgba(148, 163, 184, 0.08)'
@@ -890,47 +922,63 @@ function MetricWidget({
       }}
     >
       <div className="min-w-0">
-          <span
-            className={`block h-[10px] truncate font-mono text-[8px] uppercase tracking-wider transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
-            style={{
-              opacity: textOpacity,
-              color:
-                visualState === 'error'
-                  ? emergencyRed
-                  : visualState === 'recovered'
-                    ? recoveryGreen
-                    : undefined,
-            }}
-          >
-            {label}
-          </span>
-          <span
-            className={`block h-[10px] truncate whitespace-nowrap font-mono text-[7px] uppercase tracking-[0.16em] ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
-            style={{
-              opacity: isPreviewing ? 0.7 : 0.42,
-              color: effectiveColor,
-            }}
-          >
-            {widgetMeta.lead}
-          </span>
+        <span
+          className={`block h-[10px] truncate font-mono text-[8px] uppercase tracking-wider transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
+          style={{
+            opacity: textOpacity,
+            color:
+              visualState === 'error'
+                ? emergencyRed
+                : visualState === 'recovered'
+                  ? recoveryGreen
+                  : undefined,
+          }}
+        >
+          {label}
+        </span>
+        <span
+          className={`block h-[10px] truncate whitespace-nowrap font-mono text-[7px] uppercase tracking-[0.16em] ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
+          style={{
+            opacity: isPreviewing ? 0.7 : 0.42,
+            color: effectiveColor,
+          }}
+        >
+          {widgetMeta.lead}
+        </span>
       </div>
 
       {type === 'sparkline' ? (
         <div className="w-full">
-          <Sparkline data={data} color={effectiveColor} width={102} height={30} isFocused={isPreviewing} isDark={isDark} />
+          <Sparkline
+            data={data}
+            color={effectiveColor}
+            width={102}
+            height={30}
+            isFocused={isPreviewing}
+            isDark={isDark}
+          />
         </div>
       ) : null}
 
       {type === 'bars' ? (
         <div className="w-full">
-          <MiniBarChart values={bars} color={effectiveColor} width={102} height={36} isFocused={isPreviewing} isDark={isDark} />
+          <MiniBarChart
+            values={bars}
+            color={effectiveColor}
+            width={102}
+            height={36}
+            isFocused={isPreviewing}
+            isDark={isDark}
+          />
         </div>
       ) : null}
 
       {type === 'gauge' ? (
         <div className="flex items-center justify-between gap-2">
           <CircularGauge
-            value={id === 'uptime' ? clamp(value, 0, 100) : clamp(value, 0, 100)}
+            value={
+              id === 'uptime' ? clamp(value, 0, 100) : clamp(value, 0, 100)
+            }
             color={effectiveColor}
             size={28}
             isFocused={isPreviewing}
@@ -938,11 +986,12 @@ function MetricWidget({
             label={id === 'uptime' ? undefined : `${Math.round(value)}%`}
           />
           <span
-            className="min-w-[52px] whitespace-nowrap text-right font-mono tabular-nums text-[9px] transition-all duration-300"
+            className="min-w-[52px] whitespace-nowrap text-right font-mono text-[9px] tabular-nums transition-all duration-300"
             style={{
               color: effectiveColor,
               opacity: isPreviewing ? 1 : isDark ? 0.34 : 0.48,
-              textShadow: isPreviewing && isDark ? `0 0 6px ${effectiveColor}` : 'none',
+              textShadow:
+                isPreviewing && isDark ? `0 0 6px ${effectiveColor}` : 'none',
               fontWeight: isDark ? 500 : 600,
             }}
           >
@@ -957,7 +1006,8 @@ function MetricWidget({
           style={{
             color: effectiveColor,
             opacity: isPreviewing ? 1 : isDark ? 0.34 : 0.48,
-            textShadow: isPreviewing && isDark ? `0 0 6px ${effectiveColor}` : 'none',
+            textShadow:
+              isPreviewing && isDark ? `0 0 6px ${effectiveColor}` : 'none',
           }}
         >
           {counterText}
@@ -970,7 +1020,9 @@ function MetricWidget({
             className={`h-2 w-2 rounded-full transition-all duration-300 ${isPreviewing || statusDisplay.tone !== 'healthy' ? 'animate-pulse' : ''}`}
             style={{
               backgroundColor: statusColor,
-              boxShadow: isPreviewing ? `0 0 ${isDark ? 8 : 4}px ${statusColor}` : 'none',
+              boxShadow: isPreviewing
+                ? `0 0 ${isDark ? 8 : 4}px ${statusColor}`
+                : 'none',
               opacity: isPreviewing ? 1 : isDark ? 0.35 : 0.5,
             }}
           />
@@ -988,7 +1040,7 @@ function MetricWidget({
       ) : null}
 
       <div
-        className={`h-[29px] overflow-hidden border-t pt-1 font-mono text-[8px] leading-3.5 ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
+        className={`leading-3.5 h-[29px] overflow-hidden border-t pt-1 font-mono text-[8px] ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
         style={{
           opacity: isPreviewing ? 0.9 : isDark ? 0.42 : 0.56,
           color: visualState === 'normal' ? undefined : effectiveColor,
@@ -1011,11 +1063,15 @@ function CompositeMetricWidget({
   mode,
 }: CompositeMetricWidgetProps) {
   const [visible, setVisible] = useState(false)
-  const [reqData, setReqData] = useState<number[]>(() => Array.from({ length: 20 }, () => 40))
+  const [reqData, setReqData] = useState<number[]>(() =>
+    Array.from({ length: 20 }, () => 40),
+  )
   const [latencyData, setLatencyData] = useState<number[]>(() =>
     Array.from({ length: 20 }, () => 36),
   )
-  const [cpuValue, setCpuValue] = useState(() => getTargetValue('cpu', cluster, mode))
+  const [cpuValue, setCpuValue] = useState(() =>
+    getTargetValue('cpu', cluster, mode),
+  )
   const [memoryValue, setMemoryValue] = useState(() =>
     getTargetValue('memory', cluster, mode),
   )
@@ -1074,7 +1130,8 @@ function CompositeMetricWidget({
         setLatencyData((previous) => {
           const next = [...previous.slice(1)]
           const current = previous[previous.length - 1]
-          const drift = (latencyTarget - current) * 0.3 + (Math.random() - 0.5) * 3
+          const drift =
+            (latencyTarget - current) * 0.3 + (Math.random() - 0.5) * 3
           next.push(clamp(current + drift, 4, 98))
           return next
         })
@@ -1099,7 +1156,9 @@ function CompositeMetricWidget({
   }, [delay, id])
 
   const isPreviewing = isFocused
-  const baseColor = isDark ? darkModeColors[colorIndex] : lightModeColors[colorIndex]
+  const baseColor = isDark
+    ? darkModeColors[colorIndex]
+    : lightModeColors[colorIndex]
   const cpuNormalColor = isDark ? '#38bdf8' : '#0369a1'
   const memoryNormalColor = isDark ? '#f59e0b' : '#c2410c'
   const latencyNormalColor = isDark ? '#f472b6' : '#be185d'
@@ -1153,13 +1212,7 @@ function CompositeMetricWidget({
 
   return (
     <div
-      className={`
-        flex w-[258px] flex-col gap-2 rounded-xl border px-3 py-2.5
-        backdrop-blur-sm transition-all duration-300 ease-out
-        ${visible ? 'translate-y-0' : 'translate-y-2 opacity-0'}
-        ${borderColor} ${bgColor}
-        ${isPreviewing && visualState === 'error' ? 'animate-pulse' : ''}
-      `}
+      className={`flex w-[258px] flex-col gap-2 rounded-xl border px-3 py-2.5 backdrop-blur-sm transition-all duration-300 ease-out ${visible ? 'translate-y-0' : 'translate-y-2 opacity-0'} ${borderColor} ${bgColor} ${isPreviewing && visualState === 'error' ? 'animate-pulse' : ''} `}
       style={{
         boxShadow: isDark
           ? 'inset 0 1px 0 rgba(148, 163, 184, 0.08)'
@@ -1170,29 +1223,29 @@ function CompositeMetricWidget({
       }}
     >
       <div className="min-w-0">
-          <span
-            className={`block h-[10px] truncate font-mono text-[8px] uppercase tracking-wider transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
-            style={{
-              opacity: textOpacity,
-              color:
-                visualState === 'error'
-                  ? emergencyRed
-                  : visualState === 'recovered'
-                    ? recoveryGreen
-                    : undefined,
-            }}
-          >
-            {label}
-          </span>
-          <span
-            className={`block h-[10px] truncate whitespace-nowrap font-mono text-[7px] uppercase tracking-[0.16em] ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
-            style={{
-              opacity: isPreviewing ? 0.7 : 0.42,
-              color: effectiveColor,
-            }}
-          >
-            {compositeMeta.lead}
-          </span>
+        <span
+          className={`block h-[10px] truncate font-mono text-[8px] uppercase tracking-wider transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
+          style={{
+            opacity: textOpacity,
+            color:
+              visualState === 'error'
+                ? emergencyRed
+                : visualState === 'recovered'
+                  ? recoveryGreen
+                  : undefined,
+          }}
+        >
+          {label}
+        </span>
+        <span
+          className={`block h-[10px] truncate whitespace-nowrap font-mono text-[7px] uppercase tracking-[0.16em] ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
+          style={{
+            opacity: isPreviewing ? 0.7 : 0.42,
+            color: effectiveColor,
+          }}
+        >
+          {compositeMeta.lead}
+        </span>
       </div>
 
       {id === 'traffic_flow' ? (
@@ -1200,7 +1253,10 @@ function CompositeMetricWidget({
           <div className="flex flex-col justify-between rounded-lg border border-white/5 bg-black/5 px-2.5 py-2">
             <span
               className="font-mono text-[7px] uppercase tracking-[0.16em]"
-              style={{ color: effectiveColor, opacity: isPreviewing ? 0.8 : 0.5 }}
+              style={{
+                color: effectiveColor,
+                opacity: isPreviewing ? 0.8 : 0.5,
+              }}
             >
               ingress
             </span>
@@ -1209,12 +1265,15 @@ function CompositeMetricWidget({
               style={{
                 color: effectiveColor,
                 opacity: isPreviewing ? 1 : isDark ? 0.42 : 0.56,
-                textShadow: isPreviewing && isDark ? `0 0 8px ${effectiveColor}` : 'none',
+                textShadow:
+                  isPreviewing && isDark ? `0 0 8px ${effectiveColor}` : 'none',
               }}
             >
               {trafficCounter}
             </span>
-            <span className={`font-mono text-[8px] ${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}>
+            <span
+              className={`font-mono text-[8px] ${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}
+            >
               {getWidgetMeta('traffic', cluster, mode).detail}
             </span>
           </div>
@@ -1222,10 +1281,16 @@ function CompositeMetricWidget({
           <div className="flex min-w-0 flex-col gap-2">
             <div className="rounded-lg border border-white/5 bg-black/5 px-2 py-1.5">
               <div className="mb-1 flex items-center justify-between gap-2">
-                <span className="font-mono text-[7px] uppercase tracking-[0.16em]" style={{ color: effectiveColor, opacity: 0.78 }}>
+                <span
+                  className="font-mono text-[7px] uppercase tracking-[0.16em]"
+                  style={{ color: effectiveColor, opacity: 0.78 }}
+                >
                   request pace
                 </span>
-                <span className="min-w-[52px] whitespace-nowrap text-right font-mono tabular-nums text-[8px]" style={{ color: effectiveColor, opacity: 0.72 }}>
+                <span
+                  className="min-w-[52px] whitespace-nowrap text-right font-mono text-[8px] tabular-nums"
+                  style={{ color: effectiveColor, opacity: 0.72 }}
+                >
                   {Math.round(cluster.requestRate)}
                 </span>
               </div>
@@ -1240,10 +1305,16 @@ function CompositeMetricWidget({
             </div>
             <div className="rounded-lg border border-white/5 bg-black/5 px-2 py-1.5">
               <div className="mb-1 flex items-center justify-between gap-2">
-                <span className="font-mono text-[7px] uppercase tracking-[0.16em]" style={{ color: latencyTraceColor, opacity: 0.82 }}>
+                <span
+                  className="font-mono text-[7px] uppercase tracking-[0.16em]"
+                  style={{ color: latencyTraceColor, opacity: 0.82 }}
+                >
                   tail latency
                 </span>
-                <span className="min-w-[52px] whitespace-nowrap text-right font-mono tabular-nums text-[8px]" style={{ color: latencyTraceColor, opacity: 0.78 }}>
+                <span
+                  className="min-w-[52px] whitespace-nowrap text-right font-mono text-[8px] tabular-nums"
+                  style={{ color: latencyTraceColor, opacity: 0.78 }}
+                >
                   {Math.round(cluster.latencyMs)}ms
                 </span>
               </div>
@@ -1265,7 +1336,10 @@ function CompositeMetricWidget({
           <div className="flex flex-col justify-between rounded-lg border border-white/5 bg-black/5 px-2.5 py-2">
             <span
               className="font-mono text-[7px] uppercase tracking-[0.16em]"
-              style={{ color: effectiveColor, opacity: isPreviewing ? 0.8 : 0.5 }}
+              style={{
+                color: effectiveColor,
+                opacity: isPreviewing ? 0.8 : 0.5,
+              }}
             >
               pod set
             </span>
@@ -1274,10 +1348,12 @@ function CompositeMetricWidget({
               style={{
                 fontSize: `${podCounterFontSizePx}px`,
                 lineHeight: 1.1,
-                letterSpacing: podCounterFontSizePx <= 15 ? '-0.02em' : '-0.01em',
+                letterSpacing:
+                  podCounterFontSizePx <= 15 ? '-0.02em' : '-0.01em',
                 color: effectiveColor,
                 opacity: isPreviewing ? 1 : isDark ? 0.42 : 0.56,
-                textShadow: isPreviewing && isDark ? `0 0 8px ${effectiveColor}` : 'none',
+                textShadow:
+                  isPreviewing && isDark ? `0 0 8px ${effectiveColor}` : 'none',
               }}
             >
               {podsCounter}
@@ -1287,10 +1363,15 @@ function CompositeMetricWidget({
                 className={`h-2 w-2 rounded-full ${isPreviewing || k8sStatus.tone !== 'healthy' ? 'animate-pulse' : ''}`}
                 style={{
                   backgroundColor: k8sStatusColor,
-                  boxShadow: isPreviewing ? `0 0 ${isDark ? 8 : 4}px ${k8sStatusColor}` : 'none',
+                  boxShadow: isPreviewing
+                    ? `0 0 ${isDark ? 8 : 4}px ${k8sStatusColor}`
+                    : 'none',
                 }}
               />
-              <span className="font-mono text-[8px]" style={{ color: k8sStatusColor, opacity: 0.76 }}>
+              <span
+                className="font-mono text-[8px]"
+                style={{ color: k8sStatusColor, opacity: 0.76 }}
+              >
                 {k8sStatus.text}
               </span>
             </div>
@@ -1344,7 +1425,7 @@ function CompositeMetricWidget({
       ) : null}
 
       <div
-        className={`h-[29px] overflow-hidden border-t pt-1 font-mono text-[8px] leading-3.5 ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
+        className={`leading-3.5 h-[29px] overflow-hidden border-t pt-1 font-mono text-[8px] ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
         style={{
           opacity: isPreviewing ? 0.9 : isDark ? 0.42 : 0.56,
           color: visualState === 'normal' ? undefined : effectiveColor,
@@ -1359,21 +1440,44 @@ function CompositeMetricWidget({
 const leftWidgetGroups: MetricLayoutGroup[] = [
   {
     items: [
-      { kind: 'composite', id: 'traffic_flow', label: 'traffic flow', colorIndex: 0 },
+      {
+        kind: 'composite',
+        id: 'traffic_flow',
+        label: 'traffic flow',
+        colorIndex: 0,
+      },
     ],
   },
   {
     direction: 'row',
     items: [
-      { kind: 'single', id: 'queue', type: 'bars', label: 'queue', colorIndex: 7 },
+      {
+        kind: 'single',
+        id: 'queue',
+        type: 'bars',
+        label: 'queue',
+        colorIndex: 7,
+      },
       { kind: 'single', id: 'lb', type: 'status', label: 'lb', colorIndex: 2 },
     ],
   },
   {
     direction: 'row',
     items: [
-      { kind: 'single', id: 'targets', type: 'counter', label: 'targets', colorIndex: 5 },
-      { kind: 'single', id: 'errors', type: 'sparkline', label: 'errors', colorIndex: 4 },
+      {
+        kind: 'single',
+        id: 'targets',
+        type: 'counter',
+        label: 'targets',
+        colorIndex: 5,
+      },
+      {
+        kind: 'single',
+        id: 'errors',
+        type: 'sparkline',
+        label: 'errors',
+        colorIndex: 4,
+      },
     ],
   },
 ]
@@ -1387,14 +1491,32 @@ const rightWidgetGroups: MetricLayoutGroup[] = [
   {
     direction: 'row',
     items: [
-      { kind: 'single', id: 'uptime', type: 'gauge', label: 'uptime', colorIndex: 2 },
-      { kind: 'single', id: 'postgres', type: 'status', label: 'postgres', colorIndex: 2 },
+      {
+        kind: 'single',
+        id: 'uptime',
+        type: 'gauge',
+        label: 'uptime',
+        colorIndex: 2,
+      },
+      {
+        kind: 'single',
+        id: 'postgres',
+        type: 'status',
+        label: 'postgres',
+        colorIndex: 2,
+      },
     ],
   },
   {
     direction: 'row',
     items: [
-      { kind: 'single', id: 'redis', type: 'status', label: 'redis', colorIndex: 0 },
+      {
+        kind: 'single',
+        id: 'redis',
+        type: 'status',
+        label: 'redis',
+        colorIndex: 0,
+      },
     ],
   },
 ]
@@ -1442,7 +1564,7 @@ export default function MetricWidgets() {
             key={`left-group-${groupIndex}`}
             className={`flex gap-2 ${group.direction === 'row' ? 'flex-row' : 'flex-col'}`}
           >
-            {group.items.map((widget, itemIndex) => (
+            {group.items.map((widget, itemIndex) =>
               widget.kind === 'single' ? (
                 <MetricWidget
                   key={`left-${widget.id}`}
@@ -1463,8 +1585,8 @@ export default function MetricWidgets() {
                   isDark={isDark}
                   mode={monitoring.mode}
                 />
-              )
-            ))}
+              ),
+            )}
           </div>
         ))}
       </div>
@@ -1475,12 +1597,17 @@ export default function MetricWidgets() {
             key={`right-group-${groupIndex}`}
             className={`flex gap-2 ${group.direction === 'row' ? 'flex-row' : 'flex-col'}`}
           >
-            {group.items.map((widget, itemIndex) => (
+            {group.items.map((widget, itemIndex) =>
               widget.kind === 'single' ? (
                 <MetricWidget
                   key={`right-${widget.id}`}
                   {...widget}
-                  delay={getGroupDelay(rightWidgetGroups, groupIndex, itemIndex, 100)}
+                  delay={getGroupDelay(
+                    rightWidgetGroups,
+                    groupIndex,
+                    itemIndex,
+                    100,
+                  )}
                   isFocused={cluster.focusMode === 'preview'}
                   cluster={cluster}
                   isDark={isDark}
@@ -1490,14 +1617,19 @@ export default function MetricWidgets() {
                 <CompositeMetricWidget
                   key={`right-${widget.id}`}
                   {...widget}
-                  delay={getGroupDelay(rightWidgetGroups, groupIndex, itemIndex, 100)}
+                  delay={getGroupDelay(
+                    rightWidgetGroups,
+                    groupIndex,
+                    itemIndex,
+                    100,
+                  )}
                   isFocused={cluster.focusMode === 'preview'}
                   cluster={cluster}
                   isDark={isDark}
                   mode={monitoring.mode}
                 />
-              )
-            ))}
+              ),
+            )}
           </div>
         ))}
       </div>

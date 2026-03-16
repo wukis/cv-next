@@ -1,3 +1,5 @@
+import '@/styles/tailwind.css'
+
 import { type Metadata } from 'next'
 
 import { Providers } from '@/app/providers'
@@ -5,8 +7,6 @@ import { DesktopAmbientGate } from '@/components/DesktopAmbientGate'
 import { Layout } from '@/components/Layout'
 import { profileContent } from '@/lib/profileContent'
 import { seoDescription, seoKeywords, siteUrl } from '@/lib/siteProfile'
-
-import '@/styles/tailwind.css'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -74,7 +74,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
-      <body className="flex h-full bg-neutral-50 print:bg-white dark:bg-black">
+      <body className="flex h-full bg-neutral-50 dark:bg-black print:bg-white">
         <div className="print:hidden">
           <DesktopAmbientGate />
         </div>

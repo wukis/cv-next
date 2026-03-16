@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 type TerminalTextSegment = {
   text: string

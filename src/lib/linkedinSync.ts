@@ -175,7 +175,11 @@ export function normalizeLinkedInDate(date: string) {
   return trimmed
 }
 
-export function createExperienceSyncId(company: string, title: string, startDate: string) {
+export function createExperienceSyncId(
+  company: string,
+  title: string,
+  startDate: string,
+) {
   return `${slugify(company)}--${slugify(title)}--${normalizeLinkedInDate(startDate)}`
 }
 
@@ -204,7 +208,9 @@ function buildExperienceDescription(role: WorkInterface) {
   return [...summaryLines, projectLine].filter(Boolean).join('\n')
 }
 
-function buildDesiredExperienceEntry(role: WorkInterface): LinkedInSyncExperienceEntry {
+function buildDesiredExperienceEntry(
+  role: WorkInterface,
+): LinkedInSyncExperienceEntry {
   const overrideText =
     typedOverrides.experienceSummaryOverrides?.[toRoleOverrideKey(role)]?.trim()
 
@@ -237,13 +243,14 @@ function compareStringArrays(current: string[], desired: string[]) {
   return JSON.stringify(current) === JSON.stringify(desired)
 }
 
-function compareLinks(current: LinkedInSyncLink[], desired: LinkedInSyncLink[]) {
+function compareLinks(
+  current: LinkedInSyncLink[],
+  desired: LinkedInSyncLink[],
+) {
   return JSON.stringify(current) === JSON.stringify(desired)
 }
 
-function diffCollection<
-  T extends { id: string },
->(current: T[], desired: T[]) {
+function diffCollection<T extends { id: string }>(current: T[], desired: T[]) {
   const currentMap = new Map(current.map((entry) => [entry.id, entry]))
   const desiredMap = new Map(desired.map((entry) => [entry.id, entry]))
 
@@ -262,7 +269,9 @@ function diffCollection<
 
     const fields = Object.keys(desiredEntry).filter((fieldName) => {
       const key = fieldName as keyof T
-      return JSON.stringify(currentEntry[key]) !== JSON.stringify(desiredEntry[key])
+      return (
+        JSON.stringify(currentEntry[key]) !== JSON.stringify(desiredEntry[key])
+      )
     })
 
     if (fields.length === 0) {
@@ -298,14 +307,18 @@ export function buildDesiredLinkedInProfile(
     intro: {
       name: profileContent.person.name,
       headline:
-        typedOverrides.headline?.trim() || `${profileContent.person.label} | ${profileContent.person.summary}`,
+        typedOverrides.headline?.trim() ||
+        `${profileContent.person.label} | ${profileContent.person.summary}`,
       location: profileContent.person.locationSummary,
       currentCompany: profileContent.currentRole.name,
       currentTitle: profileContent.currentRole.position,
     },
     about:
       typedOverrides.about?.trim() ||
-      [profileContent.person.summary, ...profileContent.narratives.aboutNarrative]
+      [
+        profileContent.person.summary,
+        ...profileContent.narratives.aboutNarrative,
+      ]
         .filter(Boolean)
         .join('\n\n'),
     experience: profileContent.work.map(buildDesiredExperienceEntry),
@@ -334,7 +347,9 @@ export function diffLinkedInProfiles(
   current: LinkedInSyncProfile,
   desired: LinkedInSyncProfile,
 ): LinkedInSyncProfileDiff {
-  const intro: LinkedInSyncProfileDiff['intro'] = Object.keys(desired.intro).map((fieldName) => {
+  const intro: LinkedInSyncProfileDiff['intro'] = Object.keys(
+    desired.intro,
+  ).map((fieldName) => {
     const key = fieldName as keyof LinkedInSyncIntro
     const currentValue = current.intro[key]
     const desiredValue = desired.intro[key]
@@ -350,12 +365,17 @@ export function diffLinkedInProfiles(
   })
 
   const aboutChanged = current.about !== desired.about
-  const topSkillsChanged = !compareStringArrays(current.topSkills, desired.topSkills)
+  const topSkillsChanged = !compareStringArrays(
+    current.topSkills,
+    desired.topSkills,
+  )
   const linksChanged = !compareLinks(current.links, desired.links)
   const experience = diffCollection(current.experience, desired.experience)
   const education = diffCollection(current.education, desired.education)
 
-  const introChanges = intro.filter((entry) => entry.status === 'changed').length
+  const introChanges = intro.filter(
+    (entry) => entry.status === 'changed',
+  ).length
   const totalChanges =
     introChanges +
     (aboutChanged ? 1 : 0) +

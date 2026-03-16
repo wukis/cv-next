@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect } from 'react'
-import { createBoxLineWithBorders, createEmptyBoxLine } from '@/lib/consoleBox'
+
 import {
+  type AmbientCallHistoryEntry,
   getAmbientCallHistory,
   NETWORK_CALL_HISTORY_EVENT,
-  type AmbientCallHistoryEntry,
 } from '@/lib/ambientCluster'
+import { createBoxLineWithBorders, createEmptyBoxLine } from '@/lib/consoleBox'
 
 type IncidentScenario = {
   service: string

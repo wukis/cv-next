@@ -78,8 +78,7 @@ export function groupWorkExperiencesForDisplay(
         acc[name].totalDuration.years += Math.floor(
           acc[name].totalDuration.months / 12,
         )
-        acc[name].totalDuration.months =
-          acc[name].totalDuration.months % 12
+        acc[name].totalDuration.months = acc[name].totalDuration.months % 12
       }
 
       const companyDateRange = getCompanyDateRange(acc[name].experiences)

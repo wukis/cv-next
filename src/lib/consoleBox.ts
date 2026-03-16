@@ -21,17 +21,17 @@ function getVisualWidth(str: string): number {
   // Use for...of to properly handle surrogate pairs (emojis)
   for (const char of str) {
     const codePoint = char.codePointAt(0) || 0
-    
+
     // Emojis and wide characters take 2 spaces in monospace fonts
     if (
-      (codePoint >= 0x1F300 && codePoint <= 0x1F9FF) || // Emoticons & Symbols
-      (codePoint >= 0x2600 && codePoint <= 0x26FF) ||   // Miscellaneous Symbols
-      (codePoint >= 0x2700 && codePoint <= 0x27BF) ||   // Dingbats
-      (codePoint >= 0xFE00 && codePoint <= 0xFE0F) ||   // Variation Selectors
-      (codePoint >= 0x1F600 && codePoint <= 0x1F64F) || // Emoticons
-      (codePoint >= 0x1F900 && codePoint <= 0x1F9FF) || // Supplemental Symbols
-      (codePoint >= 0x1FA00 && codePoint <= 0x1FAFF) || // Chess Symbols
-      codePoint > 0xFFFF // Most wide characters (CJK, etc.)
+      (codePoint >= 0x1f300 && codePoint <= 0x1f9ff) || // Emoticons & Symbols
+      (codePoint >= 0x2600 && codePoint <= 0x26ff) || // Miscellaneous Symbols
+      (codePoint >= 0x2700 && codePoint <= 0x27bf) || // Dingbats
+      (codePoint >= 0xfe00 && codePoint <= 0xfe0f) || // Variation Selectors
+      (codePoint >= 0x1f600 && codePoint <= 0x1f64f) || // Emoticons
+      (codePoint >= 0x1f900 && codePoint <= 0x1f9ff) || // Supplemental Symbols
+      (codePoint >= 0x1fa00 && codePoint <= 0x1faff) || // Chess Symbols
+      codePoint > 0xffff // Most wide characters (CJK, etc.)
     ) {
       width += 2
     } else {
@@ -50,14 +50,14 @@ function hasEmoji(str: string): boolean {
   for (const char of str) {
     const codePoint = char.codePointAt(0) || 0
     if (
-      (codePoint >= 0x1F300 && codePoint <= 0x1F9FF) ||
-      (codePoint >= 0x2600 && codePoint <= 0x26FF) ||
-      (codePoint >= 0x2700 && codePoint <= 0x27BF) ||
-      (codePoint >= 0xFE00 && codePoint <= 0xFE0F) ||
-      (codePoint >= 0x1F600 && codePoint <= 0x1F64F) ||
-      (codePoint >= 0x1F900 && codePoint <= 0x1F9FF) ||
-      (codePoint >= 0x1FA00 && codePoint <= 0x1FAFF) ||
-      codePoint > 0xFFFF
+      (codePoint >= 0x1f300 && codePoint <= 0x1f9ff) ||
+      (codePoint >= 0x2600 && codePoint <= 0x26ff) ||
+      (codePoint >= 0x2700 && codePoint <= 0x27bf) ||
+      (codePoint >= 0xfe00 && codePoint <= 0xfe0f) ||
+      (codePoint >= 0x1f600 && codePoint <= 0x1f64f) ||
+      (codePoint >= 0x1f900 && codePoint <= 0x1f9ff) ||
+      (codePoint >= 0x1fa00 && codePoint <= 0x1faff) ||
+      codePoint > 0xffff
     ) {
       return true
     }
@@ -91,16 +91,19 @@ function padToVisualWidth(str: string, targetWidth: number): string {
  * @param options Configuration options
  * @returns The formatted line with proper padding
  */
-export function createBoxLine(content: string, options: BoxLineOptions = {}): string {
+export function createBoxLine(
+  content: string,
+  options: BoxLineOptions = {},
+): string {
   const { leadingSpaces = 2, width = 61 } = options
   const trailingSpace = 1
   // For emoji lines, reduce target width by 1 to compensate for extra padding
   const emojiAdjustment = hasEmoji(content) ? -1 : 0
   const contentWidth = width - leadingSpaces - trailingSpace + emojiAdjustment
-  
+
   const paddedContent = padToVisualWidth(content, contentWidth)
   const leading = ' '.repeat(leadingSpaces)
-  
+
   return `${leading}${paddedContent} `
 }
 
@@ -110,7 +113,10 @@ export function createBoxLine(content: string, options: BoxLineOptions = {}): st
  * @param options Configuration options
  * @returns The complete line with │ borders
  */
-export function createBoxLineWithBorders(content: string, options: BoxLineOptions = {}): string {
+export function createBoxLineWithBorders(
+  content: string,
+  options: BoxLineOptions = {},
+): string {
   const line = createBoxLine(content, options)
   return `│${line}│`
 }
@@ -123,4 +129,3 @@ export function createBoxLineWithBorders(content: string, options: BoxLineOption
 export function createEmptyBoxLine(width: number = 61): string {
   return `│${' '.repeat(width)}│`
 }
-

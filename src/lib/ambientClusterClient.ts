@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react'
 
 import {
+  type ClusterSnapshot,
   DEFAULT_CLUSTER_SNAPSHOT,
   NETWORK_CLUSTER_STATE_EVENT,
-  type ClusterSnapshot,
 } from '@/lib/ambientCluster'
 
 export function useAmbientClusterSnapshot() {

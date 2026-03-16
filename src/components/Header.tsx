@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
+import { AnimationPreviewButton } from '@/components/AnimationPreviewButton'
 import { DownloadIcon } from '@/components/Button'
 import { Container } from '@/components/Container'
-import { AnimationPreviewButton } from '@/components/AnimationPreviewButton'
 import { HeaderNavLink } from '@/components/HeaderNavLink'
 import {
   DesktopTooltip,
@@ -35,7 +35,11 @@ function DesktopNavigation(props: React.ComponentPropsWithoutRef<'nav'>) {
             </DesktopTooltip>
           </li>
           {navItems.map((item) => (
-            <HeaderNavLink key={item.href} href={item.href} label={item.label} />
+            <HeaderNavLink
+              key={item.href}
+              href={item.href}
+              label={item.label}
+            />
           ))}
         </ul>
       </div>

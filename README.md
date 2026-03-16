@@ -20,6 +20,26 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) to preview the site.
 
+## Quality checks
+
+Run the blocking quality commands before finishing changes:
+
+```bash
+npm run format:check
+npm run lint
+npm run typecheck
+npm run build
+```
+
+Advisory cleanup commands:
+
+```bash
+npm run typecheck:strict
+npm run knip
+```
+
+Project guidance for contributors and AI agents lives in [`AGENTS.md`](./AGENTS.md) and [`docs/stack-and-workflows.md`](./docs/stack-and-workflows.md).
+
 ## Regenerate the CV PDF
 
 Use the dedicated export command:

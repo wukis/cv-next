@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import clsx from 'clsx'
+import { useEffect, useState } from 'react'
 
 import {
   animationFocusButtonClassName,
@@ -9,9 +9,7 @@ import {
   HexagonNetworkIcon,
 } from '@/components/HeaderShared'
 import { useAmbientEligibility } from '@/components/useAmbientEligibility'
-import {
-  TRIGGER_NETWORK_EMERGENCY_EVENT,
-} from '@/lib/ambientCluster'
+import { TRIGGER_NETWORK_EMERGENCY_EVENT } from '@/lib/ambientCluster'
 import { useAmbientClusterSnapshot } from '@/lib/ambientClusterClient'
 import { deriveAmbientMonitoringState } from '@/lib/ambientMonitoring'
 

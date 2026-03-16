@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
+import { useEffect, useRef, useState } from 'react'
+
 import { RecommendationInterface } from '@/lib/recommendations'
 import { recommendationsCopy } from '@/lib/recommendationsCopy'
 
@@ -37,7 +38,7 @@ function Recommendation({
       <div
         className={`relative overflow-hidden rounded-xl border border-neutral-200 bg-white/85 backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-900/85 ${recommendationAccent.hoverBorder} ${
           isHighlighted
-            ? `border-emerald-400 bg-emerald-50/85 ring-4 ring-emerald-300/65 scale-[1.02] shadow-xl shadow-emerald-500/15 dark:border-emerald-600 dark:bg-emerald-950/28 dark:ring-emerald-700/55`
+            ? `dark:bg-emerald-950/28 scale-[1.02] border-emerald-400 bg-emerald-50/85 shadow-xl shadow-emerald-500/15 ring-4 ring-emerald-300/65 dark:border-emerald-600 dark:ring-emerald-700/55`
             : ''
         }`}
       >

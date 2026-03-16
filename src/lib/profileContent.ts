@@ -204,14 +204,17 @@ export function getHomepageRecommendations() {
 
   return curatedHomepageRecommendationSlugs
     .map((slug) => bySlug.get(slug))
-    .filter((recommendation): recommendation is RecommendationInterface => Boolean(recommendation))
+    .filter((recommendation): recommendation is RecommendationInterface =>
+      Boolean(recommendation),
+    )
 }
 
 export function sortRecommendationsForDefaultView(
   input: RecommendationInterface[],
 ) {
   return [...input].sort((left, right) => {
-    const leftPriority = recommendationPriority.get(left.slug) ?? Number.MAX_SAFE_INTEGER
+    const leftPriority =
+      recommendationPriority.get(left.slug) ?? Number.MAX_SAFE_INTEGER
     const rightPriority =
       recommendationPriority.get(right.slug) ?? Number.MAX_SAFE_INTEGER
 

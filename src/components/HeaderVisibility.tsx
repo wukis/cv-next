@@ -1,14 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
+import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
-export function HeaderVisibility({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export function HeaderVisibility({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [isVisible, setIsVisible] = useState(true)
 

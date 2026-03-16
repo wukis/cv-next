@@ -287,9 +287,7 @@
       "Building and maintaining online betting product flows.",
       "Writing test-heavy code for real-time financial and account behavior."
     ],
-    "projects": [
-      "Olybet - online sports betting platform"
-    ],
+    "projects": ["Olybet - online sports betting platform"],
     "technologies": [
       "PHP",
       "Laravel",
@@ -423,9 +421,7 @@
     "responsibilities": [
       "Building and maintaining Rails product features end to end."
     ],
-    "projects": [
-      "Voter registration and campaign management platform"
-    ],
+    "projects": ["Voter registration and campaign management platform"],
     "technologies": [
       "Ruby",
       "Rails",
@@ -452,9 +448,7 @@
     "responsibilities": [
       "Developing PHP applications integrated with SharePoint workflows and data."
     ],
-    "projects": [
-      "Government education resource-sharing platform"
-    ],
+    "projects": ["Government education resource-sharing platform"],
     "technologies": [
       "PHP",
       "SharePoint",

@@ -1,9 +1,9 @@
-import { once } from 'node:events'
 import { spawn } from 'node:child_process'
+import { once } from 'node:events'
 import { createServer } from 'node:net'
+import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import path from 'node:path'
 
 import { chromium } from 'playwright'
 

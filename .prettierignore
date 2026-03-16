@@ -1,0 +1,6 @@
+.generated
+.next
+.lighthouse-*.json
+LICENSE.md
+public/**/*.pdf
+src/data/linkedin-sync/history/**

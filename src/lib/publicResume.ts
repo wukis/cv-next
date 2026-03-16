@@ -94,9 +94,15 @@ export function buildPublicResume() {
       {
         name: 'Frontend and Delivery',
         keywords: technologies.filter((technology) =>
-          ['React', 'TypeScript', 'Vue.js', 'Jest', 'Playwright', 'Cypress', 'k6'].includes(
-            technology,
-          ),
+          [
+            'React',
+            'TypeScript',
+            'Vue.js',
+            'Jest',
+            'Playwright',
+            'Cypress',
+            'k6',
+          ].includes(technology),
         ),
       },
       {

@@ -2,13 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import {
-  type ClusterEventEntry,
-} from '@/lib/ambientCluster'
+import { type ClusterEventEntry } from '@/lib/ambientCluster'
 import { useAmbientClusterSnapshot } from '@/lib/ambientClusterClient'
-import {
-  deriveAmbientMonitoringState,
-} from '@/lib/ambientMonitoring'
+import { deriveAmbientMonitoringState } from '@/lib/ambientMonitoring'
 
 type LogEntry = {
   id: string
@@ -18,21 +14,69 @@ type LogEntry = {
 }
 
 const INITIAL_LOGS: Array<Pick<LogEntry, 'level' | 'message'>> = [
-  { level: 'INFO', message: 'Ingress accepted request burst from edge clients source=public' },
-  { level: 'INFO', message: 'LoadBalancer routed request service=edge target=edge-1 latency_ms=9' },
-  { level: 'OK', message: 'Deployments edge=2 auth=1 catalog=1 basket=1 checkout=1 warehouse=1 all ready' },
-  { level: 'DEBUG', message: 'RedisCluster master=redis-m replicas=2 hit_ratio=96.4% namespace=prod' },
+  {
+    level: 'INFO',
+    message: 'Ingress accepted request burst from edge clients source=public',
+  },
+  {
+    level: 'INFO',
+    message:
+      'LoadBalancer routed request service=edge target=edge-1 latency_ms=9',
+  },
+  {
+    level: 'OK',
+    message:
+      'Deployments edge=2 auth=1 catalog=1 basket=1 checkout=1 warehouse=1 all ready',
+  },
+  {
+    level: 'DEBUG',
+    message:
+      'RedisCluster master=redis-m replicas=2 hit_ratio=96.4% namespace=prod',
+  },
   { level: 'INFO', message: 'Queue depth stabilized topic=jobs backlog=8' },
-  { level: 'INFO', message: 'Postgres primary healthy wal_replication=1 follower' },
-  { level: 'OK', message: 'Kubelet readiness passed pod=checkout-1 namespace=prod restart_count=0' },
-  { level: 'DEBUG', message: 'Tracing exported span_count=148 collector=metrics' },
-  { level: 'INFO', message: 'ServiceMesh local call checkout-1 -> basket-1 -> warehouse-1 latency_ms=7' },
-  { level: 'OK', message: 'Autoscaler steady state confirmed pending_replicas=0 desired_services=6' },
-  { level: 'DEBUG', message: 'Worker consumer acknowledged batch size=24 topic=jobs' },
-  { level: 'INFO', message: 'Warehouse availability service refreshed sku_count=128 source=erp' },
-  { level: 'INFO', message: 'Redis replication healthy master=redis-m followers=redis-r1,redis-r2 lag_ms=3' },
+  {
+    level: 'INFO',
+    message: 'Postgres primary healthy wal_replication=1 follower',
+  },
+  {
+    level: 'OK',
+    message:
+      'Kubelet readiness passed pod=checkout-1 namespace=prod restart_count=0',
+  },
+  {
+    level: 'DEBUG',
+    message: 'Tracing exported span_count=148 collector=metrics',
+  },
+  {
+    level: 'INFO',
+    message:
+      'ServiceMesh local call checkout-1 -> basket-1 -> warehouse-1 latency_ms=7',
+  },
+  {
+    level: 'OK',
+    message:
+      'Autoscaler steady state confirmed pending_replicas=0 desired_services=6',
+  },
+  {
+    level: 'DEBUG',
+    message: 'Worker consumer acknowledged batch size=24 topic=jobs',
+  },
+  {
+    level: 'INFO',
+    message:
+      'Warehouse availability service refreshed sku_count=128 source=erp',
+  },
+  {
+    level: 'INFO',
+    message:
+      'Redis replication healthy master=redis-m followers=redis-r1,redis-r2 lag_ms=3',
+  },
   { level: 'OK', message: 'Ingress health probe passed endpoint=/readyz' },
-  { level: 'DEBUG', message: 'Service mesh sampled trace route=lb-ext/edge/basket/checkout/warehouse-1/pg-replica' },
+  {
+    level: 'DEBUG',
+    message:
+      'Service mesh sampled trace route=lb-ext/edge/basket/checkout/warehouse-1/pg-replica',
+  },
 ]
 
 function formatTimestamp(timestamp: number) {
@@ -77,8 +121,12 @@ function mapClusterEventToLog(event: ClusterEventEntry): LogEntry {
 
 function createHeartbeatLog(
   cluster: ReturnType<typeof useAmbientClusterSnapshot>,
-  heartbeatLevel: ReturnType<typeof deriveAmbientMonitoringState>['heartbeatLevel'],
-  heartbeatSuffix: ReturnType<typeof deriveAmbientMonitoringState>['heartbeatSuffix'],
+  heartbeatLevel: ReturnType<
+    typeof deriveAmbientMonitoringState
+  >['heartbeatLevel'],
+  heartbeatSuffix: ReturnType<
+    typeof deriveAmbientMonitoringState
+  >['heartbeatSuffix'],
 ) {
   return {
     id: `heartbeat-${Date.now()}`,
@@ -95,7 +143,9 @@ export default function LogTerminal() {
   const [shouldRender, setShouldRender] = useState(getShouldRenderLogTerminal)
   const cluster = useAmbientClusterSnapshot()
   const [isDark, setIsDark] = useState(true)
-  const [logEntries, setLogEntries] = useState<LogEntry[]>(() => createInitialLogs())
+  const [logEntries, setLogEntries] = useState<LogEntry[]>(() =>
+    createInitialLogs(),
+  )
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const animationRef = useRef<number>(0)
   const lastEventIdRef = useRef<number>(0)
@@ -171,7 +221,12 @@ export default function LogTerminal() {
         window.cancelAnimationFrame(frameId)
       }
     }
-  }, [appendLog, cluster, monitoring.heartbeatLevel, monitoring.heartbeatSuffix])
+  }, [
+    appendLog,
+    cluster,
+    monitoring.heartbeatLevel,
+    monitoring.heartbeatSuffix,
+  ])
 
   useEffect(() => {
     let frameId = 0
@@ -230,7 +285,8 @@ export default function LogTerminal() {
       state.lastTime = currentTime
 
       const lerpFactor = Math.min(1, 0.02 * (deltaTime / 16))
-      state.currentSpeed += (state.targetSpeed - state.currentSpeed) * lerpFactor
+      state.currentSpeed +=
+        (state.targetSpeed - state.currentSpeed) * lerpFactor
       state.currentOffset -= state.currentSpeed * deltaTime
 
       if (state.currentOffset <= -50) {
@@ -279,7 +335,10 @@ export default function LogTerminal() {
       return isDark ? previewCyanDark : previewCyanLight
     }
 
-    if (monitoring.accent === 'surge' && (entry.level === 'INFO' || entry.level === 'WARN')) {
+    if (
+      monitoring.accent === 'surge' &&
+      (entry.level === 'INFO' || entry.level === 'WARN')
+    ) {
       return isDark ? surgeSkyDark : surgeSkyLight
     }
 
@@ -292,19 +351,20 @@ export default function LogTerminal() {
 
   const isFocused = monitoring.terminalVisible
   const isActive = isFocused && monitoring.mode !== 'steady'
-  const containerOpacity =
-    !isFocused
-      ? 0
-      : monitoring.mode === 'preview' || monitoring.mode === 'incident'
-        ? 1
-        : monitoring.mode === 'recovery'
-          ? 0.92
-          : monitoring.mode === 'surge'
-            ? 0.8
-            : isDark
-              ? 0.15
-              : 0.2
-  const bgColor = isDark ? 'rgba(17, 17, 17, 0.82)' : 'rgba(255, 255, 255, 0.88)'
+  const containerOpacity = !isFocused
+    ? 0
+    : monitoring.mode === 'preview' || monitoring.mode === 'incident'
+      ? 1
+      : monitoring.mode === 'recovery'
+        ? 0.92
+        : monitoring.mode === 'surge'
+          ? 0.8
+          : isDark
+            ? 0.15
+            : 0.2
+  const bgColor = isDark
+    ? 'rgba(17, 17, 17, 0.82)'
+    : 'rgba(255, 255, 255, 0.88)'
   const borderColor =
     monitoring.mode === 'incident'
       ? isDark
@@ -322,9 +382,9 @@ export default function LogTerminal() {
             ? isDark
               ? 'rgba(56, 189, 248, 0.45)'
               : 'rgba(3, 105, 161, 0.55)'
-        : isDark
-          ? 'rgba(64, 64, 64, 0.3)'
-          : 'rgba(180, 180, 180, 0.5)'
+            : isDark
+              ? 'rgba(64, 64, 64, 0.3)'
+              : 'rgba(180, 180, 180, 0.5)'
   const headerDotColor = isDark ? '#555' : '#ccc'
   const titleColor =
     monitoring.mode === 'incident'
@@ -354,7 +414,7 @@ export default function LogTerminal() {
   }))
 
   return (
-    <div className="fixed inset-0 z-0 flex items-end justify-center overflow-hidden pb-4 pointer-events-none">
+    <div className="pointer-events-none fixed inset-0 z-0 flex items-end justify-center overflow-hidden pb-4">
       <div
         className="overflow-hidden rounded-lg"
         style={{
@@ -363,7 +423,9 @@ export default function LogTerminal() {
           backgroundColor: bgColor,
           border: `1px solid ${borderColor}`,
           opacity: containerOpacity,
-          transition: isFocused ? 'opacity 0.3s ease-in' : 'opacity 0.5s ease-out',
+          transition: isFocused
+            ? 'opacity 0.3s ease-in'
+            : 'opacity 0.5s ease-out',
           boxShadow:
             monitoring.mode === 'incident' && isActive
               ? `0 0 20px ${isDark ? 'rgba(255, 51, 51, 0.3)' : 'rgba(204, 0, 0, 0.2)'}`
@@ -373,7 +435,7 @@ export default function LogTerminal() {
                   ? `0 0 20px ${isDark ? 'rgba(77, 245, 255, 0.22)' : 'rgba(15, 118, 110, 0.14)'}`
                   : monitoring.mode === 'surge' && isActive
                     ? `0 0 20px ${isDark ? 'rgba(56, 189, 248, 0.22)' : 'rgba(3, 105, 161, 0.14)'}`
-                : 'none',
+                    : 'none',
         }}
       >
         <div
@@ -442,7 +504,10 @@ export default function LogTerminal() {
           </div>
         </div>
 
-        <div className="relative overflow-hidden" style={{ height: 'calc(100% - 33px)' }}>
+        <div
+          className="relative overflow-hidden"
+          style={{ height: 'calc(100% - 33px)' }}
+        >
           <div
             ref={scrollContainerRef}
             className="px-3 font-mono text-[0.7rem]"

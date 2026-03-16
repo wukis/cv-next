@@ -1,8 +1,8 @@
 import { type Metadata } from 'next'
 
 import { Container } from '@/components/Container'
-import { TerminalPageHeader } from '@/components/TerminalHeader'
 import { RecommendationsWall } from '@/components/RecommendationsWall'
+import { TerminalPageHeader } from '@/components/TerminalHeader'
 import recommendations from '@/data/recommendations.json'
 import { recommendationsCopy } from '@/lib/recommendationsCopy'
 

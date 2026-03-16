@@ -1,11 +1,11 @@
 import { type Metadata } from 'next'
 import Image from 'next/image'
 
-import { Container } from '@/components/Container'
 import { Button, DocumentIcon, MailIcon } from '@/components/Button'
+import { Container } from '@/components/Container'
 import { ProfileSocialLinks } from '@/components/ProfileSocialLinks'
-import { TerminalPageHeader } from '@/components/TerminalHeader'
 import { TechStack } from '@/components/TechStack'
+import { TerminalPageHeader } from '@/components/TerminalHeader'
 import portraitImage from '@/images/jonas-petrik-portrait-2.jpg'
 import {
   aboutNarrative,
@@ -108,8 +108,8 @@ export default function About() {
                     {publicLocationSummary}
                   </p>
                   <p className="mt-1 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
-                    {totalPublicExperienceYears}+ years across backend, platform,
-                    search, and engineering leadership.
+                    {totalPublicExperienceYears}+ years across backend,
+                    platform, search, and engineering leadership.
                   </p>
                 </div>
               </div>
@@ -174,7 +174,7 @@ export default function About() {
                 <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
                   background
                 </h3>
-                <div className="mt-4 space-y-4 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 sm:text-base">
+                <div className="mt-4 space-y-4 text-sm leading-relaxed text-neutral-700 sm:text-base dark:text-neutral-200">
                   {aboutNarrative.slice(0, 2).map((paragraph) => (
                     <p key={paragraph}>{paragraph}</p>
                   ))}
@@ -185,7 +185,7 @@ export default function About() {
                 <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
                   how it started
                 </h3>
-                <div className="mt-4 space-y-4 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 sm:text-base">
+                <div className="mt-4 space-y-4 text-sm leading-relaxed text-neutral-700 sm:text-base dark:text-neutral-200">
                   {earlyEngineeringStory.map((paragraph) => (
                     <p key={paragraph}>{paragraph}</p>
                   ))}
@@ -196,12 +196,12 @@ export default function About() {
                 <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
                   current focus
                 </h3>
-                <p className="mt-4 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 sm:text-base">
+                <p className="mt-4 text-sm leading-relaxed text-neutral-700 sm:text-base dark:text-neutral-200">
                   Right now my work is centered on checkout reliability,
-                  observability, and the operational quality of
-                  payment-critical flows. That means staying close to incidents,
-                  understanding where the system becomes hard to reason about,
-                  and fixing the parts that create avoidable noise for the team.
+                  observability, and the operational quality of payment-critical
+                  flows. That means staying close to incidents, understanding
+                  where the system becomes hard to reason about, and fixing the
+                  parts that create avoidable noise for the team.
                 </p>
                 <ul className="mt-4 space-y-3 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
                   {currentPublicRole.highlights.map((highlight) => (
@@ -217,12 +217,12 @@ export default function About() {
                 <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
                   different kinds of systems
                 </h3>
-                <p className="mt-4 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 sm:text-base">
+                <p className="mt-4 text-sm leading-relaxed text-neutral-700 sm:text-base dark:text-neutral-200">
                   A big part of my experience comes from working on systems
                   built for very different purposes. I have not stayed inside
-                  one product category, and that range changed how I think
-                  about tradeoffs, risk, and what good engineering looks like
-                  in different environments.
+                  one product category, and that range changed how I think about
+                  tradeoffs, risk, and what good engineering looks like in
+                  different environments.
                 </p>
                 <div className="mt-5 space-y-3">
                   {systemExperience.map((item) => (
@@ -245,7 +245,7 @@ export default function About() {
                 <h3 className="font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
                   what matters to me
                 </h3>
-                <div className="mt-4 space-y-4 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 sm:text-base">
+                <div className="mt-4 space-y-4 text-sm leading-relaxed text-neutral-700 sm:text-base dark:text-neutral-200">
                   {aboutNarrative.slice(2).map((paragraph) => (
                     <p key={paragraph}>{paragraph}</p>
                   ))}

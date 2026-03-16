@@ -64,7 +64,12 @@ export function DesktopTooltip({
 
 export function TerminalPromptIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      className={className}
+    >
       <path
         d="M7 15l5-5-5-5"
         stroke="currentColor"
@@ -99,7 +104,9 @@ export function CloseIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   )
 }
 
-export function HexagonNetworkIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
+export function HexagonNetworkIcon(
+  props: React.ComponentPropsWithoutRef<'svg'>,
+) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
       <path
@@ -122,9 +129,27 @@ export function HexagonNetworkIcon(props: React.ComponentPropsWithoutRef<'svg'>)
         strokeDasharray="2 2"
         className="opacity-60"
       />
-      <circle cx="12" cy="20" r="1" fill="currentColor" className="opacity-60" />
-      <circle cx="2.5" cy="14.5" r="1" fill="currentColor" className="opacity-60" />
-      <circle cx="21.5" cy="14.5" r="1" fill="currentColor" className="opacity-60" />
+      <circle
+        cx="12"
+        cy="20"
+        r="1"
+        fill="currentColor"
+        className="opacity-60"
+      />
+      <circle
+        cx="2.5"
+        cy="14.5"
+        r="1"
+        fill="currentColor"
+        className="opacity-60"
+      />
+      <circle
+        cx="21.5"
+        cy="14.5"
+        r="1"
+        fill="currentColor"
+        className="opacity-60"
+      />
     </svg>
   )
 }

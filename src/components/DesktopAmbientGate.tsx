@@ -20,7 +20,7 @@ export function DesktopAmbientGate() {
     }
 
     const loadAmbientDecorations = () => {
-      import('@/components/AmbientDecorations').then((module) => {
+      void import('@/components/AmbientDecorations').then((module) => {
         if (!isCancelled) {
           setAmbientComponent(() => module.default)
         }

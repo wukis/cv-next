@@ -6,17 +6,17 @@ import AdmZip from 'adm-zip'
 import { parse } from 'csv-parse/sync'
 
 import {
-  LINKEDIN_SYNC_SCHEMA_VERSION,
   buildDesiredLinkedInProfile,
   createEducationSyncId,
   createExperienceSyncId,
   diffLinkedInProfiles,
-  normalizeLinkedInDate,
+  LINKEDIN_SYNC_SCHEMA_VERSION,
   type LinkedInSyncEducationEntry,
   type LinkedInSyncExperienceEntry,
   type LinkedInSyncLink,
   type LinkedInSyncProfile,
   type LinkedInSyncProfileDiff,
+  normalizeLinkedInDate,
 } from '../src/lib/linkedinSync'
 
 type SourceType = 'zip' | 'directory'
@@ -138,7 +138,9 @@ const defaultStatusArtifact: PublicStatusArtifact = {
   pendingChanges: false,
   restoreAvailable: false,
   diffSummary: null,
-  warnings: ['LinkedIn sync has not been initialized yet. Run linkedin:import first.'],
+  warnings: [
+    'LinkedIn sync has not been initialized yet. Run linkedin:import first.',
+  ],
 }
 
 async function ensurePaths() {
@@ -191,17 +193,20 @@ async function ensureFile(filePath: string, defaultValue: unknown) {
   }
 }
 
-function parseCsvRecords(content: string) {
+function parseCsvRecords(content: string): Record<string, unknown>[] {
   return parse(content, {
     columns: true,
     skip_empty_lines: true,
     trim: true,
     bom: true,
     relax_column_count: true,
-  }) as Record<string, unknown>[]
+  })
 }
 
-function flattenJsonRecord(input: unknown, prefix = ''): Record<string, string> {
+function flattenJsonRecord(
+  input: unknown,
+  prefix = '',
+): Record<string, string> {
   if (input === null || input === undefined) {
     return {}
   }
@@ -210,22 +215,26 @@ function flattenJsonRecord(input: unknown, prefix = ''): Record<string, string> 
     return prefix ? { [prefix]: String(input) } : {}
   }
 
-  return Object.entries(input).reduce<Record<string, string>>((accumulator, [key, value]) => {
-    const nextKey = prefix ? `${prefix}.${key}` : key
+  return Object.entries(input).reduce<Record<string, string>>(
+    (accumulator, [key, value]) => {
+      const nextKey = prefix ? `${prefix}.${key}` : key
 
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
-      Object.assign(accumulator, flattenJsonRecord(value, nextKey))
+      if (value && typeof value === 'object' && !Array.isArray(value)) {
+        Object.assign(accumulator, flattenJsonRecord(value, nextKey))
+        return accumulator
+      }
+
+      accumulator[nextKey] = Array.isArray(value)
+        ? value.map((item) => String(item)).join(', ')
+        : String(value ?? '')
+
       return accumulator
-    }
-
-    accumulator[nextKey] =
-      Array.isArray(value) ? value.map((item) => String(item)).join(', ') : String(value ?? '')
-
-    return accumulator
-  }, {})
+    },
+    {},
+  )
 }
 
-function parseJsonRecords(content: string) {
+function parseJsonRecords(content: string): Record<string, string>[] {
   const parsed = JSON.parse(content) as unknown
 
   if (Array.isArray(parsed)) {
@@ -239,7 +248,10 @@ function parseJsonRecords(content: string) {
   return [] as Record<string, string>[]
 }
 
-function extractRecords(content: string, extension: string) {
+function extractRecords(
+  content: string,
+  extension: string,
+): Record<string, string>[] {
   if (extension === '.json') {
     return parseJsonRecords(content)
   }
@@ -247,7 +259,10 @@ function extractRecords(content: string, extension: string) {
   if (extension === '.csv') {
     return parseCsvRecords(content).map((record) =>
       Object.fromEntries(
-        Object.entries(record).map(([key, value]) => [key, String(value ?? '')]),
+        Object.entries(record).map(([key, value]) => [
+          key,
+          String(value ?? ''),
+        ]),
       ),
     )
   }
@@ -341,7 +356,9 @@ async function loadExportFiles(inputPath: string) {
   }
 
   if (path.extname(inputPath).toLowerCase() !== '.zip') {
-    throw new Error('LinkedIn import expects a ZIP export or an extracted folder.')
+    throw new Error(
+      'LinkedIn import expects a ZIP export or an extracted folder.',
+    )
   }
 
   const archive = new AdmZip(inputPath)
@@ -419,7 +436,9 @@ async function loadCategoryRecords(files: ExportFile[]) {
 function pickBestProfileRecord(records: Record<string, string>[]) {
   return [...records].sort((left, right) => {
     const leftScore = Object.values(left).filter((value) => value.trim()).length
-    const rightScore = Object.values(right).filter((value) => value.trim()).length
+    const rightScore = Object.values(right).filter((value) =>
+      value.trim(),
+    ).length
     return rightScore - leftScore
   })[0]
 }
@@ -440,7 +459,11 @@ function mapExperienceRecord(record: Record<string, string>) {
   const startDate = normalizeLinkedInDate(
     findValue(record, ['started on', 'start date', 'date started', 'from']),
   )
-  const currentFlag = findValue(record, ['currently works here', 'current', 'is current'])
+  const currentFlag = findValue(record, [
+    'currently works here',
+    'current',
+    'is current',
+  ])
   const rawEndDate = findValue(record, [
     'finished on',
     'end date',
@@ -453,7 +476,11 @@ function mapExperienceRecord(record: Record<string, string>) {
       : normalizeLinkedInDate(rawEndDate)
 
   return {
-    id: createExperienceSyncId(company || 'company', title || 'title', startDate || 'unknown'),
+    id: createExperienceSyncId(
+      company || 'company',
+      title || 'title',
+      startDate || 'unknown',
+    ),
     company,
     title,
     startDate,
@@ -482,7 +509,11 @@ function mapEducationRecord(record: Record<string, string>) {
   )
 
   return {
-    id: createEducationSyncId(institution || 'institution', area || 'area', startDate || 'unknown'),
+    id: createEducationSyncId(
+      institution || 'institution',
+      area || 'area',
+      startDate || 'unknown',
+    ),
     institution,
     area,
     studyType: findValue(record, ['degree', 'study type']),
@@ -527,7 +558,11 @@ function mapImportedLinks(
   contactRecords: Record<string, string>[],
 ) {
   const profileUrl = profileRecord
-    ? findValue(profileRecord, ['public profile url', 'linkedin url', 'profile url'])
+    ? findValue(profileRecord, [
+        'public profile url',
+        'linkedin url',
+        'profile url',
+      ])
     : ''
 
   const links = [
@@ -543,7 +578,9 @@ function mapImportedLinks(
   )
 }
 
-async function importLinkedInBaseline(inputPath: string): Promise<ImportedBaseline> {
+async function importLinkedInBaseline(
+  inputPath: string,
+): Promise<ImportedBaseline> {
   const loaded = await loadExportFiles(inputPath)
   const categories = categorizeFiles(loaded.files)
   const profileRecords = await loadCategoryRecords(categories.profile)
@@ -559,7 +596,9 @@ async function importLinkedInBaseline(inputPath: string): Promise<ImportedBaseli
   }
 
   if (positionRecords.length === 0) {
-    warnings.push('No LinkedIn positions/experience file was detected in the export.')
+    warnings.push(
+      'No LinkedIn positions/experience file was detected in the export.',
+    )
   }
 
   const profileRecord = pickBestProfileRecord(profileRecords)
@@ -571,7 +610,9 @@ async function importLinkedInBaseline(inputPath: string): Promise<ImportedBaseli
     .filter((entry): entry is LinkedInSyncEducationEntry => Boolean(entry))
   const currentExperience = pickCurrentExperience(experience)
   const links = mapImportedLinks(profileRecord, contactRecords)
-  const linkedInUrl = links.find((link) => link.label.toLowerCase().includes('linkedin'))?.href ?? ''
+  const linkedInUrl =
+    links.find((link) => link.label.toLowerCase().includes('linkedin'))?.href ??
+    ''
 
   const profile: LinkedInSyncProfile = {
     schemaVersion: LINKEDIN_SYNC_SCHEMA_VERSION,
@@ -585,12 +626,25 @@ async function importLinkedInBaseline(inputPath: string): Promise<ImportedBaseli
           .filter(Boolean)
           .join(' ') ||
         '',
-      headline: findValue(profileRecord ?? {}, ['headline', 'professional headline', 'tagline']),
-      location: findValue(profileRecord ?? {}, ['location', 'geo location', 'address']),
+      headline: findValue(profileRecord ?? {}, [
+        'headline',
+        'professional headline',
+        'tagline',
+      ]),
+      location: findValue(profileRecord ?? {}, [
+        'location',
+        'geo location',
+        'address',
+      ]),
       currentCompany: currentExperience?.company ?? '',
       currentTitle: currentExperience?.title ?? '',
     },
-    about: findValue(profileRecord ?? {}, ['summary', 'about', 'biography', 'description']),
+    about: findValue(profileRecord ?? {}, [
+      'summary',
+      'about',
+      'biography',
+      'description',
+    ]),
     experience,
     education,
     topSkills: mapSkillRecords(skillRecords),
@@ -664,7 +718,9 @@ ${entry.description || '(empty)'}
     .join('\n\n')
 }
 
-function renderRemovedExperienceSections(entries: LinkedInSyncExperienceEntry[]) {
+function renderRemovedExperienceSections(
+  entries: LinkedInSyncExperienceEntry[],
+) {
   if (entries.length === 0) {
     return 'No experience removals in this pack.'
   }
@@ -686,7 +742,9 @@ function renderCopyPack(options: {
   target: LinkedInSyncProfile
   diff: LinkedInSyncProfileDiff
 }) {
-  const changedIntro = options.diff.intro.filter((entry) => entry.status === 'changed')
+  const changedIntro = options.diff.intro.filter(
+    (entry) => entry.status === 'changed',
+  )
   const changedExperienceTargets = [
     ...options.diff.experience.added,
     ...options.diff.experience.changed.map((entry) => entry.desired),
@@ -723,12 +781,16 @@ ${options.target.about}
 \`\`\`
 
 ## Intro fields
-${changedIntro.length === 0 ? '- No intro field changes.' : changedIntro
-  .map(
-    (entry) =>
-      `- ${entry.path}: ${formatValue(entry.current)} -> ${formatValue(entry.desired)}`,
-  )
-  .join('\n')}
+${
+  changedIntro.length === 0
+    ? '- No intro field changes.'
+    : changedIntro
+        .map(
+          (entry) =>
+            `- ${entry.path}: ${formatValue(entry.current)} -> ${formatValue(entry.desired)}`,
+        )
+        .join('\n')
+}
 
 ## Current role
 - Company: ${formatValue(options.target.intro.currentCompany)}
@@ -751,14 +813,16 @@ ${renderRemovedExperienceSections(options.diff.experience.removed)}
 ${formatEducation(changedEducationTargets)}
 
 ## Education removals
-${options.diff.education.removed.length === 0
-  ? 'No education removals in this pack.'
-  : options.diff.education.removed
-      .map(
-        (entry) =>
-          `- Remove or archive ${entry.institution} (${formatValue(entry.startDate)} -> ${formatValue(entry.endDate)})`,
-      )
-      .join('\n')}
+${
+  options.diff.education.removed.length === 0
+    ? 'No education removals in this pack.'
+    : options.diff.education.removed
+        .map(
+          (entry) =>
+            `- Remove or archive ${entry.institution} (${formatValue(entry.startDate)} -> ${formatValue(entry.endDate)})`,
+        )
+        .join('\n')
+}
 `
 }
 
@@ -788,12 +852,16 @@ async function writeStatusArtifact(warnings: string[] = []) {
 
 async function commandImport(inputPath: string | undefined) {
   if (!inputPath) {
-    throw new Error('Usage: npm run linkedin:import -- /path/to/linkedin-export')
+    throw new Error(
+      'Usage: npm run linkedin:import -- /path/to/linkedin-export',
+    )
   }
 
   await ensurePaths()
 
-  const imported = await importLinkedInBaseline(path.resolve(repoRoot, inputPath))
+  const imported = await importLinkedInBaseline(
+    path.resolve(repoRoot, inputPath),
+  )
   await writeJsonFile(importedPath, imported)
   await writeStatusArtifact([
     'LinkedIn baseline imported. Run linkedin:sync to create a snapshot and diff.',
@@ -809,8 +877,15 @@ async function commandSync() {
 
   const imported = await readJsonFile<ImportedBaseline>(importedPath)
 
-  if (!imported.profile || !imported.importedAt || !imported.sourceType || !imported.inputName) {
-    throw new Error('No imported LinkedIn baseline found. Run linkedin:import first.')
+  if (
+    !imported.profile ||
+    !imported.importedAt ||
+    !imported.sourceType ||
+    !imported.inputName
+  ) {
+    throw new Error(
+      'No imported LinkedIn baseline found. Run linkedin:import first.',
+    )
   }
 
   const desired = buildDesiredLinkedInProfile()

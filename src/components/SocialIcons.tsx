@@ -46,5 +46,5 @@ export function GitLabIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
         />
       </g>
     </svg>
-  );
+  )
 }

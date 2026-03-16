@@ -1,26 +1,26 @@
+import Image from 'next/image'
 import React from 'react'
 
 import { Button, DocumentIcon } from '@/components/Button'
 import { Container } from '@/components/Container'
 import { TechStack } from '@/components/TechStack'
 import { TerminalPageHeader } from '@/components/TerminalHeader'
+import { EducationInterface, getDuration } from '@/lib/experience'
 import {
-  type GroupedWorkExperience,
   calculateTotalExperienceYears,
   formatDuration,
   getAllUniqueItems,
   getPromotionDiff,
+  type GroupedWorkExperience,
   groupWorkExperiencesForDisplay,
 } from '@/lib/experienceContent'
-import {
-  EducationInterface,
-  getDuration,
-  WorkInterface,
-} from '@/lib/experience'
 import { profileContent } from '@/lib/profileContent'
-import Image from 'next/image'
-const groupedWorkExperiences = groupWorkExperiencesForDisplay(profileContent.work)
-const totalExperienceYears = calculateTotalExperienceYears(groupedWorkExperiences)
+const groupedWorkExperiences = groupWorkExperiencesForDisplay(
+  profileContent.work,
+)
+const totalExperienceYears = calculateTotalExperienceYears(
+  groupedWorkExperiences,
+)
 
 // Promotion diff display component
 function PromotionDiff({
@@ -90,11 +90,7 @@ function RoleHighlights({ highlights }: { highlights: string[] }) {
 }
 
 // Company-level projects display
-function CompanyProjects({
-  projects,
-}: {
-  projects: string[]
-}) {
+function CompanyProjects({ projects }: { projects: string[] }) {
   if (projects.length === 0) return null
 
   return (
@@ -152,14 +148,12 @@ function Education({
 
         <div className="relative flex h-6 w-6 flex-shrink-0 items-center justify-center">
           <div className="absolute inset-[1px] rounded-full ring-2 ring-amber-200/80 dark:ring-amber-900/70" />
-          <div className="relative h-3.5 w-3.5 rounded-full bg-amber-300/65 ring-2 ring-white opacity-75 dark:bg-amber-200/35 dark:ring-neutral-900" />
+          <div className="relative h-3.5 w-3.5 rounded-full bg-amber-300/65 opacity-75 ring-2 ring-white dark:bg-amber-200/35 dark:ring-neutral-900" />
         </div>
       </div>
 
       <div className="min-w-0 flex-1 sm:-mt-1">
-        <div
-          className="overflow-hidden rounded-lg border border-neutral-200 bg-white/90 transition-all duration-300 dark:border-neutral-700 dark:bg-neutral-900/90 group-hover:shadow-lg"
-        >
+        <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white/90 transition-all duration-300 group-hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-900/90">
           <div className="flex h-6 items-center justify-between gap-2 border-b border-neutral-300 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
             <span className="hidden truncate font-mono text-[10px] text-neutral-700 sm:block dark:text-neutral-100">
               ~/education/
@@ -206,7 +200,7 @@ function Education({
                 <h3 className="text-lg font-semibold text-neutral-800 dark:text-neutral-100">
                   {education.institution}
                 </h3>
-                <div className="mt-1 flex flex-col items-start gap-1 text-sm text-neutral-700 dark:text-neutral-200 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-1">
+                <div className="mt-1 flex flex-col items-start gap-1 text-sm text-neutral-700 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-1 dark:text-neutral-200">
                   <span className="font-mono text-neutral-500 dark:text-neutral-400">
                     {duration.years}y
                   </span>
@@ -307,9 +301,9 @@ function Work({
               <div className="relative flex h-6 w-6 flex-shrink-0 items-center justify-center">
                 {isFirst ? (
                   <>
-                    <div className="animate-git-head-pulse absolute -inset-1 rounded-full border border-emerald-400/50 bg-emerald-400/8 dark:border-emerald-300/45 dark:bg-emerald-300/10" />
+                    <div className="animate-git-head-pulse bg-emerald-400/8 absolute -inset-1 rounded-full border border-emerald-400/50 dark:border-emerald-300/45 dark:bg-emerald-300/10" />
                     <div className="absolute inset-[1px] rounded-full ring-2 ring-emerald-500/30 dark:ring-emerald-300/35" />
-                    <div className="relative h-4 w-4 rounded-full bg-emerald-500 ring-2 ring-white shadow-sm dark:bg-emerald-400 dark:ring-neutral-900" />
+                    <div className="relative h-4 w-4 rounded-full bg-emerald-500 shadow-sm ring-2 ring-white dark:bg-emerald-400 dark:ring-neutral-900" />
                   </>
                 ) : (
                   <>
@@ -321,9 +315,7 @@ function Work({
             </div>
 
             <div className="min-w-0 flex-1 sm:-mt-1">
-              <div
-                className="overflow-hidden rounded-lg border border-neutral-200 bg-white/90 transition-all duration-300 dark:border-neutral-700 dark:bg-neutral-900/90 group-hover:shadow-lg"
-              >
+              <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white/90 transition-all duration-300 group-hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-900/90">
                 <div className="flex h-6 items-center justify-between gap-2 border-b border-neutral-300 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
                   <span className="hidden truncate font-mono text-[10px] text-neutral-700 sm:block dark:text-neutral-100">
                     ~/work/
@@ -403,7 +395,7 @@ function Work({
                           companyData.company
                         )}
                       </h2>
-                      <div className="mt-1 flex flex-col items-start gap-1 text-sm text-neutral-700 dark:text-neutral-200 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-1">
+                      <div className="mt-1 flex flex-col items-start gap-1 text-sm text-neutral-700 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-1 dark:text-neutral-200">
                         <span className="font-mono text-neutral-500 dark:text-neutral-400">
                           {formatDuration(companyData.totalDuration)}
                         </span>
@@ -619,13 +611,13 @@ function Work({
 
 function RecruiterCvHint() {
   return (
-    <div className="mb-8 rounded-2xl border border-neutral-200 bg-white/90 p-4 shadow-sm shadow-neutral-900/5 backdrop-blur-sm dark:border-neutral-700 dark:bg-neutral-900/90 dark:shadow-none sm:p-5">
+    <div className="mb-8 rounded-2xl border border-neutral-200 bg-white/90 p-4 shadow-sm shadow-neutral-900/5 backdrop-blur-sm sm:p-5 dark:border-neutral-700 dark:bg-neutral-900/90 dark:shadow-none">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-300">
             recruiter view
           </p>
-          <p className="mt-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 sm:text-[15px]">
+          <p className="mt-2 text-sm leading-relaxed text-neutral-700 sm:text-[15px] dark:text-neutral-200">
             Prefer a quicker skim? The{' '}
             <span className="font-mono text-[0.95em] text-neutral-900 dark:text-neutral-100">
               /cv

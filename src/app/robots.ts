@@ -15,4 +15,3 @@ export default function robots(): MetadataRoute.Robots {
     host: baseUrl,
   }
 }
-

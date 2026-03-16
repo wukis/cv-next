@@ -18,7 +18,8 @@ export const seoKeywords = profileContent.seo.keywords
 export const personKnowsAbout = profileContent.expertise.keywords
 export const heroIntro = profileContent.narratives.heroIntro
 export const homeImpactCards = profileContent.highlights.homeImpactCards
-export const selectedImpactStories = profileContent.highlights.selectedImpactStories
+export const selectedImpactStories =
+  profileContent.highlights.selectedImpactStories
 export const aboutNarrative = profileContent.narratives.aboutNarrative
 export const publicWork = profileContent.work
 export const currentPublicRole = profileContent.currentRole

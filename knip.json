@@ -1,0 +1,23 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": ["src/app/**/*.{ts,tsx,js,jsx}", "scripts/**/*.{ts,mjs}"],
+  "project": [
+    "src/**/*.{ts,tsx,js,jsx}",
+    "scripts/**/*.{ts,mjs}",
+    "*.config.{js,mjs,ts}"
+  ],
+  "ignoreDependencies": [
+    "@headlessui/react",
+    "@mdx-js/loader",
+    "@mdx-js/react",
+    "@next/mdx",
+    "@types/webpack-env",
+    "cheerio",
+    "fast-glob",
+    "feed",
+    "remark-gfm",
+    "sharp"
+  ],
+  "ignoreFiles": ["src/lib/articles.ts"],
+  "include": ["files", "dependencies", "unlisted", "exports"]
+}

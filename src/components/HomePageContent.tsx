@@ -1,20 +1,21 @@
 import Image from 'next/image'
 import Link from 'next/link'
+
 import { Button, DocumentIcon, MailIcon } from '@/components/Button'
 import { Container } from '@/components/Container'
-import { recommendationsCopy } from '@/lib/recommendationsCopy'
 import { ProfileSocialLinks } from '@/components/ProfileSocialLinks'
-import { TerminalSectionHeader } from '@/components/TerminalHeader'
 import { TechStack } from '@/components/TechStack'
-import { type RecommendationInterface } from '@/lib/recommendations'
+import { TerminalSectionHeader } from '@/components/TerminalHeader'
 import portraitImage from '@/images/jonas-petrik-portrait.png'
+import { type RecommendationInterface } from '@/lib/recommendations'
+import { recommendationsCopy } from '@/lib/recommendationsCopy'
 import {
   currentPublicRole,
   getHomepageRecommendations,
   heroIntro,
   homeImpactCards,
-  publicEmail,
   publicBasics,
+  publicEmail,
   selectedImpactStories,
   totalPublicExperienceYears,
 } from '@/lib/siteProfile'
