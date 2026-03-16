@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-03-15T23:18:31.143Z",
+  "baselineImportedAt": "2026-03-15T23:01:53.375Z",
+  "baselineSourceType": "directory",
+  "latestSnapshotId": "2026-03-15T23-01-59-522Z-d17f04-ea150a",
+  "appliedSnapshotId": "2026-03-15T23-01-59-522Z-d17f04-ea150a",
+  "pendingChanges": false,
+  "restoreAvailable": true,
+  "diffSummary": {
+    "introChanges": 5,
+    "aboutChanged": true,
+    "topSkillsChanged": true,
+    "linksChanged": true,
+    "experienceAdded": 12,
+    "experienceRemoved": 0,
+    "experienceChanged": 0,
+    "educationAdded": 1,
+    "educationRemoved": 0,
+    "educationChanged": 0,
+    "totalChanges": 21
+  },
+  "warnings": [
+    "No LinkedIn positions/experience file was detected in the export."
+  ]
+}

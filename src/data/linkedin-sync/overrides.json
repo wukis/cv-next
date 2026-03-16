@@ -1,0 +1,23 @@
+{
+  "headline": "Staff Engineer / Team Lead | Checkout Reliability | Backend & Platform Engineering",
+  "about": "I lead checkout at SCAYLE with a backend and platform focus on reliability, observability, and high-availability commerce systems.\n\nMy work is strongest where scale meets operational pain: noisy alerts, brittle flows, unclear ownership, or systems that only look fine until traffic arrives. I like turning those edges into calmer production systems and clearer engineering ownership.\n\nBefore SCAYLE, I rebuilt search at anwalt.de and later stepped into broader platform and team leadership work. Before that, I led delivery for Atobi at Solutionlab while staying hands-on with architecture and execution.\n\nI value direct communication, pragmatic architecture, and software that keeps working under pressure.",
+  "topSkills": [
+    "Backend Engineering",
+    "Platform Reliability",
+    "Software Architecture",
+    "Checkout Systems",
+    "Observability",
+    "Incident Response",
+    "PHP",
+    "Go",
+    "Kubernetes",
+    "AWS",
+    "Team Leadership",
+    "Commerce Infrastructure"
+  ],
+  "experienceSummaryOverrides": {
+    "SCAYLE::Staff Engineer / Team Lead (Checkout)::2025-04": "Leading checkout with a backend and platform focus inside a commerce platform processing more than EUR 6.5B yearly.\nLed checkout execution across architecture, delivery, and operational quality.\nOwned on-call quality and observability for payment-critical flows.\nHelped prepare and operate checkout during Black Friday 2025 peak traffic with zero downtime in the domain I was responsible for.",
+    "SCAYLE::Senior Software Engineer (Checkout)::2024-01": "Worked hands-on on checkout throughput, reliability, and multi-tenant commerce behavior.\nHelped rebuild checkout from a legacy implementation into a Laravel and RoadRunner architecture with clearer flow control.\nTook on checkout on-call and went deep on observability, production debugging, and error reduction.",
+    "anwalt.de::Senior Software Engineer Team Lead::2022-12": "Led a small platform-oriented team while staying hands-on across backend, DevOps, and architecture for Germany's largest legal marketplace.\nOwned delivery across backend, DevOps, and technical direction.\nImproved CI/CD and deployment safety while mentoring engineers and raising engineering quality."
+  }
+}

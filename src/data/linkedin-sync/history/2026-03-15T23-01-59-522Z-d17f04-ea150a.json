@@ -1,0 +1,455 @@
+{
+  "schemaVersion": 1,
+  "snapshotId": "2026-03-15T23-01-59-522Z-d17f04-ea150a",
+  "createdAt": "2026-03-15T23:01:59.522Z",
+  "inputName": "Basic_LinkedInDataExport_03-15-2026.zip",
+  "sourceType": "directory",
+  "manifest": [
+    "Invitations.csv",
+    "Profile.csv",
+    "Recommendations_Given.csv",
+    "Recommendations_Received.csv",
+    "Registration.csv"
+  ],
+  "warnings": [
+    "No LinkedIn positions/experience file was detected in the export."
+  ],
+  "baselineHash": "d17f046bd1a7029e8f651872b095c55b8eb3c90e9b87649a674fe3d2d185972c",
+  "desiredHash": "ea150accbb53229178a9fbbc9e29bc7ec437ffe03afd8021bc2d0b6ce23d7ffd",
+  "diff": {
+    "intro": [
+      {
+        "path": "name",
+        "status": "changed",
+        "current": "Jonas",
+        "desired": "Jonas Petrik"
+      },
+      {
+        "path": "headline",
+        "status": "changed",
+        "current": "Staff Engineer",
+        "desired": "Staff Engineer / Team Lead | Checkout Reliability | Backend & Platform Engineering"
+      },
+      {
+        "path": "location",
+        "status": "changed",
+        "current": "Germany",
+        "desired": "Based in Germany, originally from Lithuania."
+      },
+      {
+        "path": "currentCompany",
+        "status": "changed",
+        "current": "",
+        "desired": "SCAYLE"
+      },
+      {
+        "path": "currentTitle",
+        "status": "changed",
+        "current": "",
+        "desired": "Staff Engineer / Team Lead (Checkout)"
+      }
+    ],
+    "about": {
+      "status": "changed",
+      "current": "I'm a seasoned full-stack software engineer, specializing in PHP, JavaScript, GO and various other technologies. Leveraging extensive experience as a senior developer and team lead, my expertise lies in creating solutions that are not only tailored to client's immediate needs but also scalable and future-proof. I'm dedicated to effective collaboration, risk management, and building enduring systems.",
+      "desired": "I lead checkout at SCAYLE with a backend and platform focus on reliability, observability, and high-availability commerce systems.\n\nMy work is strongest where scale meets operational pain: noisy alerts, brittle flows, unclear ownership, or systems that only look fine until traffic arrives. I like turning those edges into calmer production systems and clearer engineering ownership.\n\nBefore SCAYLE, I rebuilt search at anwalt.de and later stepped into broader platform and team leadership work. Before that, I led delivery for Atobi at Solutionlab while staying hands-on with architecture and execution.\n\nI value direct communication, pragmatic architecture, and software that keeps working under pressure."
+    },
+    "topSkills": {
+      "status": "changed",
+      "current": [],
+      "desired": [
+        "Backend Engineering",
+        "Platform Reliability",
+        "Software Architecture",
+        "Checkout Systems",
+        "Observability",
+        "Incident Response",
+        "PHP",
+        "Go",
+        "Kubernetes",
+        "AWS",
+        "Team Leadership",
+        "Commerce Infrastructure"
+      ]
+    },
+    "links": {
+      "status": "changed",
+      "current": [],
+      "desired": [
+        {
+          "label": "Website",
+          "href": "https://petrik.dev"
+        },
+        {
+          "label": "LinkedIn",
+          "href": "https://www.linkedin.com/in/jonas-petrik/"
+        },
+        {
+          "label": "GitHub",
+          "href": "https://github.com/wukis"
+        },
+        {
+          "label": "GitLab",
+          "href": "https://gitlab.com/jonas.petrik"
+        }
+      ]
+    },
+    "experience": {
+      "added": [
+        {
+          "id": "scayle--staff-engineer-team-lead-checkout--2025-04",
+          "company": "SCAYLE",
+          "title": "Staff Engineer / Team Lead (Checkout)",
+          "startDate": "2025-04",
+          "endDate": "present",
+          "location": "Hamburg, Germany - Remote",
+          "description": "Leading checkout with a backend and platform focus inside a commerce platform processing more than EUR 6.5B yearly.\nLed checkout execution across architecture, delivery, and operational quality.\nOwned on-call quality and observability for payment-critical flows.\nHelped prepare and operate checkout during Black Friday 2025 peak traffic with zero downtime in the domain I was responsible for.",
+          "url": "https://www.scayle.com"
+        },
+        {
+          "id": "scayle--senior-software-engineer-checkout--2024-01",
+          "company": "SCAYLE",
+          "title": "Senior Software Engineer (Checkout)",
+          "startDate": "2024-01",
+          "endDate": "2025-04",
+          "location": "Hamburg, Germany - Remote",
+          "description": "Worked hands-on on checkout throughput, reliability, and multi-tenant commerce behavior.\nHelped rebuild checkout from a legacy implementation into a Laravel and RoadRunner architecture with clearer flow control.\nTook on checkout on-call and went deep on observability, production debugging, and error reduction.",
+          "url": "https://www.scayle.com"
+        },
+        {
+          "id": "anwalt-de--senior-software-engineer-team-lead--2022-12",
+          "company": "anwalt.de",
+          "title": "Senior Software Engineer Team Lead",
+          "startDate": "2022-12",
+          "endDate": "2023-12",
+          "location": "Nuremberg, Germany - Remote",
+          "description": "Led a small platform-oriented team while staying hands-on across backend, DevOps, and architecture for Germany's largest legal marketplace.\nOwned delivery across backend, DevOps, and technical direction.\nImproved CI/CD and deployment safety while mentoring engineers and raising engineering quality.",
+          "url": "https://www.linkedin.com/company/anwaltde/"
+        },
+        {
+          "id": "anwalt-de--senior-software-developer--2020-12",
+          "company": "anwalt.de",
+          "title": "Senior Software Developer",
+          "startDate": "2020-12",
+          "endDate": "2022-12",
+          "location": "Nuremberg, Germany - Remote",
+          "description": "Senior backend and full-stack engineer on search and marketplace capabilities for a high-traffic legal platform.\nRebuilt anwalt.de search around GraphQL, geolocation, aggregations, and range filters for a marketplace serving millions of users.\nEarned promotion into the lead role after owning one of the clearest technical improvement tracks in the product.\nBuilding platform features and APIs used by legal professionals and consumers.\nMigrating legacy code into more maintainable services and flows.\nImplementing advanced search behavior on top of Elasticsearch.",
+          "url": "https://www.linkedin.com/company/anwaltde/"
+        },
+        {
+          "id": "solutionlab-production--senior-software-engineer-team-lead--2018-01",
+          "company": "SOLUTIONLAB PRODUCTION",
+          "title": "Senior Software Engineer Team Lead",
+          "startDate": "2018-01",
+          "endDate": "2020-12",
+          "location": "Vilnius, Lithuania - Hybrid",
+          "description": "Team lead and hands-on engineer for Atobi and other retail products delivered by a dev house for startup and enterprise clients.\nLed the migration of Atobi from a prototype stack into a Laravel API, React frontend, and mobile delivery architecture.\nDesigned a reusable gamification system that became part of how multiple products approached engagement and calls to action.\nScaled the team from 3 to 10 engineers while bridging client product vision with technical feasibility.\nLeading the delivery team while staying hands-on with architecture and implementation.\nBuilding offline-first and real-time retail app behavior for enterprise client rollouts.\nActing as the technical counterpart for a startup client that needed both execution and product-level translation.\nProjects: Atobi - retail employee platform for brands like Nike and PVH Nordic; EffectiveRetail - all-in-one retail management solution",
+          "url": "https://www.linkedin.com/company/solutionlab-production/"
+        },
+        {
+          "id": "solutionlab-production--senior-web-developer--2017-11",
+          "company": "SOLUTIONLAB PRODUCTION",
+          "title": "Senior Web Developer",
+          "startDate": "2017-11",
+          "endDate": "2018-01",
+          "location": "Vilnius, Lithuania - Remote",
+          "description": "Senior backend engineer on a fast-moving retail startup account inside a dev house setup.\nJoined to build backend services for a retail startup and moved into the lead role within two months.\nDeveloping backend services and APIs for retail platform features.",
+          "url": "https://www.linkedin.com/company/solutionlab-production/"
+        },
+        {
+          "id": "olympic-casino-group-baltija--full-stack-engineer--2017-01",
+          "company": "Olympic Casino Group Baltija",
+          "title": "Full Stack Engineer",
+          "startDate": "2017-01",
+          "endDate": "2017-11",
+          "location": "Vilnius, Lithuania - On-site",
+          "description": "Full-stack engineer on betting systems where correctness, latency, and transaction handling mattered more than brochure features.\nBuilt features for real-time betting products where financial correctness and operational discipline were non-negotiable.\nWorked under a stricter TDD culture than most web teams, which sharpened how I approached safety and regression risk.\nBuilding and maintaining online betting product flows.\nWriting test-heavy code for real-time financial and account behavior.\nProjects: Olybet - online sports betting platform",
+          "url": ""
+        },
+        {
+          "id": "uab-inlusion-netforms--senior-software-engineer-team-lead--2016-02",
+          "company": "UAB inlusion Netforms",
+          "title": "Senior Software Engineer Team Lead",
+          "startDate": "2016-02",
+          "endDate": "2017-01",
+          "location": "Vilnius, Lithuania - On-site",
+          "description": "Team lead for distributed delivery across ERP, CRM, and cross-platform product work for international clients.\nLed a distributed team of 10 engineers across ERP and CRM projects with web, mobile, and desktop delivery.\nOwned architecture and delivery for enterprise products that mixed product strategy, project leadership, and implementation.\nLeading distributed engineering execution across the full project lifecycle.\nArchitecting ERP and CRM systems while staying involved in implementation detail.\nProjects: Columbina - enterprise ERP system; Olivia - CRM platform for sales teams",
+          "url": "https://www.linkedin.com/company/inlusionxr/"
+        },
+        {
+          "id": "uab-inlusion-netforms--senior-software-engineer--2015-11",
+          "company": "UAB inlusion Netforms",
+          "title": "Senior Software Engineer",
+          "startDate": "2015-11",
+          "endDate": "2016-02",
+          "location": "Vilnius, Lithuania - On-site",
+          "description": "Senior engineer across full-stack product work for enterprise clients.\nMoved from senior engineer into the lead role within roughly three months.\nDeveloping full-stack web applications and APIs for enterprise client work.",
+          "url": "https://www.linkedin.com/company/inlusionxr/"
+        },
+        {
+          "id": "uab-integrus--full-stack-engineer--2014-11",
+          "company": "UAB Integrus",
+          "title": "Full Stack Engineer",
+          "startDate": "2014-11",
+          "endDate": "2015-11",
+          "location": "Vilnius, Lithuania - On-site",
+          "description": "Full-stack engineer on warehouse and logistics systems for automotive e-commerce.\nBuilt warehouse workflow and shipping integrations for an automotive spare-parts commerce platform.\nDeveloping logistics automation and internal workflow systems.\nIntegrating external shipping providers such as DPD, DHL, and UPS.\nProjects: Ecu.de - automotive spare-parts e-commerce and warehouse platform",
+          "url": ""
+        },
+        {
+          "id": "itlogas-jsc--ruby-on-rails-developer--2014-02",
+          "company": "Itlogas JSC",
+          "title": "Ruby on Rails Developer",
+          "startDate": "2014-02",
+          "endDate": "2014-10",
+          "location": "Vilnius, Lithuania - Remote",
+          "description": "Rails developer on a campaign and voter-registration platform.\nDelivered full-stack Rails work for a voter registration and campaign management system.\nBuilding and maintaining Rails product features end to end.\nProjects: Voter registration and campaign management platform",
+          "url": "https://www.linkedin.com/company/itlogas/"
+        },
+        {
+          "id": "profectus-novus--php-web-developer--2013-04",
+          "company": "Profectus Novus",
+          "title": "PHP Web Developer",
+          "startDate": "2013-04",
+          "endDate": "2014-02",
+          "location": "Vilnius, Lithuania",
+          "description": "Early-career PHP engineer working inside SharePoint-heavy enterprise and government environments.\nBuilt a government education resource-sharing platform inside a SharePoint enterprise setup.\nDeveloping PHP applications integrated with SharePoint workflows and data.\nProjects: Government education resource-sharing platform",
+          "url": "https://www.linkedin.com/company/profectus-novus/"
+        }
+      ],
+      "removed": [],
+      "changed": [],
+      "unchanged": []
+    },
+    "education": {
+      "added": [
+        {
+          "id": "vilniaus-universitetas--software-engineering--2011",
+          "institution": "Vilniaus Universitetas",
+          "area": "Software Engineering",
+          "studyType": "Bachelor's degree",
+          "startDate": "2011",
+          "endDate": "2015"
+        }
+      ],
+      "removed": [],
+      "changed": [],
+      "unchanged": []
+    },
+    "summary": {
+      "introChanges": 5,
+      "aboutChanged": true,
+      "topSkillsChanged": true,
+      "linksChanged": true,
+      "experienceAdded": 12,
+      "experienceRemoved": 0,
+      "experienceChanged": 0,
+      "educationAdded": 1,
+      "educationRemoved": 0,
+      "educationChanged": 0,
+      "totalChanges": 21
+    }
+  },
+  "baseline": {
+    "schemaVersion": 1,
+    "intro": {
+      "name": "Jonas",
+      "headline": "Staff Engineer",
+      "location": "Germany",
+      "currentCompany": "",
+      "currentTitle": ""
+    },
+    "about": "I'm a seasoned full-stack software engineer, specializing in PHP, JavaScript, GO and various other technologies. Leveraging extensive experience as a senior developer and team lead, my expertise lies in creating solutions that are not only tailored to client's immediate needs but also scalable and future-proof. I'm dedicated to effective collaboration, risk management, and building enduring systems.",
+    "experience": [],
+    "education": [],
+    "topSkills": [],
+    "links": [],
+    "meta": {
+      "source": "imported",
+      "generatedAt": "2026-03-15T23:01:53.375Z",
+      "profileUrl": "",
+      "sourceLabel": "linkedin-export"
+    }
+  },
+  "desired": {
+    "schemaVersion": 1,
+    "intro": {
+      "name": "Jonas Petrik",
+      "headline": "Staff Engineer / Team Lead | Checkout Reliability | Backend & Platform Engineering",
+      "location": "Based in Germany, originally from Lithuania.",
+      "currentCompany": "SCAYLE",
+      "currentTitle": "Staff Engineer / Team Lead (Checkout)"
+    },
+    "about": "I lead checkout at SCAYLE with a backend and platform focus on reliability, observability, and high-availability commerce systems.\n\nMy work is strongest where scale meets operational pain: noisy alerts, brittle flows, unclear ownership, or systems that only look fine until traffic arrives. I like turning those edges into calmer production systems and clearer engineering ownership.\n\nBefore SCAYLE, I rebuilt search at anwalt.de and later stepped into broader platform and team leadership work. Before that, I led delivery for Atobi at Solutionlab while staying hands-on with architecture and execution.\n\nI value direct communication, pragmatic architecture, and software that keeps working under pressure.",
+    "experience": [
+      {
+        "id": "scayle--staff-engineer-team-lead-checkout--2025-04",
+        "company": "SCAYLE",
+        "title": "Staff Engineer / Team Lead (Checkout)",
+        "startDate": "2025-04",
+        "endDate": "present",
+        "location": "Hamburg, Germany - Remote",
+        "description": "Leading checkout with a backend and platform focus inside a commerce platform processing more than EUR 6.5B yearly.\nLed checkout execution across architecture, delivery, and operational quality.\nOwned on-call quality and observability for payment-critical flows.\nHelped prepare and operate checkout during Black Friday 2025 peak traffic with zero downtime in the domain I was responsible for.",
+        "url": "https://www.scayle.com"
+      },
+      {
+        "id": "scayle--senior-software-engineer-checkout--2024-01",
+        "company": "SCAYLE",
+        "title": "Senior Software Engineer (Checkout)",
+        "startDate": "2024-01",
+        "endDate": "2025-04",
+        "location": "Hamburg, Germany - Remote",
+        "description": "Worked hands-on on checkout throughput, reliability, and multi-tenant commerce behavior.\nHelped rebuild checkout from a legacy implementation into a Laravel and RoadRunner architecture with clearer flow control.\nTook on checkout on-call and went deep on observability, production debugging, and error reduction.",
+        "url": "https://www.scayle.com"
+      },
+      {
+        "id": "anwalt-de--senior-software-engineer-team-lead--2022-12",
+        "company": "anwalt.de",
+        "title": "Senior Software Engineer Team Lead",
+        "startDate": "2022-12",
+        "endDate": "2023-12",
+        "location": "Nuremberg, Germany - Remote",
+        "description": "Led a small platform-oriented team while staying hands-on across backend, DevOps, and architecture for Germany's largest legal marketplace.\nOwned delivery across backend, DevOps, and technical direction.\nImproved CI/CD and deployment safety while mentoring engineers and raising engineering quality.",
+        "url": "https://www.linkedin.com/company/anwaltde/"
+      },
+      {
+        "id": "anwalt-de--senior-software-developer--2020-12",
+        "company": "anwalt.de",
+        "title": "Senior Software Developer",
+        "startDate": "2020-12",
+        "endDate": "2022-12",
+        "location": "Nuremberg, Germany - Remote",
+        "description": "Senior backend and full-stack engineer on search and marketplace capabilities for a high-traffic legal platform.\nRebuilt anwalt.de search around GraphQL, geolocation, aggregations, and range filters for a marketplace serving millions of users.\nEarned promotion into the lead role after owning one of the clearest technical improvement tracks in the product.\nBuilding platform features and APIs used by legal professionals and consumers.\nMigrating legacy code into more maintainable services and flows.\nImplementing advanced search behavior on top of Elasticsearch.",
+        "url": "https://www.linkedin.com/company/anwaltde/"
+      },
+      {
+        "id": "solutionlab-production--senior-software-engineer-team-lead--2018-01",
+        "company": "SOLUTIONLAB PRODUCTION",
+        "title": "Senior Software Engineer Team Lead",
+        "startDate": "2018-01",
+        "endDate": "2020-12",
+        "location": "Vilnius, Lithuania - Hybrid",
+        "description": "Team lead and hands-on engineer for Atobi and other retail products delivered by a dev house for startup and enterprise clients.\nLed the migration of Atobi from a prototype stack into a Laravel API, React frontend, and mobile delivery architecture.\nDesigned a reusable gamification system that became part of how multiple products approached engagement and calls to action.\nScaled the team from 3 to 10 engineers while bridging client product vision with technical feasibility.\nLeading the delivery team while staying hands-on with architecture and implementation.\nBuilding offline-first and real-time retail app behavior for enterprise client rollouts.\nActing as the technical counterpart for a startup client that needed both execution and product-level translation.\nProjects: Atobi - retail employee platform for brands like Nike and PVH Nordic; EffectiveRetail - all-in-one retail management solution",
+        "url": "https://www.linkedin.com/company/solutionlab-production/"
+      },
+      {
+        "id": "solutionlab-production--senior-web-developer--2017-11",
+        "company": "SOLUTIONLAB PRODUCTION",
+        "title": "Senior Web Developer",
+        "startDate": "2017-11",
+        "endDate": "2018-01",
+        "location": "Vilnius, Lithuania - Remote",
+        "description": "Senior backend engineer on a fast-moving retail startup account inside a dev house setup.\nJoined to build backend services for a retail startup and moved into the lead role within two months.\nDeveloping backend services and APIs for retail platform features.",
+        "url": "https://www.linkedin.com/company/solutionlab-production/"
+      },
+      {
+        "id": "olympic-casino-group-baltija--full-stack-engineer--2017-01",
+        "company": "Olympic Casino Group Baltija",
+        "title": "Full Stack Engineer",
+        "startDate": "2017-01",
+        "endDate": "2017-11",
+        "location": "Vilnius, Lithuania - On-site",
+        "description": "Full-stack engineer on betting systems where correctness, latency, and transaction handling mattered more than brochure features.\nBuilt features for real-time betting products where financial correctness and operational discipline were non-negotiable.\nWorked under a stricter TDD culture than most web teams, which sharpened how I approached safety and regression risk.\nBuilding and maintaining online betting product flows.\nWriting test-heavy code for real-time financial and account behavior.\nProjects: Olybet - online sports betting platform",
+        "url": ""
+      },
+      {
+        "id": "uab-inlusion-netforms--senior-software-engineer-team-lead--2016-02",
+        "company": "UAB inlusion Netforms",
+        "title": "Senior Software Engineer Team Lead",
+        "startDate": "2016-02",
+        "endDate": "2017-01",
+        "location": "Vilnius, Lithuania - On-site",
+        "description": "Team lead for distributed delivery across ERP, CRM, and cross-platform product work for international clients.\nLed a distributed team of 10 engineers across ERP and CRM projects with web, mobile, and desktop delivery.\nOwned architecture and delivery for enterprise products that mixed product strategy, project leadership, and implementation.\nLeading distributed engineering execution across the full project lifecycle.\nArchitecting ERP and CRM systems while staying involved in implementation detail.\nProjects: Columbina - enterprise ERP system; Olivia - CRM platform for sales teams",
+        "url": "https://www.linkedin.com/company/inlusionxr/"
+      },
+      {
+        "id": "uab-inlusion-netforms--senior-software-engineer--2015-11",
+        "company": "UAB inlusion Netforms",
+        "title": "Senior Software Engineer",
+        "startDate": "2015-11",
+        "endDate": "2016-02",
+        "location": "Vilnius, Lithuania - On-site",
+        "description": "Senior engineer across full-stack product work for enterprise clients.\nMoved from senior engineer into the lead role within roughly three months.\nDeveloping full-stack web applications and APIs for enterprise client work.",
+        "url": "https://www.linkedin.com/company/inlusionxr/"
+      },
+      {
+        "id": "uab-integrus--full-stack-engineer--2014-11",
+        "company": "UAB Integrus",
+        "title": "Full Stack Engineer",
+        "startDate": "2014-11",
+        "endDate": "2015-11",
+        "location": "Vilnius, Lithuania - On-site",
+        "description": "Full-stack engineer on warehouse and logistics systems for automotive e-commerce.\nBuilt warehouse workflow and shipping integrations for an automotive spare-parts commerce platform.\nDeveloping logistics automation and internal workflow systems.\nIntegrating external shipping providers such as DPD, DHL, and UPS.\nProjects: Ecu.de - automotive spare-parts e-commerce and warehouse platform",
+        "url": ""
+      },
+      {
+        "id": "itlogas-jsc--ruby-on-rails-developer--2014-02",
+        "company": "Itlogas JSC",
+        "title": "Ruby on Rails Developer",
+        "startDate": "2014-02",
+        "endDate": "2014-10",
+        "location": "Vilnius, Lithuania - Remote",
+        "description": "Rails developer on a campaign and voter-registration platform.\nDelivered full-stack Rails work for a voter registration and campaign management system.\nBuilding and maintaining Rails product features end to end.\nProjects: Voter registration and campaign management platform",
+        "url": "https://www.linkedin.com/company/itlogas/"
+      },
+      {
+        "id": "profectus-novus--php-web-developer--2013-04",
+        "company": "Profectus Novus",
+        "title": "PHP Web Developer",
+        "startDate": "2013-04",
+        "endDate": "2014-02",
+        "location": "Vilnius, Lithuania",
+        "description": "Early-career PHP engineer working inside SharePoint-heavy enterprise and government environments.\nBuilt a government education resource-sharing platform inside a SharePoint enterprise setup.\nDeveloping PHP applications integrated with SharePoint workflows and data.\nProjects: Government education resource-sharing platform",
+        "url": "https://www.linkedin.com/company/profectus-novus/"
+      }
+    ],
+    "education": [
+      {
+        "id": "vilniaus-universitetas--software-engineering--2011",
+        "institution": "Vilniaus Universitetas",
+        "area": "Software Engineering",
+        "studyType": "Bachelor's degree",
+        "startDate": "2011",
+        "endDate": "2015"
+      }
+    ],
+    "topSkills": [
+      "Backend Engineering",
+      "Platform Reliability",
+      "Software Architecture",
+      "Checkout Systems",
+      "Observability",
+      "Incident Response",
+      "PHP",
+      "Go",
+      "Kubernetes",
+      "AWS",
+      "Team Leadership",
+      "Commerce Infrastructure"
+    ],
+    "links": [
+      {
+        "label": "Website",
+        "href": "https://petrik.dev"
+      },
+      {
+        "label": "LinkedIn",
+        "href": "https://www.linkedin.com/in/jonas-petrik/"
+      },
+      {
+        "label": "GitHub",
+        "href": "https://github.com/wukis"
+      },
+      {
+        "label": "GitLab",
+        "href": "https://gitlab.com/jonas.petrik"
+      }
+    ],
+    "meta": {
+      "source": "desired",
+      "generatedAt": "2026-03-15T23:01:59.520Z",
+      "profileUrl": "https://www.linkedin.com/in/jonas-petrik/",
+      "sourceLabel": "profileContent"
+    }
+  }
+}

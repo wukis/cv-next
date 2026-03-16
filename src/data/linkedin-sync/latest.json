@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "snapshotId": "2026-03-15T23-01-59-522Z-d17f04-ea150a",
+  "createdAt": "2026-03-15T23:01:59.522Z",
+  "importedAt": "2026-03-15T23:01:53.375Z",
+  "baselineHash": "d17f046bd1a7029e8f651872b095c55b8eb3c90e9b87649a674fe3d2d185972c",
+  "desiredHash": "ea150accbb53229178a9fbbc9e29bc7ec437ffe03afd8021bc2d0b6ce23d7ffd",
+  "summary": {
+    "introChanges": 5,
+    "aboutChanged": true,
+    "topSkillsChanged": true,
+    "linksChanged": true,
+    "experienceAdded": 12,
+    "experienceRemoved": 0,
+    "experienceChanged": 0,
+    "educationAdded": 1,
+    "educationRemoved": 0,
+    "educationChanged": 0,
+    "totalChanges": 21
+  }
+}

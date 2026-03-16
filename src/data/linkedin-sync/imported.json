@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "importedAt": "2026-03-15T23:01:53.375Z",
+  "sourceType": "directory",
+  "inputName": "Basic_LinkedInDataExport_03-15-2026.zip",
+  "manifest": [
+    "Invitations.csv",
+    "Profile.csv",
+    "Recommendations_Given.csv",
+    "Recommendations_Received.csv",
+    "Registration.csv"
+  ],
+  "warnings": [
+    "No LinkedIn positions/experience file was detected in the export."
+  ],
+  "profileHash": "d17f046bd1a7029e8f651872b095c55b8eb3c90e9b87649a674fe3d2d185972c",
+  "profile": {
+    "schemaVersion": 1,
+    "intro": {
+      "name": "Jonas",
+      "headline": "Staff Engineer",
+      "location": "Germany",
+      "currentCompany": "",
+      "currentTitle": ""
+    },
+    "about": "I'm a seasoned full-stack software engineer, specializing in PHP, JavaScript, GO and various other technologies. Leveraging extensive experience as a senior developer and team lead, my expertise lies in creating solutions that are not only tailored to client's immediate needs but also scalable and future-proof. I'm dedicated to effective collaboration, risk management, and building enduring systems.",
+    "experience": [],
+    "education": [],
+    "topSkills": [],
+    "links": [],
+    "meta": {
+      "source": "imported",
+      "generatedAt": "2026-03-15T23:01:53.375Z",
+      "profileUrl": "",
+      "sourceLabel": "linkedin-export"
+    }
+  }
+}
