@@ -62,7 +62,7 @@ import {
 } from 'react-icons/vsc'
 
 // Tech category mapping
-export const TECH_CATEGORIES: Record<string, string[]> = {
+const TECH_CATEGORIES: Record<string, string[]> = {
   Languages: [
     'PHP',
     'Go',
@@ -155,7 +155,7 @@ export const TECH_CATEGORIES: Record<string, string[]> = {
 }
 
 // Get category for a technology
-export function getTechCategory(tech: string): string {
+function getTechCategory(tech: string): string {
   const normalizedTech = tech.toLowerCase().trim()
   for (const [category, techs] of Object.entries(TECH_CATEGORIES)) {
     if (techs.some((t) => t.toLowerCase() === normalizedTech)) {
@@ -166,7 +166,7 @@ export function getTechCategory(tech: string): string {
 }
 
 // Group technologies by category
-export function groupTechByCategory(
+function groupTechByCategory(
   technologies: string[],
 ): Record<string, string[]> {
   const grouped: Record<string, string[]> = {}
@@ -200,7 +200,7 @@ export function groupTechByCategory(
 }
 
 // Technology icon component using react-icons
-export function TechIcon({
+function TechIcon({
   tech,
   className = 'w-3.5 h-3.5',
 }: {
@@ -323,7 +323,7 @@ export function TechIcon({
 }
 
 // Technology pill component for expanded view
-export function TechPill({
+function TechPill({
   tech,
   tone = 'default',
 }: {
@@ -345,7 +345,7 @@ export function TechPill({
 }
 
 // Technology icon (collapsed view)
-export function TechIconButton({
+function TechIconButton({
   tech,
   tone = 'default',
 }: {
