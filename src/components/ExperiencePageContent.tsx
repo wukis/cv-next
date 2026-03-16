@@ -4,183 +4,23 @@ import { Button, DocumentIcon } from '@/components/Button'
 import { Container } from '@/components/Container'
 import { TechStack } from '@/components/TechStack'
 import { TerminalPageHeader } from '@/components/TerminalHeader'
-import { EducationInterface, WorkInterface } from '@/lib/experience'
+import {
+  type GroupedWorkExperience,
+  calculateTotalExperienceYears,
+  formatDuration,
+  getAllUniqueItems,
+  getPromotionDiff,
+  groupWorkExperiencesForDisplay,
+} from '@/lib/experienceContent'
+import {
+  EducationInterface,
+  getDuration,
+  WorkInterface,
+} from '@/lib/experience'
 import { profileContent } from '@/lib/profileContent'
 import Image from 'next/image'
-
-const getDuration = (
-  startDate: string,
-  endDate: string,
-): { years: number; months: number } => {
-  const start = new Date(startDate)
-  const end = endDate === 'now' ? new Date() : new Date(endDate)
-
-  let years = end.getFullYear() - start.getFullYear()
-  let months = end.getMonth() - start.getMonth() + 1
-
-  if (months >= 12) {
-    years += 1
-    months -= 12
-  } else if (months < 0) {
-    years -= 1
-    months += 12
-  }
-
-  return { years, months }
-}
-
-const formatDuration = (duration: {
-  years: number
-  months: number
-}): string => {
-  const { years, months } = duration
-  let formatted = ''
-  if (years > 0) {
-    formatted += `${years} yr`
-  }
-  if (months > 0) {
-    if (formatted) formatted += ' '
-    formatted += `${months} mo`
-  }
-  return formatted || '0 mo'
-}
-
-const getCompanyDuration = (experiences: WorkInterface[]) => {
-  const startDates = experiences.map((exp) => new Date(exp.startDate).getTime())
-  const endDates = experiences.map((exp) =>
-    exp.endDate === 'now'
-      ? new Date().getTime()
-      : new Date(exp.endDate).getTime(),
-  )
-
-  const earliestStartDate = new Date(Math.min(...startDates))
-  const latestEndDate = new Date(Math.max(...endDates))
-
-  return {
-    startDate: earliestStartDate,
-    endDate: latestEndDate,
-  }
-}
-
-const groupWorkExperiences = (workExperiences: WorkInterface[]) => {
-  return workExperiences.reduce(
-    (acc, experience) => {
-      const { name, startDate, endDate } = experience
-      if (!acc[name]) {
-        acc[name] = {
-          company: name,
-          url: experience.url,
-          location: experience.location ?? '',
-          image: experience.image,
-          experiences: [],
-          totalDuration: { years: 0, months: 0 },
-          startDate: new Date(startDate),
-          endDate: endDate === 'now' ? new Date() : new Date(endDate),
-        }
-      }
-      acc[name].experiences.push(experience)
-
-      const experienceDuration = getDuration(startDate, endDate)
-      acc[name].totalDuration.years += experienceDuration.years
-      acc[name].totalDuration.months += experienceDuration.months
-
-      if (acc[name].totalDuration.months >= 12) {
-        acc[name].totalDuration.years += Math.floor(
-          acc[name].totalDuration.months / 12,
-        )
-        acc[name].totalDuration.months = acc[name].totalDuration.months % 12
-      }
-
-      const companyDuration = getCompanyDuration(acc[name].experiences)
-      acc[name].startDate = companyDuration.startDate
-      acc[name].endDate = companyDuration.endDate
-
-      return acc
-    },
-    {} as Record<
-      string,
-      {
-        company: string
-        url: string
-        location: string
-        image: string
-        experiences: WorkInterface[]
-        totalDuration: { years: number; months: number }
-        startDate: Date
-        endDate: Date
-      }
-    >,
-  )
-}
-
-const calculateTotalExperience = (
-  groupedWorkExperiences: Record<
-    string,
-    { totalDuration: { years: number; months: number } }
-  >,
-) => {
-  return Object.values(groupedWorkExperiences).reduce(
-    (acc, { totalDuration }) => {
-      acc.years += totalDuration.years
-      acc.months += totalDuration.months
-      return acc
-    },
-    { years: 0, months: 0 },
-  )
-}
-
-const groupedWorkExperiences = groupWorkExperiences(profileContent.work)
-const totalExperience = calculateTotalExperience(groupedWorkExperiences)
-const totalExperienceYears =
-  totalExperience.years + Math.floor(totalExperience.months / 12)
-
-// Get diff between two arrays (what's new in arr1 compared to arr2)
-const getNewItems = (current: string[], previous: string[]): string[] => {
-  const previousSet = new Set(previous.map((item) => item.toLowerCase().trim()))
-  return current.filter((item) => !previousSet.has(item.toLowerCase().trim()))
-}
-
-// Get all unique items from multiple arrays
-const getAllUniqueItems = (arrays: string[][]): string[] => {
-  const seen = new Set<string>()
-  const result: string[] = []
-  arrays.forEach((arr) => {
-    arr.forEach((item) => {
-      const key = item.toLowerCase().trim()
-      if (!seen.has(key)) {
-        seen.add(key)
-        result.push(item)
-      }
-    })
-  })
-  return result
-}
-
-// Get what's new in this role compared to previous
-const getPromotionDiff = (
-  current: WorkInterface,
-  previous: WorkInterface | null,
-) => {
-  if (!previous) {
-    return {
-      newResponsibilities: current.responsibilities,
-      inheritedResponsibilities: [],
-    }
-  }
-
-  const newResponsibilities = getNewItems(
-    current.responsibilities,
-    previous.responsibilities,
-  )
-  const inheritedResponsibilities = current.responsibilities.filter(
-    (item) => !newResponsibilities.includes(item),
-  )
-
-  return {
-    newResponsibilities,
-    inheritedResponsibilities,
-  }
-}
+const groupedWorkExperiences = groupWorkExperiencesForDisplay(profileContent.work)
+const totalExperienceYears = calculateTotalExperienceYears(groupedWorkExperiences)
 
 // Promotion diff display component
 function PromotionDiff({
@@ -425,19 +265,7 @@ function Education({
 function Work({
   groupedWorkExperiences,
 }: {
-  groupedWorkExperiences: Record<
-    string,
-    {
-      company: string
-      url: string
-      location: string
-      image: string
-      experiences: WorkInterface[]
-      totalDuration: { years: number; months: number }
-      startDate: Date
-      endDate: Date
-    }
-  >
+  groupedWorkExperiences: Record<string, GroupedWorkExperience>
 }) {
   const companies = Object.keys(groupedWorkExperiences)
 
@@ -820,7 +648,7 @@ function RecruiterCvHint() {
   )
 }
 
-export default function ExperienceClientContent() {
+export default function ExperiencePageContent() {
   return (
     <div>
       <Container className="mt-10 sm:mt-16">

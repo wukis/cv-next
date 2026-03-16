@@ -1,7 +1,3 @@
-'use client'
-
-import { useEffect, useState } from 'react'
-
 export const NETWORK_CLUSTER_STATE_EVENT = 'network-cluster-state'
 export const TRIGGER_NETWORK_EMERGENCY_EVENT = 'trigger-emergency'
 export const NETWORK_CALL_ASSIGNMENTS_EVENT = 'network-call-assignments'
@@ -156,28 +152,4 @@ export function appendAmbientCallHistoryEntry(entry: AmbientCallHistoryEntry) {
 
 export function getAmbientCallHistory() {
   return ambientCallHistory
-}
-
-export function useAmbientClusterSnapshot() {
-  const [snapshot, setSnapshot] = useState<ClusterSnapshot>(
-    DEFAULT_CLUSTER_SNAPSHOT,
-  )
-
-  useEffect(() => {
-    const handleClusterUpdate = (event: Event) => {
-      const customEvent = event as CustomEvent<ClusterSnapshot>
-      if (customEvent.detail) {
-        setSnapshot(customEvent.detail)
-      }
-    }
-
-    window.addEventListener(NETWORK_CLUSTER_STATE_EVENT, handleClusterUpdate)
-    return () =>
-      window.removeEventListener(
-        NETWORK_CLUSTER_STATE_EVENT,
-        handleClusterUpdate,
-      )
-  }, [])
-
-  return snapshot
 }

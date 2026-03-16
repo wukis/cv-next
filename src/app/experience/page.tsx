@@ -1,6 +1,6 @@
 import { type Metadata } from 'next'
 
-import ExperienceClientContent from '@/components/ExperienceClientPage'
+import ExperiencePageContent from '@/components/ExperiencePageContent'
 
 export const metadata: Metadata = {
   title: 'Experience',
@@ -12,5 +12,5 @@ export const metadata: Metadata = {
 }
 
 export default function ExperiencePage() {
-  return <ExperienceClientContent />
+  return <ExperiencePageContent />
 }

@@ -16,8 +16,8 @@ import {
   type AmbientServiceName,
   type EmergencyScenarioKey,
   type TriggerSource,
-  useAmbientClusterSnapshot,
 } from '@/lib/ambientCluster'
+import { useAmbientClusterSnapshot } from '@/lib/ambientClusterClient'
 
 type CallPhase = 'active' | 'holding' | 'winding'
 

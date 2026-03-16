@@ -1,5 +1,5 @@
 import { type Metadata } from 'next'
-import HomeClientContent from '@/components/HomeClientContent'
+import HomePageContent from '@/components/HomePageContent'
 import { profileContent } from '@/lib/profileContent'
 import { personKnowsAbout, seoDescription, siteUrl } from '@/lib/siteProfile'
 
@@ -45,7 +45,7 @@ export default function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <HomeClientContent />
+      <HomePageContent />
     </>
   )
 }

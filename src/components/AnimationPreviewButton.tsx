@@ -1,0 +1,104 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import clsx from 'clsx'
+
+import {
+  animationFocusButtonClassName,
+  DesktopTooltip,
+  HexagonNetworkIcon,
+} from '@/components/HeaderShared'
+import { useAmbientEligibility } from '@/components/useAmbientEligibility'
+import {
+  TRIGGER_NETWORK_EMERGENCY_EVENT,
+} from '@/lib/ambientCluster'
+import { useAmbientClusterSnapshot } from '@/lib/ambientClusterClient'
+import { deriveAmbientMonitoringState } from '@/lib/ambientMonitoring'
+
+export function AnimationPreviewButton() {
+  const isAmbientEligible = useAmbientEligibility()
+  const [isHovering, setIsHovering] = useState(false)
+  const cluster = useAmbientClusterSnapshot()
+  const monitoring = deriveAmbientMonitoringState(cluster)
+
+  useEffect(() => {
+    if (!isAmbientEligible) {
+      return
+    }
+
+    if (isHovering) {
+      document.documentElement.classList.add('animation-focus')
+      window.dispatchEvent(
+        new CustomEvent('animation-focus-hover', {
+          detail: { isHovering: true },
+        }),
+      )
+    } else {
+      document.documentElement.classList.remove('animation-focus')
+      window.dispatchEvent(
+        new CustomEvent('animation-focus-hover', {
+          detail: { isHovering: false },
+        }),
+      )
+    }
+
+    return () => {
+      document.documentElement.classList.remove('animation-focus')
+      window.dispatchEvent(
+        new CustomEvent('animation-focus-hover', {
+          detail: { isHovering: false },
+        }),
+      )
+    }
+  }, [isAmbientEligible, isHovering])
+
+  if (!isAmbientEligible) {
+    return null
+  }
+
+  const tooltipDescription = isHovering
+    ? monitoring.buttonDescription
+    : 'Hover to preview cluster pressure paths like surge scaling, reroute pressure, cache warmup misses, and queue buildup. While hovering, scroll to zoom the cluster view. Click to start a failover drill immediately.'
+
+  return (
+    <DesktopTooltip
+      align="right"
+      label={monitoring.buttonLabel}
+      description={tooltipDescription}
+      panelClassName="min-w-[20rem] max-w-[26rem]"
+    >
+      <button
+        type="button"
+        className={`${animationFocusButtonClassName} h-11 w-11 cursor-pointer`}
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
+        onClick={() =>
+          window.dispatchEvent(
+            new CustomEvent(TRIGGER_NETWORK_EMERGENCY_EVENT, {
+              detail: {
+                scenarioKey: 'failover',
+                triggerSource: 'button-click',
+              },
+            }),
+          )
+        }
+        aria-label="Preview background animation"
+      >
+        <HexagonNetworkIcon
+          className={clsx(
+            'h-5 w-5 transition-all duration-300',
+            isHovering
+              ? 'scale-110 text-emerald-500 dark:text-emerald-400'
+              : 'text-neutral-600 dark:text-neutral-300',
+          )}
+        />
+        <span
+          className={clsx(
+            'absolute inset-0 rounded-lg ring-2 ring-emerald-400/50 transition-all duration-500',
+            isHovering ? 'scale-100 opacity-100' : 'scale-95 opacity-0',
+          )}
+        />
+      </button>
+    </DesktopTooltip>
+  )
+}

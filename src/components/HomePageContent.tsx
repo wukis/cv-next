@@ -1,5 +1,3 @@
-'use client'
-
 import Image from 'next/image'
 import Link from 'next/link'
 import { Button, DocumentIcon, MailIcon } from '@/components/Button'
@@ -239,91 +237,90 @@ function Recommendation({
   )
 }
 
-export default function HomeClientContent() {
+function HomeHeroCard() {
   return (
-    <>
-      <Container className="mt-10 sm:mt-16">
-        {/* Main hero card - combines portrait and bio on mobile */}
-        <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white/95 dark:border-neutral-700 dark:bg-neutral-900/95">
-          {/* Terminal header */}
-          <div className="flex h-6 items-center gap-2 border-b border-neutral-300 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
-            <span className="truncate font-mono text-[10px] text-neutral-700 dark:text-neutral-100">
-              ~/README.md
-            </span>
-          </div>
+    <Container className="mt-10 sm:mt-16">
+      <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white/95 dark:border-neutral-700 dark:bg-neutral-900/95">
+        <div className="flex h-6 items-center gap-2 border-b border-neutral-300 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
+          <span className="truncate font-mono text-[10px] text-neutral-700 dark:text-neutral-100">
+            ~/README.md
+          </span>
+        </div>
 
-          <div className="p-5 sm:p-6">
-            {/* Mobile: Portrait centered at top, Desktop: Side by side */}
-            <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
-              {/* Portrait - smaller on mobile, side column on desktop */}
-              <div className="flex-shrink-0">
-                <div className="h-36 w-36 overflow-hidden rounded-xl shadow-lg ring-4 ring-white sm:h-40 sm:w-40 lg:h-48 lg:w-48 dark:ring-neutral-800">
-                  <Image
-                    src={portraitImage}
-                    alt="Jonas Petrik - Staff Engineer and Team Lead"
-                    sizes="(min-width: 1024px) 12rem, (min-width: 640px) 10rem, 9rem"
-                    className="h-full w-full object-cover"
-                    priority={true}
-                  />
-                </div>
-
-                <ProfileSocialLinks />
+        <div className="p-5 sm:p-6">
+          <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
+            <div className="flex-shrink-0">
+              <div className="h-36 w-36 overflow-hidden rounded-xl shadow-lg ring-4 ring-white sm:h-40 sm:w-40 lg:h-48 lg:w-48 dark:ring-neutral-800">
+                <Image
+                  src={portraitImage}
+                  alt="Jonas Petrik - Staff Engineer and Team Lead"
+                  sizes="(min-width: 1024px) 12rem, (min-width: 640px) 10rem, 9rem"
+                  className="h-full w-full object-cover"
+                  priority={true}
+                />
               </div>
 
-              {/* Bio content */}
-              <div className="min-w-0 flex-1 text-center sm:text-left">
-                <div className="mb-3">
-                  <span className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
-                    {publicBasics.label}
-                  </span>
-                </div>
-                <h1 className="text-2xl font-bold tracking-tight text-neutral-800 sm:text-3xl lg:text-4xl xl:text-5xl dark:text-neutral-100">
-                  {publicBasics.name}
-                </h1>
-                <div className="mt-4 space-y-3 text-sm leading-relaxed text-neutral-700 sm:text-base dark:text-neutral-200">
-                  {heroIntro.map((paragraph) => (
-                    <p key={paragraph}>{paragraph}</p>
-                  ))}
-                </div>
-                <div className="mt-4 flex justify-center sm:justify-start">
-                  <p className="inline-flex items-center rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 font-mono text-[11px] text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800/80 dark:text-neutral-300">
-                    {totalPublicExperienceYears}+ years across fullstack engineering,
-                    architecture, DevOps, and team leadership
-                  </p>
-                </div>
+              <ProfileSocialLinks />
+            </div>
 
-                <div className="mt-5 flex flex-row flex-wrap items-center justify-center gap-3 sm:justify-start">
-                  <Button
-                    href="/cv"
-                    variant="secondary"
-                    className="rounded-lg border border-neutral-300 bg-neutral-100 font-mono text-neutral-900 hover:border-emerald-300 hover:text-emerald-800 dark:border-neutral-700 dark:bg-neutral-800/50 dark:text-neutral-100 dark:hover:border-emerald-700 dark:hover:text-emerald-200"
-                  >
-                    <DocumentIcon className="h-4 w-4" />
-                    <span>view CV</span>
-                  </Button>
-                  <Button
-                    href={`mailto:${publicEmail}`}
-                    variant="secondary"
-                    className="rounded-lg border border-emerald-300 bg-emerald-50 font-mono text-emerald-900 hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/70"
-                  >
-                    <MailIcon className="h-4 w-4" />
-                    <span>email</span>
-                  </Button>
-                </div>
+            <div className="min-w-0 flex-1 text-center sm:text-left">
+              <div className="mb-3">
+                <span className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-neutral-600 dark:text-neutral-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
+                  {publicBasics.label}
+                </span>
+              </div>
+              <h1 className="text-2xl font-bold tracking-tight text-neutral-800 sm:text-3xl lg:text-4xl xl:text-5xl dark:text-neutral-100">
+                {publicBasics.name}
+              </h1>
+              <div className="mt-4 space-y-3 text-sm leading-relaxed text-neutral-700 sm:text-base dark:text-neutral-200">
+                {heroIntro.map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
+              </div>
+              <div className="mt-4 flex justify-center sm:justify-start">
+                <p className="inline-flex items-center rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 font-mono text-[11px] text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800/80 dark:text-neutral-300">
+                  {totalPublicExperienceYears}+ years across fullstack
+                  engineering, architecture, DevOps, and team leadership
+                </p>
+              </div>
+
+              <div className="mt-5 flex flex-row flex-wrap items-center justify-center gap-3 sm:justify-start">
+                <Button
+                  href="/cv"
+                  variant="secondary"
+                  className="rounded-lg border border-neutral-300 bg-neutral-100 font-mono text-neutral-900 hover:border-emerald-300 hover:text-emerald-800 dark:border-neutral-700 dark:bg-neutral-800/50 dark:text-neutral-100 dark:hover:border-emerald-700 dark:hover:text-emerald-200"
+                >
+                  <DocumentIcon className="h-4 w-4" />
+                  <span>view CV</span>
+                </Button>
+                <Button
+                  href={`mailto:${publicEmail}`}
+                  variant="secondary"
+                  className="rounded-lg border border-emerald-300 bg-emerald-50 font-mono text-emerald-900 hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/70"
+                >
+                  <MailIcon className="h-4 w-4" />
+                  <span>email</span>
+                </Button>
               </div>
             </div>
           </div>
-
-          {/* Tech Stack from current employment */}
-          <TechStack
-            technologies={currentPublicRole.technologies}
-            tone="plain"
-            contentId="home-tech-stack"
-          />
         </div>
-      </Container>
 
+        <TechStack
+          technologies={currentPublicRole.technologies}
+          tone="plain"
+          contentId="home-tech-stack"
+        />
+      </div>
+    </Container>
+  )
+}
+
+export default function HomePageContent() {
+  return (
+    <>
+      <HomeHeroCard />
       <Highlights />
       <RecommendationsPreview />
     </>

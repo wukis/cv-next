@@ -6,7 +6,7 @@ import DeferredBackground from '@/components/DeferredBackground'
 import DeferredConsoleEasterEgg from '@/components/DeferredConsoleEasterEgg'
 import DeferredLogTerminal from '@/components/DeferredLogTerminal'
 import DeferredMetricWidgets from '@/components/DeferredMetricWidgets'
-import { useAmbientClusterSnapshot } from '@/lib/ambientCluster'
+import { useAmbientClusterSnapshot } from '@/lib/ambientClusterClient'
 
 const EmergencyCallOverlay = dynamic(
   () => import('@/components/EmergencyCallOverlay'),

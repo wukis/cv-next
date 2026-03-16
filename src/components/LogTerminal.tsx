@@ -4,8 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import {
   type ClusterEventEntry,
-  useAmbientClusterSnapshot,
 } from '@/lib/ambientCluster'
+import { useAmbientClusterSnapshot } from '@/lib/ambientClusterClient'
 import {
   deriveAmbientMonitoringState,
 } from '@/lib/ambientMonitoring'

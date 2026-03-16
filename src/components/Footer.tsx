@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import { ContainerInner, ContainerOuter } from '@/components/Container'
+import { CurrentYear } from '@/components/CurrentYear'
 import { recommendationsCopy } from '@/lib/recommendationsCopy'
 
 function NavLink({
@@ -37,7 +38,7 @@ export function Footer() {
                 </NavLink>
               </nav>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                &copy; {new Date().getFullYear()} Jonas Petrik. All rights
+                &copy; <CurrentYear /> Jonas Petrik. All rights
                 reserved.
               </p>
             </div>
