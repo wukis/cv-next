@@ -19,6 +19,10 @@
 # misc
 .DS_Store
 *.pem
+.lighthouse-*.json
+.claude/
+.cursor/
+petrik-cv/
 
 # debug
 npm-debug.log*
@@ -34,7 +38,6 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
-next-env.d.ts
 
 # phpstorm
 .idea
