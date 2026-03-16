@@ -6,7 +6,7 @@ import { useAmbientEligibility } from '@/components/useAmbientEligibility'
 
 type AmbientComponent = React.ComponentType
 
-export function DesktopAmbientGate() {
+export default function DesktopAmbientGate() {
   const isEligible = useAmbientEligibility()
   const [AmbientComponent, setAmbientComponent] = useState<AmbientComponent>()
 

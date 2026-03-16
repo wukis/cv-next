@@ -2,8 +2,8 @@ import '@/styles/tailwind.css'
 
 import { type Metadata } from 'next'
 
-import { Providers } from '@/app/providers'
-import { DesktopAmbientGate } from '@/components/DesktopAmbientGate'
+import Providers from '@/app/providers'
+import DesktopAmbientGate from '@/components/DesktopAmbientGate'
 import { Layout } from '@/components/Layout'
 import { profileContent } from '@/lib/profileContent'
 import { seoDescription, seoKeywords, siteUrl } from '@/lib/siteProfile'

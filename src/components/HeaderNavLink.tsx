@@ -4,7 +4,7 @@ import clsx from 'clsx'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-export function HeaderNavLink({
+export default function HeaderNavLink({
   href,
   label,
 }: {

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 
 import { surfaceHoverMotionClassName } from '@/components/interactionStyles'
 
-export function BackToTopButton() {
+export default function BackToTopButton() {
   const [isVisible, setIsVisible] = useState(false)
   const [isAnimationHovering, setIsAnimationHovering] = useState(false)
 

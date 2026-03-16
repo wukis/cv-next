@@ -48,7 +48,11 @@ function MobileNavItem({
   )
 }
 
-export function MobileNavigation({ className }: { className?: string }) {
+export default function MobileNavigation({
+  className,
+}: {
+  className?: string
+}) {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const mounted = typeof document !== 'undefined'

@@ -1,4 +1,4 @@
-import { BackToTopButton } from '@/components/BackToTopButton'
+import BackToTopButton from '@/components/BackToTopButton'
 import { Footer } from '@/components/Footer'
 import { Header } from '@/components/Header'
 

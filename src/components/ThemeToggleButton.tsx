@@ -40,7 +40,7 @@ function MoonIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   )
 }
 
-export function ThemeToggleButton() {
+export default function ThemeToggleButton() {
   const isMounted = useSyncExternalStore(
     () => () => {},
     () => true,

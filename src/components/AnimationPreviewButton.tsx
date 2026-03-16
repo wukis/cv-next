@@ -13,7 +13,7 @@ import { TRIGGER_NETWORK_EMERGENCY_EVENT } from '@/lib/ambientCluster'
 import { useAmbientClusterSnapshot } from '@/lib/ambientClusterClient'
 import { deriveAmbientMonitoringState } from '@/lib/ambientMonitoring'
 
-export function AnimationPreviewButton() {
+export default function AnimationPreviewButton() {
   const isAmbientEligible = useAmbientEligibility()
   const [isHovering, setIsHovering] = useState(false)
   const cluster = useAmbientClusterSnapshot()

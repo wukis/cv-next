@@ -4,7 +4,11 @@ import clsx from 'clsx'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
-export function HeaderVisibility({ children }: { children: React.ReactNode }) {
+export default function HeaderVisibility({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   const pathname = usePathname()
   const [isVisible, setIsVisible] = useState(true)
 

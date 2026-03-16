@@ -1,18 +1,18 @@
 import Link from 'next/link'
 
-import { AnimationPreviewButton } from '@/components/AnimationPreviewButton'
+import AnimationPreviewButton from '@/components/AnimationPreviewButton'
 import { DownloadIcon } from '@/components/Button'
 import { Container } from '@/components/Container'
-import { HeaderNavLink } from '@/components/HeaderNavLink'
+import HeaderNavLink from '@/components/HeaderNavLink'
 import {
   DesktopTooltip,
   headerControlClassName,
   navItems,
   TerminalPromptIcon,
 } from '@/components/HeaderShared'
-import { HeaderVisibility } from '@/components/HeaderVisibility'
-import { MobileNavigation } from '@/components/MobileNavigation'
-import { ThemeToggleButton } from '@/components/ThemeToggleButton'
+import HeaderVisibility from '@/components/HeaderVisibility'
+import MobileNavigation from '@/components/MobileNavigation'
+import ThemeToggleButton from '@/components/ThemeToggleButton'
 
 function DesktopNavigation(props: React.ComponentPropsWithoutRef<'nav'>) {
   return (
