@@ -20,12 +20,14 @@ export function DesktopTooltip({
   label,
   description,
   panelClassName,
+  isSuppressed = false,
   children,
 }: {
   align?: 'left' | 'center' | 'right'
   label: string
   description: string
   panelClassName?: string
+  isSuppressed?: boolean
   children: React.ReactNode
 }) {
   return (
@@ -43,7 +45,10 @@ export function DesktopTooltip({
         <span
           className={clsx(
             'flex max-w-64 min-w-44 flex-col gap-1 rounded-xl border border-emerald-500/15 bg-white/95 px-3 py-2 text-left shadow-xl ring-1 shadow-neutral-900/10 ring-neutral-200/60 backdrop-blur-md transition-all duration-200 ease-out dark:border-emerald-400/15 dark:bg-neutral-900/95 dark:ring-neutral-700/70',
-            'translate-y-1 scale-[0.98] opacity-0 group-hover/tooltip:translate-y-0 group-hover/tooltip:scale-100 group-hover/tooltip:opacity-100',
+            'translate-y-1 scale-[0.98] opacity-0 group-hover/tooltip:translate-y-0 group-hover/tooltip:scale-100',
+            isSuppressed
+              ? 'group-hover/tooltip:pointer-events-none group-hover/tooltip:opacity-0'
+              : 'group-hover/tooltip:opacity-100',
             align === 'left' && 'origin-top-left',
             align === 'center' && 'origin-top',
             align === 'right' && 'origin-top-right',

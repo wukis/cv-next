@@ -6778,7 +6778,7 @@ const HexagonServiceNetwork: React.FC = () => {
       />
 
       {isFocused && visibleToasts.length > 0 ? (
-        <div className="pointer-events-none fixed right-6 bottom-6 z-10 flex w-[min(22rem,calc(100vw-3rem))] flex-col-reverse items-end gap-3">
+        <div className="pointer-events-none fixed right-6 bottom-6 z-10 flex w-[min(22rem,calc(100vw-3rem))] origin-bottom-right scale-[0.6] flex-col-reverse items-end gap-3">
           {visibleToasts.map((toast) => {
             const accentColor =
               toast.mode === 'emergency'

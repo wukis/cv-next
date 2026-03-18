@@ -9,12 +9,14 @@ import {
   HexagonNetworkIcon,
 } from '@/components/HeaderShared'
 import { useAmbientEligibility } from '@/components/useAmbientEligibility'
+import { TRIGGER_NETWORK_EMERGENCY_EVENT } from '@/lib/ambientCluster'
 import { useAmbientClusterSnapshot } from '@/lib/ambientClusterClient'
 import { deriveAmbientMonitoringState } from '@/lib/ambientMonitoring'
 
 export default function AnimationPreviewButton() {
   const isAmbientEligible = useAmbientEligibility()
   const [isHovering, setIsHovering] = useState(false)
+  const [isTooltipSuppressed, setIsTooltipSuppressed] = useState(false)
   const cluster = useAmbientClusterSnapshot()
   const monitoring = deriveAmbientMonitoringState(cluster)
 
@@ -58,6 +60,20 @@ export default function AnimationPreviewButton() {
     }
   }, [isAmbientEligible, isHovering])
 
+  useEffect(() => {
+    if (!isAmbientEligible || !isHovering) {
+      return
+    }
+
+    const tooltipFadeTimeout = window.setTimeout(() => {
+      setIsTooltipSuppressed(true)
+    }, 4200)
+
+    return () => {
+      window.clearTimeout(tooltipFadeTimeout)
+    }
+  }, [isAmbientEligible, isHovering])
+
   if (!isAmbientEligible) {
     return null
   }
@@ -67,19 +83,41 @@ export default function AnimationPreviewButton() {
   const tooltipDescription = isHovering
     ? `${monitoring.buttonDescription} ${keyboardRotationHint}`
     : `Hover to preview cluster pressure paths like surge scaling, reroute pressure, cache warmup misses, and queue buildup. While hovering, scroll to zoom the cluster view. ${keyboardRotationHint}`
+  const canTriggerEmergency = cluster.emergencyState === 'normal'
 
   return (
     <DesktopTooltip
       align="right"
       label={monitoring.buttonLabel}
       description={tooltipDescription}
+      isSuppressed={isTooltipSuppressed}
       panelClassName="min-w-[20rem] max-w-104"
     >
       <button
         type="button"
         className={`${animationFocusButtonClassName} h-11 w-11 cursor-pointer`}
-        onMouseEnter={() => setIsHovering(true)}
-        onMouseLeave={() => setIsHovering(false)}
+        onMouseEnter={() => {
+          setIsTooltipSuppressed(false)
+          setIsHovering(true)
+        }}
+        onMouseLeave={() => {
+          setIsHovering(false)
+          setIsTooltipSuppressed(false)
+        }}
+        onClick={() => {
+          if (!canTriggerEmergency) {
+            return
+          }
+
+          window.dispatchEvent(
+            new CustomEvent(TRIGGER_NETWORK_EMERGENCY_EVENT, {
+              detail: {
+                scenarioKey: 'failover',
+                triggerSource: 'button-click',
+              },
+            }),
+          )
+        }}
         aria-label="Preview background animation"
       >
         <HexagonNetworkIcon

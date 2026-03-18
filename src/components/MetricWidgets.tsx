@@ -32,7 +32,18 @@ const lightModeColors = [
   '#c26200',
 ]
 
-type WidgetType = 'sparkline' | 'bars' | 'gauge' | 'counter' | 'status'
+type WidgetType =
+  | 'sparkline'
+  | 'bars'
+  | 'gauge'
+  | 'counter'
+  | 'status'
+  | 'fanout'
+  | 'router'
+  | 'orchestrator'
+  | 'pipeline'
+  | 'heatmap'
+  | 'rings'
 type WidgetId =
   | 'req_rate'
   | 'lb'
@@ -311,6 +322,701 @@ function CircularGauge({
           </text>
         </>
       ) : null}
+    </svg>
+  )
+}
+
+function AvailabilityRings({
+  cluster,
+  uptimeValue,
+  color,
+  phase,
+  isFocused = false,
+  isDark = true,
+  size = 42,
+}: {
+  cluster: ClusterSnapshot
+  uptimeValue: number
+  color: string
+  phase: number
+  isFocused?: boolean
+  isDark?: boolean
+  size?: number
+}) {
+  const padding = 4
+  const strokeWidth = 3
+  const viewSize = size + padding * 2
+  const center = padding + size / 2
+  const radius = (size - strokeWidth) / 2
+  const circumference = 2 * Math.PI * radius
+  const totalReplicas = Math.max(cluster.replicaTarget, 1)
+  const readyRatio = clamp(cluster.readyReplicas / totalReplicas, 0, 1)
+  const startingRatio = clamp(cluster.startingReplicas / totalReplicas, 0, 1)
+  const drainingRatio = clamp(cluster.drainingReplicas / totalReplicas, 0, 1)
+  const unhealthyRatio = clamp(cluster.unhealthyReplicas / totalReplicas, 0, 1)
+  const orbitAngle = phase * (isFocused ? 0.12 : 0.06)
+  const orbitRadius = radius + 3.5
+  const orbitX = center + Math.cos(orbitAngle - Math.PI / 2) * orbitRadius
+  const orbitY = center + Math.sin(orbitAngle - Math.PI / 2) * orbitRadius
+  const startingColor = isDark ? '#38bdf8' : '#0369a1'
+  const drainingColor = isDark ? '#f59e0b' : '#c2410c'
+  const unhealthyColor = isDark ? '#fb7185' : '#be123c'
+
+  return (
+    <svg
+      width={viewSize}
+      height={viewSize}
+      viewBox={`0 0 ${viewSize} ${viewSize}`}
+      style={{ overflow: 'visible' }}
+    >
+      <g transform={`rotate(-90 ${center} ${center})`}>
+        <circle
+          cx={center}
+          cy={center}
+          r={radius}
+          fill="none"
+          stroke={
+            isDark ? 'rgba(148, 163, 184, 0.14)' : 'rgba(148, 163, 184, 0.28)'
+          }
+          strokeWidth={strokeWidth}
+        />
+        <circle
+          cx={center}
+          cy={center}
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={`${circumference * readyRatio} ${circumference}`}
+          style={{
+            filter:
+              isFocused && isDark ? `drop-shadow(0 0 6px ${color})` : 'none',
+          }}
+        />
+        <circle
+          cx={center}
+          cy={center}
+          r={radius - 5}
+          fill="none"
+          stroke={startingColor}
+          strokeWidth={1.8}
+          strokeLinecap="round"
+          strokeDasharray={`${circumference * startingRatio * 0.72} ${circumference}`}
+          strokeDashoffset={-circumference * 0.08}
+          opacity={0.9}
+        />
+        <circle
+          cx={center}
+          cy={center}
+          r={radius - 8.5}
+          fill="none"
+          stroke={drainingColor}
+          strokeWidth={1.6}
+          strokeLinecap="round"
+          strokeDasharray={`${circumference * drainingRatio * 0.68} ${circumference}`}
+          strokeDashoffset={-circumference * 0.34}
+          opacity={0.86}
+        />
+        <circle
+          cx={center}
+          cy={center}
+          r={radius - 12}
+          fill="none"
+          stroke={unhealthyColor}
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeDasharray={`${circumference * unhealthyRatio * 0.62} ${circumference}`}
+          strokeDashoffset={-circumference * 0.56}
+          opacity={0.88}
+        />
+      </g>
+      <circle
+        cx={orbitX}
+        cy={orbitY}
+        r={isFocused ? 2.3 : 1.8}
+        fill={color}
+        opacity={isFocused ? 0.95 : 0.72}
+      />
+      <text
+        x={center}
+        y={center}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fill={isDark ? '#e2e8f0' : '#0f172a'}
+        style={{
+          fontFamily: 'ui-monospace, monospace',
+          fontSize: '8px',
+          fontWeight: 700,
+          opacity: isFocused ? 0.96 : 0.8,
+        }}
+      >
+        {uptimeValue.toFixed(2)}
+      </text>
+    </svg>
+  )
+}
+
+function TargetFanoutChart({
+  cluster,
+  color,
+  isFocused = false,
+  isDark = true,
+  width = 102,
+  height = 38,
+}: {
+  cluster: ClusterSnapshot
+  color: string
+  isFocused?: boolean
+  isDark?: boolean
+  width?: number
+  height?: number
+}) {
+  const totalNodes = 8
+  const activeNodes = clamp(cluster.loadBalancerTargets.length, 0, totalNodes)
+  const centerX = 18
+  const centerY = height / 2
+  const columns = [65, 85]
+  const rows = [8, 17, 26, 35]
+
+  return (
+    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
+      {rows.flatMap((y, rowIndex) =>
+        columns.map((x, columnIndex) => {
+          const nodeIndex = rowIndex * columns.length + columnIndex
+          const isActive = nodeIndex < activeNodes
+          const lineOpacity = isActive ? (isFocused ? 0.82 : 0.56) : 0.12
+          const nodeColor = isActive
+            ? color
+            : isDark
+              ? 'rgba(148, 163, 184, 0.28)'
+              : 'rgba(148, 163, 184, 0.4)'
+
+          return (
+            <g key={`${x}-${y}`}>
+              <path
+                d={`M ${centerX} ${centerY} Q 42 ${centerY} ${x} ${y}`}
+                fill="none"
+                stroke={isActive ? color : nodeColor}
+                strokeWidth={isActive ? 1.6 : 1}
+                strokeOpacity={lineOpacity}
+                strokeDasharray={isActive ? '0' : '2 4'}
+              />
+              <circle
+                cx={x}
+                cy={y}
+                r={isActive ? 2.8 : 2.2}
+                fill={nodeColor}
+                style={{
+                  filter:
+                    isActive && isFocused && isDark
+                      ? `drop-shadow(0 0 4px ${color})`
+                      : 'none',
+                }}
+              />
+            </g>
+          )
+        }),
+      )}
+      <circle
+        cx={centerX}
+        cy={centerY}
+        r={5.5}
+        fill={isDark ? 'rgba(2, 6, 23, 0.82)' : 'rgba(255, 255, 255, 0.82)'}
+        stroke={color}
+        strokeWidth={1.4}
+      />
+      <circle
+        cx={centerX}
+        cy={centerY}
+        r={2}
+        fill={color}
+        opacity={isFocused ? 0.95 : 0.8}
+      />
+    </svg>
+  )
+}
+
+function LoadBalancerRouteChart({
+  cluster,
+  mode,
+  phase,
+  color,
+  isFocused = false,
+  isDark = true,
+  width = 102,
+  height = 38,
+}: {
+  cluster: ClusterSnapshot
+  mode: AmbientSemanticMode
+  phase: number
+  color: string
+  isFocused?: boolean
+  isDark?: boolean
+  width?: number
+  height?: number
+}) {
+  const sourceX = 10
+  const gateX = 34
+  const gateY = height / 2
+  const targetX = 84
+  const targetYs = [7, 15, 23, 31]
+  const activeTargets = clamp(
+    cluster.loadBalancerTargets.length,
+    0,
+    targetYs.length,
+  )
+  const routeColor =
+    mode === 'incident' && isScenario(cluster, 'failover')
+      ? isDark
+        ? '#fb7185'
+        : '#be123c'
+      : color
+  const pulseCount = activeTargets > 2 ? 3 : 2
+  const pulseSpeed =
+    mode === 'incident' || cluster.errorRate > 3.5
+      ? 0.18
+      : isFocused
+        ? 0.12
+        : 0.08
+
+  return (
+    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
+      <path
+        d={`M ${sourceX} ${gateY} L ${gateX - 8} ${gateY}`}
+        fill="none"
+        stroke={routeColor}
+        strokeWidth={1.8}
+        strokeOpacity={0.76}
+      />
+      {targetYs.map((targetY, index) => {
+        const isActive = index < activeTargets
+        const lineOpacity = isActive ? (isFocused ? 0.86 : 0.62) : 0.12
+        const nodeFill = isActive
+          ? routeColor
+          : isDark
+            ? 'rgba(148, 163, 184, 0.22)'
+            : 'rgba(148, 163, 184, 0.32)'
+        const pulseNodes = isActive
+          ? Array.from({ length: pulseCount }, (_, pulseIndex) => {
+              const t =
+                (phase * pulseSpeed + pulseIndex / pulseCount + index * 0.11) %
+                1
+              const x = gateX + (targetX - gateX) * t
+              const y = gateY + (targetY - gateY) * t
+
+              return (
+                <circle
+                  key={pulseIndex}
+                  cx={x}
+                  cy={y}
+                  r={1.35}
+                  fill={routeColor}
+                  opacity={0.3 + (1 - t) * 0.6}
+                />
+              )
+            })
+          : null
+
+        return (
+          <g key={targetY}>
+            <path
+              d={`M ${gateX + 8} ${gateY} Q 58 ${gateY} ${targetX} ${targetY}`}
+              fill="none"
+              stroke={isActive ? routeColor : nodeFill}
+              strokeWidth={isActive ? 1.6 : 1}
+              strokeOpacity={lineOpacity}
+              strokeDasharray={isActive ? '0' : '2.5 4'}
+            />
+            {pulseNodes}
+            <circle
+              cx={targetX}
+              cy={targetY}
+              r={isActive ? 2.7 : 2.2}
+              fill={nodeFill}
+              style={{
+                filter:
+                  isActive && isFocused && isDark
+                    ? `drop-shadow(0 0 4px ${routeColor})`
+                    : 'none',
+              }}
+            />
+          </g>
+        )
+      })}
+      <circle
+        cx={sourceX}
+        cy={gateY}
+        r={4.4}
+        fill={isDark ? 'rgba(2, 6, 23, 0.86)' : 'rgba(255, 255, 255, 0.88)'}
+        stroke={routeColor}
+        strokeWidth={1.4}
+      />
+      <rect
+        x={gateX - 7}
+        y={gateY - 6}
+        width={14}
+        height={12}
+        rx={4}
+        fill={isDark ? 'rgba(2, 6, 23, 0.9)' : 'rgba(255, 255, 255, 0.92)'}
+        stroke={routeColor}
+        strokeWidth={1.4}
+      />
+      <path
+        d={`M ${gateX - 2.5} ${gateY + 3.2} L ${gateX + 3.5} ${gateY} L ${gateX - 2.5} ${gateY - 3.2}`}
+        fill="none"
+        stroke={routeColor}
+        strokeWidth={1.3}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity={0.92}
+      />
+    </svg>
+  )
+}
+
+function ControlPlaneChart({
+  cluster,
+  mode,
+  phase,
+  isDark = true,
+  width = 102,
+  height = 38,
+}: {
+  cluster: ClusterSnapshot
+  mode: AmbientSemanticMode
+  phase: number
+  isDark?: boolean
+  width?: number
+  height?: number
+}) {
+  const centerX = 20
+  const centerY = height / 2
+  const radius = 10
+  const reconcileLoad = clamp(
+    cluster.startingReplicas * 24 +
+      cluster.drainingReplicas * 28 +
+      cluster.unhealthyReplicas * 34 +
+      Math.abs(cluster.replicaTarget - cluster.readyReplicas) * 12 +
+      (mode === 'incident' ? 18 : 0) +
+      (mode === 'surge' ? 10 : 0),
+    4,
+    100,
+  )
+  const track = 2 * Math.PI * radius
+  const reconcileColor =
+    mode === 'incident'
+      ? isDark
+        ? '#fb7185'
+        : '#be123c'
+      : mode === 'recovery'
+        ? isDark
+          ? '#4ade80'
+          : '#15803d'
+        : isDark
+          ? '#38bdf8'
+          : '#0369a1'
+  const laneData = [
+    {
+      label: 'start',
+      value: clamp(
+        cluster.startingReplicas * 36 + cluster.trafficIntensity * 28,
+        0,
+        100,
+      ),
+      color: isDark ? '#38bdf8' : '#0369a1',
+    },
+    {
+      label: 'drain',
+      value: clamp(
+        cluster.drainingReplicas * 40 + cluster.terminatingReplicas * 18,
+        0,
+        100,
+      ),
+      color: isDark ? '#f59e0b' : '#c2410c',
+    },
+    {
+      label: 'heal',
+      value: clamp(
+        cluster.unhealthyReplicas * 42 + cluster.errorRate * 7,
+        0,
+        100,
+      ),
+      color: isDark ? '#fb7185' : '#be123c',
+    },
+  ]
+
+  return (
+    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
+      <g transform={`rotate(-90 ${centerX} ${centerY})`}>
+        <circle
+          cx={centerX}
+          cy={centerY}
+          r={radius}
+          fill="none"
+          stroke={
+            isDark ? 'rgba(148, 163, 184, 0.16)' : 'rgba(148, 163, 184, 0.28)'
+          }
+          strokeWidth={2}
+        />
+        <circle
+          cx={centerX}
+          cy={centerY}
+          r={radius}
+          fill="none"
+          stroke={reconcileColor}
+          strokeWidth={2}
+          strokeLinecap="round"
+          strokeDasharray={`${track * (reconcileLoad / 100)} ${track}`}
+          style={{
+            filter: isDark ? `drop-shadow(0 0 5px ${reconcileColor})` : 'none',
+          }}
+        />
+      </g>
+      {Array.from({ length: 3 }, (_, index) => {
+        const angle = phase * 0.16 + index * ((Math.PI * 2) / 3)
+        const x = centerX + Math.cos(angle) * (radius + 4)
+        const y = centerY + Math.sin(angle) * (radius + 4)
+
+        return (
+          <circle
+            key={index}
+            cx={x}
+            cy={y}
+            r={1.7}
+            fill={reconcileColor}
+            opacity={0.72}
+          />
+        )
+      })}
+      <circle
+        cx={centerX}
+        cy={centerY}
+        r={3}
+        fill={reconcileColor}
+        opacity={0.84}
+      />
+      {laneData.map((lane, index) => {
+        const x = 44
+        const y = 7 + index * 10
+        const pulseT = (phase * 0.14 + index * 0.22) % 1
+        const pulseX = x + 12 + pulseT * 36
+        const laneOpacity = 0.2 + lane.value / 140
+
+        return (
+          <g key={lane.label}>
+            <text
+              x={x}
+              y={y + 3}
+              fill={lane.color}
+              style={{
+                fontFamily: 'ui-monospace, monospace',
+                fontSize: '5px',
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                opacity: 0.76,
+              }}
+            >
+              {lane.label}
+            </text>
+            <rect
+              x={x + 12}
+              y={y}
+              width={40}
+              height={5}
+              rx={2.5}
+              fill={
+                isDark ? 'rgba(15, 23, 42, 0.56)' : 'rgba(226, 232, 240, 0.76)'
+              }
+            />
+            <rect
+              x={x + 12}
+              y={y}
+              width={40 * (lane.value / 100)}
+              height={5}
+              rx={2.5}
+              fill={lane.color}
+              opacity={laneOpacity}
+            />
+            {lane.value > 10 ? (
+              <circle
+                cx={pulseX}
+                cy={y + 2.5}
+                r={1.3}
+                fill={lane.color}
+                opacity={0.92}
+              />
+            ) : null}
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
+function ReplicationPipelineChart({
+  cluster,
+  mode,
+  phase,
+  isDark = true,
+  width = 102,
+  height = 38,
+}: {
+  cluster: ClusterSnapshot
+  mode: AmbientSemanticMode
+  phase: number
+  isDark?: boolean
+  width?: number
+  height?: number
+}) {
+  const isIncident = mode === 'incident' && cluster.scenarioKey === 'dbDown'
+  const isRecovery = mode === 'recovery' && cluster.scenarioKey === 'dbDown'
+  const pipelineColor = isIncident
+    ? isDark
+      ? '#fb7185'
+      : '#be123c'
+    : isRecovery
+      ? isDark
+        ? '#4ade80'
+        : '#15803d'
+      : isDark
+        ? '#38bdf8'
+        : '#0369a1'
+  const nodes = [
+    { x: 16, y: 19, label: 'P' },
+    { x: 50, y: 12, label: 'R' },
+    { x: 84, y: 26, label: 'S' },
+  ]
+  const pulseT = (phase * 0.11) % 1
+
+  return (
+    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
+      <path
+        d="M 16 19 C 28 19 34 12 50 12"
+        fill="none"
+        stroke={pipelineColor}
+        strokeWidth={1.7}
+        strokeOpacity={0.78}
+        strokeDasharray={isIncident ? '3 4' : '0'}
+      />
+      <path
+        d="M 50 12 C 62 12 70 26 84 26"
+        fill="none"
+        stroke={pipelineColor}
+        strokeWidth={1.7}
+        strokeOpacity={0.72}
+        strokeDasharray={isIncident ? '3 4' : '0'}
+      />
+      {[0.1, 0.58].map((offset) => {
+        const t = (pulseT + offset) % 1
+        const x =
+          t < 0.5
+            ? 16 + (50 - 16) * (t / 0.5)
+            : 50 + (84 - 50) * ((t - 0.5) / 0.5)
+        const y =
+          t < 0.5
+            ? 19 + (12 - 19) * (t / 0.5)
+            : 12 + (26 - 12) * ((t - 0.5) / 0.5)
+
+        return (
+          <circle key={offset} cx={x} cy={y} r={1.8} fill={pipelineColor} />
+        )
+      })}
+      {nodes.map((node) => (
+        <g key={node.label}>
+          <circle
+            cx={node.x}
+            cy={node.y}
+            r={5}
+            fill={isDark ? 'rgba(2, 6, 23, 0.86)' : 'rgba(255, 255, 255, 0.9)'}
+            stroke={pipelineColor}
+            strokeWidth={1.3}
+          />
+          <text
+            x={node.x}
+            y={node.y + 0.5}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fill={pipelineColor}
+            style={{
+              fontFamily: 'ui-monospace, monospace',
+              fontSize: '6px',
+              fontWeight: 700,
+            }}
+          >
+            {node.label}
+          </text>
+        </g>
+      ))}
+    </svg>
+  )
+}
+
+function CacheHeatGrid({
+  cluster,
+  mode,
+  phase,
+  isDark = true,
+  width = 102,
+  height = 38,
+}: {
+  cluster: ClusterSnapshot
+  mode: AmbientSemanticMode
+  phase: number
+  isDark?: boolean
+  width?: number
+  height?: number
+}) {
+  const columns = 5
+  const rows = 4
+  const gap = 3
+  const cellWidth = (width - gap * (columns - 1)) / columns
+  const cellHeight = (height - gap * (rows - 1)) / rows
+  const heatBias =
+    cluster.queueDepth * 0.6 +
+    cluster.latencyMs * 0.22 +
+    cluster.trafficIntensity * 28 +
+    (mode === 'incident' && cluster.scenarioKey === 'cacheReload' ? 22 : 0)
+
+  return (
+    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
+      {Array.from({ length: rows * columns }, (_, index) => {
+        const column = index % columns
+        const row = Math.floor(index / columns)
+        const wave =
+          Math.sin(phase * 0.24 + index * 0.8) * 12 +
+          Math.cos(phase * 0.12 + row * 0.6) * 8
+        const intensity = clamp(heatBias + wave + column * 6 - row * 3, 0, 100)
+        const fill =
+          intensity > 76
+            ? isDark
+              ? '#fb7185'
+              : '#e11d48'
+            : intensity > 54
+              ? isDark
+                ? '#f59e0b'
+                : '#d97706'
+              : intensity > 34
+                ? isDark
+                  ? '#38bdf8'
+                  : '#0284c7'
+                : isDark
+                  ? 'rgba(56, 189, 248, 0.18)'
+                  : 'rgba(2, 132, 199, 0.16)'
+
+        return (
+          <rect
+            key={index}
+            x={column * (cellWidth + gap)}
+            y={row * (cellHeight + gap)}
+            width={cellWidth}
+            height={cellHeight}
+            rx={2.4}
+            fill={fill}
+            opacity={0.3 + intensity / 120}
+          />
+        )
+      })}
     </svg>
   )
 }
@@ -678,8 +1384,10 @@ function getWidgetMeta(
     case 'uptime':
       return {
         lead:
-          mode === 'recovery' ? 'availability healing' : 'availability target',
-        detail: `${cluster.readyReplicas}/${cluster.replicaTarget} ready`,
+          mode === 'recovery'
+            ? 'availability horizon healing'
+            : 'availability envelope',
+        detail: `${cluster.readyReplicas}/${cluster.replicaTarget} ready across live service lanes`,
       }
     case 'traffic':
       return {
@@ -696,8 +1404,8 @@ function getWidgetMeta(
         lead:
           cluster.loadBalancerTargets.length <
           Math.max(2, cluster.replicaTarget - 1)
-            ? 'target pool narrowed'
-            : 'target pool healthy',
+            ? 'fanout lanes narrowed'
+            : 'fanout lanes open',
         detail: `${cluster.loadBalancerTargets.join(', ') || 'none ready'}`,
       }
     case 'pods':
@@ -720,8 +1428,8 @@ function getWidgetMeta(
       return {
         lead:
           mode === 'incident' && isScenario(cluster, 'dbDown')
-            ? 'writes backing off'
-            : 'primary replica in sync',
+            ? 'replication path backing off'
+            : 'primary replica path aligned',
         detail:
           cluster.errorRate > 6
             ? 'replication lag visible'
@@ -731,8 +1439,8 @@ function getWidgetMeta(
       return {
         lead:
           mode === 'incident' && isScenario(cluster, 'cacheReload')
-            ? 'cache warming keys'
-            : 'hit ratio holding',
+            ? 'cache tiles warming'
+            : 'cache heat balanced',
         detail:
           cluster.queueDepth > 40
             ? 'miss pressure elevated'
@@ -823,7 +1531,15 @@ function MetricWidget({
   )
   const [value, setValue] = useState(() => getTargetValue(id, cluster, mode))
   const [visible, setVisible] = useState(false)
+  const [animationPhase, setAnimationPhase] = useState(0)
   const stateRef = useRef({ cluster, mode })
+  const metricMotionRef = useRef({
+    previousErrorRate: cluster.errorRate,
+    previousQueueDepth: cluster.queueDepth,
+    previousUnhealthyReplicas: cluster.unhealthyReplicas,
+    errorShock: 0,
+    queueShock: 0,
+  })
 
   useEffect(() => {
     stateRef.current = { cluster, mode }
@@ -834,6 +1550,39 @@ function MetricWidget({
     const interval = setInterval(() => {
       const { cluster: snapshot, mode: currentMode } = stateRef.current
       const targetValue = getTargetValue(id, snapshot, currentMode)
+      const metricMotion = metricMotionRef.current
+      const errorJump = Math.max(
+        0,
+        snapshot.errorRate - metricMotion.previousErrorRate,
+      )
+      const unhealthyJump = Math.max(
+        0,
+        snapshot.unhealthyReplicas - metricMotion.previousUnhealthyReplicas,
+      )
+      const queueJump = Math.max(
+        0,
+        snapshot.queueDepth - metricMotion.previousQueueDepth,
+      )
+
+      metricMotion.errorShock = clamp(
+        metricMotion.errorShock * 0.42 +
+          errorJump * 18 +
+          unhealthyJump * 10 +
+          (snapshot.emergencyState === 'emergency' ? 8 : 0) +
+          (currentMode === 'incident' ? 6 : 0),
+        0,
+        54,
+      )
+      metricMotion.queueShock = clamp(
+        metricMotion.queueShock * 0.56 +
+          queueJump * 0.62 +
+          (snapshot.scenarioKey === 'queueFull' &&
+          snapshot.emergencyState === 'emergency'
+            ? 10
+            : 0),
+        0,
+        28,
+      )
 
       if (type === 'sparkline') {
         setData((previous) => {
@@ -844,24 +1593,57 @@ function MetricWidget({
             'Expected a previous sparkline point.',
           )
           const drift =
-            (targetValue - current) * 0.32 + (Math.random() - 0.5) * 5
-          next.push(clamp(current + drift, 4, 98))
+            id === 'errors'
+              ? (targetValue - current) * 0.44 +
+                metricMotion.errorShock * (0.34 + Math.random() * 0.12) +
+                (Math.random() - 0.5) * 4
+              : (targetValue - current) * 0.32 + (Math.random() - 0.5) * 5
+          const nextValue = clamp(current + drift, 4, 98)
+          next.push(
+            id === 'errors'
+              ? Math.max(
+                  nextValue,
+                  clamp(targetValue + metricMotion.errorShock * 0.38, 6, 100),
+                )
+              : nextValue,
+          )
           return next
         })
       }
 
       if (type === 'bars') {
-        setBars(getBarValues(id, snapshot, currentMode))
+        const nextBars = getBarValues(id, snapshot, currentMode)
+        setBars(
+          id === 'queue'
+            ? nextBars.map((value, index) =>
+                clamp(
+                  value +
+                    metricMotion.queueShock * (0.28 + index * 0.08) +
+                    (snapshot.emergencyState === 'emergency' ? index * 2 : 0),
+                  8,
+                  100,
+                ),
+              )
+            : nextBars,
+        )
       }
 
-      if (type === 'gauge') {
+      if (type === 'gauge' || type === 'rings') {
         setValue((previous) => previous + (targetValue - previous) * 0.28)
       }
+
+      metricMotion.previousErrorRate = snapshot.errorRate
+      metricMotion.previousQueueDepth = snapshot.queueDepth
+      metricMotion.previousUnhealthyReplicas = snapshot.unhealthyReplicas
     }, 1200)
+    const animationInterval = setInterval(() => {
+      setAnimationPhase((previous) => previous + 1)
+    }, 240)
 
     return () => {
       clearTimeout(appearTimeout)
       clearInterval(interval)
+      clearInterval(animationInterval)
     }
   }, [delay, id, type])
 
@@ -921,6 +1703,7 @@ function MetricWidget({
   const counterText = getCounterDisplay(id, cluster, mode)
   const uptimeDisplay = `${value.toFixed(2)}%`
   const widgetMeta = getWidgetMeta(id, cluster, mode)
+  const hideWidgetLead = type === 'rings' && id === 'uptime'
 
   return (
     <div
@@ -949,15 +1732,17 @@ function MetricWidget({
         >
           {label}
         </span>
-        <span
-          className={`block h-[10px] truncate font-mono text-[7px] tracking-[0.16em] whitespace-nowrap uppercase ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
-          style={{
-            opacity: isPreviewing ? 0.7 : 0.42,
-            color: effectiveColor,
-          }}
-        >
-          {widgetMeta.lead}
-        </span>
+        {!hideWidgetLead ? (
+          <span
+            className={`block h-[10px] truncate font-mono text-[7px] tracking-[0.16em] whitespace-nowrap uppercase ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
+            style={{
+              opacity: isPreviewing ? 0.7 : 0.42,
+              color: effectiveColor,
+            }}
+          >
+            {widgetMeta.lead}
+          </span>
+        ) : null}
       </div>
 
       {type === 'sparkline' ? (
@@ -1013,6 +1798,40 @@ function MetricWidget({
         </div>
       ) : null}
 
+      {type === 'rings' ? (
+        <div className="flex items-center justify-between gap-2">
+          <AvailabilityRings
+            cluster={cluster}
+            uptimeValue={value}
+            color={effectiveColor}
+            phase={animationPhase}
+            isFocused={isPreviewing}
+            isDark={isDark}
+            size={46}
+          />
+          <div className="min-w-[52px] text-right font-mono">
+            <div
+              className="text-[9px] whitespace-nowrap tabular-nums transition-all duration-300"
+              style={{
+                color: effectiveColor,
+                opacity: isPreviewing ? 1 : isDark ? 0.34 : 0.48,
+                textShadow:
+                  isPreviewing && isDark ? `0 0 6px ${effectiveColor}` : 'none',
+                fontWeight: isDark ? 500 : 600,
+              }}
+            >
+              {value.toFixed(2)}%
+            </div>
+            <div
+              className={`text-[7px] tracking-[0.14em] uppercase ${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}
+              style={{ opacity: isPreviewing ? 0.68 : 0.42 }}
+            >
+              {cluster.readyReplicas}/{cluster.replicaTarget} ready
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {type === 'counter' ? (
         <span
           className="min-h-[16px] font-mono text-[13px] font-medium whitespace-nowrap tabular-nums transition-all duration-300"
@@ -1025,6 +1844,30 @@ function MetricWidget({
         >
           {counterText}
         </span>
+      ) : null}
+
+      {type === 'fanout' ? (
+        <div className="w-full">
+          <TargetFanoutChart
+            cluster={cluster}
+            color={effectiveColor}
+            isFocused={isPreviewing}
+            isDark={isDark}
+          />
+        </div>
+      ) : null}
+
+      {type === 'router' ? (
+        <div className="w-full">
+          <LoadBalancerRouteChart
+            cluster={cluster}
+            mode={mode}
+            phase={animationPhase}
+            color={effectiveColor}
+            isFocused={isPreviewing}
+            isDark={isDark}
+          />
+        </div>
       ) : null}
 
       {type === 'status' ? (
@@ -1049,6 +1892,39 @@ function MetricWidget({
           >
             {statusDisplay.text}
           </span>
+        </div>
+      ) : null}
+
+      {type === 'orchestrator' ? (
+        <div className="w-full">
+          <ControlPlaneChart
+            cluster={cluster}
+            mode={mode}
+            phase={animationPhase}
+            isDark={isDark}
+          />
+        </div>
+      ) : null}
+
+      {type === 'pipeline' ? (
+        <div className="w-full">
+          <ReplicationPipelineChart
+            cluster={cluster}
+            mode={mode}
+            phase={animationPhase}
+            isDark={isDark}
+          />
+        </div>
+      ) : null}
+
+      {type === 'heatmap' ? (
+        <div className="w-full">
+          <CacheHeatGrid
+            cluster={cluster}
+            mode={mode}
+            phase={animationPhase}
+            isDark={isDark}
+          />
         </div>
       ) : null}
 
@@ -1487,7 +2363,7 @@ const leftWidgetGroups: MetricLayoutGroup[] = [
         label: 'queue',
         colorIndex: 7,
       },
-      { kind: 'single', id: 'lb', type: 'status', label: 'lb', colorIndex: 2 },
+      { kind: 'single', id: 'lb', type: 'router', label: 'lb', colorIndex: 2 },
     ],
   },
   {
@@ -1496,8 +2372,8 @@ const leftWidgetGroups: MetricLayoutGroup[] = [
       {
         kind: 'single',
         id: 'targets',
-        type: 'counter',
-        label: 'targets',
+        type: 'fanout',
+        label: 'fanout',
         colorIndex: 5,
       },
       {
@@ -1523,15 +2399,15 @@ const rightWidgetGroups: MetricLayoutGroup[] = [
       {
         kind: 'single',
         id: 'uptime',
-        type: 'gauge',
-        label: 'uptime',
+        type: 'rings',
+        label: 'availability',
         colorIndex: 2,
       },
       {
         kind: 'single',
         id: 'postgres',
-        type: 'status',
-        label: 'postgres',
+        type: 'pipeline',
+        label: 'replication',
         colorIndex: 2,
       },
     ],
@@ -1542,9 +2418,16 @@ const rightWidgetGroups: MetricLayoutGroup[] = [
       {
         kind: 'single',
         id: 'redis',
-        type: 'status',
-        label: 'redis',
+        type: 'heatmap',
+        label: 'cache heat',
         colorIndex: 0,
+      },
+      {
+        kind: 'single',
+        id: 'k8s',
+        type: 'orchestrator',
+        label: 'control',
+        colorIndex: 2,
       },
     ],
   },
