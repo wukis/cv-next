@@ -477,6 +477,11 @@ function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value))
 }
 
+function wrapAngle(angle: number) {
+  const wrappedAngle = (angle + Math.PI) % (Math.PI * 2)
+  return wrappedAngle < 0 ? wrappedAngle + Math.PI : wrappedAngle - Math.PI
+}
+
 function lerp(start: number, end: number, factor: number) {
   return start + (end - start) * factor
 }
@@ -2362,6 +2367,18 @@ const HexagonServiceNetwork: React.FC = () => {
   const packetsRef = useRef<DataPacket[]>([])
   const statusIndicatorsRef = useRef<StatusIndicator[]>([])
   const rotationRef = useRef({ x: 0, y: 0 })
+  const autoRotationXRef = useRef(0)
+  const autoRotationYRef = useRef(0)
+  const keyboardRotationInputRef = useRef({
+    left: false,
+    right: false,
+    up: false,
+    down: false,
+  })
+  const manualRotationRef = useRef({
+    x: 0,
+    y: 0,
+  })
   const timeRef = useRef(0)
   const nodeIdRef = useRef(0)
   const connectionIdRef = useRef(0)
@@ -4884,6 +4901,7 @@ const HexagonServiceNetwork: React.FC = () => {
       return
     }
 
+    const keyboardRotationInput = keyboardRotationInputRef.current
     let width = window.innerWidth
     let height = window.innerHeight
     let centerX = width / 2
@@ -4926,9 +4944,63 @@ const HexagonServiceNetwork: React.FC = () => {
       )
     }
 
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isFocusedRef.current) {
+        return
+      }
+
+      if (
+        event.target instanceof HTMLElement &&
+        (event.target.isContentEditable ||
+          event.target.tagName === 'INPUT' ||
+          event.target.tagName === 'TEXTAREA' ||
+          event.target.tagName === 'SELECT')
+      ) {
+        return
+      }
+
+      switch (event.key) {
+        case 'ArrowLeft':
+          keyboardRotationInput.left = true
+          event.preventDefault()
+          break
+        case 'ArrowRight':
+          keyboardRotationInput.right = true
+          event.preventDefault()
+          break
+        case 'ArrowUp':
+          keyboardRotationInput.up = true
+          event.preventDefault()
+          break
+        case 'ArrowDown':
+          keyboardRotationInput.down = true
+          event.preventDefault()
+          break
+      }
+    }
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      switch (event.key) {
+        case 'ArrowLeft':
+          keyboardRotationInput.left = false
+          break
+        case 'ArrowRight':
+          keyboardRotationInput.right = false
+          break
+        case 'ArrowUp':
+          keyboardRotationInput.up = false
+          break
+        case 'ArrowDown':
+          keyboardRotationInput.down = false
+          break
+      }
+    }
+
     resize()
     window.addEventListener('resize', resize)
     window.addEventListener('wheel', handleWheel, { passive: false })
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
 
     const animate = () => {
       if (!isFocusedRef.current && frameSkipRef.current % 2 === 0) {
@@ -4976,8 +5048,52 @@ const HexagonServiceNetwork: React.FC = () => {
       const rotationSpeed =
         ROTATION_SPEED_NORMAL +
         (ROTATION_SPEED_FOCUSED - ROTATION_SPEED_NORMAL) * motionFocusLevel
-      rotationRef.current.y += rotationSpeed
-      rotationRef.current.x = Math.sin(timeRef.current * 0.1) * 0.14
+      const horizontalInput =
+        (keyboardRotationInput.right ? 1 : 0) -
+        (keyboardRotationInput.left ? 1 : 0)
+      const verticalInput =
+        (keyboardRotationInput.down ? 1 : 0) -
+        (keyboardRotationInput.up ? 1 : 0)
+      const manualRotation = manualRotationRef.current
+      const hasKeyboardRotationInput =
+        isFocusedRef.current && (horizontalInput !== 0 || verticalInput !== 0)
+      const yawSteerSpeed = (0.014 + motionFocusLevel * 0.008) * focusLevel
+      const pitchSteerSpeed = (0.014 + motionFocusLevel * 0.008) * focusLevel
+      const recoverySpeed = rotationSpeed
+
+      if (!hasKeyboardRotationInput) {
+        autoRotationYRef.current += rotationSpeed
+        const targetAutoRotationX = Math.sin(timeRef.current * 0.1) * 0.14
+        autoRotationXRef.current += clamp(
+          targetAutoRotationX - autoRotationXRef.current,
+          -rotationSpeed,
+          rotationSpeed,
+        )
+      }
+
+      const autoRotationY = autoRotationYRef.current
+      const autoRotationX = autoRotationXRef.current
+
+      if (hasKeyboardRotationInput) {
+        manualRotation.y = wrapAngle(
+          manualRotation.y + horizontalInput * yawSteerSpeed,
+        )
+        manualRotation.x = wrapAngle(
+          manualRotation.x + verticalInput * pitchSteerSpeed,
+        )
+      } else {
+        manualRotation.y = wrapAngle(
+          manualRotation.y +
+            clamp(-manualRotation.y, -recoverySpeed, recoverySpeed),
+        )
+        manualRotation.x = wrapAngle(
+          manualRotation.x +
+            clamp(-manualRotation.x, -recoverySpeed, recoverySpeed),
+        )
+      }
+
+      rotationRef.current.y = autoRotationY + manualRotation.y
+      rotationRef.current.x = autoRotationX + manualRotation.x
 
       const rotX = rotationRef.current.x
       const rotY = rotationRef.current.y
@@ -6269,6 +6385,12 @@ const HexagonServiceNetwork: React.FC = () => {
     return () => {
       window.removeEventListener('resize', resize)
       window.removeEventListener('wheel', handleWheel)
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+      keyboardRotationInput.left = false
+      keyboardRotationInput.right = false
+      keyboardRotationInput.up = false
+      keyboardRotationInput.down = false
       cameraZoomOffset = 0
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current)

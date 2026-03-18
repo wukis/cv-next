@@ -9,7 +9,6 @@ import {
   HexagonNetworkIcon,
 } from '@/components/HeaderShared'
 import { useAmbientEligibility } from '@/components/useAmbientEligibility'
-import { TRIGGER_NETWORK_EMERGENCY_EVENT } from '@/lib/ambientCluster'
 import { useAmbientClusterSnapshot } from '@/lib/ambientClusterClient'
 import { deriveAmbientMonitoringState } from '@/lib/ambientMonitoring'
 
@@ -65,7 +64,7 @@ export default function AnimationPreviewButton() {
 
   const tooltipDescription = isHovering
     ? monitoring.buttonDescription
-    : 'Hover to preview cluster pressure paths like surge scaling, reroute pressure, cache warmup misses, and queue buildup. While hovering, scroll to zoom the cluster view. Click to start a failover drill immediately.'
+    : 'Hover to preview cluster pressure paths like surge scaling, reroute pressure, cache warmup misses, and queue buildup. While hovering, scroll to zoom the cluster view and use the arrow keys to rotate the cluster.'
 
   return (
     <DesktopTooltip
@@ -79,16 +78,6 @@ export default function AnimationPreviewButton() {
         className={`${animationFocusButtonClassName} h-11 w-11 cursor-pointer`}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
-        onClick={() =>
-          window.dispatchEvent(
-            new CustomEvent(TRIGGER_NETWORK_EMERGENCY_EVENT, {
-              detail: {
-                scenarioKey: 'failover',
-                triggerSource: 'button-click',
-              },
-            }),
-          )
-        }
         aria-label="Preview background animation"
       >
         <HexagonNetworkIcon
