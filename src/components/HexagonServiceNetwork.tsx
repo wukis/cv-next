@@ -513,6 +513,80 @@ function softenAccent(accent: string, alpha: string) {
   return accent.replace(/0\.\d+\)/, `${alpha})`)
 }
 
+function drawServiceClusterScaleRing(
+  ctx: CanvasRenderingContext2D,
+  options: {
+    shellRadius: number
+    progress: number
+    direction: 1 | -1
+    queueDepth: number
+    palette: { main: string; glow: string; fill: string }
+    isDark: boolean
+  },
+) {
+  const { shellRadius, progress, direction, queueDepth, palette, isDark } =
+    options
+
+  if (progress <= 0) {
+    return
+  }
+
+  const visibility = Math.sin(progress * Math.PI)
+  if (visibility <= 0.04) {
+    return
+  }
+
+  const ringRadius = shellRadius + 6.5
+  const ringRadiusY = ringRadius * 0.96
+  const startAngle = -Math.PI / 2
+  const endAngle = startAngle + direction * progress * Math.PI * 2
+  const lineWidth = 1.2 + Math.min(queueDepth, 4) * 0.28
+  const trackOpacity = (isDark ? 0.04 : 0.055) * visibility
+  const accentOpacity = clamp(
+    ((isDark ? 0.26 : 0.22) + Math.min(queueDepth, 4) * 0.045) * visibility,
+    0.08,
+    0.42,
+  )
+  const accentColor = withOpacity(
+    direction > 0 ? palette.glow : palette.main,
+    accentOpacity,
+  )
+  const headAngle = endAngle
+  const headX = Math.cos(headAngle) * ringRadius
+  const headY = Math.sin(headAngle) * ringRadiusY
+
+  ctx.save()
+  ctx.beginPath()
+  ctx.ellipse(0, 0, ringRadius, ringRadiusY, 0, 0, Math.PI * 2)
+  ctx.strokeStyle = withOpacity(palette.main, trackOpacity)
+  ctx.lineWidth = 1
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.ellipse(
+    0,
+    0,
+    ringRadius,
+    ringRadiusY,
+    0,
+    startAngle,
+    endAngle,
+    direction < 0,
+  )
+  ctx.strokeStyle = accentColor
+  ctx.lineWidth = lineWidth
+  ctx.lineCap = 'round'
+  ctx.shadowColor = accentColor
+  ctx.shadowBlur = isDark ? 6 : 3
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.arc(headX, headY, lineWidth * 0.48, 0, Math.PI * 2)
+  ctx.fillStyle = accentColor
+  ctx.fill()
+  ctx.restore()
+}
+
 function project3D(
   x: number,
   y: number,
@@ -1609,6 +1683,11 @@ function drawServiceClusterHoneycomb(
       desired: number
       capacity: number
     }
+    scaleRing: {
+      progress: number
+      direction: 1 | -1 | 0
+      queueDepth: number
+    }
   },
 ) {
   const {
@@ -1624,6 +1703,7 @@ function drawServiceClusterHoneycomb(
     bouncePhase,
     localRotation,
     counts,
+    scaleRing,
   } = options
 
   if (counts.total <= 0 || scale < 0.36) {
@@ -1699,6 +1779,17 @@ function drawServiceClusterHoneycomb(
   ctx.save()
   ctx.translate(x, y)
   ctx.rotate(localRotation)
+
+  if (scaleRing.direction !== 0 && scaleRing.progress > 0) {
+    drawServiceClusterScaleRing(ctx, {
+      shellRadius,
+      progress: scaleRing.progress,
+      direction: scaleRing.direction,
+      queueDepth: scaleRing.queueDepth,
+      palette,
+      isDark,
+    })
+  }
 
   const applyRipple = (baseX: number, baseY: number, strength = 1) => {
     const ripple = getServiceClusterRippleOffset({
@@ -2308,6 +2399,10 @@ const HexagonServiceNetwork: React.FC = () => {
           footprintCount: 0,
           degradedCount: 0,
           desiredCount: 0,
+          pendingScaleOutSteps: 0,
+          pendingScaleInSteps: 0,
+          scaleRingProgress: 0,
+          scaleRingDirection: 0 as 1 | -1 | 0,
           phase: index * 0.82,
         }
         return accumulator
@@ -2319,6 +2414,10 @@ const HexagonServiceNetwork: React.FC = () => {
           footprintCount: number
           degradedCount: number
           desiredCount: number
+          pendingScaleOutSteps: number
+          pendingScaleInSteps: number
+          scaleRingProgress: number
+          scaleRingDirection: 1 | -1 | 0
           phase: number
         }
       >,
@@ -3905,6 +4004,19 @@ const HexagonServiceNetwork: React.FC = () => {
         checkout: 0,
         warehouse: 0,
       }
+      APP_SERVICE_ORDER.forEach((serviceName, index) => {
+        serviceClusterMotionRef.current[serviceName] = {
+          energy: 0,
+          footprintCount: 0,
+          degradedCount: 0,
+          desiredCount: 0,
+          pendingScaleOutSteps: 0,
+          pendingScaleInSteps: 0,
+          scaleRingProgress: 0,
+          scaleRingDirection: 0,
+          phase: index * 0.82,
+        }
+      })
 
       clusterRef.current.desiredReplicas = 6
       clusterRef.current.nextAmbientFailureTime = 8 + Math.random() * 6
@@ -4092,6 +4204,10 @@ const HexagonServiceNetwork: React.FC = () => {
       clusterRef.current.desiredReplicas = Object.values(
         clusterRef.current.desiredServiceReplicas,
       ).reduce((sum, count) => sum + count, 0)
+      APP_SERVICE_ORDER.forEach((serviceName) => {
+        serviceClusterMotionRef.current[serviceName].desiredCount =
+          clusterRef.current.desiredServiceReplicas[serviceName]
+      })
 
       const nodes: ServiceNode[] = [
         createNode(
@@ -5842,7 +5958,8 @@ const HexagonServiceNetwork: React.FC = () => {
           footprintPods - motionState.footprintCount,
         )
         const degradedDelta = Math.abs(degradedPods - motionState.degradedCount)
-        const desiredDelta = Math.abs(desiredPods - motionState.desiredCount)
+        const desiredShift = desiredPods - motionState.desiredCount
+        const desiredDelta = Math.abs(desiredShift)
         const scaleOutStarted = desiredPods > motionState.desiredCount
         const scaleInStarted = desiredPods < motionState.desiredCount
         const impactTarget = clamp(
@@ -5864,6 +5981,77 @@ const HexagonServiceNetwork: React.FC = () => {
           )
         } else {
           motionState.energy *= 0.95
+        }
+
+        if (desiredShift > 0) {
+          motionState.pendingScaleOutSteps += desiredShift
+        } else if (desiredShift < 0) {
+          motionState.pendingScaleInSteps += Math.abs(desiredShift)
+        }
+
+        if (motionState.scaleRingDirection === 0) {
+          motionState.scaleRingDirection =
+            motionState.pendingScaleOutSteps > 0
+              ? 1
+              : motionState.pendingScaleInSteps > 0
+                ? -1
+                : 0
+        }
+
+        if (motionState.scaleRingDirection !== 0) {
+          const activeQueueDepth =
+            motionState.scaleRingDirection > 0
+              ? motionState.pendingScaleOutSteps
+              : motionState.pendingScaleInSteps
+          const ringDuration = clamp(
+            1.08 - Math.min(Math.max(activeQueueDepth - 1, 0), 5) * 0.13,
+            0.34,
+            1.08,
+          )
+
+          motionState.scaleRingProgress = clamp(
+            motionState.scaleRingProgress + 0.016 / ringDuration,
+            0,
+            1.2,
+          )
+
+          if (motionState.scaleRingProgress >= 1) {
+            motionState.scaleRingProgress -= 1
+
+            if (motionState.scaleRingDirection > 0) {
+              motionState.pendingScaleOutSteps = Math.max(
+                0,
+                motionState.pendingScaleOutSteps - 1,
+              )
+            } else {
+              motionState.pendingScaleInSteps = Math.max(
+                0,
+                motionState.pendingScaleInSteps - 1,
+              )
+            }
+
+            motionState.energy = clamp(motionState.energy + 0.035, 0, 0.44)
+
+            const hasMoreInCurrentDirection =
+              motionState.scaleRingDirection > 0
+                ? motionState.pendingScaleOutSteps > 0
+                : motionState.pendingScaleInSteps > 0
+
+            if (!hasMoreInCurrentDirection) {
+              motionState.scaleRingDirection =
+                motionState.pendingScaleOutSteps > 0
+                  ? 1
+                  : motionState.pendingScaleInSteps > 0
+                    ? -1
+                    : 0
+
+              if (motionState.scaleRingDirection === 0) {
+                motionState.scaleRingProgress = 0
+              }
+            }
+          }
+        } else {
+          motionState.scaleRingProgress = 0
         }
 
         motionState.footprintCount = footprintPods
@@ -5918,6 +6106,14 @@ const HexagonServiceNetwork: React.FC = () => {
             total: servicePods.length,
             desired: desiredPods,
             capacity: capacityPods,
+          },
+          scaleRing: {
+            progress: motionState.scaleRingProgress,
+            direction: motionState.scaleRingDirection,
+            queueDepth:
+              motionState.scaleRingDirection > 0
+                ? motionState.pendingScaleOutSteps
+                : motionState.pendingScaleInSteps,
           },
         })
 
