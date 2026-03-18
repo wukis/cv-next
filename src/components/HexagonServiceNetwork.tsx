@@ -5912,7 +5912,7 @@ const HexagonServiceNetwork: React.FC = () => {
             return (
               <div
                 key={toast.id}
-                className="pointer-events-auto flex h-[8.75rem] w-full flex-col overflow-hidden rounded-2xl border px-4 py-3 shadow-2xl backdrop-blur-md"
+                className="pointer-events-auto flex h-[7.5rem] w-full flex-col overflow-hidden rounded-2xl border px-4 py-3 shadow-2xl backdrop-blur-md"
                 style={{
                   backgroundColor: isDark
                     ? 'rgba(10, 14, 24, 0.92)'

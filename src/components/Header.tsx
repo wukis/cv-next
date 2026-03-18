@@ -1,12 +1,11 @@
 import Link from 'next/link'
 
 import AnimationPreviewButton from '@/components/AnimationPreviewButton'
-import { DownloadIcon } from '@/components/Button'
 import { Container } from '@/components/Container'
+import CvDownloadButton from '@/components/CvDownloadButton'
 import HeaderNavLink from '@/components/HeaderNavLink'
 import {
   DesktopTooltip,
-  headerControlClassName,
   navItems,
   TerminalPromptIcon,
 } from '@/components/HeaderShared'
@@ -44,25 +43,6 @@ function DesktopNavigation(props: React.ComponentPropsWithoutRef<'nav'>) {
         </ul>
       </div>
     </nav>
-  )
-}
-
-function CvDownloadButton() {
-  return (
-    <DesktopTooltip
-      label="Download CV"
-      description="Save the latest PDF version of the resume."
-      align="right"
-    >
-      <a
-        href="/jonas-petrik-cv.pdf"
-        download
-        aria-label="Download CV PDF"
-        className={`${headerControlClassName} h-11 w-11`}
-      >
-        <DownloadIcon className="h-5 w-5 text-neutral-700 transition group-hover:text-emerald-800 dark:text-neutral-200 dark:group-hover:text-emerald-200" />
-      </a>
-    </DesktopTooltip>
   )
 }
 
