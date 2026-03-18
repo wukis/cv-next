@@ -1370,6 +1370,20 @@ type OccupiedLayoutZone = {
   radius: number
 }
 
+type OccupiedPanelZone = {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+type ServicePanelPlacementState = {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
 function resolveServiceClusterCenters(
   services: Array<
     Pick<
@@ -1587,6 +1601,7 @@ function chooseServicePanelPlacement(options: {
   viewportWidth: number
   viewportHeight: number
   otherCenters: OccupiedLayoutZone[]
+  otherPanels?: OccupiedPanelZone[]
 }) {
   const {
     clusterX,
@@ -1597,6 +1612,7 @@ function chooseServicePanelPlacement(options: {
     viewportWidth,
     viewportHeight,
     otherCenters,
+    otherPanels = [],
   } = options
 
   const viewportCenterX = viewportWidth / 2
@@ -1645,13 +1661,45 @@ function chooseServicePanelPlacement(options: {
       return Math.min(nearest, distance)
     }, Number.POSITIVE_INFINITY)
     const crowdPenalty = Math.max(0, 190 - nearestClusterDistance) * 1.4
+    const panelOverlapPenalty = otherPanels.reduce((penalty, panel) => {
+      const overlapWidth =
+        Math.min(candidate.x + panelWidth + 10, panel.x + panel.width + 10) -
+        Math.max(candidate.x - 10, panel.x - 10)
+      const overlapHeight =
+        Math.min(candidate.y + panelHeight + 10, panel.y + panel.height + 10) -
+        Math.max(candidate.y - 10, panel.y - 10)
+
+      if (overlapWidth <= 0 || overlapHeight <= 0) {
+        return penalty
+      }
+
+      return penalty + overlapWidth * overlapHeight * 0.22
+    }, 0)
+    const panelCrowdPenalty = otherPanels.reduce((penalty, panel) => {
+      const panelCenterX = panel.x + panel.width / 2
+      const panelCenterY = panel.y + panel.height / 2
+      const distance = Math.hypot(
+        panelCenterX - centerX,
+        panelCenterY - centerY,
+      )
+      const desiredDistance =
+        Math.max(panel.width, panelWidth) * 0.48 +
+        Math.max(panel.height, panelHeight) * 0.42 +
+        16
+      return penalty + Math.max(0, desiredDistance - distance) * 1.4
+    }, 0)
     const viewportRoomBonus =
       Math.abs(centerX - viewportCenterX) * 0.06 +
       Math.abs(centerY - viewportCenterY) * 0.03
     const alignmentBonus =
       Math.abs(centerX - clusterX) > Math.abs(centerY - clusterY) ? 12 : 6
     const score =
-      viewportRoomBonus + alignmentBonus - overflowPenalty - crowdPenalty
+      viewportRoomBonus +
+      alignmentBonus -
+      overflowPenalty -
+      crowdPenalty -
+      panelOverlapPenalty -
+      panelCrowdPenalty
 
     if (score > bestScore) {
       bestScore = score
@@ -2379,6 +2427,9 @@ const HexagonServiceNetwork: React.FC = () => {
     x: 0,
     y: 0,
   })
+  const servicePanelPlacementRef = useRef<
+    Partial<Record<AppServiceGroup, ServicePanelPlacementState>>
+  >({})
   const timeRef = useRef(0)
   const nodeIdRef = useRef(0)
   const connectionIdRef = useRef(0)
@@ -2932,11 +2983,21 @@ const HexagonServiceNetwork: React.FC = () => {
       const cellRadius = 24 * densityFactor
       const honeycombX = cellRadius * Math.sqrt(3)
       const honeycombY = cellRadius * 1.5
-      const depthGap = 18 * (0.72 + densityFactor * 0.28)
-      const microJitter = 2.4 * densityFactor
+      const depthGap = 24 * (0.76 + densityFactor * 0.34)
+      const microJitter = 3.2 * densityFactor
       const slot = getHoneycombSlot(slotIndex)
+      const ringDepth =
+        Math.max(
+          Math.abs(slot.q),
+          Math.abs(slot.r),
+          Math.abs(-slot.q - slot.r),
+        ) * 0.16
       const xOffset = honeycombX * (slot.q + slot.r / 2)
       const yOffset = honeycombY * slot.r
+      const depthWave =
+        Math.sin(slotIndex * 0.9 + service.centerZ * 0.008) *
+        depthGap *
+        (0.5 + ringDepth)
 
       return {
         x:
@@ -2949,9 +3010,10 @@ const HexagonServiceNetwork: React.FC = () => {
           Math.cos(slotIndex * 0.85 + service.centerY * 0.01) * microJitter,
         z:
           service.centerZ +
-          ((slot.q + slot.r) % 2 === 0 ? 1 : -1) * depthGap +
-          slot.q * 6 * densityFactor -
-          slot.r * 5 * densityFactor +
+          ((slot.q + slot.r) % 2 === 0 ? 1 : -1) * depthGap * 1.08 +
+          slot.q * 7 * densityFactor -
+          slot.r * 6 * densityFactor +
+          depthWave +
           Math.sin(slotIndex * 0.62 + service.centerZ * 0.01) * microJitter,
       }
     },
@@ -4054,7 +4116,7 @@ const HexagonServiceNetwork: React.FC = () => {
       const rightBound = width / 2 - rightWidgetGutter
       const topBound = -height / 2 + topPreviewGutter
       const bottomBound = height / 2 - bottomContentGutter
-      const infraDepth = clamp(width * 0.12, 110, 180)
+      const infraDepth = clamp(width * 0.15, 140, 220)
       const serviceTopologyConfigs = [
         {
           name: 'edge',
@@ -4066,7 +4128,7 @@ const HexagonServiceNetwork: React.FC = () => {
           spikeReplicas: 12,
           maxReplicas: 18,
           trafficWeight: 1,
-          layoutSeed: { x: 0.86, y: 0.48, z: 0.72 },
+          layoutSeed: { x: 0.84, y: 0.44, z: 0.96 },
           downstream: ['auth', 'catalog', 'basket', 'checkout'],
         },
         {
@@ -4079,7 +4141,7 @@ const HexagonServiceNetwork: React.FC = () => {
           spikeReplicas: 7,
           maxReplicas: 12,
           trafficWeight: 0.56,
-          layoutSeed: { x: 0.64, y: 0.2, z: 0.16 },
+          layoutSeed: { x: 0.62, y: 0.18, z: 0.34 },
           downstream: [],
         },
         {
@@ -4092,7 +4154,7 @@ const HexagonServiceNetwork: React.FC = () => {
           spikeReplicas: 10,
           maxReplicas: 18,
           trafficWeight: 0.68,
-          layoutSeed: { x: 0.54, y: 0.82, z: -0.26 },
+          layoutSeed: { x: 0.56, y: 0.78, z: -0.44 },
           downstream: ['warehouse'],
         },
         {
@@ -4105,7 +4167,7 @@ const HexagonServiceNetwork: React.FC = () => {
           spikeReplicas: 14,
           maxReplicas: 24,
           trafficWeight: 0.84,
-          layoutSeed: { x: 0.42, y: 0.52, z: 0.28 },
+          layoutSeed: { x: 0.42, y: 0.56, z: 0.58 },
           downstream: [],
         },
         {
@@ -4118,7 +4180,7 @@ const HexagonServiceNetwork: React.FC = () => {
           spikeReplicas: 22,
           maxReplicas: 50,
           trafficWeight: 1.18,
-          layoutSeed: { x: 0.22, y: 0.36, z: 0.9 },
+          layoutSeed: { x: 0.2, y: 0.32, z: 1.08 },
           downstream: ['auth', 'basket', 'warehouse'],
         },
         {
@@ -4131,7 +4193,7 @@ const HexagonServiceNetwork: React.FC = () => {
           spikeReplicas: 9,
           maxReplicas: 16,
           trafficWeight: 0.62,
-          layoutSeed: { x: 0.22, y: 0.8, z: -0.62 },
+          layoutSeed: { x: 0.2, y: 0.74, z: -0.86 },
           downstream: [],
         },
       ] satisfies Array<
@@ -4167,6 +4229,16 @@ const HexagonServiceNetwork: React.FC = () => {
           x: lerp(leftBound, rightBound, 0.06),
           y: lerp(topBound, bottomBound, 0.98),
           radius: 62,
+        },
+        {
+          x: lerp(leftBound, rightBound, 0.34),
+          y: lerp(topBound, bottomBound, 0.46),
+          radius: 78,
+        },
+        {
+          x: lerp(leftBound, rightBound, 0.31),
+          y: lerp(topBound, bottomBound, 0.68),
+          radius: 88,
         },
       ]
       const serviceCenters = resolveServiceClusterCenters(
@@ -4231,8 +4303,8 @@ const HexagonServiceNetwork: React.FC = () => {
           'ingress',
           'ingress',
           lerp(leftBound, rightBound, 0.95),
-          lerp(topBound, bottomBound, 0.46),
-          infraDepth * 1.4,
+          lerp(topBound, bottomBound, 0.42),
+          infraDepth * 1.72,
           {
             replicaGroup: 'edge',
           },
@@ -4240,9 +4312,9 @@ const HexagonServiceNetwork: React.FC = () => {
         createNode(
           'loadBalancer',
           'lb-ext',
-          lerp(leftBound, rightBound, 0.88),
+          lerp(leftBound, rightBound, 0.87),
           lerp(topBound, bottomBound, 0.54),
-          infraDepth,
+          infraDepth * 1.16,
           {
             replicaGroup: 'edge',
           },
@@ -4250,72 +4322,93 @@ const HexagonServiceNetwork: React.FC = () => {
         createNode(
           'cache',
           'redis-m',
-          lerp(leftBound, rightBound, 0.46),
-          lerp(topBound, bottomBound, 0.88),
-          infraDepth * 0.08,
+          lerp(leftBound, rightBound, 0.48),
+          lerp(topBound, bottomBound, 0.84),
+          infraDepth * 0.2,
         ),
         createNode(
           'cache',
           'redis-r1',
-          lerp(leftBound, rightBound, 0.38),
-          lerp(topBound, bottomBound, 0.97),
-          -infraDepth * 0.42,
+          lerp(leftBound, rightBound, 0.4),
+          lerp(topBound, bottomBound, 0.94),
+          -infraDepth * 0.56,
         ),
         createNode(
           'cache',
           'redis-r2',
-          lerp(leftBound, rightBound, 0.54),
-          lerp(topBound, bottomBound, 0.92),
-          -infraDepth * 0.66,
+          lerp(leftBound, rightBound, 0.58),
+          lerp(topBound, bottomBound, 0.9),
+          -infraDepth * 0.86,
         ),
         createNode(
           'queue',
           'queue',
-          lerp(leftBound, rightBound, 0.24),
-          lerp(topBound, bottomBound, 0.78),
-          0,
+          lerp(leftBound, rightBound, 0.23),
+          lerp(topBound, bottomBound, 0.72),
+          infraDepth * 0.18,
+        ),
+        createNode(
+          'queue',
+          'queue-priority',
+          lerp(leftBound, rightBound, 0.35),
+          lerp(topBound, bottomBound, 0.48),
+          infraDepth * 0.42,
+        ),
+        createNode(
+          'queue',
+          'queue-dlq',
+          lerp(leftBound, rightBound, 0.32),
+          lerp(topBound, bottomBound, 0.69),
+          -infraDepth * 0.18,
         ),
         createNode(
           'database',
           'pg-primary',
           lerp(leftBound, rightBound, 0.1),
-          lerp(topBound, bottomBound, 0.89),
-          -infraDepth * 1.15,
+          lerp(topBound, bottomBound, 0.86),
+          -infraDepth * 1.35,
         ),
         createNode(
           'database',
           'pg-replica',
-          lerp(leftBound, rightBound, 0.26),
-          lerp(topBound, bottomBound, 0.93),
-          -infraDepth * 1.34,
+          lerp(leftBound, rightBound, 0.24),
+          lerp(topBound, bottomBound, 0.96),
+          -infraDepth * 1.58,
+        ),
+        createNode(
+          'database',
+          'pg-standby',
+          lerp(leftBound, rightBound, 0.36),
+          lerp(topBound, bottomBound, 0.84),
+          -infraDepth * 0.92,
         ),
         createNode(
           'worker',
           'worker-a',
-          lerp(leftBound, rightBound, 0.04),
-          lerp(topBound, bottomBound, 0.82),
-          infraDepth * 0.52,
+          lerp(leftBound, rightBound, 0.05),
+          lerp(topBound, bottomBound, 0.74),
+          infraDepth * 0.78,
         ),
         createNode(
           'worker',
           'worker-b',
-          lerp(leftBound, rightBound, 0.14),
-          lerp(topBound, bottomBound, 0.66),
-          infraDepth * 0.22,
+          lerp(leftBound, rightBound, 0.15),
+          lerp(topBound, bottomBound, 0.6),
+          infraDepth * 0.36,
         ),
         createNode(
           'observability',
           'metrics',
-          lerp(leftBound, rightBound, 0.92),
-          lerp(topBound, bottomBound, 0.98),
-          -infraDepth * 0.88,
+          lerp(leftBound, rightBound, 0.9),
+          lerp(topBound, bottomBound, 0.92),
+          -infraDepth * 1.04,
         ),
         createNode(
           'observability',
           'logs',
-          lerp(leftBound, rightBound, 0.05),
-          lerp(topBound, bottomBound, 0.98),
-          -infraDepth * 0.94,
+          lerp(leftBound, rightBound, 0.06),
+          lerp(topBound, bottomBound, 0.94),
+          -infraDepth * 1.12,
         ),
       ]
 
@@ -4352,6 +4445,28 @@ const HexagonServiceNetwork: React.FC = () => {
     const redisReplicas = caches.filter((node) => node.id !== redisMaster?.id)
     const queues = nodes.filter((node) => node.role === 'queue')
     const databases = nodes.filter((node) => node.role === 'database')
+    const primaryQueue =
+      queues.find((node) => node.label === 'queue') ?? queues[0]
+    const priorityQueue =
+      queues.find((node) => node.label === 'queue-priority') ??
+      queues[1] ??
+      primaryQueue
+    const deadLetterQueue =
+      queues.find((node) => node.label === 'queue-dlq') ??
+      queues[2] ??
+      priorityQueue ??
+      primaryQueue
+    const primaryDb =
+      databases.find((node) => node.label === 'pg-primary') ?? databases[0]
+    const replicaDb =
+      databases.find((node) => node.label === 'pg-replica') ??
+      databases[1] ??
+      primaryDb
+    const standbyDb =
+      databases.find((node) => node.label === 'pg-standby') ??
+      databases[2] ??
+      replicaDb ??
+      primaryDb
     const workers = nodes.filter((node) => node.role === 'worker')
     const observability = nodes.filter((node) => node.role === 'observability')
     const metricsNode = observability.find((node) => node.label === 'metrics')
@@ -4420,15 +4535,16 @@ const HexagonServiceNetwork: React.FC = () => {
     })
 
     connectedAppPods.forEach((pod, index) => {
-      const queue = queues[0]
+      const queue =
+        pod.replicaGroup === 'checkout'
+          ? ([primaryQueue, priorityQueue, deadLetterQueue][
+              index % Math.max(queues.length, 1)
+            ] ?? primaryQueue)
+          : pod.replicaGroup === 'warehouse'
+            ? (priorityQueue ?? primaryQueue)
+            : primaryQueue
       const worker = workers[index % Math.max(workers.length, 1)]
       const telemetry = observability[index % Math.max(observability.length, 1)]
-      const primaryDb =
-        databases.find((node) => node.label === 'pg-primary') ?? databases[0]
-      const replicaDb =
-        databases.find((node) => node.label === 'pg-replica') ??
-        databases[1] ??
-        databases[0]
       const authTarget =
         podsByService.auth[index % Math.max(podsByService.auth.length, 1)]
       const catalogTarget =
@@ -4566,6 +4682,14 @@ const HexagonServiceNetwork: React.FC = () => {
             kind: 'storage',
           })
         }
+
+        if (standbyDb && standbyDb.id !== primaryDb?.id) {
+          desiredConnections.push({
+            fromNodeId: pod.id,
+            toNodeId: standbyDb.id,
+            kind: 'storage',
+          })
+        }
       }
 
       if (pod.replicaGroup === 'warehouse') {
@@ -4589,6 +4713,14 @@ const HexagonServiceNetwork: React.FC = () => {
           desiredConnections.push({
             fromNodeId: pod.id,
             toNodeId: replicaDb.id,
+            kind: 'storage',
+          })
+        }
+
+        if (standbyDb && standbyDb.id !== replicaDb?.id) {
+          desiredConnections.push({
+            fromNodeId: pod.id,
+            toNodeId: standbyDb.id,
             kind: 'storage',
           })
         }
@@ -4628,9 +4760,9 @@ const HexagonServiceNetwork: React.FC = () => {
       }
     })
 
-    if (queues[0] && redisMaster) {
+    if (primaryQueue && redisMaster) {
       desiredConnections.push({
-        fromNodeId: queues[0].id,
+        fromNodeId: primaryQueue.id,
         toNodeId: redisMaster.id,
         kind: 'service',
       })
@@ -4680,18 +4812,18 @@ const HexagonServiceNetwork: React.FC = () => {
       })
     }
 
-    if (metricsNode && queues[0]) {
+    if (metricsNode && primaryQueue) {
       desiredConnections.push({
         fromNodeId: metricsNode.id,
-        toNodeId: queues[0].id,
+        toNodeId: primaryQueue.id,
         kind: 'telemetry',
       })
     }
 
-    if (logsNode && queues[0]) {
+    if (logsNode && primaryQueue) {
       desiredConnections.push({
         fromNodeId: logsNode.id,
-        toNodeId: queues[0].id,
+        toNodeId: primaryQueue.id,
         kind: 'telemetry',
       })
     }
@@ -4714,12 +4846,30 @@ const HexagonServiceNetwork: React.FC = () => {
       }
     })
 
-    const primaryQueue = queues[0]
-
     if (redisMaster && primaryQueue) {
       desiredConnections.push({
         fromNodeId: redisMaster.id,
         toNodeId: primaryQueue.id,
+        kind: 'service',
+      })
+    }
+
+    if (primaryQueue && priorityQueue && primaryQueue.id !== priorityQueue.id) {
+      desiredConnections.push({
+        fromNodeId: primaryQueue.id,
+        toNodeId: priorityQueue.id,
+        kind: 'service',
+      })
+    }
+
+    if (
+      priorityQueue &&
+      deadLetterQueue &&
+      priorityQueue.id !== deadLetterQueue.id
+    ) {
+      desiredConnections.push({
+        fromNodeId: priorityQueue.id,
+        toNodeId: deadLetterQueue.id,
         kind: 'service',
       })
     }
@@ -4731,6 +4881,18 @@ const HexagonServiceNetwork: React.FC = () => {
           toNodeId: worker.id,
           kind: 'service',
         })
+      })
+    }
+
+    if (priorityQueue) {
+      workers.forEach((worker, index) => {
+        if (index % 2 === 0) {
+          desiredConnections.push({
+            fromNodeId: priorityQueue.id,
+            toNodeId: worker.id,
+            kind: 'service',
+          })
+        }
       })
     }
 
@@ -6003,6 +6165,173 @@ const HexagonServiceNetwork: React.FC = () => {
             radius: Math.max(18, node.size * node.screenScale * 3.6),
           })),
       ]
+      const placedPanelZones: OccupiedPanelZone[] = []
+      const servicePanelPlacementMap = new Map<
+        AppServiceGroup,
+        {
+          x: number
+          y: number
+          width: number
+          height: number
+        }
+      >()
+
+      appServicesRef.current
+        .map((service) => {
+          const serviceProjection = serviceProjectionMap.get(service.name)
+          if (!serviceProjection) {
+            return null
+          }
+
+          const projected = project3D(
+            service.centerX,
+            service.centerY - 52,
+            service.centerZ,
+            centerX,
+            centerY,
+            rotX,
+            rotY,
+          )
+          const depthFade = clamp(projected.scale, 0.3, 1)
+          const servicePods = nodesRef.current.filter(
+            (node) =>
+              node.role === 'appPod' &&
+              node.replicaGroup === service.name &&
+              node.lifecycleState !== 'terminating',
+          )
+
+          if (depthFade < 0.48 || servicePods.length === 0) {
+            return null
+          }
+
+          const readyPods = servicePods.filter(
+            (node) => node.lifecycleState === 'ready' && node.acceptingTraffic,
+          ).length
+          const startingPods = servicePods.filter(
+            (node) => node.lifecycleState === 'starting',
+          ).length
+          const desiredPods =
+            clusterRef.current.desiredServiceReplicas[service.name] ??
+            servicePods.length
+          const capacityPods = service.maxReplicas
+          const drainingPods = servicePods.filter(
+            (node) => node.lifecycleState === 'draining',
+          ).length
+          const unhealthyPods = servicePods.filter(
+            (node) =>
+              node.lifecycleState === 'unhealthy' ||
+              node.lifecycleState === 'terminating',
+          ).length
+          const footprintPods = getServiceClusterFootprintPodCount({
+            ready: readyPods,
+            starting: startingPods,
+            draining: drainingPods,
+          })
+          const titleFont = `bold ${Math.max(10, Math.round(10 * depthFade))}px ui-monospace, monospace`
+          const metaFont = `${Math.max(9, Math.round(9 * depthFade))}px ui-monospace, monospace`
+          const statusFont = `${Math.max(8, Math.round(8 * depthFade))}px ui-monospace, monospace`
+          const statusDisplay = getServiceStatusDisplay(
+            service.name,
+            {
+              ready: readyPods,
+              starting: startingPods,
+              draining: drainingPods,
+              unhealthy: unhealthyPods,
+              total: servicePods.length,
+              desired: desiredPods,
+            },
+            {
+              emergencyState: currentEmergencyState,
+              emergencyScenarioKey: emergencyRef.current.scenarioKey,
+              isTrafficSpike: clusterRef.current.isTrafficSpike,
+              isDark,
+              metaOpacity: 0.9,
+            },
+          )
+
+          ctx.font = titleFont
+          const titleWidth = ctx.measureText(service.displayLabel).width
+          ctx.font = metaFont
+          const readyWidth = ctx.measureText(
+            `${readyPods}/${capacityPods} ready`,
+          ).width
+          ctx.font = statusFont
+          const statusWidth = ctx.measureText(statusDisplay.text).width
+          const panelWidth =
+            Math.max(titleWidth, readyWidth, statusWidth, 92) + 34
+          const panelHeight = 60
+          const clusterRadius = getServiceClusterShellRadius(
+            footprintPods,
+            capacityPods,
+            serviceProjection.scale,
+          )
+
+          return {
+            serviceName: service.name,
+            clusterX: serviceProjection.screenX,
+            clusterY: serviceProjection.screenY + 4,
+            clusterRadius,
+            panelWidth,
+            panelHeight,
+            priority:
+              serviceProjection.scale * 1000 -
+              Math.hypot(
+                serviceProjection.screenX - centerX,
+                serviceProjection.screenY - centerY,
+              ),
+          }
+        })
+        .filter(
+          (placement): placement is NonNullable<typeof placement> =>
+            !!placement,
+        )
+        .sort((left, right) => right.priority - left.priority)
+        .forEach((placement) => {
+          const panelPosition = chooseServicePanelPlacement({
+            clusterX: placement.clusterX,
+            clusterY: placement.clusterY,
+            clusterRadius: placement.clusterRadius,
+            panelWidth: placement.panelWidth,
+            panelHeight: placement.panelHeight,
+            viewportWidth: width,
+            viewportHeight: height,
+            otherCenters: occupiedLayoutZones.filter(
+              (zone) =>
+                Math.hypot(
+                  zone.x - placement.clusterX,
+                  zone.y - placement.clusterY,
+                ) > 1,
+            ),
+            otherPanels: placedPanelZones,
+          })
+          const previousPanelPlacement =
+            servicePanelPlacementRef.current[placement.serviceName]
+          const smoothedPanelPosition = previousPanelPlacement
+            ? {
+                x: lerp(previousPanelPlacement.x, panelPosition.x, 0.16),
+                y: lerp(previousPanelPlacement.y, panelPosition.y, 0.16),
+              }
+            : panelPosition
+
+          servicePanelPlacementMap.set(placement.serviceName, {
+            x: smoothedPanelPosition.x,
+            y: smoothedPanelPosition.y,
+            width: placement.panelWidth,
+            height: placement.panelHeight,
+          })
+          servicePanelPlacementRef.current[placement.serviceName] = {
+            x: smoothedPanelPosition.x,
+            y: smoothedPanelPosition.y,
+            width: placement.panelWidth,
+            height: placement.panelHeight,
+          }
+          placedPanelZones.push({
+            x: smoothedPanelPosition.x,
+            y: smoothedPanelPosition.y,
+            width: placement.panelWidth,
+            height: placement.panelHeight,
+          })
+        })
 
       appServicesRef.current.forEach((service) => {
         const serviceProjection = serviceProjectionMap.get(service.name)
@@ -6262,22 +6591,25 @@ const HexagonServiceNetwork: React.FC = () => {
           capacityPods,
           clusterProjected.scale,
         )
-        const panelPosition = chooseServicePanelPlacement({
-          clusterX: clusterProjected.screenX,
-          clusterY: clusterProjected.screenY,
-          clusterRadius,
-          panelWidth,
-          panelHeight,
-          viewportWidth: width,
-          viewportHeight: height,
-          otherCenters: occupiedLayoutZones.filter(
-            (zone) =>
-              Math.hypot(
-                zone.x - clusterProjected.screenX,
-                zone.y - clusterProjected.screenY,
-              ) > 1,
-          ),
-        })
+        const panelPlacement = servicePanelPlacementMap.get(service.name)
+        const panelPosition = panelPlacement
+          ? { x: panelPlacement.x, y: panelPlacement.y }
+          : chooseServicePanelPlacement({
+              clusterX: clusterProjected.screenX,
+              clusterY: clusterProjected.screenY,
+              clusterRadius,
+              panelWidth,
+              panelHeight,
+              viewportWidth: width,
+              viewportHeight: height,
+              otherCenters: occupiedLayoutZones.filter(
+                (zone) =>
+                  Math.hypot(
+                    zone.x - clusterProjected.screenX,
+                    zone.y - clusterProjected.screenY,
+                  ) > 1,
+              ),
+            })
         const panelCenterX = panelPosition.x + panelWidth / 2
 
         const panelLayout = drawInfoPanel(ctx, {

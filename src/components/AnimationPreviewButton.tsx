@@ -62,9 +62,11 @@ export default function AnimationPreviewButton() {
     return null
   }
 
+  const keyboardRotationHint =
+    'Use the arrow keys to rotate the cluster while preview is active.'
   const tooltipDescription = isHovering
-    ? monitoring.buttonDescription
-    : 'Hover to preview cluster pressure paths like surge scaling, reroute pressure, cache warmup misses, and queue buildup. While hovering, scroll to zoom the cluster view and use the arrow keys to rotate the cluster.'
+    ? `${monitoring.buttonDescription} ${keyboardRotationHint}`
+    : `Hover to preview cluster pressure paths like surge scaling, reroute pressure, cache warmup misses, and queue buildup. While hovering, scroll to zoom the cluster view. ${keyboardRotationHint}`
 
   return (
     <DesktopTooltip
