@@ -1,4 +1,5 @@
 export const NETWORK_CLUSTER_STATE_EVENT = 'network-cluster-state'
+export const NETWORK_CLUSTER_EVENT = 'network-cluster-event'
 export const TRIGGER_NETWORK_EMERGENCY_EVENT = 'trigger-emergency'
 export const NETWORK_CALL_ASSIGNMENTS_EVENT = 'network-call-assignments'
 export const NETWORK_CALL_HISTORY_EVENT = 'network-call-history'
@@ -124,6 +125,18 @@ export function dispatchClusterSnapshot(snapshot: ClusterSnapshot) {
   window.dispatchEvent(
     new CustomEvent<ClusterSnapshot>(NETWORK_CLUSTER_STATE_EVENT, {
       detail: snapshot,
+    }),
+  )
+}
+
+export function dispatchClusterEvent(entry: ClusterEventEntry) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.dispatchEvent(
+    new CustomEvent<ClusterEventEntry>(NETWORK_CLUSTER_EVENT, {
+      detail: entry,
     }),
   )
 }

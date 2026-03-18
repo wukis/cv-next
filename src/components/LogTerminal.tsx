@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { type ClusterEventEntry } from '@/lib/ambientCluster'
+import {
+  type ClusterEventEntry,
+  NETWORK_CLUSTER_EVENT,
+} from '@/lib/ambientCluster'
 import { useAmbientClusterSnapshot } from '@/lib/ambientClusterClient'
 import { deriveAmbientMonitoringState } from '@/lib/ambientMonitoring'
 
@@ -79,6 +82,13 @@ const INITIAL_LOGS: Array<Pick<LogEntry, 'level' | 'message'>> = [
   },
 ]
 
+const LOG_SCROLL_DURATION_MIN_MS = 12000
+const LOG_SCROLL_DURATION_MAX_MS = 28000
+const LOG_ACTIVITY_WINDOW_MS = 14000
+const LOG_ACTIVITY_BASELINE_COUNT = 2
+const LOG_ACTIVITY_PEAK_COUNT = 8
+const LOG_LINE_HEIGHT_PX = 18
+
 function formatTimestamp(timestamp: number) {
   return new Date(timestamp).toISOString()
 }
@@ -148,9 +158,9 @@ export default function LogTerminal() {
   )
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const animationRef = useRef<number>(0)
-  const lastEventIdRef = useRef<number>(0)
   const lastHeartbeatRef = useRef<number>(0)
-  const lastStateKeyRef = useRef<string | null>(null)
+  const recentLogTimesRef = useRef<number[]>([])
+  const singleCopyHeightRef = useRef(INITIAL_LOGS.length * LOG_LINE_HEIGHT_PX)
   const scrollStateRef = useRef({
     currentOffset: 0,
     currentSpeed: 0,
@@ -163,9 +173,40 @@ export default function LogTerminal() {
     setShouldRender(getShouldRenderLogTerminal())
   }, [])
 
-  const appendLog = useCallback((entry: LogEntry) => {
-    setLogEntries((previous) => [...previous, entry].slice(-32))
+  const updateScrollCadence = useCallback((timestamp: number) => {
+    recentLogTimesRef.current = recentLogTimesRef.current.filter(
+      (loggedAt) => timestamp - loggedAt <= LOG_ACTIVITY_WINDOW_MS,
+    )
+
+    const activityCount = recentLogTimesRef.current.length
+    const normalizedActivity = Math.min(
+      1,
+      Math.max(
+        0,
+        (activityCount - LOG_ACTIVITY_BASELINE_COUNT) /
+          (LOG_ACTIVITY_PEAK_COUNT - LOG_ACTIVITY_BASELINE_COUNT),
+      ),
+    )
+    const durationMs =
+      LOG_SCROLL_DURATION_MAX_MS -
+      normalizedActivity *
+        (LOG_SCROLL_DURATION_MAX_MS - LOG_SCROLL_DURATION_MIN_MS)
+
+    const singleCopyHeight = Math.max(
+      singleCopyHeightRef.current,
+      LOG_LINE_HEIGHT_PX,
+    )
+    scrollStateRef.current.targetSpeed = singleCopyHeight / durationMs
   }, [])
+
+  const appendLog = useCallback(
+    (entry: LogEntry) => {
+      recentLogTimesRef.current.push(entry.timestamp)
+      updateScrollCadence(entry.timestamp)
+      setLogEntries((previous) => [...previous, entry].slice(-32))
+    },
+    [updateScrollCadence],
+  )
 
   useEffect(() => {
     window.addEventListener('resize', checkScreenSize)
@@ -189,18 +230,22 @@ export default function LogTerminal() {
   }, [])
 
   useEffect(() => {
-    let frameId = 0
+    const handleClusterEvent = (event: Event) => {
+      const customEvent = event as CustomEvent<ClusterEventEntry>
+      if (!customEvent.detail) {
+        return
+      }
 
-    if (
-      cluster.recentEvent &&
-      cluster.recentEvent.id !== lastEventIdRef.current
-    ) {
-      lastEventIdRef.current = cluster.recentEvent.id
-      frameId = window.requestAnimationFrame(() => {
-        appendLog(mapClusterEventToLog(cluster.recentEvent!))
-      })
-      return () => window.cancelAnimationFrame(frameId)
+      appendLog(mapClusterEventToLog(customEvent.detail))
     }
+
+    window.addEventListener(NETWORK_CLUSTER_EVENT, handleClusterEvent)
+    return () =>
+      window.removeEventListener(NETWORK_CLUSTER_EVENT, handleClusterEvent)
+  }, [appendLog])
+
+  useEffect(() => {
+    let frameId = 0
 
     const now = Date.now()
     if (now - lastHeartbeatRef.current > 8500) {
@@ -223,52 +268,30 @@ export default function LogTerminal() {
     }
   }, [
     appendLog,
-    cluster,
     monitoring.heartbeatLevel,
     monitoring.heartbeatSuffix,
+    cluster,
   ])
 
   useEffect(() => {
-    let frameId = 0
-
-    if (lastStateKeyRef.current === monitoring.stateKey) {
-      return
-    }
-
-    lastStateKeyRef.current = monitoring.stateKey
-    if (monitoring.mode === 'steady') {
-      return
-    }
-
-    frameId = window.requestAnimationFrame(() => {
-      appendLog({
-        id: `mode-${monitoring.stateKey}-${Date.now()}`,
-        level: monitoring.modeAnnouncementLevel,
-        message: monitoring.terminalSummary,
-        timestamp: Date.now(),
-      })
-    })
-
-    return () => {
-      if (frameId) {
-        window.cancelAnimationFrame(frameId)
-      }
-    }
-  }, [
-    appendLog,
-    monitoring.mode,
-    monitoring.modeAnnouncementLevel,
-    monitoring.stateKey,
-    monitoring.terminalSummary,
-  ])
-
-  const getTargetScrollSpeed = useCallback(() => {
-    return 50 / monitoring.scrollDurationMs
-  }, [monitoring.scrollDurationMs])
+    updateScrollCadence(Date.now())
+  }, [updateScrollCadence])
 
   useEffect(() => {
-    scrollStateRef.current.targetSpeed = getTargetScrollSpeed()
-  }, [getTargetScrollSpeed])
+    singleCopyHeightRef.current = Math.max(
+      logEntries.length * LOG_LINE_HEIGHT_PX,
+      LOG_LINE_HEIGHT_PX,
+    )
+
+    const loopHeight = singleCopyHeightRef.current
+    const state = scrollStateRef.current
+
+    if (state.currentOffset <= -loopHeight) {
+      state.currentOffset = -(-state.currentOffset % loopHeight)
+    }
+
+    updateScrollCadence(Date.now())
+  }, [logEntries.length, updateScrollCadence])
 
   useEffect(() => {
     if (!shouldRender) {
@@ -276,11 +299,13 @@ export default function LogTerminal() {
     }
 
     const state = scrollStateRef.current
-    state.targetSpeed = getTargetScrollSpeed()
+    updateScrollCadence(Date.now())
     state.currentSpeed = state.targetSpeed
     state.lastTime = performance.now()
 
     const animate = (currentTime: number) => {
+      updateScrollCadence(Date.now())
+
       const deltaTime = currentTime - state.lastTime
       state.lastTime = currentTime
 
@@ -289,12 +314,13 @@ export default function LogTerminal() {
         (state.targetSpeed - state.currentSpeed) * lerpFactor
       state.currentOffset -= state.currentSpeed * deltaTime
 
-      if (state.currentOffset <= -50) {
-        state.currentOffset += 50
+      const loopHeight = singleCopyHeightRef.current
+      if (state.currentOffset <= -loopHeight) {
+        state.currentOffset += loopHeight
       }
 
       if (scrollContainerRef.current) {
-        scrollContainerRef.current.style.transform = `translateY(${state.currentOffset}%)`
+        scrollContainerRef.current.style.transform = `translateY(${state.currentOffset}px)`
       }
 
       animationRef.current = requestAnimationFrame(animate)
@@ -307,7 +333,7 @@ export default function LogTerminal() {
         cancelAnimationFrame(animationRef.current)
       }
     }
-  }, [getTargetScrollSpeed, shouldRender])
+  }, [shouldRender, updateScrollCadence])
 
   if (!shouldRender) {
     return null
@@ -322,8 +348,8 @@ export default function LogTerminal() {
   const surgeSkyDark = '#38bdf8'
   const surgeSkyLight = '#0369a1'
 
-  const getLogColor = (entry: LogEntry) => {
-    if (monitoring.accent === 'incident' && entry.level !== 'OK') {
+  const getHighlightAccent = (entry: LogEntry) => {
+    if (monitoring.accent === 'incident' && entry.level === 'ERROR') {
       return isDark ? emergencyRedDark : emergencyRedLight
     }
 
@@ -342,11 +368,23 @@ export default function LogTerminal() {
       return isDark ? surgeSkyDark : surgeSkyLight
     }
 
+    return null
+  }
+
+  const getBaseLogColor = (entry: LogEntry) => {
     if (entry.level === 'ERROR') return isDark ? '#ff6666' : '#cc0000'
     if (entry.level === 'WARN') return isDark ? '#ffaa00' : '#aa6600'
     if (entry.level === 'OK') return isDark ? '#33ff66' : '#009933'
     if (entry.level === 'DEBUG') return isDark ? '#888888' : '#666666'
     return isDark ? '#00cccc' : '#008888'
+  }
+
+  const getGlowAccent = (entry: LogEntry) => {
+    if (monitoring.accent === 'preview') {
+      return null
+    }
+
+    return getHighlightAccent(entry)
   }
 
   const isFocused = monitoring.terminalVisible
@@ -406,11 +444,33 @@ export default function LogTerminal() {
             : isDark
               ? '#94a3b8'
               : '#475569'
+  const panelAccentColor =
+    monitoring.mode === 'incident'
+      ? isDark
+        ? 'rgba(255, 51, 51, 0.42)'
+        : 'rgba(204, 0, 0, 0.34)'
+      : monitoring.mode === 'recovery'
+        ? isDark
+          ? 'rgba(51, 255, 102, 0.36)'
+          : 'rgba(0, 153, 51, 0.28)'
+        : monitoring.mode === 'preview'
+          ? isDark
+            ? 'rgba(77, 245, 255, 0.3)'
+            : 'rgba(15, 118, 110, 0.24)'
+          : monitoring.mode === 'surge'
+            ? isDark
+              ? 'rgba(56, 189, 248, 0.3)'
+              : 'rgba(3, 105, 161, 0.24)'
+            : isDark
+              ? 'rgba(148, 163, 184, 0.16)'
+              : 'rgba(148, 163, 184, 0.18)'
 
   const formattedLogs = logEntries.map((entry) => ({
     id: entry.id,
     text: `${formatTimestamp(entry.timestamp)} ${entry.level.padEnd(5, ' ')} ${entry.message}`,
-    color: getLogColor(entry),
+    highlightAccent: getHighlightAccent(entry),
+    glowAccent: getGlowAccent(entry),
+    color: getHighlightAccent(entry) ?? getBaseLogColor(entry),
   }))
 
   return (
@@ -426,16 +486,9 @@ export default function LogTerminal() {
           transition: isFocused
             ? 'opacity 0.3s ease-in'
             : 'opacity 0.5s ease-out',
-          boxShadow:
-            monitoring.mode === 'incident' && isActive
-              ? `0 0 20px ${isDark ? 'rgba(255, 51, 51, 0.3)' : 'rgba(204, 0, 0, 0.2)'}`
-              : monitoring.mode === 'recovery' && isActive
-                ? `0 0 20px ${isDark ? 'rgba(51, 255, 102, 0.28)' : 'rgba(0, 153, 51, 0.18)'}`
-                : monitoring.mode === 'preview' && isActive
-                  ? `0 0 20px ${isDark ? 'rgba(77, 245, 255, 0.22)' : 'rgba(15, 118, 110, 0.14)'}`
-                  : monitoring.mode === 'surge' && isActive
-                    ? `0 0 20px ${isDark ? 'rgba(56, 189, 248, 0.22)' : 'rgba(3, 105, 161, 0.14)'}`
-                    : 'none',
+          boxShadow: `0 0 0 1px ${isActive ? panelAccentColor : borderColor}, 0 24px 60px ${
+            isDark ? 'rgba(2, 6, 23, 0.44)' : 'rgba(15, 23, 42, 0.14)'
+          }`,
         }}
       >
         <div
@@ -514,7 +567,10 @@ export default function LogTerminal() {
             style={{ willChange: 'transform' }}
           >
             {[0, 1].map((copyIndex) => (
-              <div key={copyIndex} style={{ lineHeight: '18px' }}>
+              <div
+                key={copyIndex}
+                style={{ lineHeight: `${LOG_LINE_HEIGHT_PX}px` }}
+              >
                 {formattedLogs.map((entry) => (
                   <div
                     key={`${copyIndex}-${entry.id}`}
@@ -522,16 +578,8 @@ export default function LogTerminal() {
                     style={{
                       color: entry.color,
                       textShadow:
-                        isActive && isDark
-                          ? `0 0 4px ${
-                              monitoring.mode === 'incident'
-                                ? emergencyRedDark
-                                : monitoring.mode === 'recovery'
-                                  ? recoveryGreenDark
-                                  : monitoring.mode === 'surge'
-                                    ? surgeSkyDark
-                                    : previewCyanDark
-                            }`
+                        isActive && isDark && entry.glowAccent
+                          ? `0 0 4px ${entry.glowAccent}`
                           : 'none',
                     }}
                   >

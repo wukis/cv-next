@@ -8,6 +8,7 @@ import {
   type ClusterNodeLifecycle,
   type ClusterNodeRole,
   type ClusterSnapshot,
+  dispatchClusterEvent,
   dispatchClusterSnapshot,
   type EmergencyScenarioKey,
   type EmergencyState,
@@ -139,6 +140,84 @@ const SCENARIO_AFFECTED_SERVICES: Record<
 
 function getScenarioAffectedServices(scenarioKey: EmergencyScenarioKey) {
   return SCENARIO_AFFECTED_SERVICES[scenarioKey]
+}
+
+function getEmergencyLogBurst(
+  scenarioKey: EmergencyScenarioKey,
+  affectedServices: AppServiceGroup[],
+) {
+  const serviceSummary = affectedServices.join(',')
+
+  switch (scenarioKey) {
+    case 'failover':
+      return [
+        {
+          level: 'error' as const,
+          message: `lb-ext detected unstable targets in services=${serviceSummary}; failover policy engaged`,
+        },
+        {
+          level: 'warn' as const,
+          message:
+            'traffic is draining from unhealthy pods while edge retries fan out across healthy targets',
+        },
+        {
+          level: 'error' as const,
+          message:
+            'request errors are spiking during reroute convergence; checkout paths are shedding load',
+        },
+      ]
+    case 'dbDown':
+      return [
+        {
+          level: 'error' as const,
+          message: `postgres primary writes are failing for services=${serviceSummary}; retry budget is burning`,
+        },
+        {
+          level: 'warn' as const,
+          message:
+            'transaction workers are backing off while connection pools wait for durable storage',
+        },
+        {
+          level: 'error' as const,
+          message:
+            'checkout and basket mutations are timing out against the primary database',
+        },
+      ]
+    case 'cacheReload':
+      return [
+        {
+          level: 'warn' as const,
+          message: `redis cache warmup is active for services=${serviceSummary}; miss rate is climbing`,
+        },
+        {
+          level: 'error' as const,
+          message:
+            'catalog reads are falling through to origin while hot keys repopulate the cache',
+        },
+        {
+          level: 'warn' as const,
+          message:
+            'latency is rising as repeated cache misses fan out across backing services',
+        },
+      ]
+    case 'queueFull':
+      return [
+        {
+          level: 'error' as const,
+          message: `queue backlog breached saturation threshold for services=${serviceSummary}; workers are throttling`,
+        },
+        {
+          level: 'warn' as const,
+          message:
+            'dispatch latency is rising while consumers drain jobs slower than ingress arrival',
+        },
+        {
+          level: 'error' as const,
+          message:
+            'checkout workflows are stalling behind queued work and retry pressure',
+        },
+      ]
+  }
 }
 
 function isScenarioAffectingNode(
@@ -2528,6 +2607,8 @@ const HexagonServiceNetwork: React.FC = () => {
         timestamp: Date.now(),
       }
 
+      dispatchClusterEvent(event)
+
       if (forceSnapshot) {
         emitClusterSnapshot(true, event)
       }
@@ -3041,12 +3122,14 @@ const HexagonServiceNetwork: React.FC = () => {
       )
 
       nodesRef.current.push(nextNode)
+      const replacementEventLevel =
+        getEmergencyState() === 'emergency' ? 'error' : 'info'
       pushClusterEvent(
-        'info',
+        replacementEventLevel,
         `deployment/${serviceName} created replacement ${nextNode.label} for ${failedNode.label}`,
       )
     },
-    [createAppPod, getAppServiceConfig, pushClusterEvent],
+    [createAppPod, getAppServiceConfig, getEmergencyState, pushClusterEvent],
   )
 
   const triggerPodFailure = useCallback(
@@ -3654,6 +3737,7 @@ const HexagonServiceNetwork: React.FC = () => {
       const affectedServiceNames = new Set(
         getScenarioAffectedServices(nextScenarioKey),
       )
+      const affectedServices = getScenarioAffectedServices(nextScenarioKey)
       const readyAffectedPods = getReadyAppPods().filter((node) =>
         node.replicaGroup
           ? affectedServiceNames.has(node.replicaGroup as AppServiceGroup)
@@ -3672,6 +3756,11 @@ const HexagonServiceNetwork: React.FC = () => {
       )
       emergency.recoveryAnnounced = false
       pushClusterEvent('error', scenario.eventMessage)
+      getEmergencyLogBurst(nextScenarioKey, affectedServices).forEach(
+        ({ level, message }) => {
+          pushClusterEvent(level, message)
+        },
+      )
       enqueueEventToast({
         title: scenario.title,
         subtitle: scenario.subtitle,
@@ -4908,7 +4997,7 @@ const HexagonServiceNetwork: React.FC = () => {
           createReplacementPod(node)
           node.replacementLaunched = true
           pushClusterEvent(
-            'info',
+            currentEmergencyState === 'emergency' ? 'error' : 'info',
             `scheduler is bringing up a replacement for ${node.label} before shutdown`,
           )
         } else if (
@@ -4937,7 +5026,7 @@ const HexagonServiceNetwork: React.FC = () => {
               previousPod.lifecycleState = 'terminating'
               previousPod.statusSince = timeRef.current
               pushClusterEvent(
-                'warn',
+                currentEmergencyState === 'emergency' ? 'error' : 'warn',
                 `rolling update is shutting down ${previousPod.label} after ${node.label} joined the pool`,
               )
             }
@@ -4949,7 +5038,9 @@ const HexagonServiceNetwork: React.FC = () => {
           }
           if (node.replicaGroup === 'edge') {
             pushClusterEvent(
-              'success',
+              currentEmergencyState === 'emergency' && node.replacementFor
+                ? 'error'
+                : 'success',
               `${node.label} became ready; lb-ext added it back into rotation`,
             )
           }
