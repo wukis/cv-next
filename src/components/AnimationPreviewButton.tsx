@@ -24,8 +24,13 @@ export default function AnimationPreviewButton() {
       return
     }
 
+    const previousHtmlOverflow = document.documentElement.style.overflow
+    const previousBodyOverflow = document.body.style.overflow
+
     if (isHovering) {
       document.documentElement.classList.add('animation-focus')
+      document.documentElement.style.overflow = 'hidden'
+      document.body.style.overflow = 'hidden'
       window.dispatchEvent(
         new CustomEvent('animation-focus-hover', {
           detail: { isHovering: true },
@@ -33,6 +38,8 @@ export default function AnimationPreviewButton() {
       )
     } else {
       document.documentElement.classList.remove('animation-focus')
+      document.documentElement.style.overflow = previousHtmlOverflow
+      document.body.style.overflow = previousBodyOverflow
       window.dispatchEvent(
         new CustomEvent('animation-focus-hover', {
           detail: { isHovering: false },
@@ -42,6 +49,8 @@ export default function AnimationPreviewButton() {
 
     return () => {
       document.documentElement.classList.remove('animation-focus')
+      document.documentElement.style.overflow = previousHtmlOverflow
+      document.body.style.overflow = previousBodyOverflow
       window.dispatchEvent(
         new CustomEvent('animation-focus-hover', {
           detail: { isHovering: false },

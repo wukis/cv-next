@@ -2332,6 +2332,7 @@ const HexagonServiceNetwork: React.FC = () => {
   const clusterRef = useRef({
     desiredReplicas: 6,
     nextAmbientFailureTime: 10,
+    nextAmbientRebalanceTime: 4,
     nextTrafficSpikeTime: 18,
     trafficSpikeEndTime: 0,
     isTrafficSpike: false,
@@ -3621,6 +3622,120 @@ const HexagonServiceNetwork: React.FC = () => {
     return true
   }, [getMostVisibleServiceGroups, getServiceReplicaCount])
 
+  const rebalanceAmbientReplicaTargets = useCallback(() => {
+    const cluster = clusterRef.current
+
+    if (
+      cluster.isTrafficSpike ||
+      timeRef.current < cluster.nextAmbientRebalanceTime
+    ) {
+      return false
+    }
+
+    const scalingActivity = getScalingActivitySummary()
+    if (scalingActivity.starting > 0 || scalingActivity.draining > 0) {
+      cluster.nextAmbientRebalanceTime =
+        timeRef.current + 1.6 + Math.random() * 1.4
+      return false
+    }
+
+    const visibleServiceSet = new Set(getMostVisibleServiceGroups(3))
+    const serviceStates = APP_SERVICE_ORDER.map((serviceName) => {
+      const service = getAppServiceConfig(serviceName)
+      const baseline = cluster.baselineServiceReplicas[serviceName]
+      const desired = cluster.desiredServiceReplicas[serviceName]
+      const currentReplicas = getServiceReplicaCount(serviceName)
+      const minDesired = Math.max(service?.minReplicas ?? 1, baseline - 1)
+      const maxDesired = Math.min(service?.maxReplicas ?? desired, baseline + 1)
+
+      return {
+        serviceName,
+        desired,
+        currentReplicas,
+        trafficWeight: service?.trafficWeight ?? 0.5,
+        isVisible: visibleServiceSet.has(serviceName),
+        donorHeadroom: Math.max(desired - minDesired, 0),
+        receiverHeadroom: Math.max(maxDesired - desired, 0),
+      }
+    })
+
+    const donor = [...serviceStates]
+      .filter((state) => state.donorHeadroom > 0)
+      .sort((left, right) => {
+        if (left.isVisible !== right.isVisible) {
+          return left.isVisible ? 1 : -1
+        }
+
+        if (left.trafficWeight !== right.trafficWeight) {
+          return left.trafficWeight - right.trafficWeight
+        }
+
+        if (left.currentReplicas !== right.currentReplicas) {
+          return right.currentReplicas - left.currentReplicas
+        }
+
+        return (
+          APP_SERVICE_ORDER.indexOf(left.serviceName) -
+          APP_SERVICE_ORDER.indexOf(right.serviceName)
+        )
+      })[0]
+
+    const receiver = [...serviceStates]
+      .filter(
+        (state) =>
+          state.receiverHeadroom > 0 &&
+          state.serviceName !== donor?.serviceName,
+      )
+      .sort((left, right) => {
+        if (left.isVisible !== right.isVisible) {
+          return left.isVisible ? -1 : 1
+        }
+
+        if (left.trafficWeight !== right.trafficWeight) {
+          return right.trafficWeight - left.trafficWeight
+        }
+
+        if (left.currentReplicas !== right.currentReplicas) {
+          return left.currentReplicas - right.currentReplicas
+        }
+
+        return (
+          APP_SERVICE_ORDER.indexOf(left.serviceName) -
+          APP_SERVICE_ORDER.indexOf(right.serviceName)
+        )
+      })[0]
+
+    if (!donor || !receiver) {
+      cluster.nextAmbientRebalanceTime = timeRef.current + 2.8 + Math.random()
+      return false
+    }
+
+    cluster.desiredServiceReplicas[donor.serviceName] -= 1
+    cluster.desiredServiceReplicas[receiver.serviceName] += 1
+    cluster.desiredReplicas = Object.values(
+      cluster.desiredServiceReplicas,
+    ).reduce((sum, count) => sum + count, 0)
+    cluster.nextAmbientRebalanceTime = timeRef.current + 4.4 + Math.random() * 3
+    cluster.nextScaleActionTime = Math.min(
+      cluster.nextScaleActionTime,
+      timeRef.current + 0.12,
+    )
+
+    pushClusterEvent(
+      'info',
+      `autoscaler is rebalancing standby capacity from ${donor.serviceName} to ${receiver.serviceName}`,
+    )
+    emitClusterSnapshot(true)
+    return true
+  }, [
+    emitClusterSnapshot,
+    getAppServiceConfig,
+    getMostVisibleServiceGroups,
+    getScalingActivitySummary,
+    getServiceReplicaCount,
+    pushClusterEvent,
+  ])
+
   const rebalanceTrafficSpikeTargets = useCallback(
     (force = false) => {
       const cluster = clusterRef.current
@@ -3793,6 +3908,7 @@ const HexagonServiceNetwork: React.FC = () => {
 
       clusterRef.current.desiredReplicas = 6
       clusterRef.current.nextAmbientFailureTime = 8 + Math.random() * 6
+      clusterRef.current.nextAmbientRebalanceTime = 3.5 + Math.random() * 3.5
       clusterRef.current.nextTrafficSpikeTime = 5 + Math.random() * 6
       clusterRef.current.trafficSpikeEndTime = 0
       clusterRef.current.isTrafficSpike = false
@@ -4833,6 +4949,7 @@ const HexagonServiceNetwork: React.FC = () => {
 
       if (currentEmergencyState === 'normal' && !cluster.isTrafficSpike) {
         relaxReplicaTargetsTowardsBaseline()
+        rebalanceAmbientReplicaTargets()
       }
 
       if (currentEmergencyState === 'normal') {
@@ -5975,6 +6092,7 @@ const HexagonServiceNetwork: React.FC = () => {
     mounted,
     isDark,
     pushClusterEvent,
+    rebalanceAmbientReplicaTargets,
     rebalanceTrafficSpikeTargets,
     relaxReplicaTargetsTowardsBaseline,
     relayoutServicePods,
