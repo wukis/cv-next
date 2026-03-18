@@ -185,7 +185,7 @@ function MiniBarChart({
   isFocused?: boolean
   isDark?: boolean
 }) {
-  const gap = 5
+  const gap = values.length > 8 ? 3 : 5
   const barWidth = (width - gap * (values.length - 1)) / values.length
   const baseOpacity = isFocused ? (isDark ? 0.85 : 1) : isDark ? 0.35 : 0.4
   const glowSize = isFocused ? (isDark ? 4 : 2) : 0
@@ -460,6 +460,7 @@ function AvailabilityRings({
 function TargetFanoutChart({
   cluster,
   color,
+  phase,
   isFocused = false,
   isDark = true,
   width = 102,
@@ -467,6 +468,7 @@ function TargetFanoutChart({
 }: {
   cluster: ClusterSnapshot
   color: string
+  phase: number
   isFocused?: boolean
   isDark?: boolean
   width?: number
@@ -474,10 +476,23 @@ function TargetFanoutChart({
 }) {
   const totalNodes = 8
   const activeNodes = clamp(cluster.loadBalancerTargets.length, 0, totalNodes)
+  const [blinkNode, setBlinkNode] = useState<number | null>(null)
+
+  useEffect(() => {
+    const rafId = requestAnimationFrame(() => {
+      setBlinkNode(activeNodes)
+    })
+    const timeout = setTimeout(() => setBlinkNode(null), 2800)
+    return () => {
+      cancelAnimationFrame(rafId)
+      clearTimeout(timeout)
+    }
+  }, [activeNodes])
+
   const centerX = 18
   const centerY = height / 2
   const columns = [65, 85]
-  const rows = [8, 17, 26, 35]
+  const rows = [height * 0.14, height * 0.36, height * 0.58, height * 0.86]
 
   return (
     <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
@@ -485,12 +500,26 @@ function TargetFanoutChart({
         columns.map((x, columnIndex) => {
           const nodeIndex = rowIndex * columns.length + columnIndex
           const isActive = nodeIndex < activeNodes
-          const lineOpacity = isActive ? (isFocused ? 0.82 : 0.56) : 0.12
+          const isBlinking =
+            blinkNode !== null &&
+            nodeIndex === blinkNode &&
+            nodeIndex >= activeNodes
+          const lineOpacity = isActive
+            ? isFocused
+              ? 0.82
+              : 0.56
+            : isBlinking
+              ? 0.45
+              : 0.12
           const nodeColor = isActive
             ? color
-            : isDark
-              ? 'rgba(148, 163, 184, 0.28)'
-              : 'rgba(148, 163, 184, 0.4)'
+            : isBlinking
+              ? isDark
+                ? '#fb7185'
+                : '#be123c'
+              : isDark
+                ? 'rgba(148, 163, 184, 0.28)'
+                : 'rgba(148, 163, 184, 0.4)'
 
           return (
             <g key={`${x}-${y}`}>
@@ -505,13 +534,16 @@ function TargetFanoutChart({
               <circle
                 cx={x}
                 cy={y}
-                r={isActive ? 2.8 : 2.2}
+                r={isActive ? 2.8 : isBlinking ? 3.2 : 2.2}
                 fill={nodeColor}
                 style={{
                   filter:
-                    isActive && isFocused && isDark
-                      ? `drop-shadow(0 0 4px ${color})`
+                    (isActive && isFocused && isDark) || isBlinking
+                      ? `drop-shadow(0 0 ${isBlinking ? 6 : 4}px ${isBlinking ? nodeColor : color})`
                       : 'none',
+                  animation: isBlinking
+                    ? 'pulse 0.6s ease-in-out infinite'
+                    : 'none',
                 }}
               />
             </g>
@@ -679,6 +711,7 @@ function ControlPlaneChart({
   cluster,
   mode,
   phase,
+  isFocused = false,
   isDark = true,
   width = 102,
   height = 38,
@@ -686,13 +719,14 @@ function ControlPlaneChart({
   cluster: ClusterSnapshot
   mode: AmbientSemanticMode
   phase: number
+  isFocused?: boolean
   isDark?: boolean
   width?: number
   height?: number
 }) {
-  const centerX = 20
+  const centerX = 16
   const centerY = height / 2
-  const radius = 10
+  const radius = 9
   const reconcileLoad = clamp(
     cluster.startingReplicas * 24 +
       cluster.drainingReplicas * 28 +
@@ -718,7 +752,7 @@ function ControlPlaneChart({
           : '#0369a1'
   const laneData = [
     {
-      label: 'start',
+      label: 'S',
       value: clamp(
         cluster.startingReplicas * 36 + cluster.trafficIntensity * 28,
         0,
@@ -727,7 +761,7 @@ function ControlPlaneChart({
       color: isDark ? '#38bdf8' : '#0369a1',
     },
     {
-      label: 'drain',
+      label: 'D',
       value: clamp(
         cluster.drainingReplicas * 40 + cluster.terminatingReplicas * 18,
         0,
@@ -736,7 +770,7 @@ function ControlPlaneChart({
       color: isDark ? '#f59e0b' : '#c2410c',
     },
     {
-      label: 'heal',
+      label: 'H',
       value: clamp(
         cluster.unhealthyReplicas * 42 + cluster.errorRate * 7,
         0,
@@ -745,6 +779,8 @@ function ControlPlaneChart({
       color: isDark ? '#fb7185' : '#be123c',
     },
   ]
+  const laneX = 36
+  const barWidth = width - laneX - 8
 
   return (
     <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
@@ -769,21 +805,24 @@ function ControlPlaneChart({
           strokeLinecap="round"
           strokeDasharray={`${track * (reconcileLoad / 100)} ${track}`}
           style={{
-            filter: isDark ? `drop-shadow(0 0 5px ${reconcileColor})` : 'none',
+            filter:
+              isDark && isFocused
+                ? `drop-shadow(0 0 5px ${reconcileColor})`
+                : 'none',
           }}
         />
       </g>
       {Array.from({ length: 3 }, (_, index) => {
         const angle = phase * 0.16 + index * ((Math.PI * 2) / 3)
-        const x = centerX + Math.cos(angle) * (radius + 4)
-        const y = centerY + Math.sin(angle) * (radius + 4)
+        const x = centerX + Math.cos(angle) * (radius + 3.5)
+        const y = centerY + Math.sin(angle) * (radius + 3.5)
 
         return (
           <circle
             key={index}
             cx={x}
             cy={y}
-            r={1.7}
+            r={1.5}
             fill={reconcileColor}
             opacity={0.72}
           />
@@ -792,56 +831,57 @@ function ControlPlaneChart({
       <circle
         cx={centerX}
         cy={centerY}
-        r={3}
+        r={2.5}
         fill={reconcileColor}
         opacity={0.84}
       />
       {laneData.map((lane, index) => {
-        const x = 44
-        const y = 7 + index * 10
+        const laneSpacing = Math.max((height - 8) / 3, 8)
+        const laneStartY = (height - laneSpacing * 2.5) / 2
+        const y = laneStartY + index * laneSpacing
+        const barHeight = Math.min(laneSpacing * 0.55, 6)
         const pulseT = (phase * 0.14 + index * 0.22) % 1
-        const pulseX = x + 12 + pulseT * 36
+        const pulseX = laneX + 8 + pulseT * (barWidth - 8)
         const laneOpacity = 0.2 + lane.value / 140
 
         return (
           <g key={lane.label}>
             <text
-              x={x}
-              y={y + 3}
+              x={laneX}
+              y={y + barHeight * 0.8}
               fill={lane.color}
               style={{
                 fontFamily: 'ui-monospace, monospace',
-                fontSize: '5px',
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                opacity: 0.76,
+                fontSize: '6px',
+                fontWeight: 700,
+                opacity: 0.86,
               }}
             >
               {lane.label}
             </text>
             <rect
-              x={x + 12}
+              x={laneX + 8}
               y={y}
-              width={40}
-              height={5}
-              rx={2.5}
+              width={barWidth - 8}
+              height={barHeight}
+              rx={barHeight / 2}
               fill={
                 isDark ? 'rgba(15, 23, 42, 0.56)' : 'rgba(226, 232, 240, 0.76)'
               }
             />
             <rect
-              x={x + 12}
+              x={laneX + 8}
               y={y}
-              width={40 * (lane.value / 100)}
-              height={5}
-              rx={2.5}
+              width={(barWidth - 8) * (lane.value / 100)}
+              height={barHeight}
+              rx={barHeight / 2}
               fill={lane.color}
               opacity={laneOpacity}
             />
             {lane.value > 10 ? (
               <circle
                 cx={pulseX}
-                cy={y + 2.5}
+                cy={y + barHeight / 2}
                 r={1.3}
                 fill={lane.color}
                 opacity={0.92}
@@ -858,6 +898,7 @@ function ReplicationPipelineChart({
   cluster,
   mode,
   phase,
+  isFocused = false,
   isDark = true,
   width = 102,
   height = 38,
@@ -865,6 +906,7 @@ function ReplicationPipelineChart({
   cluster: ClusterSnapshot
   mode: AmbientSemanticMode
   phase: number
+  isFocused?: boolean
   isDark?: boolean
   width?: number
   height?: number
@@ -882,17 +924,61 @@ function ReplicationPipelineChart({
       : isDark
         ? '#38bdf8'
         : '#0369a1'
-  const nodes = [
-    { x: 16, y: 19, label: 'P' },
-    { x: 50, y: 12, label: 'R' },
-    { x: 84, y: 26, label: 'S' },
+  const readColor = isDark ? '#a78bfa' : '#7c3aed'
+  const walColor = isDark
+    ? 'rgba(56, 189, 248, 0.22)'
+    : 'rgba(2, 132, 199, 0.18)'
+
+  const midY = height * 0.38
+  const bottomY = height * 0.78
+  const pNode = { x: 14, y: midY, label: 'P', r: 5.5 }
+  const rNode = { x: 50, y: midY - 5, label: 'R', r: 4.5 }
+  const sNode = { x: 88, y: midY + 2, label: 'S', r: 4.5 }
+  const primaryNodes = [pNode, rNode, sNode]
+  const readNodes = [
+    { x: 36, y: bottomY, label: 'r1', parentX: 50, parentY: midY - 5 },
+    { x: 62, y: bottomY + 3, label: 'r2', parentX: 50, parentY: midY - 5 },
+    { x: 84, y: bottomY - 1, label: 'r3', parentX: 88, parentY: midY + 2 },
   ]
   const pulseT = (phase * 0.11) % 1
 
+  const walSegments = 8
+  const walY = 4
+  const walSegWidth = (width - 12) / walSegments
+
   return (
     <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
+      {Array.from({ length: walSegments }, (_, i) => {
+        const intensity =
+          (Math.sin(phase * 0.18 + i * 0.7) + 1) / 2 + (isIncident ? 0.3 : 0)
+        return (
+          <rect
+            key={i}
+            x={6 + i * walSegWidth}
+            y={walY}
+            width={walSegWidth - 2}
+            height={3}
+            rx={1.5}
+            fill={isIncident ? (isDark ? '#fb7185' : '#be123c') : pipelineColor}
+            opacity={clamp(intensity * 0.45, 0.08, 0.5)}
+          />
+        )
+      })}
+      <text
+        x={3}
+        y={walY + 2.5}
+        fill={pipelineColor}
+        style={{
+          fontFamily: 'ui-monospace, monospace',
+          fontSize: '3.5px',
+          opacity: 0.5,
+        }}
+      >
+        W
+      </text>
+
       <path
-        d="M 16 19 C 28 19 34 12 50 12"
+        d={`M ${pNode.x} ${pNode.y} C ${pNode.x + 14} ${pNode.y} ${rNode.x - 14} ${rNode.y} ${rNode.x} ${rNode.y}`}
         fill="none"
         stroke={pipelineColor}
         strokeWidth={1.7}
@@ -900,37 +986,101 @@ function ReplicationPipelineChart({
         strokeDasharray={isIncident ? '3 4' : '0'}
       />
       <path
-        d="M 50 12 C 62 12 70 26 84 26"
+        d={`M ${rNode.x} ${rNode.y} C ${rNode.x + 14} ${rNode.y} ${sNode.x - 14} ${sNode.y} ${sNode.x} ${sNode.y}`}
         fill="none"
         stroke={pipelineColor}
         strokeWidth={1.7}
         strokeOpacity={0.72}
         strokeDasharray={isIncident ? '3 4' : '0'}
       />
+
       {[0.1, 0.58].map((offset) => {
         const t = (pulseT + offset) % 1
-        const x =
+        const px =
           t < 0.5
-            ? 16 + (50 - 16) * (t / 0.5)
-            : 50 + (84 - 50) * ((t - 0.5) / 0.5)
-        const y =
+            ? pNode.x + (rNode.x - pNode.x) * (t / 0.5)
+            : rNode.x + (sNode.x - rNode.x) * ((t - 0.5) / 0.5)
+        const py =
           t < 0.5
-            ? 19 + (12 - 19) * (t / 0.5)
-            : 12 + (26 - 12) * ((t - 0.5) / 0.5)
-
+            ? pNode.y + (rNode.y - pNode.y) * (t / 0.5)
+            : rNode.y + (sNode.y - rNode.y) * ((t - 0.5) / 0.5)
         return (
-          <circle key={offset} cx={x} cy={y} r={1.8} fill={pipelineColor} />
+          <circle
+            key={offset}
+            cx={px}
+            cy={py}
+            r={1.6}
+            fill={pipelineColor}
+            opacity={0.85}
+          />
         )
       })}
-      {nodes.map((node) => (
+
+      {readNodes.map((rn, i) => {
+        const readPulseT = (phase * 0.09 + i * 0.3) % 1
+        const rpx = rn.parentX + (rn.x - rn.parentX) * readPulseT
+        const rpy = rn.parentY + (rn.y - rn.parentY) * readPulseT
+
+        return (
+          <g key={rn.label}>
+            <line
+              x1={rn.parentX}
+              y1={rn.parentY}
+              x2={rn.x}
+              y2={rn.y}
+              stroke={readColor}
+              strokeWidth={1}
+              strokeOpacity={isIncident ? 0.2 : 0.42}
+              strokeDasharray="2 3"
+            />
+            {!isIncident ? (
+              <circle cx={rpx} cy={rpy} r={1} fill={readColor} opacity={0.6} />
+            ) : null}
+            <circle
+              cx={rn.x}
+              cy={rn.y}
+              r={3.2}
+              fill={
+                isDark ? 'rgba(2, 6, 23, 0.82)' : 'rgba(255, 255, 255, 0.88)'
+              }
+              stroke={isIncident ? walColor : readColor}
+              strokeWidth={1}
+              opacity={isIncident ? 0.5 : 0.85}
+            />
+            <text
+              x={rn.x}
+              y={rn.y + 0.4}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill={readColor}
+              style={{
+                fontFamily: 'ui-monospace, monospace',
+                fontSize: '4px',
+                fontWeight: 600,
+                opacity: isIncident ? 0.4 : 0.8,
+              }}
+            >
+              {rn.label}
+            </text>
+          </g>
+        )
+      })}
+
+      {primaryNodes.map((node) => (
         <g key={node.label}>
           <circle
             cx={node.x}
             cy={node.y}
-            r={5}
+            r={node.r}
             fill={isDark ? 'rgba(2, 6, 23, 0.86)' : 'rgba(255, 255, 255, 0.9)'}
             stroke={pipelineColor}
             strokeWidth={1.3}
+            style={{
+              filter:
+                isFocused && isDark
+                  ? `drop-shadow(0 0 4px ${pipelineColor})`
+                  : 'none',
+            }}
           />
           <text
             x={node.x}
@@ -940,7 +1090,7 @@ function ReplicationPipelineChart({
             fill={pipelineColor}
             style={{
               fontFamily: 'ui-monospace, monospace',
-              fontSize: '6px',
+              fontSize: node.label === 'P' ? '6.5px' : '5.5px',
               fontWeight: 700,
             }}
           >
@@ -956,6 +1106,7 @@ function CacheHeatGrid({
   cluster,
   mode,
   phase,
+  isFocused = false,
   isDark = true,
   width = 102,
   height = 38,
@@ -963,6 +1114,7 @@ function CacheHeatGrid({
   cluster: ClusterSnapshot
   mode: AmbientSemanticMode
   phase: number
+  isFocused?: boolean
   isDark?: boolean
   width?: number
   height?: number
@@ -1013,7 +1165,7 @@ function CacheHeatGrid({
             height={cellHeight}
             rx={2.4}
             fill={fill}
-            opacity={0.3 + intensity / 120}
+            opacity={isFocused ? 0.3 + intensity / 120 : 0.15 + intensity / 240}
           />
         )
       })}
@@ -1027,6 +1179,7 @@ function getWidgetAppearance(
   isPreviewing: boolean,
   baseColor: string,
   normalColorOverride?: string,
+  isComposite?: boolean,
 ) {
   const visualState = getWidgetVisualState(cluster)
   const emergencyRed = isDark ? '#ff3333' : '#cc0000'
@@ -1038,7 +1191,15 @@ function getWidgetAppearance(
         ? recoveryGreen
         : (normalColorOverride ?? baseColor)
 
-  const containerOpacity = isPreviewing ? 1 : isDark ? 0.16 : 0.24
+  const containerOpacity = isPreviewing
+    ? 1
+    : isComposite
+      ? isDark
+        ? 0.2
+        : 0.3
+      : isDark
+        ? 0.16
+        : 0.24
 
   const textOpacity = isPreviewing
     ? isDark
@@ -1136,23 +1297,24 @@ function getTargetValue(
       )
     case 'cpu':
       return clamp(
-        36 +
-          cluster.trafficIntensity * 26 +
-          cluster.drainingReplicas * 5 +
-          cluster.unhealthyReplicas * 7 +
+        28 +
+          cluster.trafficIntensity * 38 +
+          Math.min(cluster.requestRate / 600, 12) +
+          (mode === 'incident' ? 14 : 0) +
           (mode === 'preview' ? 4 : 0),
-        20,
-        96,
+        28,
+        88,
       )
     case 'memory':
       return clamp(
-        48 +
-          cluster.startingReplicas * 8 +
-          cluster.unhealthyReplicas * 4 +
-          cluster.trafficIntensity * 16 +
+        52 +
+          Math.min(cluster.liveReplicas, 6) * 3 +
+          cluster.startingReplicas * 6 +
+          cluster.drainingReplicas * 4 +
+          (mode === 'incident' ? 8 : 0) +
           (mode === 'preview' ? 4 : 0),
-        35,
-        94,
+        52,
+        90,
       )
     case 'uptime':
       return clamp(
@@ -1168,15 +1330,7 @@ function getTargetValue(
   }
 }
 
-function getBarValues(
-  widgetId: WidgetId,
-  cluster: ClusterSnapshot,
-  mode: AmbientSemanticMode,
-) {
-  if (widgetId !== 'queue') {
-    return Array.from({ length: 6 }, () => 40)
-  }
-
+function getNextBarValue(cluster: ClusterSnapshot, mode: AmbientSemanticMode) {
   const incidentBoost =
     mode === 'incident'
       ? 18
@@ -1188,16 +1342,14 @@ function getBarValues(
             ? 4
             : 0
   const base = clamp(cluster.queueDepth * 1.45 + incidentBoost, 12, 96)
-  return Array.from({ length: 6 }, (_, index) =>
-    clamp(
-      base +
-        Math.sin(Date.now() / 350 + index * 0.75) * 10 +
-        index * 4 +
-        (mode === 'incident' ? index * 2.5 : 0) +
-        (mode === 'surge' ? index * 1.5 : 0),
-      8,
-      100,
-    ),
+  return clamp(
+    base +
+      Math.sin(Date.now() / 350) * 10 +
+      (Math.random() - 0.5) * 8 +
+      (mode === 'incident' ? 6 : 0) +
+      (mode === 'surge' ? 3 : 0),
+    8,
+    100,
   )
 }
 
@@ -1379,7 +1531,7 @@ function getWidgetMeta(
           cluster.startingReplicas > 0
             ? 'warm pods reserving'
             : 'memory envelope calm',
-        detail: `${cluster.startingReplicas} pods warming`,
+        detail: `${cluster.liveReplicas} live / ${Math.round(getTargetValue('memory', cluster, mode))}% used`,
       }
     case 'uptime':
       return {
@@ -1397,7 +1549,7 @@ function getWidgetMeta(
             : mode === 'surge'
               ? 'surge routing active'
               : 'public edge traffic',
-        detail: `${(cluster.trafficIntensity * 100).toFixed(0)}% traffic intensity`,
+        detail: `${Math.round(cluster.requestRate)} req/min`,
       }
     case 'targets':
       return {
@@ -1422,7 +1574,7 @@ function getWidgetMeta(
           mode === 'incident' && isScenario(cluster, 'failover')
             ? 'rerouting hot traffic'
             : 'edge routes stable',
-        detail: `${cluster.loadBalancerTargets.length} active targets`,
+        detail: `${cluster.loadBalancerHealthy ? 'routes clean' : 'route degraded'} | ${Math.round(cluster.latencyMs)}ms edge`,
       }
     case 'postgres':
       return {
@@ -1476,7 +1628,7 @@ function getCompositeWidgetMeta(
             : mode === 'preview'
               ? 'edge flow paths opening'
               : 'edge flow steady',
-        detail: `${getWidgetMeta('traffic', cluster, mode).detail} | ${getWidgetMeta('latency', cluster, mode).detail}`,
+        detail: `${Math.round(cluster.requestRate)} req/min | p95 ${Math.round(cluster.latencyMs)}ms`,
       }
     case 'capacity':
       return {
@@ -1484,7 +1636,7 @@ function getCompositeWidgetMeta(
           cluster.startingReplicas > 0 || cluster.drainingReplicas > 0
             ? 'runtime capacity shifting'
             : 'runtime capacity balanced',
-        detail: `${getWidgetMeta('pods', cluster, mode).detail} | ${getWidgetMeta('memory', cluster, mode).detail}`,
+        detail: `cpu ${Math.round(getTargetValue('cpu', cluster, mode))}% | mem ${Math.round(getTargetValue('memory', cluster, mode))}%`,
       }
   }
 }
@@ -1527,7 +1679,7 @@ function MetricWidget({
     Array.from({ length: 20 }, () => 40),
   )
   const [bars, setBars] = useState<number[]>(() =>
-    Array.from({ length: 6 }, () => 28),
+    Array.from({ length: 12 }, () => 28),
   )
   const [value, setValue] = useState(() => getTargetValue(id, cluster, mode))
   const [visible, setVisible] = useState(false)
@@ -1612,20 +1764,24 @@ function MetricWidget({
       }
 
       if (type === 'bars') {
-        const nextBars = getBarValues(id, snapshot, currentMode)
-        setBars(
-          id === 'queue'
-            ? nextBars.map((value, index) =>
-                clamp(
-                  value +
-                    metricMotion.queueShock * (0.28 + index * 0.08) +
-                    (snapshot.emergencyState === 'emergency' ? index * 2 : 0),
-                  8,
-                  100,
-                ),
-              )
-            : nextBars,
-        )
+        if (id === 'queue') {
+          const newValue = getNextBarValue(snapshot, currentMode)
+          setBars((prev) => {
+            const shifted = [...prev.slice(1)]
+            shifted.push(
+              clamp(
+                newValue +
+                  metricMotion.queueShock * 0.36 +
+                  (snapshot.emergencyState === 'emergency' ? 4 : 0),
+                8,
+                100,
+              ),
+            )
+            return shifted
+          })
+        } else {
+          setBars(Array.from({ length: 12 }, () => 40))
+        }
       }
 
       if (type === 'gauge' || type === 'rings') {
@@ -1704,10 +1860,17 @@ function MetricWidget({
   const uptimeDisplay = `${value.toFixed(2)}%`
   const widgetMeta = getWidgetMeta(id, cluster, mode)
   const hideWidgetLead = type === 'rings' && id === 'uptime'
+  const showFooter =
+    id !== 'queue' &&
+    id !== 'targets' &&
+    id !== 'postgres' &&
+    id !== 'redis' &&
+    id !== 'k8s'
+  const chartHeightBonus = showFooter ? 0 : 26
 
   return (
     <div
-      className={`flex w-[124px] flex-col gap-1.5 rounded-xl border px-2.5 py-2 backdrop-blur-xs transition-all duration-300 ease-out ${visible ? 'translate-y-0' : 'translate-y-2 opacity-0'} ${borderColor} ${bgColor} ${isPreviewing && visualState === 'error' ? 'animate-pulse' : ''} `}
+      className={`relative flex w-[124px] flex-col gap-1.5 rounded-xl border px-2.5 py-2 backdrop-blur-xs transition-all duration-300 ease-out ${visible ? 'translate-y-0' : 'translate-y-2 opacity-0'} ${borderColor} ${bgColor} ${isPreviewing && visualState === 'error' ? 'animate-pulse' : ''} `}
       style={{
         boxShadow: isDark
           ? 'inset 0 1px 0 rgba(148, 163, 184, 0.08)'
@@ -1717,6 +1880,14 @@ function MetricWidget({
           'opacity 0.3s ease, transform 0.5s ease, background-color 0.3s ease, border-color 0.3s ease',
       }}
     >
+      <span
+        className="absolute top-1.5 right-1.5 block h-[3px] w-[3px] rounded-full"
+        style={{
+          backgroundColor: effectiveColor,
+          opacity: 0.3,
+          animation: 'pulse 1.2s ease infinite',
+        }}
+      />
       <div className="min-w-0">
         <span
           className={`block h-[10px] truncate font-mono text-[8px] tracking-wider uppercase transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
@@ -1751,7 +1922,7 @@ function MetricWidget({
             data={data}
             color={effectiveColor}
             width={102}
-            height={30}
+            height={38 + chartHeightBonus}
             isFocused={isPreviewing}
             isDark={isDark}
           />
@@ -1764,7 +1935,7 @@ function MetricWidget({
             values={bars}
             color={effectiveColor}
             width={102}
-            height={36}
+            height={36 + chartHeightBonus}
             isFocused={isPreviewing}
             isDark={isDark}
           />
@@ -1799,19 +1970,21 @@ function MetricWidget({
       ) : null}
 
       {type === 'rings' ? (
-        <div className="flex items-center justify-between gap-2">
-          <AvailabilityRings
-            cluster={cluster}
-            uptimeValue={value}
-            color={effectiveColor}
-            phase={animationPhase}
-            isFocused={isPreviewing}
-            isDark={isDark}
-            size={46}
-          />
-          <div className="min-w-[52px] text-right font-mono">
+        <div className="flex items-center gap-1.5">
+          <div className="shrink-0">
+            <AvailabilityRings
+              cluster={cluster}
+              uptimeValue={value}
+              color={effectiveColor}
+              phase={animationPhase}
+              isFocused={isPreviewing}
+              isDark={isDark}
+              size={42}
+            />
+          </div>
+          <div className="min-w-0 text-right font-mono">
             <div
-              className="text-[9px] whitespace-nowrap tabular-nums transition-all duration-300"
+              className="truncate text-[9px] whitespace-nowrap tabular-nums transition-all duration-300"
               style={{
                 color: effectiveColor,
                 opacity: isPreviewing ? 1 : isDark ? 0.34 : 0.48,
@@ -1823,7 +1996,7 @@ function MetricWidget({
               {value.toFixed(2)}%
             </div>
             <div
-              className={`text-[7px] tracking-[0.14em] uppercase ${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}
+              className={`truncate text-[7px] tracking-[0.1em] uppercase ${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}
               style={{ opacity: isPreviewing ? 0.68 : 0.42 }}
             >
               {cluster.readyReplicas}/{cluster.replicaTarget} ready
@@ -1851,8 +2024,10 @@ function MetricWidget({
           <TargetFanoutChart
             cluster={cluster}
             color={effectiveColor}
+            phase={animationPhase}
             isFocused={isPreviewing}
             isDark={isDark}
+            height={38 + chartHeightBonus}
           />
         </div>
       ) : null}
@@ -1901,7 +2076,9 @@ function MetricWidget({
             cluster={cluster}
             mode={mode}
             phase={animationPhase}
+            isFocused={isPreviewing}
             isDark={isDark}
+            height={38 + chartHeightBonus}
           />
         </div>
       ) : null}
@@ -1912,7 +2089,9 @@ function MetricWidget({
             cluster={cluster}
             mode={mode}
             phase={animationPhase}
+            isFocused={isPreviewing}
             isDark={isDark}
+            height={38 + chartHeightBonus}
           />
         </div>
       ) : null}
@@ -1923,20 +2102,24 @@ function MetricWidget({
             cluster={cluster}
             mode={mode}
             phase={animationPhase}
+            isFocused={isPreviewing}
             isDark={isDark}
+            height={38 + chartHeightBonus}
           />
         </div>
       ) : null}
 
-      <div
-        className={`h-[29px] overflow-hidden border-t pt-1 font-mono text-[8px] leading-3.5 ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
-        style={{
-          opacity: isPreviewing ? 0.9 : isDark ? 0.42 : 0.56,
-          color: visualState === 'normal' ? undefined : effectiveColor,
-        }}
-      >
-        {widgetMeta.detail}
-      </div>
+      {showFooter ? (
+        <div
+          className={`h-[18px] overflow-hidden border-t pt-0.5 font-mono text-[7px] leading-tight ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
+          style={{
+            opacity: isPreviewing ? 0.9 : isDark ? 0.42 : 0.56,
+            color: visualState === 'normal' ? undefined : effectiveColor,
+          }}
+        >
+          {widgetMeta.detail}
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -1963,6 +2146,21 @@ function CompositeMetricWidget({
   )
   const [memoryValue, setMemoryValue] = useState(() =>
     getTargetValue('memory', cluster, mode),
+  )
+  const [cpuHistory, setCpuHistory] = useState<number[]>(() =>
+    Array.from({ length: 12 }, () => getTargetValue('cpu', cluster, mode)),
+  )
+  const [memoryHistory, setMemoryHistory] = useState<number[]>(() =>
+    Array.from({ length: 12 }, () => getTargetValue('memory', cluster, mode)),
+  )
+  const [podHistory, setPodHistory] = useState<number[]>(() =>
+    Array.from({ length: 16 }, () =>
+      clamp(
+        (cluster.readyReplicas / Math.max(cluster.replicaTarget, 1)) * 100,
+        5,
+        100,
+      ),
+    ),
   )
   const stateRef = useRef({ cluster, mode })
   const requestPaceRef = useRef({
@@ -2037,12 +2235,25 @@ function CompositeMetricWidget({
       if (id === 'capacity') {
         setCpuValue((previous) => {
           const target = getTargetValue('cpu', snapshot, currentMode)
-          return previous + (target - previous) * 0.28
+          const next = previous + (target - previous) * 0.28
+          setCpuHistory((hist) => [...hist.slice(1), next])
+          return next
         })
         setMemoryValue((previous) => {
           const target = getTargetValue('memory', snapshot, currentMode)
-          return previous + (target - previous) * 0.28
+          const next = previous + (target - previous) * 0.28
+          setMemoryHistory((hist) => [...hist.slice(1), next])
+          return next
         })
+        setPodHistory((hist) => [
+          ...hist.slice(1),
+          clamp(
+            (snapshot.readyReplicas / Math.max(snapshot.replicaTarget, 1)) *
+              100,
+            5,
+            100,
+          ),
+        ])
       }
     }, 1200)
 
@@ -2076,7 +2287,14 @@ function CompositeMetricWidget({
     textOpacity,
     borderColor,
     bgColor,
-  } = getWidgetAppearance(cluster, isDark, isPreviewing, baseColor)
+  } = getWidgetAppearance(
+    cluster,
+    isDark,
+    isPreviewing,
+    baseColor,
+    undefined,
+    true,
+  )
   const cpuGaugeColor =
     visualState === 'error'
       ? emergencyRed
@@ -2100,24 +2318,10 @@ function CompositeMetricWidget({
   const podsCounter = getCounterDisplay('pods', cluster, mode)
   const podCounterFontSizePx =
     podsCounter.length >= 7 ? 14 : podsCounter.length >= 6 ? 15 : 18
-  const k8sStatus = getStatusDisplay('k8s', cluster, mode)
-  const statusHealthyColor = isDark ? '#00ff88' : '#009955'
-  const statusDegradedColor = isDark ? '#ffaa00' : '#cc7700'
-  const statusCriticalColor = isDark ? '#ff5555' : '#c62828'
-  const k8sStatusColor =
-    k8sStatus.tone === 'healthy'
-      ? statusHealthyColor
-      : visualState === 'error'
-        ? statusCriticalColor
-        : visualState === 'recovered'
-          ? statusHealthyColor
-          : k8sStatus.tone === 'degraded'
-            ? statusDegradedColor
-            : statusCriticalColor
 
   return (
     <div
-      className={`flex w-[258px] flex-col gap-2 rounded-xl border px-3 py-2.5 backdrop-blur-xs transition-all duration-300 ease-out ${visible ? 'translate-y-0' : 'translate-y-2 opacity-0'} ${borderColor} ${bgColor} ${isPreviewing && visualState === 'error' ? 'animate-pulse' : ''} `}
+      className={`relative flex w-[258px] flex-col gap-2 rounded-xl border px-3 py-2.5 backdrop-blur-xs transition-all duration-300 ease-out ${visible ? 'translate-y-0' : 'translate-y-2 opacity-0'} ${borderColor} ${bgColor} ${isPreviewing && visualState === 'error' ? 'animate-pulse' : ''} `}
       style={{
         boxShadow: isDark
           ? 'inset 0 1px 0 rgba(148, 163, 184, 0.08)'
@@ -2127,6 +2331,14 @@ function CompositeMetricWidget({
           'opacity 0.3s ease, transform 0.5s ease, background-color 0.3s ease, border-color 0.3s ease',
       }}
     >
+      <span
+        className="absolute top-2 right-2 block h-[3px] w-[3px] rounded-full"
+        style={{
+          backgroundColor: effectiveColor,
+          opacity: 0.3,
+          animation: 'pulse 1.2s ease infinite',
+        }}
+      />
       <div className="min-w-0">
         <span
           className={`block h-[10px] truncate font-mono text-[8px] tracking-wider uppercase transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
@@ -2237,107 +2449,145 @@ function CompositeMetricWidget({
       ) : null}
 
       {id === 'capacity' ? (
-        <div className="grid grid-cols-[84px_minmax(0,1fr)] gap-3">
-          <div className="flex flex-col justify-between rounded-lg border border-white/5 bg-black/5 px-2.5 py-2">
-            <span
-              className="font-mono text-[7px] tracking-[0.16em] uppercase"
-              style={{
-                color: effectiveColor,
-                opacity: isPreviewing ? 0.8 : 0.5,
-              }}
-            >
-              pod set
-            </span>
-            <span
-              className="font-mono font-semibold whitespace-nowrap tabular-nums"
-              style={{
-                fontSize: `${podCounterFontSizePx}px`,
-                lineHeight: 1.1,
-                letterSpacing:
-                  podCounterFontSizePx <= 15 ? '-0.02em' : '-0.01em',
-                color: effectiveColor,
-                opacity: isPreviewing ? 1 : isDark ? 0.42 : 0.56,
-                textShadow:
-                  isPreviewing && isDark ? `0 0 8px ${effectiveColor}` : 'none',
-              }}
-            >
-              {podsCounter}
-            </span>
-            <div className="flex items-center gap-1.5">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 rounded-lg border border-white/5 bg-black/5 px-2 py-1">
+            <div className="flex shrink-0 items-baseline gap-1.5">
               <span
-                className={`h-2 w-2 rounded-full ${isPreviewing || k8sStatus.tone !== 'healthy' ? 'animate-pulse' : ''}`}
+                className="font-mono text-[7px] tracking-[0.16em] uppercase"
                 style={{
-                  backgroundColor: k8sStatusColor,
-                  boxShadow: isPreviewing
-                    ? `0 0 ${isDark ? 8 : 4}px ${k8sStatusColor}`
-                    : 'none',
+                  color: effectiveColor,
+                  opacity: isPreviewing ? 0.8 : 0.5,
                 }}
-              />
-              <span
-                className="font-mono text-[8px]"
-                style={{ color: k8sStatusColor, opacity: 0.76 }}
               >
-                {k8sStatus.text}
+                pods
               </span>
+              <span
+                className="font-mono text-[11px] font-semibold whitespace-nowrap tabular-nums"
+                style={{
+                  color: effectiveColor,
+                  opacity: isPreviewing ? 1 : isDark ? 0.42 : 0.56,
+                  textShadow:
+                    isPreviewing && isDark
+                      ? `0 0 6px ${effectiveColor}`
+                      : 'none',
+                }}
+              >
+                {podsCounter}
+              </span>
+              {cluster.startingReplicas > 0 || cluster.drainingReplicas > 0 ? (
+                <span
+                  className="font-mono text-[7px] tabular-nums"
+                  style={{
+                    color: isDark
+                      ? 'rgba(251, 191, 36, 0.9)'
+                      : 'rgba(194, 65, 12, 0.9)',
+                    opacity: isPreviewing ? 0.8 : 0.5,
+                  }}
+                >
+                  {cluster.startingReplicas}↑{cluster.drainingReplicas}↓
+                </span>
+              ) : null}
+            </div>
+            <div className="min-w-0 flex-1">
+              <Sparkline
+                data={podHistory}
+                color={effectiveColor}
+                width={120}
+                height={16}
+                isFocused={isPreviewing}
+                isDark={isDark}
+              />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-lg border border-white/5 bg-black/5 px-2 py-1.5">
-              <div className="mb-1 flex items-center gap-2">
+            <div className="flex flex-col items-center gap-1 rounded-lg border border-white/5 bg-black/5 px-2 py-1.5">
+              <div className="flex w-full items-center justify-between">
                 <span
                   className="font-mono text-[7px] tracking-[0.16em] uppercase"
                   style={{ color: cpuGaugeColor, opacity: 0.82 }}
                 >
                   cpu
                 </span>
+                <span
+                  className="font-mono text-[9px] font-semibold tabular-nums"
+                  style={{
+                    color: cpuGaugeColor,
+                    opacity: isPreviewing ? 0.95 : 0.55,
+                  }}
+                >
+                  {Math.round(cpuValue)}%
+                </span>
               </div>
-              <div className="flex justify-center">
-                <CircularGauge
-                  value={clamp(cpuValue, 0, 100)}
-                  color={cpuGaugeColor}
-                  size={42}
-                  isFocused={isPreviewing}
-                  isDark={isDark}
-                  label={`${Math.round(cpuValue)}%`}
-                  labelFontSize={14}
-                />
-              </div>
+              <CircularGauge
+                value={clamp(cpuValue, 0, 100)}
+                color={cpuGaugeColor}
+                size={40}
+                isFocused={isPreviewing}
+                isDark={isDark}
+                label={`${Math.round(cpuValue)}%`}
+                labelFontSize={12}
+              />
+              <Sparkline
+                data={cpuHistory}
+                color={cpuGaugeColor}
+                width={90}
+                height={16}
+                isFocused={isPreviewing}
+                isDark={isDark}
+              />
             </div>
-            <div className="rounded-lg border border-white/5 bg-black/5 px-2 py-1.5">
-              <div className="mb-1 flex items-center gap-2">
+            <div className="flex flex-col items-center gap-1 rounded-lg border border-white/5 bg-black/5 px-2 py-1.5">
+              <div className="flex w-full items-center justify-between">
                 <span
                   className="font-mono text-[7px] tracking-[0.16em] uppercase"
                   style={{ color: memoryGaugeColor, opacity: 0.82 }}
                 >
-                  memory
+                  mem
+                </span>
+                <span
+                  className="font-mono text-[9px] font-semibold tabular-nums"
+                  style={{
+                    color: memoryGaugeColor,
+                    opacity: isPreviewing ? 0.95 : 0.55,
+                  }}
+                >
+                  {Math.round(memoryValue)}%
                 </span>
               </div>
-              <div className="flex justify-center">
-                <CircularGauge
-                  value={clamp(memoryValue, 0, 100)}
-                  color={memoryGaugeColor}
-                  size={42}
-                  isFocused={isPreviewing}
-                  isDark={isDark}
-                  label={`${Math.round(memoryValue)}%`}
-                  labelFontSize={14}
-                />
-              </div>
+              <CircularGauge
+                value={clamp(memoryValue, 0, 100)}
+                color={memoryGaugeColor}
+                size={40}
+                isFocused={isPreviewing}
+                isDark={isDark}
+                label={`${Math.round(memoryValue)}%`}
+                labelFontSize={12}
+              />
+              <Sparkline
+                data={memoryHistory}
+                color={memoryGaugeColor}
+                width={90}
+                height={16}
+                isFocused={isPreviewing}
+                isDark={isDark}
+              />
             </div>
           </div>
         </div>
       ) : null}
 
-      <div
-        className={`h-[29px] overflow-hidden border-t pt-1 font-mono text-[8px] leading-3.5 ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
-        style={{
-          opacity: isPreviewing ? 0.9 : isDark ? 0.42 : 0.56,
-          color: visualState === 'normal' ? undefined : effectiveColor,
-        }}
-      >
-        {compositeMeta.detail}
-      </div>
+      {id === 'traffic_flow' ? (
+        <div
+          className={`h-[29px] overflow-hidden border-t pt-1 font-mono text-[8px] leading-3.5 ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
+          style={{
+            opacity: isPreviewing ? 0.9 : isDark ? 0.42 : 0.56,
+            color: visualState === 'normal' ? undefined : effectiveColor,
+          }}
+        >
+          {compositeMeta.detail}
+        </div>
+      ) : null}
     </div>
   )
 }

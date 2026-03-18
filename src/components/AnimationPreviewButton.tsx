@@ -1,7 +1,7 @@
 'use client'
 
 import clsx from 'clsx'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import {
   animationFocusButtonClassName,
@@ -60,29 +60,36 @@ export default function AnimationPreviewButton() {
     }
   }, [isAmbientEligible, isHovering])
 
+  const keyboardRotationHint =
+    'Use the arrow keys to rotate the cluster while preview is active.'
+  const tooltipDescription = useMemo(
+    () =>
+      isHovering
+        ? `${monitoring.buttonDescription} ${keyboardRotationHint}`
+        : `Hover to preview cluster pressure paths like surge scaling, reroute pressure, cache warmup misses, and queue buildup. While hovering, scroll to zoom the cluster view. ${keyboardRotationHint}`,
+    [isHovering, monitoring.buttonDescription, keyboardRotationHint],
+  )
+
   useEffect(() => {
     if (!isAmbientEligible || !isHovering) {
       return
     }
 
+    const wordCount = tooltipDescription.split(/\s+/).length
+    const duration = Math.max(10000, Math.min(30000, (wordCount / 200) * 60000))
+
     const tooltipFadeTimeout = window.setTimeout(() => {
       setIsTooltipSuppressed(true)
-    }, 4200)
+    }, duration)
 
     return () => {
       window.clearTimeout(tooltipFadeTimeout)
     }
-  }, [isAmbientEligible, isHovering])
+  }, [isAmbientEligible, isHovering, tooltipDescription])
 
   if (!isAmbientEligible) {
     return null
   }
-
-  const keyboardRotationHint =
-    'Use the arrow keys to rotate the cluster while preview is active.'
-  const tooltipDescription = isHovering
-    ? `${monitoring.buttonDescription} ${keyboardRotationHint}`
-    : `Hover to preview cluster pressure paths like surge scaling, reroute pressure, cache warmup misses, and queue buildup. While hovering, scroll to zoom the cluster view. ${keyboardRotationHint}`
   const canTriggerEmergency = cluster.emergencyState === 'normal'
 
   return (
