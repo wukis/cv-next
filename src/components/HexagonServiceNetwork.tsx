@@ -251,6 +251,7 @@ interface EventToast {
   accentColor: string
   duration: number
   shownAt: number
+  exitingAt: number | null
 }
 
 interface DataPacket {
@@ -383,6 +384,7 @@ const UNHEALTHY_DURATION = 1.8
 const TERMINATING_DURATION = 1.6
 const STARTING_DURATION = 3.2
 const SNAPSHOT_INTERVAL = 0.45
+const TOAST_EXIT_DURATION = 0.32
 const POD_LAYOUT_STIFFNESS = 0.09
 const POD_LAYOUT_DAMPING = 0.76
 const CAMERA_BASE_ZOOM_IDLE = 92
@@ -2536,10 +2538,11 @@ const HexagonServiceNetwork: React.FC = () => {
   )
 
   const enqueueEventToast = useCallback(
-    (toast: Omit<EventToast, 'id' | 'shownAt'>) => {
+    (toast: Omit<EventToast, 'id' | 'shownAt' | 'exitingAt'>) => {
       const nextToast: EventToast = {
         id: ++toastIdRef.current,
         shownAt: 0,
+        exitingAt: null,
         ...toast,
       }
 
@@ -2564,7 +2567,10 @@ const HexagonServiceNetwork: React.FC = () => {
       (left, right) => left.shownAt - right.shownAt,
     )
     const nextSignature = nextToasts
-      .map((toast) => `${toast.id}:${toast.mode}:${toast.shownAt}`)
+      .map(
+        (toast) =>
+          `${toast.id}:${toast.mode}:${toast.shownAt}:${toast.exitingAt ?? 'active'}`,
+      )
       .join('|')
 
     if (nextSignature === toastSignatureRef.current) {
@@ -4833,9 +4839,21 @@ const HexagonServiceNetwork: React.FC = () => {
         }
       }
 
-      activeToastRef.current = activeToastRef.current.filter(
-        (toast) => timeRef.current - toast.shownAt <= toast.duration,
-      )
+      activeToastRef.current = activeToastRef.current.flatMap((toast) => {
+        const age = timeRef.current - toast.shownAt
+
+        if (age <= toast.duration) {
+          return [toast]
+        }
+
+        if (toast.exitingAt === null) {
+          return [{ ...toast, exitingAt: timeRef.current }]
+        }
+
+        return timeRef.current - toast.exitingAt <= TOAST_EXIT_DURATION
+          ? [toast]
+          : []
+      })
 
       while (
         activeToastRef.current.length < 3 &&
@@ -5912,8 +5930,13 @@ const HexagonServiceNetwork: React.FC = () => {
             return (
               <div
                 key={toast.id}
-                className="pointer-events-auto flex h-[7.5rem] w-full flex-col overflow-hidden rounded-2xl border px-4 py-3 shadow-2xl backdrop-blur-md"
+                className="pointer-events-auto flex min-h-[6.75rem] w-full flex-col overflow-hidden rounded-2xl border px-4 py-3 shadow-2xl backdrop-blur-md transition-[opacity,transform] duration-300 ease-out will-change-[opacity,transform]"
                 style={{
+                  opacity: toast.exitingAt === null ? 1 : 0,
+                  transform:
+                    toast.exitingAt === null
+                      ? 'translateY(0) scale(1)'
+                      : 'translateY(10px) scale(0.985)',
                   backgroundColor: isDark
                     ? 'rgba(10, 14, 24, 0.92)'
                     : 'rgba(255, 255, 255, 0.94)',
@@ -5944,7 +5967,7 @@ const HexagonServiceNetwork: React.FC = () => {
                     }}
                   />
                 </div>
-                <div className="min-h-0 flex-1 overflow-y-auto pr-1 [scrollbar-gutter:stable]">
+                <div className="flex-1">
                   <div
                     className="font-mono text-[13px] font-semibold tracking-[0.08em] break-words uppercase"
                     style={{
