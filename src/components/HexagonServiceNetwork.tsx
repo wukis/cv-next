@@ -545,12 +545,12 @@ function drawServiceClusterScaleRing(
   const ringRadiusY = ringRadius * 0.96
   const startAngle = -Math.PI / 2
   const endAngle = startAngle + direction * progress * Math.PI * 2
-  const lineWidth = 1.2 + Math.min(queueDepth, 4) * 0.28
-  const trackOpacity = (isDark ? 0.04 : 0.055) * visibility
+  const lineWidth = 1.05 + Math.min(queueDepth, 4) * 0.22
+  const trackOpacity = (isDark ? 0.024 : 0.034) * visibility
   const accentOpacity = clamp(
-    ((isDark ? 0.26 : 0.22) + Math.min(queueDepth, 4) * 0.045) * visibility,
-    0.08,
-    0.42,
+    ((isDark ? 0.16 : 0.14) + Math.min(queueDepth, 4) * 0.03) * visibility,
+    0.045,
+    0.24,
   )
   const accentColor = withOpacity(
     direction > 0 ? palette.glow : palette.main,
@@ -582,12 +582,15 @@ function drawServiceClusterScaleRing(
   ctx.lineWidth = lineWidth
   ctx.lineCap = 'round'
   ctx.shadowColor = accentColor
-  ctx.shadowBlur = isDark ? 6 : 3
+  ctx.shadowBlur = isDark ? 3 : 2
   ctx.stroke()
 
   ctx.beginPath()
   ctx.arc(headX, headY, lineWidth * 0.48, 0, Math.PI * 2)
-  ctx.fillStyle = accentColor
+  ctx.fillStyle = withOpacity(
+    direction > 0 ? palette.glow : palette.main,
+    accentOpacity * 0.78,
+  )
   ctx.fill()
   ctx.restore()
 }
