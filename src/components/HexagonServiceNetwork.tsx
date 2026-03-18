@@ -5898,7 +5898,7 @@ const HexagonServiceNetwork: React.FC = () => {
       />
 
       {isFocused && visibleToasts.length > 0 ? (
-        <div className="pointer-events-none fixed right-6 bottom-6 z-10 flex max-w-[360px] flex-col-reverse items-end gap-3">
+        <div className="pointer-events-none fixed right-6 bottom-6 z-10 flex w-[min(22rem,calc(100vw-3rem))] flex-col-reverse items-end gap-3">
           {visibleToasts.map((toast) => {
             const accentColor =
               toast.mode === 'emergency'
@@ -5912,7 +5912,7 @@ const HexagonServiceNetwork: React.FC = () => {
             return (
               <div
                 key={toast.id}
-                className="w-full overflow-hidden rounded-2xl border px-4 py-3 shadow-2xl backdrop-blur-md"
+                className="pointer-events-auto flex h-[8.75rem] w-full flex-col overflow-hidden rounded-2xl border px-4 py-3 shadow-2xl backdrop-blur-md"
                 style={{
                   backgroundColor: isDark
                     ? 'rgba(10, 14, 24, 0.92)'
@@ -5944,25 +5944,27 @@ const HexagonServiceNetwork: React.FC = () => {
                     }}
                   />
                 </div>
-                <div
-                  className="font-mono text-[13px] font-semibold tracking-[0.08em] uppercase"
-                  style={{
-                    color: isDark
-                      ? 'rgba(248, 250, 252, 0.96)'
-                      : 'rgba(15, 23, 42, 0.92)',
-                  }}
-                >
-                  {toast.title}
-                </div>
-                <div
-                  className="mt-1 text-sm leading-5"
-                  style={{
-                    color: isDark
-                      ? 'rgba(226, 232, 240, 0.78)'
-                      : 'rgba(51, 65, 85, 0.8)',
-                  }}
-                >
-                  {toast.subtitle}
+                <div className="min-h-0 flex-1 overflow-y-auto pr-1 [scrollbar-gutter:stable]">
+                  <div
+                    className="font-mono text-[13px] font-semibold tracking-[0.08em] break-words uppercase"
+                    style={{
+                      color: isDark
+                        ? 'rgba(248, 250, 252, 0.96)'
+                        : 'rgba(15, 23, 42, 0.92)',
+                    }}
+                  >
+                    {toast.title}
+                  </div>
+                  <div
+                    className="mt-1 text-sm leading-5 break-words"
+                    style={{
+                      color: isDark
+                        ? 'rgba(226, 232, 240, 0.78)'
+                        : 'rgba(51, 65, 85, 0.8)',
+                    }}
+                  >
+                    {toast.subtitle}
+                  </div>
                 </div>
               </div>
             )
