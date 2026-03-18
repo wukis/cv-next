@@ -72,6 +72,48 @@ export default function MobileNavigation({
     return () => document.removeEventListener('keydown', handleEscape)
   }, [isOpen])
 
+  useEffect(() => {
+    if (!isOpen) {
+      return
+    }
+
+    const scrollY = window.scrollY
+    const { style: htmlStyle } = document.documentElement
+    const { style: bodyStyle } = document.body
+    const previousHtmlOverflow = htmlStyle.overflow
+    const previousBodyOverflow = bodyStyle.overflow
+    const previousBodyPosition = bodyStyle.position
+    const previousBodyTop = bodyStyle.top
+    const previousBodyWidth = bodyStyle.width
+
+    document.body.dataset.mobileMenuOpen = 'true'
+    window.dispatchEvent(
+      new CustomEvent('mobile-navigation-toggle', {
+        detail: { isOpen: true },
+      }),
+    )
+    htmlStyle.overflow = 'hidden'
+    bodyStyle.overflow = 'hidden'
+    bodyStyle.position = 'fixed'
+    bodyStyle.top = `-${scrollY}px`
+    bodyStyle.width = '100%'
+
+    return () => {
+      delete document.body.dataset.mobileMenuOpen
+      window.dispatchEvent(
+        new CustomEvent('mobile-navigation-toggle', {
+          detail: { isOpen: false },
+        }),
+      )
+      htmlStyle.overflow = previousHtmlOverflow
+      bodyStyle.overflow = previousBodyOverflow
+      bodyStyle.position = previousBodyPosition
+      bodyStyle.top = previousBodyTop
+      bodyStyle.width = previousBodyWidth
+      window.scrollTo(0, scrollY)
+    }
+  }, [isOpen])
+
   const close = () => setIsOpen(false)
 
   return (
