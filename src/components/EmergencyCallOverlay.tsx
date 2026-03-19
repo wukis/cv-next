@@ -2242,9 +2242,217 @@ export default function EmergencyCallOverlay() {
             </div>
           </div>
 
-          <div className="mt-2 min-h-[2.1rem]">
+          <div className="relative mt-2 min-h-[2.1rem]">
+            {/* Meet-style action buttons – visible when no system notice */}
             <div
-              className="rounded-[0.9rem] border px-2.5 py-1.5 transition-all duration-300"
+              className="absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300"
+              style={{
+                opacity: activeSystemNotice && isSystemNoticeVisible ? 0 : 0.85,
+                transform:
+                  activeSystemNotice && isSystemNoticeVisible
+                    ? 'scale(0.96)'
+                    : 'scale(1)',
+                pointerEvents: 'none',
+              }}
+            >
+              {/* Mic */}
+              <div
+                className="flex h-[1.85rem] w-[1.85rem] items-center justify-center rounded-full"
+                style={{
+                  backgroundColor: isDark
+                    ? 'rgba(30, 41, 59, 0.5)'
+                    : 'rgba(241, 245, 249, 0.82)',
+                  border: `1px solid ${isDark ? 'rgba(148, 163, 184, 0.12)' : 'rgba(148, 163, 184, 0.16)'}`,
+                }}
+              >
+                <svg
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke={
+                    isDark
+                      ? 'rgba(191, 219, 254, 0.7)'
+                      : 'rgba(71, 85, 105, 0.7)'
+                  }
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="9" y="1" width="6" height="13" rx="3" />
+                  <path d="M19 10v1a7 7 0 0 1-14 0v-1" />
+                  <line x1="12" y1="19" x2="12" y2="23" />
+                  <line x1="8" y1="23" x2="16" y2="23" />
+                </svg>
+              </div>
+              {/* Camera */}
+              <div
+                className="flex h-[1.85rem] w-[1.85rem] items-center justify-center rounded-full"
+                style={{
+                  backgroundColor: isDark
+                    ? 'rgba(30, 41, 59, 0.5)'
+                    : 'rgba(241, 245, 249, 0.82)',
+                  border: `1px solid ${isDark ? 'rgba(148, 163, 184, 0.12)' : 'rgba(148, 163, 184, 0.16)'}`,
+                }}
+              >
+                <svg
+                  width="12"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke={
+                    isDark
+                      ? 'rgba(191, 219, 254, 0.7)'
+                      : 'rgba(71, 85, 105, 0.7)'
+                  }
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="1" y="5" width="15" height="14" rx="2" />
+                  <polygon points="23 7 16 12 23 17 23 7" />
+                </svg>
+              </div>
+              {/* Reaction (smiley) */}
+              <div
+                className="flex h-[1.85rem] w-[1.85rem] items-center justify-center rounded-full"
+                style={{
+                  backgroundColor: isDark
+                    ? 'rgba(30, 41, 59, 0.5)'
+                    : 'rgba(241, 245, 249, 0.82)',
+                  border: `1px solid ${isDark ? 'rgba(148, 163, 184, 0.12)' : 'rgba(148, 163, 184, 0.16)'}`,
+                }}
+              >
+                <svg
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke={
+                    isDark
+                      ? 'rgba(191, 219, 254, 0.7)'
+                      : 'rgba(71, 85, 105, 0.7)'
+                  }
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                  <line x1="9" y1="9" x2="9.01" y2="9" />
+                  <line x1="15" y1="9" x2="15.01" y2="9" />
+                </svg>
+              </div>
+              {/* Screen share */}
+              <div
+                className="flex h-[1.85rem] w-[1.85rem] items-center justify-center rounded-full"
+                style={{
+                  backgroundColor: isDark
+                    ? 'rgba(30, 41, 59, 0.5)'
+                    : 'rgba(241, 245, 249, 0.82)',
+                  border: `1px solid ${isDark ? 'rgba(148, 163, 184, 0.12)' : 'rgba(148, 163, 184, 0.16)'}`,
+                }}
+              >
+                <svg
+                  width="12"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke={
+                    isDark
+                      ? 'rgba(191, 219, 254, 0.7)'
+                      : 'rgba(71, 85, 105, 0.7)'
+                  }
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="2" y="3" width="20" height="14" rx="2" />
+                  <line x1="8" y1="21" x2="16" y2="21" />
+                  <line x1="12" y1="17" x2="12" y2="21" />
+                </svg>
+              </div>
+              {/* Hand raise */}
+              <div
+                className="flex h-[1.85rem] w-[1.85rem] items-center justify-center rounded-full"
+                style={{
+                  backgroundColor: isDark
+                    ? 'rgba(30, 41, 59, 0.5)'
+                    : 'rgba(241, 245, 249, 0.82)',
+                  border: `1px solid ${isDark ? 'rgba(148, 163, 184, 0.12)' : 'rgba(148, 163, 184, 0.16)'}`,
+                }}
+              >
+                <svg
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke={
+                    isDark
+                      ? 'rgba(191, 219, 254, 0.7)'
+                      : 'rgba(71, 85, 105, 0.7)'
+                  }
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M18 11V6a2 2 0 0 0-4 0" />
+                  <path d="M14 10V4a2 2 0 0 0-4 0v7" />
+                  <path d="M10 10.5V6a2 2 0 0 0-4 0v8" />
+                  <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8H12a8 8 0 0 1-6-2.7" />
+                </svg>
+              </div>
+              {/* More (three dots) */}
+              <div
+                className="flex h-[1.85rem] w-[1.85rem] items-center justify-center rounded-full"
+                style={{
+                  backgroundColor: isDark
+                    ? 'rgba(30, 41, 59, 0.5)'
+                    : 'rgba(241, 245, 249, 0.82)',
+                  border: `1px solid ${isDark ? 'rgba(148, 163, 184, 0.12)' : 'rgba(148, 163, 184, 0.16)'}`,
+                }}
+              >
+                <svg
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill={
+                    isDark
+                      ? 'rgba(191, 219, 254, 0.7)'
+                      : 'rgba(71, 85, 105, 0.7)'
+                  }
+                >
+                  <circle cx="5" cy="12" r="1.5" />
+                  <circle cx="12" cy="12" r="1.5" />
+                  <circle cx="19" cy="12" r="1.5" />
+                </svg>
+              </div>
+              {/* End call (red) */}
+              <div
+                className="flex h-[1.85rem] w-[2.2rem] items-center justify-center rounded-full"
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.82)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                }}
+              >
+                <svg
+                  width="13"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="rgba(255, 255, 255, 0.92)"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91" />
+                  <line x1="23" y1="1" x2="1" y2="23" />
+                </svg>
+              </div>
+            </div>
+            {/* System notice – overlays buttons when active */}
+            <div
+              className="relative rounded-[0.9rem] border px-2.5 py-1.5 transition-all duration-300"
               style={{
                 opacity: activeSystemNotice && isSystemNoticeVisible ? 1 : 0,
                 transform:

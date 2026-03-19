@@ -728,13 +728,23 @@ function ControlPlaneChart({
   const centerX = 16
   const centerY = height / 2
   const radius = 9
+  const scalePressure = Math.abs(cluster.replicaTarget - cluster.readyReplicas)
+  const lbDegraded =
+    !cluster.loadBalancerHealthy ||
+    cluster.readyReplicas < Math.max(2, cluster.replicaTarget - 1)
   const reconcileLoad = clamp(
-    cluster.startingReplicas * 24 +
-      cluster.drainingReplicas * 28 +
-      cluster.unhealthyReplicas * 34 +
-      Math.abs(cluster.replicaTarget - cluster.readyReplicas) * 12 +
-      (mode === 'incident' ? 18 : 0) +
-      (mode === 'surge' ? 10 : 0),
+    cluster.startingReplicas * 20 +
+      cluster.drainingReplicas * 22 +
+      cluster.unhealthyReplicas * 28 +
+      cluster.terminatingReplicas * 16 +
+      scalePressure * 14 +
+      cluster.trafficIntensity * 18 +
+      cluster.errorRate * 3 +
+      (cluster.queueDepth > 40 ? 12 : cluster.queueDepth * 0.2) +
+      (lbDegraded ? 14 : 0) +
+      (mode === 'incident' ? 22 : 0) +
+      (mode === 'surge' ? 14 : 0) +
+      (mode === 'recovery' ? 8 : 0),
     4,
     100,
   )
@@ -753,27 +763,44 @@ function ControlPlaneChart({
           : '#0369a1'
   const laneData = [
     {
-      label: 'S',
+      label: 'starting',
       value: clamp(
-        cluster.startingReplicas * 36 + cluster.trafficIntensity * 28,
+        cluster.startingReplicas * 28 +
+          scalePressure * 18 +
+          cluster.trafficIntensity * 22 +
+          (cluster.queueDepth > 30 ? 14 : 0) +
+          (mode === 'surge' ? 16 : 0) +
+          (mode === 'incident' ? 10 : 0),
         0,
         100,
       ),
       color: isDark ? '#38bdf8' : '#0369a1',
     },
     {
-      label: 'D',
+      label: 'draining',
       value: clamp(
-        cluster.drainingReplicas * 40 + cluster.terminatingReplicas * 18,
+        cluster.drainingReplicas * 32 +
+          cluster.terminatingReplicas * 22 +
+          (lbDegraded ? 18 : 0) +
+          (cluster.loadBalancerTargets.length < cluster.replicaTarget
+            ? (cluster.replicaTarget - cluster.loadBalancerTargets.length) * 12
+            : 0) +
+          (mode === 'recovery' ? 14 : 0) +
+          (mode === 'incident' ? 8 : 0),
         0,
         100,
       ),
       color: isDark ? '#f59e0b' : '#c2410c',
     },
     {
-      label: 'H',
+      label: 'healing',
       value: clamp(
-        cluster.unhealthyReplicas * 42 + cluster.errorRate * 7,
+        cluster.unhealthyReplicas * 30 +
+          cluster.errorRate * 6 +
+          (cluster.latencyMs > 60 ? (cluster.latencyMs - 60) * 1.4 : 0) +
+          (lbDegraded ? 10 : 0) +
+          (mode === 'incident' ? 16 : 0) +
+          (mode === 'recovery' ? 22 : 0),
         0,
         100,
       ),
@@ -837,33 +864,38 @@ function ControlPlaneChart({
         opacity={0.84}
       />
       {laneData.map((lane, index) => {
-        const laneSpacing = Math.max((height - 8) / 3, 8)
-        const laneStartY = (height - laneSpacing * 2.5) / 2
-        const y = laneStartY + index * laneSpacing
-        const barHeight = Math.min(laneSpacing * 0.55, 6)
+        const labelHeight = 7
+        const barHeight = 5
+        const laneHeight = labelHeight + barHeight + 1
+        const totalLanesHeight = laneHeight * 3 + 2 * 2
+        const laneStartY = (height - totalLanesHeight) / 2
+        const y = laneStartY + index * (laneHeight + 2)
         const pulseT = (phase * 0.14 + index * 0.22) % 1
-        const pulseX = laneX + 8 + pulseT * (barWidth - 8)
+        const fullBarWidth = width - laneX - 2
+        const pulseX = laneX + pulseT * fullBarWidth
         const laneOpacity = 0.2 + lane.value / 140
 
         return (
           <g key={lane.label}>
             <text
               x={laneX}
-              y={y + barHeight * 0.8}
+              y={y + 5.5}
               fill={lane.color}
               style={{
                 fontFamily: 'ui-monospace, monospace',
-                fontSize: '6px',
-                fontWeight: 700,
-                opacity: 0.86,
+                fontSize: '5px',
+                fontWeight: 600,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                opacity: 0.72,
               }}
             >
               {lane.label}
             </text>
             <rect
-              x={laneX + 8}
-              y={y}
-              width={barWidth - 8}
+              x={laneX}
+              y={y + labelHeight}
+              width={fullBarWidth}
               height={barHeight}
               rx={barHeight / 2}
               fill={
@@ -871,9 +903,9 @@ function ControlPlaneChart({
               }
             />
             <rect
-              x={laneX + 8}
-              y={y}
-              width={(barWidth - 8) * (lane.value / 100)}
+              x={laneX}
+              y={y + labelHeight}
+              width={fullBarWidth * (lane.value / 100)}
               height={barHeight}
               rx={barHeight / 2}
               fill={lane.color}
@@ -882,7 +914,7 @@ function ControlPlaneChart({
             {lane.value > 10 ? (
               <circle
                 cx={pulseX}
-                cy={y + barHeight / 2}
+                cy={y + labelHeight + barHeight / 2}
                 r={1.3}
                 fill={lane.color}
                 opacity={0.92}
@@ -1860,7 +1892,7 @@ function MetricWidget({
   const counterText = getCounterDisplay(id, cluster, mode)
   const uptimeDisplay = `${value.toFixed(2)}%`
   const widgetMeta = getWidgetMeta(id, cluster, mode)
-  const hideWidgetLead = type === 'rings' && id === 'uptime'
+  const hideWidgetLead = false
   const showFooter =
     id !== 'queue' &&
     id !== 'targets' &&
@@ -1940,12 +1972,74 @@ function MetricWidget({
         ) : null}
 
         {type === 'bars' ? (
-          <div className="w-full">
+          <div className="flex w-full flex-col gap-1">
+            {/* Queue depth + workers row */}
+            <div className="flex items-end justify-between">
+              <span
+                className="font-mono text-[11px] font-semibold tabular-nums transition-all duration-300"
+                style={{
+                  color: effectiveColor,
+                  opacity: isPreviewing ? 1 : isDark ? 0.38 : 0.5,
+                  textShadow:
+                    isPreviewing && isDark
+                      ? `0 0 6px ${effectiveColor}`
+                      : 'none',
+                }}
+              >
+                {cluster.queueDepth}
+              </span>
+              <div className="flex items-center gap-[3px]">
+                {Array.from(
+                  { length: Math.min(cluster.readyReplicas, 6) },
+                  (_, i) => (
+                    <span
+                      key={i}
+                      className="block h-[4px] w-[4px] rounded-sm transition-all duration-500"
+                      style={{
+                        backgroundColor: effectiveColor,
+                        opacity: isPreviewing
+                          ? 0.8 - i * 0.06
+                          : 0.35 - i * 0.03,
+                        boxShadow:
+                          isPreviewing && isDark
+                            ? `0 0 3px ${effectiveColor}`
+                            : 'none',
+                      }}
+                    />
+                  ),
+                )}
+                <span
+                  className={`font-mono text-[6px] tracking-[0.1em] uppercase ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
+                  style={{ opacity: isPreviewing ? 0.6 : 0.32 }}
+                >
+                  wkr
+                </span>
+              </div>
+            </div>
+            {/* Throughput bar */}
+            <div
+              className="h-[3px] w-full overflow-hidden rounded-full"
+              style={{
+                backgroundColor: isDark
+                  ? 'rgba(31, 41, 55, 0.48)'
+                  : 'rgba(203, 213, 225, 0.5)',
+              }}
+            >
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${clamp(100 - (cluster.queueDepth / 80) * 100, 5, 100)}%`,
+                  backgroundColor: effectiveColor,
+                  opacity: isPreviewing ? 0.7 : 0.35,
+                }}
+              />
+            </div>
+            {/* Bar chart */}
             <MiniBarChart
               values={bars}
               color={effectiveColor}
               width={102}
-              height={bodyHeight}
+              height={bodyHeight - 26}
               isFocused={isPreviewing}
               isDark={isDark}
             />
@@ -1980,7 +2074,7 @@ function MetricWidget({
         ) : null}
 
         {type === 'rings' ? (
-          <div className="relative flex h-full w-full items-center">
+          <div className="relative flex h-full w-full items-center overflow-hidden">
             <div className="shrink-0">
               <AvailabilityRings
                 cluster={cluster}
@@ -1992,6 +2086,85 @@ function MetricWidget({
                 size={42}
               />
             </div>
+            {/* Replica pod grid – fixed 6×3 cells, each dot = ≥1 pod */}
+            {(() => {
+              const GRID_COLS = 6
+              const GRID_ROWS = 8
+              const GRID_TOTAL = GRID_COLS * GRID_ROWS
+              const target = Math.max(cluster.replicaTarget, 1)
+              const podsPerDot = Math.max(1, Math.ceil(target / GRID_TOTAL))
+              const toDots = (n: number) =>
+                Math.round(clamp(n, 0, target) / podsPerDot)
+              const readyDots = toDots(cluster.readyReplicas)
+              const startingDots = toDots(cluster.startingReplicas)
+              const drainingDots = toDots(cluster.drainingReplicas)
+              const unhealthyDots = toDots(cluster.unhealthyReplicas)
+              const usedDots = Math.min(
+                readyDots + startingDots + drainingDots + unhealthyDots,
+                GRID_TOTAL,
+              )
+              const emptyDots = GRID_TOTAL - usedDots
+              const startingColor = isDark ? '#38bdf8' : '#0369a1'
+              const drainingColor = isDark ? '#f59e0b' : '#c2410c'
+              const unhealthyColor = isDark ? '#fb7185' : '#be123c'
+              const emptyColor = isDark
+                ? 'rgba(148, 163, 184, 0.14)'
+                : 'rgba(148, 163, 184, 0.26)'
+
+              const dots: { color: string; glow: boolean; active: boolean }[] =
+                []
+              for (let i = 0; i < readyDots; i++)
+                dots.push({ color: effectiveColor, glow: true, active: true })
+              for (let i = 0; i < startingDots; i++)
+                dots.push({ color: startingColor, glow: false, active: true })
+              for (let i = 0; i < drainingDots; i++)
+                dots.push({ color: drainingColor, glow: false, active: true })
+              for (let i = 0; i < unhealthyDots; i++)
+                dots.push({ color: unhealthyColor, glow: true, active: true })
+              for (let i = 0; i < emptyDots; i++)
+                dots.push({ color: emptyColor, glow: false, active: false })
+              // Trim to exact grid size in case rounding produced extra
+              dots.length = GRID_TOTAL
+
+              return (
+                <div className="absolute top-0 right-0 flex flex-col items-end gap-[2px]">
+                  <div
+                    className="grid gap-[2.5px]"
+                    style={{
+                      gridTemplateColumns: `repeat(${GRID_COLS}, 4px)`,
+                      gridTemplateRows: `repeat(${GRID_ROWS}, 4px)`,
+                    }}
+                  >
+                    {dots.map((dot, i) => (
+                      <span
+                        key={i}
+                        className="block h-[4px] w-[4px] rounded-full transition-all duration-500"
+                        style={{
+                          backgroundColor: dot.color,
+                          opacity: dot.active
+                            ? isPreviewing
+                              ? 0.9
+                              : 0.45
+                            : isPreviewing
+                              ? 0.5
+                              : 0.25,
+                          boxShadow:
+                            isPreviewing && isDark && dot.glow
+                              ? `0 0 3px ${dot.color}`
+                              : 'none',
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <span
+                    className={`font-mono text-[5.5px] leading-none tracking-[0.1em] uppercase ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
+                    style={{ opacity: isPreviewing ? 0.6 : 0.32 }}
+                  >
+                    {podsPerDot > 1 ? `×${podsPerDot}` : 'pods'}
+                  </span>
+                </div>
+              )
+            })()}
             <div className="absolute right-0 bottom-0 text-right font-mono">
               <div
                 className="text-[9px] whitespace-nowrap tabular-nums transition-all duration-300"
@@ -2032,20 +2205,116 @@ function MetricWidget({
         ) : null}
 
         {type === 'fanout' ? (
-          <div className="w-full">
+          <div className="flex w-full flex-col gap-1">
+            {/* Target count + health pills */}
+            <div className="flex items-end justify-between">
+              <span
+                className="font-mono text-[11px] font-semibold tabular-nums transition-all duration-300"
+                style={{
+                  color: effectiveColor,
+                  opacity: isPreviewing ? 1 : isDark ? 0.38 : 0.5,
+                  textShadow:
+                    isPreviewing && isDark
+                      ? `0 0 6px ${effectiveColor}`
+                      : 'none',
+                }}
+              >
+                {cluster.loadBalancerTargets.length}/{cluster.replicaTarget}
+              </span>
+              <div className="flex gap-[2.5px]">
+                {Array.from(
+                  { length: Math.max(cluster.replicaTarget, 1) },
+                  (_, i) => {
+                    const isLive = i < cluster.loadBalancerTargets.length
+                    return (
+                      <span
+                        key={i}
+                        className="block h-[4px] w-[3px] rounded-sm transition-all duration-500"
+                        style={{
+                          backgroundColor: isLive
+                            ? effectiveColor
+                            : isDark
+                              ? 'rgba(148, 163, 184, 0.18)'
+                              : 'rgba(148, 163, 184, 0.3)',
+                          opacity: isLive
+                            ? isPreviewing
+                              ? 0.85
+                              : 0.45
+                            : isPreviewing
+                              ? 0.4
+                              : 0.2,
+                          boxShadow:
+                            isLive && isPreviewing && isDark
+                              ? `0 0 3px ${effectiveColor}`
+                              : 'none',
+                        }}
+                      />
+                    )
+                  },
+                )}
+              </div>
+            </div>
+            {/* Fanout diagram */}
             <TargetFanoutChart
               cluster={cluster}
               color={effectiveColor}
               phase={animationPhase}
               isFocused={isPreviewing}
               isDark={isDark}
-              height={bodyHeight}
+              height={bodyHeight - 18}
             />
           </div>
         ) : null}
 
         {type === 'router' ? (
-          <div className="w-full">
+          <div className="flex w-full flex-col gap-1">
+            {/* LB status row */}
+            <div className="flex items-end justify-between">
+              <div className="flex items-center gap-1.5">
+                <span
+                  className="block h-[5px] w-[5px] rounded-full transition-all duration-300"
+                  style={{
+                    backgroundColor: cluster.loadBalancerHealthy
+                      ? isDark
+                        ? '#4ade80'
+                        : '#16a34a'
+                      : isDark
+                        ? '#fb7185'
+                        : '#e11d48',
+                    opacity: isPreviewing ? 0.9 : 0.5,
+                    boxShadow:
+                      isPreviewing && isDark
+                        ? `0 0 4px ${cluster.loadBalancerHealthy ? '#4ade80' : '#fb7185'}`
+                        : 'none',
+                  }}
+                />
+                <span
+                  className="font-mono text-[7px] font-semibold tracking-[0.08em] uppercase transition-all duration-300"
+                  style={{
+                    color: cluster.loadBalancerHealthy
+                      ? isDark
+                        ? '#4ade80'
+                        : '#16a34a'
+                      : isDark
+                        ? '#fb7185'
+                        : '#e11d48',
+                    opacity: isPreviewing ? 0.85 : 0.45,
+                  }}
+                >
+                  {cluster.loadBalancerHealthy ? 'healthy' : 'degraded'}
+                </span>
+              </div>
+              <span
+                className="font-mono text-[8px] tabular-nums transition-all duration-300"
+                style={{
+                  color: effectiveColor,
+                  opacity: isPreviewing ? 0.9 : isDark ? 0.34 : 0.48,
+                }}
+              >
+                {Math.round(cluster.latencyMs)}ms
+              </span>
+            </div>
+            {/* Route diagram */}
             <LoadBalancerRouteChart
               cluster={cluster}
               mode={mode}
@@ -2053,6 +2322,7 @@ function MetricWidget({
               color={effectiveColor}
               isFocused={isPreviewing}
               isDark={isDark}
+              height={bodyHeight - 16}
             />
           </div>
         ) : null}
@@ -2188,6 +2458,33 @@ function CompositeMetricWidget({
     stateRef.current = { cluster, mode }
   }, [cluster, mode])
 
+  // Immediate spike when emergency begins
+  const prevModeRef = useRef(mode)
+  useEffect(() => {
+    const prev = prevModeRef.current
+    prevModeRef.current = mode
+    if (mode !== 'incident' || prev === 'incident') return
+    const cpuSpike = clamp(72 + Math.random() * 22, 72, 96)
+    const memSpike = clamp(68 + Math.random() * 20, 68, 96)
+    const frame = requestAnimationFrame(() => {
+      setCpuValue(cpuSpike)
+      setMemoryValue(memSpike)
+      setCpuHistory((hist) => [
+        ...hist.slice(3),
+        cpuSpike * 0.85,
+        cpuSpike * 0.92,
+        cpuSpike,
+      ])
+      setMemoryHistory((hist) => [
+        ...hist.slice(3),
+        memSpike * 0.88,
+        memSpike * 0.94,
+        memSpike,
+      ])
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [mode])
+
   useEffect(() => {
     const appearTimeout = setTimeout(() => setVisible(true), delay)
     const interval = setInterval(() => {
@@ -2248,15 +2545,48 @@ function CompositeMetricWidget({
       }
 
       if (id === 'capacity') {
+        const isEmergency = currentMode === 'incident'
         setCpuValue((previous) => {
           const target = getTargetValue('cpu', snapshot, currentMode)
-          const next = previous + (target - previous) * 0.28
+          const spikeChance = isEmergency ? 0.4 : 0.22
+          const spikeSize = isEmergency
+            ? 14 + Math.random() * 22
+            : 10 + Math.random() * 16
+          const jitter = isEmergency
+            ? (Math.random() - 0.4) * 12
+            : (Math.random() - 0.5) * 8
+          const spike =
+            Math.random() < spikeChance
+              ? (Math.random() < (isEmergency ? 0.75 : 0.5) ? 1 : -1) *
+                spikeSize
+              : jitter
+          const next = clamp(
+            previous + (target - previous) * 0.22 + spike,
+            12,
+            98,
+          )
           setCpuHistory((hist) => [...hist.slice(1), next])
           return next
         })
         setMemoryValue((previous) => {
           const target = getTargetValue('memory', snapshot, currentMode)
-          const next = previous + (target - previous) * 0.28
+          const spikeChance = isEmergency ? 0.35 : 0.2
+          const spikeSize = isEmergency
+            ? 12 + Math.random() * 18
+            : 8 + Math.random() * 14
+          const jitter = isEmergency
+            ? (Math.random() - 0.4) * 10
+            : (Math.random() - 0.5) * 6
+          const spike =
+            Math.random() < spikeChance
+              ? (Math.random() < (isEmergency ? 0.75 : 0.5) ? 1 : -1) *
+                spikeSize
+              : jitter
+          const next = clamp(
+            previous + (target - previous) * 0.22 + spike,
+            20,
+            98,
+          )
           setMemoryHistory((hist) => [...hist.slice(1), next])
           return next
         })
@@ -2594,15 +2924,97 @@ function CompositeMetricWidget({
 
       {id === 'traffic_flow' ? (
         <div
-          className={`h-[33px] overflow-hidden border-t pt-1 font-mono text-[8px] leading-3.5 ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
+          className={`flex h-[33px] items-start gap-2 overflow-hidden border-t pt-1 font-mono text-[8px] leading-3.5 ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
           style={{
             opacity: isPreviewing ? 0.9 : isDark ? 0.42 : 0.56,
             color: visualState === 'normal' ? undefined : effectiveColor,
           }}
         >
-          {compositeMeta.detail.split('\n').map((line, i) => (
-            <div key={i}>{line}</div>
-          ))}
+          <div className="min-w-0 shrink">
+            {compositeMeta.detail.split('\n').map((line, i) => (
+              <div key={i}>{line}</div>
+            ))}
+          </div>
+          {/* SLO pills */}
+          <div
+            className="ml-auto flex shrink-0 flex-wrap justify-end gap-[3px] pt-0.5"
+            style={{ maxWidth: 72 }}
+          >
+            {[
+              {
+                label: 'avl',
+                ok:
+                  cluster.readyReplicas >= cluster.replicaTarget &&
+                  cluster.unhealthyReplicas === 0,
+              },
+              {
+                label: 'lat',
+                ok: cluster.latencyMs <= 65,
+              },
+              {
+                label: 'err',
+                ok: cluster.errorRate <= 4,
+              },
+              {
+                label: 'lb',
+                ok: cluster.loadBalancerHealthy,
+              },
+              {
+                label: 'queue',
+                ok: cluster.queueDepth <= 40,
+              },
+              {
+                label: 'pods',
+                ok:
+                  cluster.startingReplicas === 0 &&
+                  cluster.drainingReplicas === 0,
+              },
+              {
+                label: 'p99',
+                ok: cluster.latencyMs * 1.4 <= 90,
+              },
+              {
+                label: 'tput',
+                ok: cluster.requestRate > 800 && cluster.requestRate < 3200,
+              },
+            ].map((slo) => {
+              const green = isDark ? '#4ade80' : '#16a34a'
+              const red = isDark ? '#fb7185' : '#e11d48'
+              const color = slo.ok ? green : red
+              return (
+                <span
+                  key={slo.label}
+                  className="inline-block rounded-full px-[5px] py-[1px] font-mono text-[6px] leading-tight tracking-[0.06em] uppercase transition-all duration-300"
+                  style={{
+                    backgroundColor: slo.ok
+                      ? isDark
+                        ? 'rgba(74, 222, 128, 0.12)'
+                        : 'rgba(22, 163, 74, 0.1)'
+                      : isDark
+                        ? 'rgba(251, 113, 133, 0.14)'
+                        : 'rgba(225, 29, 72, 0.1)',
+                    color,
+                    border: `1px solid ${
+                      slo.ok
+                        ? isDark
+                          ? 'rgba(74, 222, 128, 0.2)'
+                          : 'rgba(22, 163, 74, 0.18)'
+                        : isDark
+                          ? 'rgba(251, 113, 133, 0.22)'
+                          : 'rgba(225, 29, 72, 0.18)'
+                    }`,
+                    opacity: isPreviewing ? 0.9 : 0.65,
+                    boxShadow:
+                      isPreviewing && isDark
+                        ? `0 0 4px ${slo.ok ? 'rgba(74, 222, 128, 0.15)' : 'rgba(251, 113, 133, 0.15)'}`
+                        : 'none',
+                  }}
+                >
+                  {slo.label}
+                </span>
+              )
+            })}
+          </div>
         </div>
       ) : null}
     </div>
