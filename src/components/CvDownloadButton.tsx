@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 
 import { Button, DownloadIcon } from '@/components/Button'
 import {
+  CloseIcon,
   DesktopTooltip,
   headerControlClassName,
 } from '@/components/HeaderShared'
@@ -86,43 +87,55 @@ export default function CvDownloadButton() {
               role="dialog"
               aria-modal="true"
               aria-label="Download CV"
-              className="fixed inset-x-4 top-20 z-70 rounded-2xl border border-neutral-200/80 bg-white/95 p-4 shadow-2xl ring-1 ring-neutral-200/70 backdrop-blur-md md:hidden dark:border-neutral-700 dark:bg-neutral-900/95 dark:ring-neutral-700/70"
+              className="fixed inset-x-4 top-4 z-70 overflow-hidden rounded-sm bg-white shadow-2xl ring-1 ring-neutral-200 md:hidden dark:bg-neutral-950 dark:ring-neutral-800"
             >
-              <div className="flex items-start gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300">
-                  <DownloadIcon className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-mono text-[11px] font-semibold tracking-[0.16em] text-emerald-700 uppercase dark:text-emerald-300">
-                    Download CV
-                  </p>
-                  <h2 className="mt-1 text-sm font-semibold text-neutral-900 dark:text-neutral-50">
-                    Save the latest PDF resume
-                  </h2>
-                  <p className="mt-2 text-sm leading-6 text-neutral-600 dark:text-neutral-300">
-                    This downloads the latest CV as a PDF to your device, so you
-                    can open it locally or share it later.
-                  </p>
-                </div>
+              <div className="flex h-6 items-center justify-between border-b border-neutral-200 bg-neutral-50/80 px-4 dark:border-neutral-800 dark:bg-neutral-900">
+                <span className="font-mono text-[10px] text-neutral-700 dark:text-neutral-100">
+                  ~/download
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  aria-label="Close download dialog"
+                  className="-mr-2 inline-flex h-6 w-6 items-center justify-center rounded-sm transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                >
+                  <CloseIcon className="h-3.5 w-3.5 text-neutral-500 dark:text-neutral-400" />
+                </button>
               </div>
 
-              <div className="mt-4 flex gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => setIsOpen(false)}
-                  className="min-h-11 flex-1"
-                >
-                  Cancel
-                </Button>
-                <a
-                  href={CV_PDF_URL}
-                  download
-                  onClick={() => setIsOpen(false)}
-                  className="inline-flex min-h-11 flex-1 items-center justify-center rounded-md bg-neutral-800 px-3 py-2 text-sm font-semibold text-neutral-100 outline-offset-2 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-neutral-700 hover:shadow-lg active:bg-neutral-800 active:text-neutral-100/70 dark:bg-neutral-700 dark:hover:bg-neutral-600 dark:active:bg-neutral-700 dark:active:text-neutral-100/70"
-                >
-                  Download PDF
-                </a>
+              <div className="p-3">
+                <div className="flex items-start gap-3 rounded-sm px-4 py-2.5">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-emerald-500/10 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300">
+                    <DownloadIcon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="font-mono text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                      Save the latest PDF resume
+                    </h2>
+                    <p className="mt-1 text-xs leading-5 text-neutral-600 dark:text-neutral-300">
+                      Downloads the CV as a PDF to your device.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-2 flex gap-2 px-4">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setIsOpen(false)}
+                    className="min-h-11 flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <a
+                    href={CV_PDF_URL}
+                    download
+                    onClick={() => setIsOpen(false)}
+                    className="inline-flex min-h-11 flex-1 items-center justify-center rounded-sm bg-neutral-800 px-3 py-2 font-mono text-sm font-medium text-neutral-100 transition-colors hover:bg-neutral-700 active:bg-neutral-800 active:text-neutral-100/70 dark:bg-neutral-700 dark:hover:bg-neutral-600 dark:active:bg-neutral-700 dark:active:text-neutral-100/70"
+                  >
+                    Download PDF
+                  </a>
+                </div>
               </div>
             </div>
           </>,
