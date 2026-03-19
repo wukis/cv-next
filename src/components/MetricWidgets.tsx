@@ -359,16 +359,54 @@ function AvailabilityRings({
   const orbitRadius = radius + 3.5
   const orbitX = center + Math.cos(orbitAngle - Math.PI / 2) * orbitRadius
   const orbitY = center + Math.sin(orbitAngle - Math.PI / 2) * orbitRadius
-  const startingColor = isDark ? '#38bdf8' : '#0369a1'
-  const drainingColor = isDark ? '#f59e0b' : '#c2410c'
-  const unhealthyColor = isDark ? '#fb7185' : '#be123c'
+  const ringsEmergency = cluster.emergencyState === 'emergency'
+  const ringsRecovery = cluster.emergencyState === 'recovery'
+  const startingColor = ringsEmergency
+    ? isDark
+      ? '#f87171'
+      : '#dc2626'
+    : ringsRecovery
+      ? isDark
+        ? '#86efac'
+        : '#22c55e'
+      : isDark
+        ? '#38bdf8'
+        : '#0369a1'
+  const drainingColor = ringsEmergency
+    ? isDark
+      ? '#fb7185'
+      : '#be123c'
+    : ringsRecovery
+      ? isDark
+        ? '#4ade80'
+        : '#15803d'
+      : isDark
+        ? '#f59e0b'
+        : '#c2410c'
+  const unhealthyColor = ringsEmergency
+    ? isDark
+      ? '#ef4444'
+      : '#b91c1c'
+    : ringsRecovery
+      ? isDark
+        ? '#4ade80'
+        : '#16a34a'
+      : isDark
+        ? '#fb7185'
+        : '#be123c'
+
+  const ringsOpacity = isFocused ? (isDark ? 0.85 : 1) : isDark ? 0.35 : 0.4
 
   return (
     <svg
       width={viewSize}
       height={viewSize}
       viewBox={`0 0 ${viewSize} ${viewSize}`}
-      style={{ overflow: 'visible' }}
+      style={{
+        overflow: 'visible',
+        opacity: ringsOpacity,
+        transition: 'opacity 0.5s ease',
+      }}
     >
       <g transform={`rotate(-90 ${center} ${center})`}>
         <circle
@@ -391,8 +429,7 @@ function AvailabilityRings({
           strokeLinecap="round"
           strokeDasharray={`${circumference * readyRatio} ${circumference}`}
           style={{
-            filter:
-              isFocused && isDark ? `drop-shadow(0 0 6px ${color})` : 'none',
+            filter: isDark ? `drop-shadow(0 0 6px ${color})` : 'none',
           }}
         />
         <circle
@@ -437,19 +474,19 @@ function AvailabilityRings({
         cy={orbitY}
         r={isFocused ? 2.3 : 1.8}
         fill={color}
-        opacity={isFocused ? 0.95 : 0.72}
+        opacity={0.95}
       />
       <text
         x={center}
         y={center}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill={isDark ? '#e2e8f0' : '#0f172a'}
+        fill={color}
         style={{
           fontFamily: 'ui-monospace, monospace',
           fontSize: '8px',
           fontWeight: 700,
-          opacity: isFocused ? 0.96 : 0.8,
+          opacity: 0.96,
         }}
       >
         {uptimeValue.toFixed(2)}
@@ -494,6 +531,7 @@ function TargetFanoutChart({
   const centerY = height / 2
   const columns = [62, 82]
   const rows = [height * 0.2, height * 0.5, height * 0.8]
+  const fanoutOpacity = isFocused ? (isDark ? 0.85 : 1) : isDark ? 0.35 : 0.4
 
   return (
     <svg
@@ -501,6 +539,7 @@ function TargetFanoutChart({
       height={height}
       viewBox={`0 0 ${width} ${height}`}
       className="overflow-hidden"
+      style={{ opacity: fanoutOpacity, transition: 'opacity 0.5s ease' }}
     >
       {rows.flatMap((y, rowIndex) =>
         columns.map((x, columnIndex) => {
@@ -510,13 +549,7 @@ function TargetFanoutChart({
             blinkNode !== null &&
             nodeIndex === blinkNode &&
             nodeIndex >= activeNodes
-          const lineOpacity = isActive
-            ? isFocused
-              ? 0.82
-              : 0.56
-            : isBlinking
-              ? 0.45
-              : 0.12
+          const lineOpacity = isActive ? 0.82 : isBlinking ? 0.45 : 0.12
           const nodeColor = isActive
             ? color
             : isBlinking
@@ -544,7 +577,7 @@ function TargetFanoutChart({
                 fill={nodeColor}
                 style={{
                   filter:
-                    (isActive && isFocused && isDark) || isBlinking
+                    (isActive && isDark) || isBlinking
                       ? `drop-shadow(0 0 ${isBlinking ? 6 : 4}px ${isBlinking ? nodeColor : color})`
                       : 'none',
                   animation: isBlinking
@@ -564,13 +597,7 @@ function TargetFanoutChart({
         stroke={color}
         strokeWidth={1.4}
       />
-      <circle
-        cx={centerX}
-        cy={centerY}
-        r={2}
-        fill={color}
-        opacity={isFocused ? 0.95 : 0.8}
-      />
+      <circle cx={centerX} cy={centerY} r={2} fill={color} opacity={0.95} />
     </svg>
   )
 }
@@ -605,11 +632,15 @@ function LoadBalancerRouteChart({
     targetYs.length,
   )
   const routeColor =
-    mode === 'incident' && isScenario(cluster, 'failover')
+    mode === 'incident' || cluster.emergencyState === 'emergency'
       ? isDark
         ? '#fb7185'
         : '#be123c'
-      : color
+      : mode === 'recovery' || cluster.emergencyState === 'recovery'
+        ? isDark
+          ? '#4ade80'
+          : '#15803d'
+        : color
   const pulseCount = activeTargets > 2 ? 3 : 2
   const pulseSpeed =
     mode === 'incident' || cluster.errorRate > 3.5
@@ -617,9 +648,15 @@ function LoadBalancerRouteChart({
       : isFocused
         ? 0.12
         : 0.08
+  const routerOpacity = isFocused ? (isDark ? 0.85 : 1) : isDark ? 0.35 : 0.4
 
   return (
-    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
+    <svg
+      width="100%"
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      style={{ opacity: routerOpacity, transition: 'opacity 0.5s ease' }}
+    >
       <path
         d={`M ${sourceX} ${gateY} L ${gateX - 8} ${gateY}`}
         fill="none"
@@ -629,7 +666,7 @@ function LoadBalancerRouteChart({
       />
       {targetYs.map((targetY, index) => {
         const isActive = index < activeTargets
-        const lineOpacity = isActive ? (isFocused ? 0.86 : 0.62) : 0.12
+        const lineOpacity = isActive ? 0.86 : 0.12
         const nodeFill = isActive
           ? routeColor
           : isDark
@@ -674,7 +711,7 @@ function LoadBalancerRouteChart({
               fill={nodeFill}
               style={{
                 filter:
-                  isActive && isFocused && isDark
+                  isActive && isDark
                     ? `drop-shadow(0 0 4px ${routeColor})`
                     : 'none',
               }}
@@ -766,6 +803,10 @@ function ControlPlaneChart({
         : isDark
           ? '#38bdf8'
           : '#0369a1'
+  const laneEmergency =
+    cluster.emergencyState === 'emergency' || mode === 'incident'
+  const laneRecovery =
+    cluster.emergencyState === 'recovery' || mode === 'recovery'
   const laneData = [
     {
       label: 'starting',
@@ -779,7 +820,17 @@ function ControlPlaneChart({
         0,
         100,
       ),
-      color: isDark ? '#38bdf8' : '#0369a1',
+      color: laneEmergency
+        ? isDark
+          ? '#fb7185'
+          : '#be123c'
+        : laneRecovery
+          ? isDark
+            ? '#4ade80'
+            : '#15803d'
+          : isDark
+            ? '#38bdf8'
+            : '#0369a1',
     },
     {
       label: 'draining',
@@ -795,7 +846,17 @@ function ControlPlaneChart({
         0,
         100,
       ),
-      color: isDark ? '#f59e0b' : '#c2410c',
+      color: laneEmergency
+        ? isDark
+          ? '#f87171'
+          : '#dc2626'
+        : laneRecovery
+          ? isDark
+            ? '#86efac'
+            : '#22c55e'
+          : isDark
+            ? '#f59e0b'
+            : '#c2410c',
     },
     {
       label: 'healing',
@@ -809,14 +870,30 @@ function ControlPlaneChart({
         0,
         100,
       ),
-      color: isDark ? '#fb7185' : '#be123c',
+      color: laneEmergency
+        ? isDark
+          ? '#ef4444'
+          : '#b91c1c'
+        : laneRecovery
+          ? isDark
+            ? '#4ade80'
+            : '#15803d'
+          : isDark
+            ? '#fb7185'
+            : '#be123c',
     },
   ]
   const laneX = 36
   const barWidth = width - laneX - 8
+  const controlOpacity = isFocused ? (isDark ? 0.85 : 1) : isDark ? 0.35 : 0.4
 
   return (
-    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
+    <svg
+      width="100%"
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      style={{ opacity: controlOpacity, transition: 'opacity 0.5s ease' }}
+    >
       <g transform={`rotate(-90 ${centerX} ${centerY})`}>
         <circle
           cx={centerX}
@@ -838,10 +915,7 @@ function ControlPlaneChart({
           strokeLinecap="round"
           strokeDasharray={`${track * (reconcileLoad / 100)} ${track}`}
           style={{
-            filter:
-              isDark && isFocused
-                ? `drop-shadow(0 0 5px ${reconcileColor})`
-                : 'none',
+            filter: isDark ? `drop-shadow(0 0 5px ${reconcileColor})` : 'none',
           }}
         />
       </g>
@@ -949,8 +1023,10 @@ function ReplicationPipelineChart({
   width?: number
   height?: number
 }) {
-  const isIncident = mode === 'incident' && cluster.scenarioKey === 'dbDown'
-  const isRecovery = mode === 'recovery' && cluster.scenarioKey === 'dbDown'
+  const isIncident =
+    mode === 'incident' || cluster.emergencyState === 'emergency'
+  const isRecovery =
+    mode === 'recovery' || cluster.emergencyState === 'recovery'
   const pipelineColor = isIncident
     ? isDark
       ? '#fb7185'
@@ -983,9 +1059,15 @@ function ReplicationPipelineChart({
   const walSegments = 8
   const walY = 4
   const walSegWidth = (width - 12) / walSegments
+  const pipelineOpacity = isFocused ? (isDark ? 0.85 : 1) : isDark ? 0.35 : 0.4
 
   return (
-    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
+    <svg
+      width="100%"
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      style={{ opacity: pipelineOpacity, transition: 'opacity 0.5s ease' }}
+    >
       {Array.from({ length: walSegments }, (_, i) => {
         const intensity =
           (Math.sin(phase * 0.18 + i * 0.7) + 1) / 2 + (isIncident ? 0.3 : 0)
@@ -1114,10 +1196,7 @@ function ReplicationPipelineChart({
             stroke={pipelineColor}
             strokeWidth={1.3}
             style={{
-              filter:
-                isFocused && isDark
-                  ? `drop-shadow(0 0 4px ${pipelineColor})`
-                  : 'none',
+              filter: isDark ? `drop-shadow(0 0 4px ${pipelineColor})` : 'none',
             }}
           />
           <text
@@ -1162,14 +1241,25 @@ function CacheHeatGrid({
   const gap = 3
   const cellWidth = (width - gap * (columns - 1)) / columns
   const cellHeight = (height - gap * (rows - 1)) / rows
+  const heatEmergency =
+    cluster.emergencyState === 'emergency' || mode === 'incident'
+  const heatRecovery =
+    cluster.emergencyState === 'recovery' || mode === 'recovery'
   const heatBias =
     cluster.queueDepth * 0.6 +
     cluster.latencyMs * 0.22 +
     cluster.trafficIntensity * 28 +
-    (mode === 'incident' && cluster.scenarioKey === 'cacheReload' ? 22 : 0)
+    (mode === 'incident' && cluster.scenarioKey === 'cacheReload' ? 22 : 0) +
+    (heatEmergency ? 18 : 0)
+  const heatOpacity = isFocused ? (isDark ? 0.85 : 1) : isDark ? 0.35 : 0.4
 
   return (
-    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
+    <svg
+      width="100%"
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      style={{ opacity: heatOpacity, transition: 'opacity 0.5s ease' }}
+    >
       {Array.from({ length: rows * columns }, (_, index) => {
         const column = index % columns
         const row = Math.floor(index / columns)
@@ -1177,22 +1267,45 @@ function CacheHeatGrid({
           Math.sin(phase * 0.24 + index * 0.8) * 12 +
           Math.cos(phase * 0.12 + row * 0.6) * 8
         const intensity = clamp(heatBias + wave + column * 6 - row * 3, 0, 100)
-        const fill =
-          intensity > 76
+        const fill = heatEmergency
+          ? intensity > 54
             ? isDark
               ? '#fb7185'
               : '#e11d48'
-            : intensity > 54
+            : intensity > 30
               ? isDark
-                ? '#f59e0b'
-                : '#d97706'
-              : intensity > 34
+                ? '#f87171'
+                : '#dc2626'
+              : isDark
+                ? 'rgba(248, 113, 113, 0.22)'
+                : 'rgba(220, 38, 38, 0.18)'
+          : heatRecovery
+            ? intensity > 54
+              ? isDark
+                ? '#4ade80'
+                : '#16a34a'
+              : intensity > 30
                 ? isDark
-                  ? '#38bdf8'
-                  : '#0284c7'
+                  ? '#86efac'
+                  : '#22c55e'
                 : isDark
-                  ? 'rgba(56, 189, 248, 0.18)'
-                  : 'rgba(2, 132, 199, 0.16)'
+                  ? 'rgba(74, 222, 128, 0.22)'
+                  : 'rgba(22, 163, 74, 0.18)'
+            : intensity > 76
+              ? isDark
+                ? '#fb7185'
+                : '#e11d48'
+              : intensity > 54
+                ? isDark
+                  ? '#f59e0b'
+                  : '#d97706'
+                : intensity > 34
+                  ? isDark
+                    ? '#38bdf8'
+                    : '#0284c7'
+                  : isDark
+                    ? 'rgba(56, 189, 248, 0.18)'
+                    : 'rgba(2, 132, 199, 0.16)'
 
         return (
           <rect
@@ -1203,7 +1316,7 @@ function CacheHeatGrid({
             height={cellHeight}
             rx={2.4}
             fill={fill}
-            opacity={isFocused ? 0.3 + intensity / 120 : 0.15 + intensity / 240}
+            opacity={0.3 + intensity / 120}
           />
         )
       })}
@@ -2109,9 +2222,41 @@ function MetricWidget({
                 GRID_TOTAL,
               )
               const emptyDots = GRID_TOTAL - usedDots
-              const startingColor = isDark ? '#38bdf8' : '#0369a1'
-              const drainingColor = isDark ? '#f59e0b' : '#c2410c'
-              const unhealthyColor = isDark ? '#fb7185' : '#be123c'
+              const gridEmergency = cluster.emergencyState === 'emergency'
+              const gridRecovery = cluster.emergencyState === 'recovery'
+              const startingColor = gridEmergency
+                ? isDark
+                  ? '#f87171'
+                  : '#dc2626'
+                : gridRecovery
+                  ? isDark
+                    ? '#86efac'
+                    : '#22c55e'
+                  : isDark
+                    ? '#38bdf8'
+                    : '#0369a1'
+              const drainingColor = gridEmergency
+                ? isDark
+                  ? '#fb7185'
+                  : '#be123c'
+                : gridRecovery
+                  ? isDark
+                    ? '#4ade80'
+                    : '#15803d'
+                  : isDark
+                    ? '#f59e0b'
+                    : '#c2410c'
+              const unhealthyColor = gridEmergency
+                ? isDark
+                  ? '#ef4444'
+                  : '#b91c1c'
+                : gridRecovery
+                  ? isDark
+                    ? '#4ade80'
+                    : '#16a34a'
+                  : isDark
+                    ? '#fb7185'
+                    : '#be123c'
               const emptyColor = isDark
                 ? 'rgba(148, 163, 184, 0.14)'
                 : 'rgba(148, 163, 184, 0.26)'
@@ -2187,7 +2332,10 @@ function MetricWidget({
               </div>
               <div
                 className={`text-[7px] tracking-[0.1em] whitespace-nowrap uppercase ${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}
-                style={{ opacity: isPreviewing ? 0.68 : 0.42 }}
+                style={{
+                  opacity: isPreviewing ? 0.68 : 0.42,
+                  color: visualState !== 'normal' ? effectiveColor : undefined,
+                }}
               >
                 {cluster.readyReplicas}/{cluster.replicaTarget} ready
               </div>
@@ -2276,38 +2424,52 @@ function MetricWidget({
             {/* LB status row */}
             <div className="flex items-end justify-between">
               <div className="flex items-center gap-1.5">
-                <span
-                  className="block h-[5px] w-[5px] rounded-full transition-all duration-300"
-                  style={{
-                    backgroundColor: cluster.loadBalancerHealthy
-                      ? isDark
-                        ? '#4ade80'
-                        : '#16a34a'
-                      : isDark
-                        ? '#fb7185'
-                        : '#e11d48',
-                    opacity: isPreviewing ? 0.9 : 0.5,
-                    boxShadow:
-                      isPreviewing && isDark
-                        ? `0 0 4px ${cluster.loadBalancerHealthy ? '#4ade80' : '#fb7185'}`
-                        : 'none',
-                  }}
-                />
-                <span
-                  className="font-mono text-[7px] font-semibold tracking-[0.08em] uppercase transition-all duration-300"
-                  style={{
-                    color: cluster.loadBalancerHealthy
-                      ? isDark
-                        ? '#4ade80'
-                        : '#16a34a'
-                      : isDark
-                        ? '#fb7185'
-                        : '#e11d48',
-                    opacity: isPreviewing ? 0.85 : 0.45,
-                  }}
-                >
-                  {cluster.loadBalancerHealthy ? 'healthy' : 'degraded'}
-                </span>
+                {(() => {
+                  const routerDotColor =
+                    visualState === 'error'
+                      ? emergencyRed
+                      : visualState === 'recovered'
+                        ? recoveryGreen
+                        : cluster.loadBalancerHealthy
+                          ? isDark
+                            ? '#4ade80'
+                            : '#16a34a'
+                          : isDark
+                            ? '#fb7185'
+                            : '#e11d48'
+                  const routerLabel =
+                    visualState === 'error'
+                      ? 'emergency'
+                      : visualState === 'recovered'
+                        ? 'recovering'
+                        : cluster.loadBalancerHealthy
+                          ? 'healthy'
+                          : 'degraded'
+                  return (
+                    <>
+                      <span
+                        className="block h-[5px] w-[5px] rounded-full transition-all duration-300"
+                        style={{
+                          backgroundColor: routerDotColor,
+                          opacity: isPreviewing ? 0.9 : 0.5,
+                          boxShadow:
+                            isPreviewing && isDark
+                              ? `0 0 4px ${routerDotColor}`
+                              : 'none',
+                        }}
+                      />
+                      <span
+                        className="font-mono text-[7px] font-semibold tracking-[0.08em] uppercase transition-all duration-300"
+                        style={{
+                          color: routerDotColor,
+                          opacity: isPreviewing ? 0.85 : 0.45,
+                        }}
+                      >
+                        {routerLabel}
+                      </span>
+                    </>
+                  )
+                })()}
               </div>
               <span
                 className="font-mono text-[8px] tabular-nums transition-all duration-300"
@@ -2983,36 +3145,65 @@ function CompositeMetricWidget({
                 ok: cluster.requestRate > 800 && cluster.requestRate < 3200,
               },
             ].map((slo) => {
+              const sloEmergency = visualState === 'error'
+              const sloRecovery = visualState === 'recovered'
               const green = isDark ? '#4ade80' : '#16a34a'
               const red = isDark ? '#fb7185' : '#e11d48'
-              const color = slo.ok ? green : red
+              const sloColor = sloEmergency
+                ? emergencyRed
+                : sloRecovery
+                  ? recoveryGreen
+                  : slo.ok
+                    ? green
+                    : red
+              const sloBg = sloEmergency
+                ? isDark
+                  ? 'rgba(255, 51, 51, 0.14)'
+                  : 'rgba(204, 0, 0, 0.1)'
+                : sloRecovery
+                  ? isDark
+                    ? 'rgba(51, 255, 102, 0.12)'
+                    : 'rgba(0, 153, 51, 0.1)'
+                  : slo.ok
+                    ? isDark
+                      ? 'rgba(74, 222, 128, 0.12)'
+                      : 'rgba(22, 163, 74, 0.1)'
+                    : isDark
+                      ? 'rgba(251, 113, 133, 0.14)'
+                      : 'rgba(225, 29, 72, 0.1)'
+              const sloBorder = sloEmergency
+                ? isDark
+                  ? 'rgba(255, 51, 51, 0.22)'
+                  : 'rgba(204, 0, 0, 0.18)'
+                : sloRecovery
+                  ? isDark
+                    ? 'rgba(51, 255, 102, 0.2)'
+                    : 'rgba(0, 153, 51, 0.18)'
+                  : slo.ok
+                    ? isDark
+                      ? 'rgba(74, 222, 128, 0.2)'
+                      : 'rgba(22, 163, 74, 0.18)'
+                    : isDark
+                      ? 'rgba(251, 113, 133, 0.22)'
+                      : 'rgba(225, 29, 72, 0.18)'
+              const sloGlow = sloEmergency
+                ? 'rgba(255, 51, 51, 0.15)'
+                : sloRecovery
+                  ? 'rgba(51, 255, 102, 0.15)'
+                  : slo.ok
+                    ? 'rgba(74, 222, 128, 0.15)'
+                    : 'rgba(251, 113, 133, 0.15)'
               return (
                 <span
                   key={slo.label}
                   className="inline-block rounded-full px-[5px] py-[1px] font-mono text-[6px] leading-tight tracking-[0.06em] uppercase transition-all duration-300"
                   style={{
-                    backgroundColor: slo.ok
-                      ? isDark
-                        ? 'rgba(74, 222, 128, 0.12)'
-                        : 'rgba(22, 163, 74, 0.1)'
-                      : isDark
-                        ? 'rgba(251, 113, 133, 0.14)'
-                        : 'rgba(225, 29, 72, 0.1)',
-                    color,
-                    border: `1px solid ${
-                      slo.ok
-                        ? isDark
-                          ? 'rgba(74, 222, 128, 0.2)'
-                          : 'rgba(22, 163, 74, 0.18)'
-                        : isDark
-                          ? 'rgba(251, 113, 133, 0.22)'
-                          : 'rgba(225, 29, 72, 0.18)'
-                    }`,
+                    backgroundColor: sloBg,
+                    color: sloColor,
+                    border: `1px solid ${sloBorder}`,
                     opacity: isPreviewing ? 0.9 : 0.65,
                     boxShadow:
-                      isPreviewing && isDark
-                        ? `0 0 4px ${slo.ok ? 'rgba(74, 222, 128, 0.15)' : 'rgba(251, 113, 133, 0.15)'}`
-                        : 'none',
+                      isPreviewing && isDark ? `0 0 4px ${sloGlow}` : 'none',
                   }}
                 >
                   {slo.label}
