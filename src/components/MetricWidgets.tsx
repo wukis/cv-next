@@ -127,11 +127,12 @@ function Sparkline({
   isFocused?: boolean
   isDark?: boolean
 }) {
+  const pad = 2
   const normalizedData = data.length > 1 ? data : [0, 0]
   const points = normalizedData
     .map((value, index) => {
       const x = (index / (normalizedData.length - 1)) * width
-      const y = height - (value / 100) * height
+      const y = pad + (height - 2 * pad) * (1 - value / 100)
       return `${x},${y}`
     })
     .join(' ')
@@ -1485,7 +1486,7 @@ function getWidgetMeta(
             : cluster.requestRate > 2600
               ? 'edge burst active'
               : 'steady ingress',
-        detail: `${Math.round(cluster.requestRate)} req/min sample`,
+        detail: `${Math.round(cluster.requestRate)} req/min`,
       }
     case 'latency':
       return {
@@ -1505,7 +1506,7 @@ function getWidgetMeta(
             : mode === 'recovery'
               ? 'error rate cooling'
               : 'healthy request mix',
-        detail: `${cluster.errorRate.toFixed(1)}% app failures`,
+        detail: `${cluster.errorRate.toFixed(1)}% errors`,
       }
     case 'queue':
       return {
@@ -1523,7 +1524,7 @@ function getWidgetMeta(
           cluster.trafficIntensity > 0.72
             ? 'cpu pressure rising'
             : 'compute headroom ok',
-        detail: `${Math.round(36 + cluster.trafficIntensity * 26)}% active load`,
+        detail: `${Math.round(36 + cluster.trafficIntensity * 26)}% load`,
       }
     case 'memory':
       return {
@@ -1531,7 +1532,7 @@ function getWidgetMeta(
           cluster.startingReplicas > 0
             ? 'warm pods reserving'
             : 'memory envelope calm',
-        detail: `${cluster.liveReplicas} live / ${Math.round(getTargetValue('memory', cluster, mode))}% used`,
+        detail: `${cluster.liveReplicas} live / ${Math.round(getTargetValue('memory', cluster, mode))}%`,
       }
     case 'uptime':
       return {
@@ -1539,7 +1540,7 @@ function getWidgetMeta(
           mode === 'recovery'
             ? 'availability horizon healing'
             : 'availability envelope',
-        detail: `${cluster.readyReplicas}/${cluster.replicaTarget} ready across live service lanes`,
+        detail: `${cluster.readyReplicas}/${cluster.replicaTarget} ready`,
       }
     case 'traffic':
       return {
@@ -1574,7 +1575,7 @@ function getWidgetMeta(
           mode === 'incident' && isScenario(cluster, 'failover')
             ? 'rerouting hot traffic'
             : 'edge routes stable',
-        detail: `${cluster.loadBalancerHealthy ? 'routes clean' : 'route degraded'} | ${Math.round(cluster.latencyMs)}ms edge`,
+        detail: `${cluster.loadBalancerHealthy ? 'clean' : 'degraded'} | ${Math.round(cluster.latencyMs)}ms`,
       }
     case 'postgres':
       return {
@@ -1628,7 +1629,7 @@ function getCompositeWidgetMeta(
             : mode === 'preview'
               ? 'edge flow paths opening'
               : 'edge flow steady',
-        detail: `${Math.round(cluster.requestRate)} req/min | p95 ${Math.round(cluster.latencyMs)}ms`,
+        detail: `${Math.round(cluster.requestRate)} req/min | p95 ${Math.round(cluster.latencyMs)}ms\np99 ${Math.round(cluster.latencyMs * 1.4)}ms | p50 ${Math.round(cluster.latencyMs * 0.45)}ms`,
       }
     case 'capacity':
       return {
@@ -1866,11 +1867,14 @@ function MetricWidget({
     id !== 'postgres' &&
     id !== 'redis' &&
     id !== 'k8s'
-  const chartHeightBonus = showFooter ? 0 : 26
+  // Card heights: 20px header (or 10px when lead is hidden) + body + 10px footer (when shown)
+  const headerHeight = hideWidgetLead ? 10 : 20
+  const footerHeight = showFooter ? 10 : 0
+  const bodyHeight = 88 - headerHeight - footerHeight
 
   return (
     <div
-      className={`relative flex w-[124px] flex-col gap-1.5 rounded-xl border px-2.5 py-2 backdrop-blur-xs transition-all duration-300 ease-out ${visible ? 'translate-y-0' : 'translate-y-2 opacity-0'} ${borderColor} ${bgColor} ${isPreviewing && visualState === 'error' ? 'animate-pulse' : ''} `}
+      className={`relative flex h-[120px] w-[124px] flex-col rounded-xl border px-2.5 pt-2 backdrop-blur-xs transition-all duration-300 ease-out ${visible ? 'translate-y-0' : 'translate-y-2 opacity-0'} ${borderColor} ${bgColor} ${isPreviewing && visualState === 'error' ? 'animate-pulse' : ''} `}
       style={{
         boxShadow: isDark
           ? 'inset 0 1px 0 rgba(148, 163, 184, 0.08)'
@@ -1888,7 +1892,8 @@ function MetricWidget({
           animation: 'pulse 1.2s ease infinite',
         }}
       />
-      <div className="min-w-0">
+      {/* ── Header ── */}
+      <div className="min-w-0 shrink-0" style={{ height: headerHeight }}>
         <span
           className={`block h-[10px] truncate font-mono text-[8px] tracking-wider uppercase transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
           style={{
@@ -1916,75 +1921,51 @@ function MetricWidget({
         ) : null}
       </div>
 
-      {type === 'sparkline' ? (
-        <div className="w-full">
-          <Sparkline
-            data={data}
-            color={effectiveColor}
-            width={102}
-            height={38 + chartHeightBonus}
-            isFocused={isPreviewing}
-            isDark={isDark}
-          />
-        </div>
-      ) : null}
-
-      {type === 'bars' ? (
-        <div className="w-full">
-          <MiniBarChart
-            values={bars}
-            color={effectiveColor}
-            width={102}
-            height={36 + chartHeightBonus}
-            isFocused={isPreviewing}
-            isDark={isDark}
-          />
-        </div>
-      ) : null}
-
-      {type === 'gauge' ? (
-        <div className="flex items-center justify-between gap-2">
-          <CircularGauge
-            value={
-              id === 'uptime' ? clamp(value, 0, 100) : clamp(value, 0, 100)
-            }
-            color={effectiveColor}
-            size={28}
-            isFocused={isPreviewing}
-            isDark={isDark}
-            {...(id === 'uptime' ? {} : { label: `${Math.round(value)}%` })}
-          />
-          <span
-            className="min-w-[52px] text-right font-mono text-[9px] whitespace-nowrap tabular-nums transition-all duration-300"
-            style={{
-              color: effectiveColor,
-              opacity: isPreviewing ? 1 : isDark ? 0.34 : 0.48,
-              textShadow:
-                isPreviewing && isDark ? `0 0 6px ${effectiveColor}` : 'none',
-              fontWeight: isDark ? 500 : 600,
-            }}
-          >
-            {id === 'uptime' ? uptimeDisplay : `${Math.round(value)}%`}
-          </span>
-        </div>
-      ) : null}
-
-      {type === 'rings' ? (
-        <div className="flex items-center gap-1.5">
-          <div className="shrink-0">
-            <AvailabilityRings
-              cluster={cluster}
-              uptimeValue={value}
+      {/* ── Body ── */}
+      <div
+        className="flex min-h-0 flex-1 items-center"
+        style={{ height: bodyHeight }}
+      >
+        {type === 'sparkline' ? (
+          <div className="w-full">
+            <Sparkline
+              data={data}
               color={effectiveColor}
-              phase={animationPhase}
+              width={102}
+              height={bodyHeight}
               isFocused={isPreviewing}
               isDark={isDark}
-              size={42}
             />
           </div>
-          <div className="min-w-0 text-right font-mono">
-            <div
-              className="truncate text-[9px] whitespace-nowrap tabular-nums transition-all duration-300"
+        ) : null}
+
+        {type === 'bars' ? (
+          <div className="w-full">
+            <MiniBarChart
+              values={bars}
+              color={effectiveColor}
+              width={102}
+              height={bodyHeight}
+              isFocused={isPreviewing}
+              isDark={isDark}
+            />
+          </div>
+        ) : null}
+
+        {type === 'gauge' ? (
+          <div className="flex w-full items-center justify-between gap-2">
+            <CircularGauge
+              value={
+                id === 'uptime' ? clamp(value, 0, 100) : clamp(value, 0, 100)
+              }
+              color={effectiveColor}
+              size={28}
+              isFocused={isPreviewing}
+              isDark={isDark}
+              {...(id === 'uptime' ? {} : { label: `${Math.round(value)}%` })}
+            />
+            <span
+              className="min-w-[52px] text-right font-mono text-[9px] whitespace-nowrap tabular-nums transition-all duration-300"
               style={{
                 color: effectiveColor,
                 opacity: isPreviewing ? 1 : isDark ? 0.34 : 0.48,
@@ -1993,126 +1974,160 @@ function MetricWidget({
                 fontWeight: isDark ? 500 : 600,
               }}
             >
-              {value.toFixed(2)}%
+              {id === 'uptime' ? uptimeDisplay : `${Math.round(value)}%`}
+            </span>
+          </div>
+        ) : null}
+
+        {type === 'rings' ? (
+          <div className="flex items-center gap-1.5">
+            <div className="shrink-0">
+              <AvailabilityRings
+                cluster={cluster}
+                uptimeValue={value}
+                color={effectiveColor}
+                phase={animationPhase}
+                isFocused={isPreviewing}
+                isDark={isDark}
+                size={42}
+              />
             </div>
-            <div
-              className={`truncate text-[7px] tracking-[0.1em] uppercase ${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}
-              style={{ opacity: isPreviewing ? 0.68 : 0.42 }}
-            >
-              {cluster.readyReplicas}/{cluster.replicaTarget} ready
+            <div className="min-w-0 text-right font-mono">
+              <div
+                className="truncate text-[9px] whitespace-nowrap tabular-nums transition-all duration-300"
+                style={{
+                  color: effectiveColor,
+                  opacity: isPreviewing ? 1 : isDark ? 0.34 : 0.48,
+                  textShadow:
+                    isPreviewing && isDark
+                      ? `0 0 6px ${effectiveColor}`
+                      : 'none',
+                  fontWeight: isDark ? 500 : 600,
+                }}
+              >
+                {value.toFixed(2)}%
+              </div>
+              <div
+                className={`truncate text-[7px] tracking-[0.1em] uppercase ${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}
+                style={{ opacity: isPreviewing ? 0.68 : 0.42 }}
+              >
+                {cluster.readyReplicas}/{cluster.replicaTarget} ready
+              </div>
             </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
 
-      {type === 'counter' ? (
-        <span
-          className="min-h-[16px] font-mono text-[13px] font-medium whitespace-nowrap tabular-nums transition-all duration-300"
-          style={{
-            color: effectiveColor,
-            opacity: isPreviewing ? 1 : isDark ? 0.34 : 0.48,
-            textShadow:
-              isPreviewing && isDark ? `0 0 6px ${effectiveColor}` : 'none',
-          }}
-        >
-          {counterText}
-        </span>
-      ) : null}
-
-      {type === 'fanout' ? (
-        <div className="w-full">
-          <TargetFanoutChart
-            cluster={cluster}
-            color={effectiveColor}
-            phase={animationPhase}
-            isFocused={isPreviewing}
-            isDark={isDark}
-            height={38 + chartHeightBonus}
-          />
-        </div>
-      ) : null}
-
-      {type === 'router' ? (
-        <div className="w-full">
-          <LoadBalancerRouteChart
-            cluster={cluster}
-            mode={mode}
-            phase={animationPhase}
-            color={effectiveColor}
-            isFocused={isPreviewing}
-            isDark={isDark}
-          />
-        </div>
-      ) : null}
-
-      {type === 'status' ? (
-        <div className="flex items-center gap-1.5">
+        {type === 'counter' ? (
           <span
-            className={`h-2 w-2 rounded-full transition-all duration-300 ${isPreviewing || statusDisplay.tone !== 'healthy' ? 'animate-pulse' : ''}`}
+            className="min-h-[16px] font-mono text-[13px] font-medium whitespace-nowrap tabular-nums transition-all duration-300"
             style={{
-              backgroundColor: statusColor,
-              boxShadow: isPreviewing
-                ? `0 0 ${isDark ? 8 : 4}px ${statusColor}`
-                : 'none',
-              opacity: isPreviewing ? 1 : isDark ? 0.35 : 0.5,
-            }}
-          />
-          <span
-            className={`min-w-[44px] font-mono text-[9px] whitespace-nowrap transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
-            style={{
-              opacity: isPreviewing ? 0.82 : isDark ? 0.3 : 0.42,
-              color: statusColor,
-              fontWeight: isDark ? 'normal' : 500,
+              color: effectiveColor,
+              opacity: isPreviewing ? 1 : isDark ? 0.34 : 0.48,
+              textShadow:
+                isPreviewing && isDark ? `0 0 6px ${effectiveColor}` : 'none',
             }}
           >
-            {statusDisplay.text}
+            {counterText}
           </span>
-        </div>
-      ) : null}
+        ) : null}
 
-      {type === 'orchestrator' ? (
-        <div className="w-full">
-          <ControlPlaneChart
-            cluster={cluster}
-            mode={mode}
-            phase={animationPhase}
-            isFocused={isPreviewing}
-            isDark={isDark}
-            height={38 + chartHeightBonus}
-          />
-        </div>
-      ) : null}
+        {type === 'fanout' ? (
+          <div className="w-full">
+            <TargetFanoutChart
+              cluster={cluster}
+              color={effectiveColor}
+              phase={animationPhase}
+              isFocused={isPreviewing}
+              isDark={isDark}
+              height={bodyHeight}
+            />
+          </div>
+        ) : null}
 
-      {type === 'pipeline' ? (
-        <div className="w-full">
-          <ReplicationPipelineChart
-            cluster={cluster}
-            mode={mode}
-            phase={animationPhase}
-            isFocused={isPreviewing}
-            isDark={isDark}
-            height={38 + chartHeightBonus}
-          />
-        </div>
-      ) : null}
+        {type === 'router' ? (
+          <div className="w-full">
+            <LoadBalancerRouteChart
+              cluster={cluster}
+              mode={mode}
+              phase={animationPhase}
+              color={effectiveColor}
+              isFocused={isPreviewing}
+              isDark={isDark}
+            />
+          </div>
+        ) : null}
 
-      {type === 'heatmap' ? (
-        <div className="w-full">
-          <CacheHeatGrid
-            cluster={cluster}
-            mode={mode}
-            phase={animationPhase}
-            isFocused={isPreviewing}
-            isDark={isDark}
-            height={38 + chartHeightBonus}
-          />
-        </div>
-      ) : null}
+        {type === 'status' ? (
+          <div className="flex items-center gap-1.5">
+            <span
+              className={`h-2 w-2 rounded-full transition-all duration-300 ${isPreviewing || statusDisplay.tone !== 'healthy' ? 'animate-pulse' : ''}`}
+              style={{
+                backgroundColor: statusColor,
+                boxShadow: isPreviewing
+                  ? `0 0 ${isDark ? 8 : 4}px ${statusColor}`
+                  : 'none',
+                opacity: isPreviewing ? 1 : isDark ? 0.35 : 0.5,
+              }}
+            />
+            <span
+              className={`min-w-[44px] font-mono text-[9px] whitespace-nowrap transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
+              style={{
+                opacity: isPreviewing ? 0.82 : isDark ? 0.3 : 0.42,
+                color: statusColor,
+                fontWeight: isDark ? 'normal' : 500,
+              }}
+            >
+              {statusDisplay.text}
+            </span>
+          </div>
+        ) : null}
 
+        {type === 'orchestrator' ? (
+          <div className="w-full">
+            <ControlPlaneChart
+              cluster={cluster}
+              mode={mode}
+              phase={animationPhase}
+              isFocused={isPreviewing}
+              isDark={isDark}
+              height={bodyHeight}
+            />
+          </div>
+        ) : null}
+
+        {type === 'pipeline' ? (
+          <div className="w-full">
+            <ReplicationPipelineChart
+              cluster={cluster}
+              mode={mode}
+              phase={animationPhase}
+              isFocused={isPreviewing}
+              isDark={isDark}
+              height={bodyHeight}
+            />
+          </div>
+        ) : null}
+
+        {type === 'heatmap' ? (
+          <div className="w-full">
+            <CacheHeatGrid
+              cluster={cluster}
+              mode={mode}
+              phase={animationPhase}
+              isFocused={isPreviewing}
+              isDark={isDark}
+              height={bodyHeight}
+            />
+          </div>
+        ) : null}
+      </div>
+
+      {/* ── Footer ── */}
       {showFooter ? (
         <div
-          className={`h-[18px] overflow-hidden border-t pt-0.5 font-mono text-[7px] leading-tight ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
+          className={`flex shrink-0 items-center overflow-hidden border-t font-mono text-[7px] ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
           style={{
+            height: footerHeight,
             opacity: isPreviewing ? 0.9 : isDark ? 0.42 : 0.56,
             color: visualState === 'normal' ? undefined : effectiveColor,
           }}
@@ -2579,13 +2594,15 @@ function CompositeMetricWidget({
 
       {id === 'traffic_flow' ? (
         <div
-          className={`h-[29px] overflow-hidden border-t pt-1 font-mono text-[8px] leading-3.5 ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
+          className={`h-[33px] overflow-hidden border-t pt-1 font-mono text-[8px] leading-3.5 ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
           style={{
             opacity: isPreviewing ? 0.9 : isDark ? 0.42 : 0.56,
             color: visualState === 'normal' ? undefined : effectiveColor,
           }}
         >
-          {compositeMeta.detail}
+          {compositeMeta.detail.split('\n').map((line, i) => (
+            <div key={i}>{line}</div>
+          ))}
         </div>
       ) : null}
     </div>
