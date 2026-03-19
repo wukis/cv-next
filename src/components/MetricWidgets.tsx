@@ -1980,7 +1980,7 @@ function MetricWidget({
         ) : null}
 
         {type === 'rings' ? (
-          <div className="flex items-center gap-1.5">
+          <div className="relative flex h-full w-full items-center">
             <div className="shrink-0">
               <AvailabilityRings
                 cluster={cluster}
@@ -1992,9 +1992,9 @@ function MetricWidget({
                 size={42}
               />
             </div>
-            <div className="min-w-0 text-right font-mono">
+            <div className="absolute right-0 bottom-0 text-right font-mono">
               <div
-                className="truncate text-[9px] whitespace-nowrap tabular-nums transition-all duration-300"
+                className="text-[9px] whitespace-nowrap tabular-nums transition-all duration-300"
                 style={{
                   color: effectiveColor,
                   opacity: isPreviewing ? 1 : isDark ? 0.34 : 0.48,
@@ -2008,7 +2008,7 @@ function MetricWidget({
                 {value.toFixed(2)}%
               </div>
               <div
-                className={`truncate text-[7px] tracking-[0.1em] uppercase ${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}
+                className={`text-[7px] tracking-[0.1em] whitespace-nowrap uppercase ${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}
                 style={{ opacity: isPreviewing ? 0.68 : 0.42 }}
               >
                 {cluster.readyReplicas}/{cluster.replicaTarget} ready
