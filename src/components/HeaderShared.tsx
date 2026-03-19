@@ -2,9 +2,20 @@ import clsx from 'clsx'
 
 import { recommendationsCopy } from '@/lib/recommendationsCopy'
 
-export const navItems = [
+export type NavChild = { href: string; label: string }
+export type NavItem = {
+  href: string
+  label: string
+  children?: NavChild[]
+}
+
+export const navItems: NavItem[] = [
   { href: '/', label: 'home' },
-  { href: '/about', label: 'about' },
+  {
+    href: '/about',
+    label: 'about',
+    children: [{ href: '/cv', label: 'cv' }],
+  },
   { href: '/experience', label: 'experience' },
   { href: '/recommendations', label: recommendationsCopy.navLabel },
 ]

@@ -9,6 +9,7 @@ import { createPortal } from 'react-dom'
 import {
   CloseIcon,
   headerControlClassName,
+  type NavChild,
   navItems,
   TerminalPromptIcon,
 } from '@/components/HeaderShared'
@@ -17,11 +18,13 @@ function MobileNavItem({
   href,
   label,
   isActive,
+  isParentActive,
   close,
 }: {
   href: string
   label: string
   isActive: boolean
+  isParentActive?: boolean
   close: () => void
 }) {
   return (
@@ -33,7 +36,9 @@ function MobileNavItem({
           'flex min-h-11 items-center gap-2 rounded-sm px-4 py-2.5 font-mono text-sm font-medium transition-colors',
           isActive
             ? 'bg-emerald-500/10 text-emerald-800 shadow-[inset_2px_0_0_0] shadow-emerald-500/50 dark:bg-emerald-400/10 dark:text-emerald-200 dark:shadow-emerald-400/40'
-            : 'text-neutral-800 hover:bg-neutral-100 hover:text-emerald-700 dark:text-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-emerald-300',
+            : isParentActive
+              ? 'text-neutral-800 shadow-[inset_2px_0_0_0] shadow-emerald-500/50 dark:text-neutral-200 dark:shadow-emerald-400/40'
+              : 'text-neutral-800 hover:bg-neutral-100 hover:text-emerald-700 dark:text-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-emerald-300',
         )}
       >
         {isActive ? (
@@ -43,6 +48,46 @@ function MobileNavItem({
       </Link>
     </li>
   )
+}
+
+function MobileSubNavItem({
+  href,
+  label,
+  isActive,
+  close,
+}: {
+  href: string
+  label: string
+  isActive: boolean
+  close: () => void
+}) {
+  return (
+    <li className="ml-4">
+      <Link
+        href={href}
+        onClick={close}
+        className={clsx(
+          'flex min-h-9 items-center gap-1.5 rounded-sm px-3 py-2 font-mono text-xs font-medium transition-colors',
+          isActive
+            ? 'bg-emerald-500/10 text-emerald-600 shadow-[inset_2px_0_0_0] shadow-emerald-500/50 dark:bg-emerald-400/10 dark:text-emerald-400 dark:shadow-emerald-400/40'
+            : 'text-neutral-600 hover:bg-neutral-100 hover:text-emerald-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-emerald-300',
+        )}
+      >
+        <span className="text-emerald-500/50 dark:text-emerald-400/50">└─</span>
+        {isActive ? (
+          <TerminalPromptIcon className="h-3 w-3 shrink-0 text-emerald-500" />
+        ) : null}
+        <span>{label}</span>
+      </Link>
+    </li>
+  )
+}
+
+function hasActiveChild(
+  children: NavChild[] | undefined,
+  pathname: string,
+): boolean {
+  return children?.some((c) => pathname === c.href) ?? false
 }
 
 export default function MobileNavigation({
@@ -162,15 +207,32 @@ export default function MobileNavigation({
 
               <nav className="p-3">
                 <ul className="space-y-1">
-                  {navItems.map((item) => (
-                    <MobileNavItem
-                      key={item.href}
-                      href={item.href}
-                      label={item.label}
-                      isActive={pathname === item.href}
-                      close={close}
-                    />
-                  ))}
+                  {navItems.map((item) => {
+                    const parentActive = hasActiveChild(item.children, pathname)
+                    return (
+                      <li key={item.href} className="space-y-1">
+                        <ul className="space-y-1">
+                          <MobileNavItem
+                            href={item.href}
+                            label={item.label}
+                            isActive={pathname === item.href}
+                            isParentActive={parentActive}
+                            close={close}
+                          />
+                          {parentActive &&
+                            item.children?.map((child) => (
+                              <MobileSubNavItem
+                                key={child.href}
+                                href={child.href}
+                                label={child.label}
+                                isActive={pathname === child.href}
+                                close={close}
+                              />
+                            ))}
+                        </ul>
+                      </li>
+                    )
+                  })}
                 </ul>
               </nav>
             </div>

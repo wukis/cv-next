@@ -10,13 +10,14 @@ import ThemeToggleButton from '@/components/ThemeToggleButton'
 function DesktopNavigation(props: React.ComponentPropsWithoutRef<'nav'>) {
   return (
     <nav {...props}>
-      <div className="flex items-center overflow-hidden rounded-sm bg-white/95 shadow-lg ring-1 shadow-neutral-800/5 ring-neutral-300/70 backdrop-blur-sm dark:bg-neutral-900/95 dark:ring-neutral-700/70">
+      <div className="flex items-center rounded-sm bg-white/95 shadow-lg ring-1 shadow-neutral-800/5 ring-neutral-300/70 backdrop-blur-sm dark:bg-neutral-900/95 dark:ring-neutral-700/70">
         <ul className="flex items-center gap-1 px-2 py-1">
           {navItems.map((item) => (
             <HeaderNavLink
               key={item.href}
               href={item.href}
               label={item.label}
+              {...(item.children ? { children: item.children } : {})}
             />
           ))}
         </ul>
