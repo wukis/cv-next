@@ -48,7 +48,7 @@ export default function CvDownloadButton() {
       <div className="hidden md:block">
         <DesktopTooltip
           label="Download CV"
-          description="Save the latest PDF version of the resume."
+          description="Grab the latest PDF version of my resume."
           align="right"
         >
           <a
@@ -110,10 +110,10 @@ export default function CvDownloadButton() {
                   </div>
                   <div className="min-w-0">
                     <h2 className="font-mono text-sm font-medium text-neutral-800 dark:text-neutral-200">
-                      Save the latest PDF resume
+                      Grab my CV
                     </h2>
                     <p className="mt-1 text-xs leading-5 text-neutral-600 dark:text-neutral-300">
-                      Downloads the CV as a PDF to your device.
+                      Download the latest PDF version to your device.
                     </p>
                   </div>
                 </div>
@@ -131,7 +131,7 @@ export default function CvDownloadButton() {
                     href={CV_PDF_URL}
                     download
                     onClick={() => setIsOpen(false)}
-                    className="inline-flex min-h-11 flex-1 items-center justify-center rounded-sm bg-neutral-800 px-3 py-2 font-mono text-sm font-medium text-neutral-100 transition-colors hover:bg-neutral-700 active:bg-neutral-800 active:text-neutral-100/70 dark:bg-neutral-700 dark:hover:bg-neutral-600 dark:active:bg-neutral-700 dark:active:text-neutral-100/70"
+                    className="inline-flex min-h-11 flex-1 items-center justify-center rounded-sm bg-neutral-900 px-3 py-2 text-sm font-semibold text-neutral-100 outline-offset-2 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-neutral-800 hover:shadow-lg active:bg-neutral-900 active:text-neutral-100/70 active:transition-none dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:active:bg-neutral-800 dark:active:text-neutral-100/70"
                   >
                     Download PDF
                   </a>
