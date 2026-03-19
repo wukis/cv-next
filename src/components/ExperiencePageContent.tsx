@@ -155,8 +155,8 @@ function Education({
       </div>
 
       <div className="min-w-0 flex-1 sm:-mt-1">
-        <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white/90 transition-all duration-300 group-hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-900/90">
-          <div className="flex h-6 items-center justify-between gap-2 border-b border-neutral-300 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
+        <div className="overflow-hidden rounded-sm border border-neutral-200/70 bg-white/95 transition-all duration-300 group-hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-950/95">
+          <div className="flex h-6 items-center justify-between gap-2 border-b border-neutral-200 bg-neutral-50/80 px-4 dark:border-neutral-800 dark:bg-neutral-900">
             <span className="hidden truncate font-mono text-[10px] text-neutral-700 sm:block dark:text-neutral-100">
               ~/education/
               {education.studyType.toLowerCase().replace(/\s+/g, '-')}.md
@@ -189,7 +189,7 @@ function Education({
           <div className="border-b border-neutral-200 p-4 dark:border-neutral-700">
             <div className="flex items-start gap-4">
               <Image
-                className="h-12 w-12 shrink-0 rounded-lg bg-white object-contain p-1 ring-1 ring-neutral-200 dark:ring-neutral-700"
+                className="h-12 w-12 shrink-0 rounded-sm bg-white object-contain p-1 ring-1 ring-neutral-200 dark:ring-neutral-700"
                 width={48}
                 height={48}
                 src={universityImages.vilniausUniversitetas}
@@ -313,8 +313,8 @@ function Work({
             </div>
 
             <div className="min-w-0 flex-1 sm:-mt-1">
-              <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white/90 transition-all duration-300 group-hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-900/90">
-                <div className="flex h-6 items-center justify-between gap-2 border-b border-neutral-300 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
+              <div className="overflow-hidden rounded-sm border border-neutral-200/70 bg-white/95 transition-all duration-300 group-hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-950/95">
+                <div className="flex h-6 items-center justify-between gap-2 border-b border-neutral-200 bg-neutral-50/80 px-4 dark:border-neutral-800 dark:bg-neutral-900">
                   <span className="hidden truncate font-mono text-[10px] text-neutral-700 sm:block dark:text-neutral-100">
                     ~/work/
                     {companyData.company
@@ -356,7 +356,7 @@ function Work({
                 <div className="border-b border-neutral-200 p-4 dark:border-neutral-700">
                   <div className="flex items-start gap-4">
                     <Image
-                      className="h-12 w-12 shrink-0 rounded-lg bg-white object-contain p-1 ring-1 ring-neutral-200 dark:ring-neutral-700"
+                      className="h-12 w-12 shrink-0 rounded-sm bg-white object-contain p-1 ring-1 ring-neutral-200 dark:ring-neutral-700"
                       width={48}
                       height={48}
                       src={getCompanyImage(companyData.image)}
@@ -606,7 +606,7 @@ function Work({
 
 function RecruiterCvHint() {
   return (
-    <div className="mb-8 rounded-2xl border border-neutral-200 bg-white/90 p-4 shadow-xs shadow-neutral-900/5 backdrop-blur-xs sm:p-5 dark:border-neutral-700 dark:bg-neutral-900/90 dark:shadow-none">
+    <div className="mb-8 rounded-sm border border-neutral-200/70 bg-white/95 p-4 shadow-xs shadow-neutral-900/5 backdrop-blur-xs sm:p-5 dark:border-neutral-800 dark:bg-neutral-950/95 dark:shadow-none">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <p className="font-mono text-[11px] tracking-[0.2em] text-emerald-700 uppercase dark:text-emerald-300">
@@ -625,7 +625,7 @@ function RecruiterCvHint() {
         <Button
           href="/cv"
           variant="secondary"
-          className="w-full shrink-0 justify-center rounded-xl border border-neutral-300 bg-neutral-50 px-4 py-3 font-mono text-neutral-900 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 sm:w-auto dark:border-neutral-700 dark:bg-neutral-800/80 dark:text-neutral-100 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-200"
+          className="w-full shrink-0 justify-center rounded-sm border border-neutral-300 bg-neutral-50 px-4 py-3 font-mono text-neutral-900 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 sm:w-auto dark:border-neutral-800 dark:bg-neutral-900/80 dark:text-neutral-100 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-200"
         >
           <DocumentIcon className="h-4 w-4" />
           <span>open CV view</span>

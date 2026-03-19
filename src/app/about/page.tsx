@@ -73,8 +73,8 @@ export default function About() {
         description="A deeper look into who I am"
       />
 
-      <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white/95 dark:border-neutral-700 dark:bg-neutral-900/95">
-        <div className="flex h-6 items-center gap-2 border-b border-neutral-300 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
+      <div className="overflow-hidden rounded-sm border border-neutral-200/70 bg-white/95 dark:border-neutral-800 dark:bg-neutral-950/95">
+        <div className="flex h-6 items-center gap-2 border-b border-neutral-200 bg-neutral-50/80 px-4 dark:border-neutral-800 dark:bg-neutral-900">
           <span className="truncate font-mono text-[10px] text-neutral-700 dark:text-neutral-100">
             ~/about.md
           </span>
@@ -83,8 +83,8 @@ export default function About() {
         <div className="p-5 sm:p-6 lg:p-8">
           <div className="grid grid-cols-1 gap-10 lg:grid-cols-[18rem_minmax(0,1fr)]">
             <aside className="space-y-8">
-              <div className="border-b border-neutral-200 pb-8 dark:border-neutral-700">
-                <div className="mx-auto aspect-[4/4.4] w-full max-w-36 overflow-hidden rounded-xl shadow-lg ring-4 ring-white sm:max-w-56 dark:ring-neutral-800">
+              <div className="border-b border-neutral-200/60 pb-8 dark:border-neutral-800/70">
+                <div className="mx-auto aspect-[4/4.4] w-full max-w-36 overflow-hidden rounded-sm shadow-lg ring-4 ring-white sm:max-w-56 dark:ring-neutral-800">
                   <Image
                     src={portraitImage}
                     alt="Jonas Petrik - Staff Engineer and Team Lead"
@@ -97,8 +97,7 @@ export default function About() {
                 <ProfileSocialLinks />
 
                 <div className="mt-5">
-                  <div className="inline-flex items-center gap-2 font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:text-neutral-300">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
+                  <div className="font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:text-neutral-300">
                     {publicBasics.label}
                   </div>
                   <h2 className="mt-3 text-2xl font-bold tracking-tight text-neutral-800 dark:text-neutral-100">
@@ -114,8 +113,8 @@ export default function About() {
                 </div>
               </div>
 
-              <section className="border-b border-neutral-200 pb-8 dark:border-neutral-700">
-                <h3 className="font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:text-neutral-300">
+              <section className="border-b border-neutral-200/60 pb-8 dark:border-neutral-800/70">
+                <h3 className="border-l-2 border-emerald-500/30 pl-2.5 font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:border-emerald-400/30 dark:text-neutral-300">
                   current role
                 </h3>
                 <p className="mt-3 text-sm font-semibold text-neutral-900 dark:text-neutral-100">
@@ -129,8 +128,8 @@ export default function About() {
                 </p>
               </section>
 
-              <section className="border-b border-neutral-200 pb-8 dark:border-neutral-700">
-                <h3 className="font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:text-neutral-300">
+              <section className="border-b border-neutral-200/60 pb-8 dark:border-neutral-800/70">
+                <h3 className="border-l-2 border-emerald-500/30 pl-2.5 font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:border-emerald-400/30 dark:text-neutral-300">
                   how I work
                 </h3>
                 <ul className="mt-4 space-y-3 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
@@ -152,7 +151,7 @@ export default function About() {
                   <Button
                     href="/cv"
                     variant="secondary"
-                    className="rounded-lg border border-neutral-300 bg-neutral-100 font-mono text-sm text-neutral-800 hover:border-emerald-300 hover:text-emerald-800 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:border-emerald-700 dark:hover:text-emerald-200"
+                    className="rounded-sm border border-neutral-300 bg-neutral-50 font-mono text-sm text-neutral-800 hover:border-emerald-300 hover:text-emerald-800 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:border-emerald-700 dark:hover:text-emerald-200"
                   >
                     <DocumentIcon className="h-4 w-4" />
                     view CV
@@ -160,7 +159,7 @@ export default function About() {
                   <Button
                     href={`mailto:${publicEmail}`}
                     variant="secondary"
-                    className="rounded-lg border border-emerald-300 bg-emerald-50 font-mono text-sm text-emerald-900 hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/70"
+                    className="rounded-sm border border-emerald-300 bg-emerald-50 font-mono text-sm text-emerald-900 hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/70"
                   >
                     <MailIcon className="h-4 w-4" />
                     email
@@ -171,7 +170,7 @@ export default function About() {
 
             <div className="space-y-10">
               <section>
-                <h3 className="font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:text-neutral-300">
+                <h3 className="border-l-2 border-emerald-500/30 pl-2.5 font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:border-emerald-400/30 dark:text-neutral-300">
                   background
                 </h3>
                 <div className="mt-4 space-y-4 text-sm leading-relaxed text-neutral-700 sm:text-base dark:text-neutral-200">
@@ -181,8 +180,8 @@ export default function About() {
                 </div>
               </section>
 
-              <section className="border-t border-neutral-200 pt-8 dark:border-neutral-700">
-                <h3 className="font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:text-neutral-300">
+              <section className="border-t border-neutral-200/60 pt-8 dark:border-neutral-800/70">
+                <h3 className="border-l-2 border-emerald-500/30 pl-2.5 font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:border-emerald-400/30 dark:text-neutral-300">
                   how it started
                 </h3>
                 <div className="mt-4 space-y-4 text-sm leading-relaxed text-neutral-700 sm:text-base dark:text-neutral-200">
@@ -192,8 +191,8 @@ export default function About() {
                 </div>
               </section>
 
-              <section className="border-t border-neutral-200 pt-8 dark:border-neutral-700">
-                <h3 className="font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:text-neutral-300">
+              <section className="border-t border-neutral-200/60 pt-8 dark:border-neutral-800/70">
+                <h3 className="border-l-2 border-emerald-500/30 pl-2.5 font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:border-emerald-400/30 dark:text-neutral-300">
                   current focus
                 </h3>
                 <p className="mt-4 text-sm leading-relaxed text-neutral-700 sm:text-base dark:text-neutral-200">
@@ -213,8 +212,8 @@ export default function About() {
                 </ul>
               </section>
 
-              <section className="border-t border-neutral-200 pt-8 dark:border-neutral-700">
-                <h3 className="font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:text-neutral-300">
+              <section className="border-t border-neutral-200/60 pt-8 dark:border-neutral-800/70">
+                <h3 className="border-l-2 border-emerald-500/30 pl-2.5 font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:border-emerald-400/30 dark:text-neutral-300">
                   different kinds of systems
                 </h3>
                 <p className="mt-4 text-sm leading-relaxed text-neutral-700 sm:text-base dark:text-neutral-200">
@@ -228,7 +227,7 @@ export default function About() {
                   {systemExperience.map((item) => (
                     <article
                       key={item.label}
-                      className="rounded-lg border border-neutral-200 bg-neutral-50/70 p-4 dark:border-neutral-700 dark:bg-neutral-800/40"
+                      className="rounded-sm border border-neutral-200/70 bg-neutral-50/70 p-4 dark:border-neutral-800 dark:bg-neutral-900/50"
                     >
                       <p className="text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
                         <span className="font-semibold text-neutral-900 dark:text-neutral-100">
@@ -241,8 +240,8 @@ export default function About() {
                 </div>
               </section>
 
-              <section className="border-t border-neutral-200 pt-8 dark:border-neutral-700">
-                <h3 className="font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:text-neutral-300">
+              <section className="border-t border-neutral-200/60 pt-8 dark:border-neutral-800/70">
+                <h3 className="border-l-2 border-emerald-500/30 pl-2.5 font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:border-emerald-400/30 dark:text-neutral-300">
                   what matters to me
                 </h3>
                 <div className="mt-4 space-y-4 text-sm leading-relaxed text-neutral-700 sm:text-base dark:text-neutral-200">

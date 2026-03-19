@@ -5,9 +5,9 @@ import { surfaceHoverMotionClassName } from '@/components/interactionStyles'
 
 const variantStyles = {
   primary:
-    'bg-neutral-800 font-semibold text-neutral-100 hover:bg-neutral-700 active:bg-neutral-800 active:text-neutral-100/70 dark:bg-neutral-700 dark:hover:bg-neutral-600 dark:active:bg-neutral-700 dark:active:text-neutral-100/70',
+    'bg-neutral-900 font-semibold text-neutral-100 hover:bg-neutral-800 active:bg-neutral-900 active:text-neutral-100/70 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:active:bg-neutral-800 dark:active:text-neutral-100/70',
   secondary:
-    'bg-neutral-50 font-medium text-neutral-900 hover:bg-neutral-100 active:bg-neutral-100 active:text-neutral-900/60 dark:bg-neutral-800/50 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-50 dark:active:bg-neutral-800/50 dark:active:text-neutral-50/70',
+    'bg-neutral-50 font-medium text-neutral-900 hover:bg-neutral-100 active:bg-neutral-100 active:text-neutral-900/60 dark:bg-neutral-900/50 dark:text-neutral-300 dark:hover:bg-neutral-900 dark:hover:text-neutral-50 dark:active:bg-neutral-900/50 dark:active:text-neutral-50/70',
 }
 
 type ButtonProps = {
@@ -23,7 +23,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   className = clsx(
-    'inline-flex items-center gap-2 justify-center rounded-md py-2 px-3 text-sm outline-offset-2 active:transition-none',
+    'inline-flex items-center gap-2 justify-center rounded-sm py-2 px-3 text-sm outline-offset-2 active:transition-none',
     surfaceHoverMotionClassName,
     variantStyles[variant],
     className,

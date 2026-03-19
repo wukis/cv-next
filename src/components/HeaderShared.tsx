@@ -10,10 +10,10 @@ export const navItems = [
 ]
 
 export const headerControlClassName =
-  'group inline-flex min-h-11 items-center justify-center rounded-lg bg-white/90 text-neutral-800 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-300/70 backdrop-blur-sm transition-colors hover:text-emerald-800 hover:ring-emerald-400/50 dark:bg-neutral-800/90 dark:text-neutral-200 dark:ring-neutral-700/70 dark:hover:text-emerald-200 dark:hover:ring-emerald-400/50'
+  'group inline-flex min-h-11 items-center justify-center rounded-sm bg-white/95 text-neutral-800 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-300/70 backdrop-blur-sm transition-colors hover:text-emerald-700 hover:ring-emerald-500/40 dark:bg-neutral-900/95 dark:text-neutral-200 dark:ring-neutral-700/70 dark:hover:text-emerald-300 dark:hover:ring-emerald-400/40'
 
 export const animationFocusButtonClassName =
-  'group inline-flex min-h-11 items-center justify-center rounded-lg bg-white/90 text-neutral-800 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-300/70 backdrop-blur-sm transition-[color,box-shadow,ring-color] duration-200 hover:text-emerald-800 hover:shadow-lg hover:ring-emerald-400/50 dark:bg-neutral-800/90 dark:text-neutral-200 dark:ring-neutral-700/70 dark:hover:text-emerald-200 dark:hover:ring-emerald-400/50'
+  'group inline-flex min-h-11 items-center justify-center rounded-sm bg-white/95 text-neutral-800 shadow-lg shadow-neutral-800/5 ring-1 ring-neutral-300/70 backdrop-blur-sm transition-[color,box-shadow,ring-color] duration-200 hover:text-emerald-700 hover:shadow-lg hover:ring-emerald-500/40 dark:bg-neutral-900/95 dark:text-neutral-200 dark:ring-neutral-700/70 dark:hover:text-emerald-300 dark:hover:ring-emerald-400/40'
 
 export function DesktopTooltip({
   align = 'center',
@@ -44,7 +44,7 @@ export function DesktopTooltip({
       >
         <span
           className={clsx(
-            'flex max-w-64 min-w-44 flex-col gap-1 rounded-xl border border-emerald-500/15 bg-white/95 px-3 py-2 text-left shadow-xl ring-1 shadow-neutral-900/10 ring-neutral-200/60 backdrop-blur-md transition-all duration-200 ease-out dark:border-emerald-400/15 dark:bg-neutral-900/95 dark:ring-neutral-700/70',
+            'flex max-w-64 min-w-44 flex-col gap-1 rounded-sm border border-emerald-500/15 bg-white/95 px-3 py-2 text-left shadow-xl ring-1 shadow-neutral-900/10 ring-neutral-200/60 backdrop-blur-md transition-all duration-200 ease-out dark:border-emerald-400/15 dark:bg-neutral-950/95 dark:ring-neutral-700/70',
             'translate-y-1 scale-[0.98] opacity-0 group-hover/tooltip:translate-y-0 group-hover/tooltip:scale-100',
             isSuppressed
               ? 'group-hover/tooltip:pointer-events-none group-hover/tooltip:opacity-0'
@@ -88,7 +88,7 @@ export function TerminalPromptIcon({ className }: { className?: string }) {
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className="animate-pulse"
+        className="animate-terminal-caret-slow"
       />
     </svg>
   )

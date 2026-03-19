@@ -111,7 +111,7 @@ function CompanyWorkEntry({ company }: { company: WorkGroup }) {
   const hasPromotion = company.roles.length > 1
 
   return (
-    <article className="cv-company-card rounded-lg border border-neutral-200 bg-white p-5 dark:border-neutral-700 dark:bg-neutral-900 print:break-inside-avoid print:p-3.5">
+    <article className="cv-company-card rounded-sm border border-neutral-200/70 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950 print:break-inside-avoid print:p-3.5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 print:text-[16px]">
@@ -226,7 +226,7 @@ export default function CvPage() {
         />
       </div>
 
-      <div className="rounded-lg border border-neutral-200 bg-white/95 p-6 shadow-xs dark:border-neutral-700 dark:bg-neutral-900/95 print:border-none print:bg-white print:p-0 print:shadow-none">
+      <div className="rounded-sm border border-neutral-200/70 bg-white/95 p-6 shadow-xs dark:border-neutral-800 dark:bg-neutral-950/95 print:border-none print:bg-white print:p-0 print:shadow-none">
         <div className="flex flex-col gap-6 border-b border-neutral-200 pb-6 dark:border-neutral-700 print:gap-3 print:pb-3">
           <div className="hidden border-b border-neutral-200 pb-4 dark:border-neutral-700 print:block print:pb-2.5">
             <div className="grid grid-cols-2 gap-4 text-sm text-neutral-700 print:gap-2 print:text-[12px]">
@@ -309,7 +309,7 @@ export default function CvPage() {
             {selectedImpactStories.map((story) => (
               <article
                 key={story.title}
-                className="rounded-lg border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-950/60 print:break-inside-avoid print:p-2.5"
+                className="rounded-sm border border-neutral-200/70 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950/60 print:break-inside-avoid print:p-2.5"
               >
                 <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100 print:text-[14px]">
                   {story.title}

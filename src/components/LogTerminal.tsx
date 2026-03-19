@@ -476,7 +476,7 @@ export default function LogTerminal() {
   return (
     <div className="pointer-events-none fixed inset-0 z-0 flex items-end justify-center overflow-hidden pb-4">
       <div
-        className="overflow-hidden rounded-lg"
+        className="overflow-hidden rounded-sm"
         style={{
           width: '720px',
           height: '190px',

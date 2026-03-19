@@ -2046,7 +2046,7 @@ export default function EmergencyCallOverlay() {
   return (
     <div className="pointer-events-none fixed bottom-5 left-5 z-10 hidden origin-bottom-left scale-[0.8] xl:block">
       <div
-        className="overflow-hidden rounded-[1.4rem] border shadow-2xl backdrop-blur-xl"
+        className="overflow-hidden rounded-sm border shadow-2xl backdrop-blur-xl"
         style={{
           width: `${CALL_PANEL_WIDTH_REM}rem`,
           backgroundColor: isDark
@@ -2086,7 +2086,7 @@ export default function EmergencyCallOverlay() {
 
         <div className="px-3.5 py-3">
           <div
-            className="relative flex items-center justify-center rounded-2xl border px-2 py-1"
+            className="relative flex items-center justify-center rounded-sm border px-2 py-1"
             style={{
               minHeight: `${participantStageMinHeightRem}rem`,
               backgroundColor: isDark
@@ -2452,7 +2452,7 @@ export default function EmergencyCallOverlay() {
             </div>
             {/* System notice – overlays buttons when active */}
             <div
-              className="relative rounded-[0.9rem] border px-2.5 py-1.5 transition-all duration-300"
+              className="relative rounded-sm border px-2.5 py-1.5 transition-all duration-300"
               style={{
                 opacity: activeSystemNotice && isSystemNoticeVisible ? 1 : 0,
                 transform:
@@ -2499,7 +2499,7 @@ export default function EmergencyCallOverlay() {
           </div>
 
           <div
-            className="mt-1 h-15 rounded-[0.95rem] border px-2 py-1.5"
+            className="mt-1 h-15 rounded-sm border px-2 py-1.5"
             style={{
               backgroundColor: isDark
                 ? 'rgba(15, 23, 42, 0.44)'
@@ -2530,7 +2530,7 @@ export default function EmergencyCallOverlay() {
                 </span>
                 <div className="flex h-full min-w-0 items-center">
                   <div
-                    className="flex w-full items-center rounded-[0.95rem] px-2.5"
+                    className="flex w-full items-center rounded-sm px-2.5"
                     style={{
                       height: `${bubbleTypography.heightRem}rem`,
                       backgroundColor: isDark

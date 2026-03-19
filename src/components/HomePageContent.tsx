@@ -33,8 +33,8 @@ function Highlights() {
 
   return (
     <Container className="mt-8">
-      <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white/95 dark:border-neutral-700 dark:bg-neutral-900/95">
-        <div className="flex h-6 items-center gap-2 border-b border-neutral-300 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
+      <div className="overflow-hidden rounded-sm border border-neutral-200/70 bg-white/95 dark:border-neutral-800 dark:bg-neutral-950/95">
+        <div className="flex h-6 items-center gap-2 border-b border-neutral-200 bg-neutral-50/80 px-4 dark:border-neutral-800 dark:bg-neutral-900">
           <span className="truncate font-mono text-[10px] text-neutral-700 dark:text-neutral-100">
             ~/impact-report.md
           </span>
@@ -53,7 +53,7 @@ function Highlights() {
 
           <div className="mt-8 grid grid-cols-1 gap-10 xl:grid-cols-[18rem_minmax(0,1fr)]">
             <aside>
-              <h3 className="font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:text-neutral-300">
+              <h3 className="border-l-2 border-emerald-500/30 pl-2.5 font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:border-emerald-400/30 dark:text-neutral-300">
                 impact at a glance
               </h3>
               <dl className="mt-4 border-t border-neutral-200 dark:border-neutral-700">
@@ -77,7 +77,7 @@ function Highlights() {
             </aside>
 
             <section>
-              <h3 className="font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:text-neutral-300">
+              <h3 className="border-l-2 border-emerald-500/30 pl-2.5 font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:border-emerald-400/30 dark:text-neutral-300">
                 selected impact
               </h3>
 
@@ -159,7 +159,7 @@ function RecommendationsPreview() {
       <div className="mt-8 flex justify-end">
         <Link
           href="/recommendations"
-          className="inline-flex items-center gap-2 rounded-lg border border-neutral-300 bg-neutral-100 px-4 py-2 font-mono text-sm text-neutral-800 transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:text-emerald-800 hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:border-emerald-700 dark:hover:text-emerald-200"
+          className="inline-flex items-center gap-2 rounded-sm border border-neutral-300 bg-neutral-50 px-4 py-2 font-mono text-sm text-neutral-800 transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:text-emerald-800 hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:border-emerald-700 dark:hover:text-emerald-200"
         >
           <span>view all recommendations</span>
           <svg
@@ -190,10 +190,10 @@ function Recommendation({
   return (
     <Link
       href={`/recommendations#${recommendation.slug}`}
-      className="group block overflow-hidden rounded-lg border border-neutral-200 bg-white/85 transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-900/85 dark:hover:border-emerald-700"
+      className="group block overflow-hidden rounded-sm border border-neutral-200/70 bg-white/90 transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-950/90 dark:hover:border-emerald-700"
     >
       {/* Terminal header */}
-      <div className="flex h-6 items-center gap-2 border-b border-neutral-300 bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-800">
+      <div className="flex h-6 items-center gap-2 border-b border-neutral-200 bg-neutral-50/80 dark:border-neutral-800 dark:bg-neutral-900">
         <span className="truncate px-4 font-mono text-[10px] text-neutral-700 dark:text-neutral-100">
           ~/{recommendationsCopy.directoryName}/{recommendation.slug}.md
         </span>
@@ -212,7 +212,7 @@ function Recommendation({
           </blockquote>
           <figcaption className="mt-4 flex items-center gap-3">
             <Image
-              className="h-9 w-9 shrink-0 rounded-lg object-cover ring-2 ring-white dark:ring-neutral-800"
+              className="h-9 w-9 shrink-0 rounded-sm object-cover ring-2 ring-white dark:ring-neutral-800"
               width={36}
               height={36}
               src={getRecommendationImage(recommendation.image)}
@@ -239,8 +239,8 @@ function Recommendation({
 function HomeHeroCard() {
   return (
     <Container className="mt-10 sm:mt-16">
-      <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white/95 dark:border-neutral-700 dark:bg-neutral-900/95">
-        <div className="flex h-6 items-center gap-2 border-b border-neutral-300 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
+      <div className="overflow-hidden rounded-sm border border-neutral-200/70 bg-white/95 dark:border-neutral-800 dark:bg-neutral-950/95">
+        <div className="flex h-6 items-center gap-2 border-b border-neutral-200 bg-neutral-50/80 px-4 dark:border-neutral-800 dark:bg-neutral-900">
           <span className="truncate font-mono text-[10px] text-neutral-700 dark:text-neutral-100">
             ~/README.md
           </span>
@@ -249,7 +249,7 @@ function HomeHeroCard() {
         <div className="p-5 sm:p-6">
           <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
             <div className="shrink-0">
-              <div className="h-36 w-36 overflow-hidden rounded-xl shadow-lg ring-4 ring-white sm:h-40 sm:w-40 lg:h-48 lg:w-48 dark:ring-neutral-800">
+              <div className="h-36 w-36 overflow-hidden rounded-sm shadow-lg ring-4 ring-white sm:h-40 sm:w-40 lg:h-48 lg:w-48 dark:ring-neutral-800">
                 <Image
                   src={portraitImage}
                   alt="Jonas Petrik - Staff Engineer and Team Lead"
@@ -264,8 +264,7 @@ function HomeHeroCard() {
 
             <div className="min-w-0 flex-1 text-center sm:text-left">
               <div className="mb-3">
-                <span className="inline-flex items-center gap-2 font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:text-neutral-300">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
+                <span className="font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:text-neutral-300">
                   {publicBasics.label}
                 </span>
               </div>
@@ -278,7 +277,7 @@ function HomeHeroCard() {
                 ))}
               </div>
               <div className="mt-4 flex justify-center sm:justify-start">
-                <p className="inline-flex items-center rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 font-mono text-[11px] text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800/80 dark:text-neutral-300">
+                <p className="inline-flex items-center rounded-sm border border-neutral-200/70 bg-neutral-50 px-3 py-1.5 font-mono text-[11px] text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900/80 dark:text-neutral-300">
                   {totalPublicExperienceYears}+ years across fullstack
                   engineering, architecture, DevOps, and team leadership
                 </p>
@@ -288,7 +287,7 @@ function HomeHeroCard() {
                 <Button
                   href="/cv"
                   variant="secondary"
-                  className="rounded-lg border border-neutral-300 bg-neutral-100 font-mono text-neutral-900 hover:border-emerald-300 hover:text-emerald-800 dark:border-neutral-700 dark:bg-neutral-800/50 dark:text-neutral-100 dark:hover:border-emerald-700 dark:hover:text-emerald-200"
+                  className="rounded-sm border border-neutral-300 bg-neutral-50 font-mono text-neutral-900 hover:border-emerald-300 hover:text-emerald-800 dark:border-neutral-800 dark:bg-neutral-900/50 dark:text-neutral-100 dark:hover:border-emerald-700 dark:hover:text-emerald-200"
                 >
                   <DocumentIcon className="h-4 w-4" />
                   <span>view CV</span>
@@ -296,7 +295,7 @@ function HomeHeroCard() {
                 <Button
                   href={`mailto:${publicEmail}`}
                   variant="secondary"
-                  className="rounded-lg border border-emerald-300 bg-emerald-50 font-mono text-emerald-900 hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/70"
+                  className="rounded-sm border border-emerald-300 bg-emerald-50 font-mono text-emerald-900 hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/70"
                 >
                   <MailIcon className="h-4 w-4" />
                   <span>email</span>

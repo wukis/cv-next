@@ -94,8 +94,8 @@ function TerminalPrompt({
 
   return (
     <Component className={className}>
-      <span className="inline-flex max-w-full items-stretch overflow-hidden rounded-lg border border-neutral-200/80 bg-white/80 align-middle shadow-xs shadow-neutral-800/5 dark:border-neutral-700 dark:bg-neutral-900/75">
-        <span className="flex items-center gap-1.5 border-r border-neutral-200 bg-neutral-100 px-2 py-1 text-emerald-700 sm:gap-2 sm:px-3 sm:py-2 dark:border-neutral-800 dark:bg-neutral-950 dark:text-emerald-300">
+      <span className="inline-flex max-w-full items-stretch overflow-hidden rounded-sm border border-neutral-200/80 bg-white/90 align-middle shadow-xs shadow-neutral-800/5 dark:border-neutral-800 dark:bg-neutral-950/80">
+        <span className="flex items-center gap-1.5 border-r border-neutral-200 bg-neutral-50/80 px-2 py-1 text-emerald-700 sm:gap-2 sm:px-3 sm:py-2 dark:border-neutral-800 dark:bg-neutral-950 dark:text-emerald-300">
           <span className="font-mono text-[0.56em] leading-none sm:text-[0.72em]">
             &gt;
           </span>

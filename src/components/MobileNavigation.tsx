@@ -30,19 +30,16 @@ function MobileNavItem({
         href={href}
         onClick={close}
         className={clsx(
-          'flex min-h-11 items-center gap-3 rounded-lg px-4 py-2.5 font-mono text-sm font-medium transition-colors',
+          'flex min-h-11 items-center gap-2 rounded-sm px-4 py-2.5 font-mono text-sm font-medium transition-colors',
           isActive
-            ? 'bg-emerald-500/15 text-emerald-900 dark:bg-emerald-400/20 dark:text-emerald-100'
-            : 'text-neutral-800 hover:bg-neutral-100 hover:text-emerald-800 dark:text-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-emerald-200',
+            ? 'bg-emerald-500/10 text-emerald-800 shadow-[inset_2px_0_0_0] shadow-emerald-500/50 dark:bg-emerald-400/10 dark:text-emerald-200 dark:shadow-emerald-400/40'
+            : 'text-neutral-800 hover:bg-neutral-100 hover:text-emerald-700 dark:text-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-emerald-300',
         )}
       >
-        <span
-          className={clsx(
-            'h-1.5 w-1.5 rounded-full',
-            isActive ? 'bg-current' : 'bg-neutral-400 dark:bg-neutral-500',
-          )}
-        />
-        <span>~/{label}</span>
+        {isActive ? (
+          <TerminalPromptIcon className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+        ) : null}
+        <span>{label}</span>
       </Link>
     </li>
   )
@@ -148,26 +145,18 @@ export default function MobileNavigation({
               onClick={close}
               aria-hidden="true"
             />
-            <div className="fixed inset-x-4 top-4 z-70 overflow-hidden rounded-lg bg-white shadow-2xl ring-1 ring-neutral-200 dark:bg-neutral-900 dark:ring-neutral-700">
-              <div className="flex min-h-11 items-center justify-between border-b border-neutral-200 bg-neutral-100 px-4 dark:border-neutral-700 dark:bg-neutral-800">
-                <Link
-                  href="/"
-                  onClick={close}
-                  className="-ml-1 inline-flex min-h-11 items-center gap-2 rounded-sm px-2 py-1 transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-700"
-                  aria-label="Go to home"
-                >
-                  <TerminalPromptIcon className="h-4 w-4 text-emerald-500" />
-                  <span className="font-mono text-[10px] text-neutral-700 dark:text-neutral-200">
-                    ~/navigation
-                  </span>
-                </Link>
+            <div className="fixed inset-x-4 top-4 z-70 overflow-hidden rounded-sm bg-white shadow-2xl ring-1 ring-neutral-200 dark:bg-neutral-950 dark:ring-neutral-800">
+              <div className="flex h-6 items-center justify-between border-b border-neutral-200 bg-neutral-50/80 px-4 dark:border-neutral-800 dark:bg-neutral-900">
+                <span className="font-mono text-[10px] text-neutral-700 dark:text-neutral-100">
+                  ~/navigation
+                </span>
                 <button
                   type="button"
                   onClick={close}
                   aria-label="Close menu"
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-sm transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                  className="-mr-2 inline-flex h-6 w-6 items-center justify-center rounded-sm transition-colors hover:bg-neutral-200 dark:hover:bg-neutral-700"
                 >
-                  <CloseIcon className="h-5 w-5 text-neutral-700 dark:text-neutral-200" />
+                  <CloseIcon className="h-3.5 w-3.5 text-neutral-500 dark:text-neutral-400" />
                 </button>
               </div>
 

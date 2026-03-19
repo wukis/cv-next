@@ -159,7 +159,7 @@ export function drawInfoPanel(
     y,
     width,
     height,
-    radius = 12,
+    radius = 3,
     isDark,
     opacity,
     accentColor,

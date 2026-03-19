@@ -39,12 +39,12 @@
 
 @layer base {
   :root {
-    --selection-background: rgba(16, 185, 129, 0.28);
+    --selection-background: rgba(16, 185, 129, 0.22);
     --selection-color: #022c22;
   }
 
   .dark {
-    --selection-background: rgba(52, 211, 153, 0.38);
+    --selection-background: rgba(52, 211, 153, 0.3);
     --selection-color: #ecfdf5;
   }
 
@@ -110,6 +110,10 @@
     animation: terminalCaretBlink 0.65s steps(1, end) infinite;
   }
 
+  .animate-terminal-caret-slow {
+    animation: terminalCaretBlink 1.2s steps(1, end) infinite;
+  }
+
   /* Animation focus mode - makes content transparent to show background animation */
 }
 @layer utilities {
@@ -125,7 +129,8 @@
     animation: none;
   }
 
-  .animate-terminal-caret {
+  .animate-terminal-caret,
+  .animate-terminal-caret-slow {
     animation: none;
   }
 }

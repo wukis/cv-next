@@ -15,7 +15,7 @@ function MailIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   )
 }
 
-const socialLinkClassName = `rounded-md border border-neutral-300 bg-neutral-100 p-1.5 text-neutral-700 hover:border-neutral-400 hover:bg-neutral-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:border-neutral-600 dark:hover:bg-neutral-700 ${surfaceHoverMotionClassName}`
+const socialLinkClassName = `rounded-sm border border-neutral-300 bg-neutral-50 p-1.5 text-neutral-700 hover:border-neutral-400 hover:bg-neutral-100 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-neutral-600 dark:hover:bg-neutral-800 ${surfaceHoverMotionClassName}`
 
 export function ProfileSocialLinks() {
   const socialLinks = new Map(

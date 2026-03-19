@@ -475,7 +475,7 @@ function TargetFanoutChart({
   width?: number
   height?: number
 }) {
-  const totalNodes = 8
+  const totalNodes = 6
   const activeNodes = clamp(cluster.loadBalancerTargets.length, 0, totalNodes)
   const [blinkNode, setBlinkNode] = useState<number | null>(null)
 
@@ -492,11 +492,16 @@ function TargetFanoutChart({
 
   const centerX = 18
   const centerY = height / 2
-  const columns = [65, 85]
-  const rows = [height * 0.14, height * 0.36, height * 0.58, height * 0.86]
+  const columns = [62, 82]
+  const rows = [height * 0.2, height * 0.5, height * 0.8]
 
   return (
-    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
+    <svg
+      width="100%"
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      className="overflow-hidden"
+    >
       {rows.flatMap((y, rowIndex) =>
         columns.map((x, columnIndex) => {
           const nodeIndex = rowIndex * columns.length + columnIndex
@@ -1906,7 +1911,7 @@ function MetricWidget({
 
   return (
     <div
-      className={`relative flex h-[120px] w-[124px] flex-col rounded-xl border px-2.5 pt-2 backdrop-blur-xs transition-all duration-300 ease-out ${visible ? 'translate-y-0' : 'translate-y-2 opacity-0'} ${borderColor} ${bgColor} ${isPreviewing && visualState === 'error' ? 'animate-pulse' : ''} `}
+      className={`relative flex h-[120px] w-[124px] flex-col rounded-sm border px-2.5 pt-2 backdrop-blur-xs transition-all duration-300 ease-out ${visible ? 'translate-y-0' : 'translate-y-2 opacity-0'} ${borderColor} ${bgColor} ${isPreviewing && visualState === 'error' ? 'animate-pulse' : ''} `}
       style={{
         boxShadow: isDark
           ? 'inset 0 1px 0 rgba(148, 163, 184, 0.08)'
@@ -2666,7 +2671,7 @@ function CompositeMetricWidget({
 
   return (
     <div
-      className={`relative flex w-[258px] flex-col gap-2 rounded-xl border px-3 py-2.5 backdrop-blur-xs transition-all duration-300 ease-out ${visible ? 'translate-y-0' : 'translate-y-2 opacity-0'} ${borderColor} ${bgColor} ${isPreviewing && visualState === 'error' ? 'animate-pulse' : ''} `}
+      className={`relative flex w-[258px] flex-col gap-2 rounded-sm border px-3 py-2.5 backdrop-blur-xs transition-all duration-300 ease-out ${visible ? 'translate-y-0' : 'translate-y-2 opacity-0'} ${borderColor} ${bgColor} ${isPreviewing && visualState === 'error' ? 'animate-pulse' : ''} `}
       style={{
         boxShadow: isDark
           ? 'inset 0 1px 0 rgba(148, 163, 184, 0.08)'
@@ -2712,7 +2717,7 @@ function CompositeMetricWidget({
 
       {id === 'traffic_flow' ? (
         <div className="grid grid-cols-[72px_minmax(0,1fr)] gap-3">
-          <div className="flex flex-col justify-between rounded-lg border border-white/5 bg-black/5 px-2.5 py-2">
+          <div className="flex flex-col justify-between rounded-sm border border-white/5 bg-black/5 px-2.5 py-2">
             <span
               className="font-mono text-[7px] tracking-[0.16em] uppercase"
               style={{
@@ -2741,7 +2746,7 @@ function CompositeMetricWidget({
           </div>
 
           <div className="flex min-w-0 flex-col gap-2">
-            <div className="rounded-lg border border-white/5 bg-black/5 px-2 py-1.5">
+            <div className="rounded-sm border border-white/5 bg-black/5 px-2 py-1.5">
               <div className="mb-1 flex items-center justify-between gap-2">
                 <span
                   className="font-mono text-[7px] tracking-[0.16em] uppercase"
@@ -2765,7 +2770,7 @@ function CompositeMetricWidget({
                 isDark={isDark}
               />
             </div>
-            <div className="rounded-lg border border-white/5 bg-black/5 px-2 py-1.5">
+            <div className="rounded-sm border border-white/5 bg-black/5 px-2 py-1.5">
               <div className="mb-1 flex items-center justify-between gap-2">
                 <span
                   className="font-mono text-[7px] tracking-[0.16em] uppercase"
@@ -2795,7 +2800,7 @@ function CompositeMetricWidget({
 
       {id === 'capacity' ? (
         <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 rounded-lg border border-white/5 bg-black/5 px-2 py-1">
+          <div className="flex items-center gap-2 rounded-sm border border-white/5 bg-black/5 px-2 py-1">
             <div className="flex shrink-0 items-baseline gap-1.5">
               <span
                 className="font-mono text-[7px] tracking-[0.16em] uppercase"
@@ -2846,7 +2851,7 @@ function CompositeMetricWidget({
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <div className="flex flex-col items-center gap-1 rounded-lg border border-white/5 bg-black/5 px-2 py-1.5">
+            <div className="flex flex-col items-center gap-1 rounded-sm border border-white/5 bg-black/5 px-2 py-1.5">
               <div className="flex w-full items-center justify-between">
                 <span
                   className="font-mono text-[7px] tracking-[0.16em] uppercase"
@@ -2882,7 +2887,7 @@ function CompositeMetricWidget({
                 isDark={isDark}
               />
             </div>
-            <div className="flex flex-col items-center gap-1 rounded-lg border border-white/5 bg-black/5 px-2 py-1.5">
+            <div className="flex flex-col items-center gap-1 rounded-sm border border-white/5 bg-black/5 px-2 py-1.5">
               <div className="flex w-full items-center justify-between">
                 <span
                   className="font-mono text-[7px] tracking-[0.16em] uppercase"

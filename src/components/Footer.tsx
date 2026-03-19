@@ -14,7 +14,7 @@ function NavLink({
   return (
     <Link
       href={href}
-      className="inline-flex min-h-11 items-center rounded-md px-2 text-neutral-700 transition-colors hover:bg-neutral-100 hover:text-blue-600 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-blue-300"
+      className="inline-flex min-h-11 items-center rounded-sm px-2 text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-blue-600 dark:text-neutral-300 dark:hover:bg-neutral-900 dark:hover:text-blue-300"
     >
       {children}
     </Link>

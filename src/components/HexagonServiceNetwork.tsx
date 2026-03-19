@@ -3803,7 +3803,7 @@ const HexagonServiceNetwork: React.FC = () => {
             labelY - pillHeight / 2,
             pillWidth,
             pillHeight,
-            pillHeight / 2,
+            3,
           )
           ctx.fillStyle = isDark
             ? `rgba(2, 6, 23, ${0.74 * labelOpacity})`
@@ -4319,7 +4319,7 @@ const HexagonServiceNetwork: React.FC = () => {
           y: panelPosition.y,
           width: panelWidth,
           height: panelHeight,
-          radius: 10,
+          radius: 3,
           isDark,
           opacity: panelOpacity,
           accentColor: panelAccent,
@@ -4491,7 +4491,7 @@ const HexagonServiceNetwork: React.FC = () => {
             return (
               <div
                 key={toast.id}
-                className="pointer-events-auto flex min-h-[6.75rem] w-full flex-col overflow-hidden rounded-2xl border px-4 py-3 shadow-2xl backdrop-blur-md transition-[opacity,transform] duration-300 ease-out will-change-[opacity,transform]"
+                className="pointer-events-auto flex min-h-[6.75rem] w-full flex-col overflow-hidden rounded-sm border px-4 py-3 shadow-2xl backdrop-blur-md transition-[opacity,transform] duration-300 ease-out will-change-[opacity,transform]"
                 style={{
                   opacity: toast.exitingAt === null ? 1 : 0,
                   transform:

@@ -2,8 +2,6 @@
 
 import { Children, useMemo, useState } from 'react'
 
-import { surfaceHoverMotionClassName } from '@/components/interactionStyles'
-
 export function TechStackDisclosure({
   children,
   contentId,
@@ -20,13 +18,13 @@ export function TechStackDisclosure({
   )
 
   return (
-    <div className="border-t border-neutral-200 bg-neutral-100/95 dark:border-neutral-700 dark:bg-neutral-800/85">
+    <div className="border-t border-neutral-200 bg-neutral-50/95 dark:border-neutral-800 dark:bg-neutral-900/90">
       <button
         type="button"
-        className={`flex w-full items-center justify-between gap-2 px-4 py-3 text-left focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden dark:focus-visible:ring-offset-black ${surfaceHoverMotionClassName} ${
+        className={`flex min-h-[52px] w-full cursor-pointer items-center justify-between gap-2 px-4 py-3 text-left transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-hidden dark:focus-visible:ring-offset-black ${
           tone === 'plain'
-            ? 'hover:bg-neutral-100/50 focus-visible:ring-neutral-400 focus-visible:ring-offset-white dark:hover:bg-neutral-800/20'
-            : 'hover:bg-neutral-200/80 focus-visible:ring-emerald-500 focus-visible:ring-offset-white dark:hover:bg-neutral-700/60'
+            ? 'hover:bg-neutral-100/50 focus-visible:ring-neutral-400 focus-visible:ring-offset-white dark:hover:bg-neutral-800/30'
+            : 'hover:bg-neutral-100/80 focus-visible:ring-emerald-500 focus-visible:ring-offset-white dark:hover:bg-neutral-800/60'
         }`}
         onClick={() => setIsExpanded((current) => !current)}
         aria-expanded={isExpanded}
