@@ -35,6 +35,7 @@ type CallParticipant = {
 type ParticipantScheduleEntry = {
   included: boolean
   optional: boolean
+  departing: boolean
   joinAt: number
   leaveAt: number
 }
@@ -98,6 +99,8 @@ const CALL_PANEL_WIDTH_REM = 19
 const MANUAL_REPEAT_WINDOW_MS = 45_000
 const WINDING_FIRST_DROP_DELAY_MS = 8_000
 const WINDING_DROP_SPACING_MS = 6_500
+const TRANSITION_FIRST_DEPARTURE_MS = 3_500
+const TRANSITION_DEPARTURE_SPACING_MS = 2_800
 const WINDING_FINAL_OWNER_LINGER_MS = 11_000
 const FINAL_OWNER_ID = 'jp'
 
@@ -435,6 +438,46 @@ const MANUAL_REPEAT_REACTIONS: ScriptLine[] = [
     text: 'I was literally about to close the tabs.',
   },
 ]
+
+const DEPARTURE_LINES: Record<string, string[]> = {
+  sr: [
+    'Not my area, I will drop off. Ping me if it escalates.',
+    'I am not needed for this one. Hopping off.',
+  ],
+  be: [
+    'Basket looks fine. Dropping off, shout if you need me.',
+    'Not seeing basket impact. I will leave you to it.',
+  ],
+  db: [
+    'Data side is quiet. I will free up the slot.',
+    'DB is holding steady. Dropping off.',
+  ],
+  ed: ['Edge is clean. I will step out.', 'Nothing on my end. Hopping off.'],
+  au: [
+    'Auth looks good. I will leave you to it.',
+    'Not seeing auth issues. Dropping off.',
+  ],
+  ca: [
+    'Catalog is fine. I will drop.',
+    'Not a cache thing this time. Stepping out.',
+  ],
+  wh: [
+    'Warehouse is quiet. Dropping off.',
+    'Stock jobs look normal. I will hop off.',
+  ],
+  td: [
+    'Sounds handled. I will check back in a bit.',
+    'Different beast from last one. Let me know if it widens.',
+  ],
+  md: [
+    'Okay, sounds contained. I will check back later.',
+    'Stepping out, keep me posted.',
+  ],
+  ic: [
+    'Switching context. Different crew for this one.',
+    'Okay, different scenario. Trimming the room.',
+  ],
+}
 
 const CALL_SCRIPT: Record<
   EmergencyScenarioKey,
@@ -1013,17 +1056,68 @@ function buildParticipantSchedule(
     previousLeaveOffset = targetOffset
   })
 
+  const departingIds: string[] = []
+  if (previousSchedule) {
+    for (const participant of PARTICIPANTS) {
+      if (includedIds.has(participant.id)) {
+        continue
+      }
+
+      const prev = previousSchedule[participant.id]
+      if (!prev || !prev.included) {
+        continue
+      }
+
+      if (prev.departing) {
+        continue
+      }
+
+      const wasConnected =
+        prev.joinAt <= cycleStartedAt && prev.leaveAt > cycleStartedAt
+      if (wasConnected) {
+        departingIds.push(participant.id)
+      }
+    }
+  }
+
   return Object.fromEntries(
     PARTICIPANTS.map((participant, index) => {
       const previousEntry = previousSchedule?.[participant.id]
       const included = includedIds.has(participant.id)
 
       if (!included) {
+        const departureIndex = departingIds.indexOf(participant.id)
+
+        if (departureIndex >= 0 && previousEntry) {
+          return [
+            participant.id,
+            {
+              included: true,
+              optional: false,
+              departing: true,
+              joinAt: previousEntry.joinAt,
+              leaveAt:
+                cycleStartedAt +
+                TRANSITION_FIRST_DEPARTURE_MS +
+                departureIndex * TRANSITION_DEPARTURE_SPACING_MS,
+            },
+          ]
+        }
+
+        if (
+          previousEntry?.departing &&
+          previousEntry.included &&
+          previousEntry.leaveAt > cycleStartedAt
+        ) {
+          return [participant.id, { ...previousEntry }]
+        }
+
         return [
           participant.id,
           {
             included: false,
             optional: false,
+            departing: false,
             joinAt: cycleStartedAt,
             leaveAt: cycleStartedAt,
           },
@@ -1053,6 +1147,7 @@ function buildParticipantSchedule(
         {
           included: true,
           optional: isOptional,
+          departing: false,
           joinAt,
           leaveAt:
             holdUntil +
@@ -1099,6 +1194,7 @@ export default function EmergencyCallOverlay() {
   const previousParticipantRectsRef = useRef<Record<string, DOMRect>>({})
   const lastEmergencyEndedAtRef = useRef<number | null>(null)
   const consecutiveManualEmergencyCountRef = useRef(0)
+  const departureChatterShownRef = useRef<Set<string>>(new Set())
 
   const checkScreenSize = useCallback(() => {
     setShouldRender(getShouldRenderEmergencyCall())
@@ -1245,13 +1341,16 @@ export default function EmergencyCallOverlay() {
       const leaveAt = schedule.leaveAt
       const hasJoined = currentTime >= joinedAt
       const isConnected = hasJoined && currentTime < leaveAt
+      const isDeparting = schedule.departing
       const isVisible =
         hasJoined &&
-        (phase !== 'winding' ||
-          currentTime < leaveAt + PARTICIPANT_EXIT_ANIMATION_MS)
+        (isDeparting
+          ? currentTime < leaveAt + PARTICIPANT_EXIT_ANIMATION_MS
+          : phase !== 'winding' ||
+            currentTime < leaveAt + PARTICIPANT_EXIT_ANIMATION_MS)
       const isJoining = hasJoined && currentTime - joinedAt < 1_600
       const isDropping =
-        phase === 'winding' &&
+        (isDeparting || phase === 'winding') &&
         currentTime >= leaveAt - 1_800 &&
         currentTime < leaveAt + PARTICIPANT_EXIT_ANIMATION_MS
 
@@ -1735,6 +1834,59 @@ export default function EmergencyCallOverlay() {
 
     previousConnectedIdsRef.current = currentConnectedIds
   }, [connectedParticipants, enqueueSystemNotice, session])
+
+  useEffect(() => {
+    if (!session) {
+      departureChatterShownRef.current = new Set()
+      return
+    }
+
+    const departingParticipant = participants.find((participant) => {
+      const schedule = session.participantSchedule[participant.id]
+      return (
+        schedule?.departing &&
+        participant.isConnected &&
+        !departureChatterShownRef.current.has(participant.id)
+      )
+    })
+
+    if (!departingParticipant) {
+      return
+    }
+
+    departureChatterShownRef.current.add(departingParticipant.id)
+    const lines = DEPARTURE_LINES[departingParticipant.id]
+    if (!lines || lines.length === 0) {
+      return
+    }
+
+    const lineIndex = Math.floor(currentTime / 1000) % lines.length
+    const line = getRequiredArrayItem(
+      lines,
+      lineIndex,
+      'Expected a seeded departure line.',
+    )
+    const timeoutId = window.setTimeout(() => {
+      setTransientBubble((current) => {
+        if (
+          current?.participantId === departingParticipant.id &&
+          current.text === line
+        ) {
+          return current
+        }
+
+        return {
+          kind: 'chat',
+          participantId: departingParticipant.id,
+          initials: departingParticipant.initials,
+          text: line,
+          durationMs: 2_800,
+        }
+      })
+    }, 800)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [currentTime, participants, session])
 
   useEffect(() => {
     if (!transientBubble) {
@@ -2255,44 +2407,66 @@ export default function EmergencyCallOverlay() {
                 pointerEvents: 'none',
               }}
             >
-              {/* Mic */}
+              {/* Mic – unmuted when JP speaks, muted otherwise */}
+              {(() => {
+                const jpSpeaking = activeSpeakerId === FINAL_OWNER_ID
+                return (
+                  <div
+                    className="flex h-[1.85rem] w-[1.85rem] items-center justify-center rounded-full transition-colors duration-300"
+                    style={{
+                      backgroundColor: jpSpeaking
+                        ? isDark
+                          ? 'rgba(30, 41, 59, 0.5)'
+                          : 'rgba(241, 245, 249, 0.82)'
+                        : isDark
+                          ? 'rgba(239, 68, 68, 0.25)'
+                          : 'rgba(239, 68, 68, 0.14)',
+                      border: `1px solid ${
+                        jpSpeaking
+                          ? isDark
+                            ? 'rgba(148, 163, 184, 0.12)'
+                            : 'rgba(148, 163, 184, 0.16)'
+                          : isDark
+                            ? 'rgba(239, 68, 68, 0.25)'
+                            : 'rgba(239, 68, 68, 0.18)'
+                      }`,
+                    }}
+                  >
+                    <svg
+                      width="11"
+                      height="11"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke={
+                        jpSpeaking
+                          ? isDark
+                            ? 'rgba(191, 219, 254, 0.7)'
+                            : 'rgba(71, 85, 105, 0.7)'
+                          : isDark
+                            ? 'rgba(248, 113, 113, 0.8)'
+                            : 'rgba(220, 38, 38, 0.7)'
+                      }
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="9" y="1" width="6" height="13" rx="3" />
+                      <path d="M19 10v1a7 7 0 0 1-14 0v-1" />
+                      <line x1="12" y1="19" x2="12" y2="23" />
+                      <line x1="8" y1="23" x2="16" y2="23" />
+                      {!jpSpeaking && <line x1="1" y1="1" x2="23" y2="23" />}
+                    </svg>
+                  </div>
+                )
+              })()}
+              {/* Camera – always disabled (no video in voice call) */}
               <div
                 className="flex h-[1.85rem] w-[1.85rem] items-center justify-center rounded-full"
                 style={{
                   backgroundColor: isDark
-                    ? 'rgba(30, 41, 59, 0.5)'
-                    : 'rgba(241, 245, 249, 0.82)',
-                  border: `1px solid ${isDark ? 'rgba(148, 163, 184, 0.12)' : 'rgba(148, 163, 184, 0.16)'}`,
-                }}
-              >
-                <svg
-                  width="11"
-                  height="11"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke={
-                    isDark
-                      ? 'rgba(191, 219, 254, 0.7)'
-                      : 'rgba(71, 85, 105, 0.7)'
-                  }
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="9" y="1" width="6" height="13" rx="3" />
-                  <path d="M19 10v1a7 7 0 0 1-14 0v-1" />
-                  <line x1="12" y1="19" x2="12" y2="23" />
-                  <line x1="8" y1="23" x2="16" y2="23" />
-                </svg>
-              </div>
-              {/* Camera */}
-              <div
-                className="flex h-[1.85rem] w-[1.85rem] items-center justify-center rounded-full"
-                style={{
-                  backgroundColor: isDark
-                    ? 'rgba(30, 41, 59, 0.5)'
-                    : 'rgba(241, 245, 249, 0.82)',
-                  border: `1px solid ${isDark ? 'rgba(148, 163, 184, 0.12)' : 'rgba(148, 163, 184, 0.16)'}`,
+                    ? 'rgba(239, 68, 68, 0.25)'
+                    : 'rgba(239, 68, 68, 0.14)',
+                  border: `1px solid ${isDark ? 'rgba(239, 68, 68, 0.25)' : 'rgba(239, 68, 68, 0.18)'}`,
                 }}
               >
                 <svg
@@ -2302,8 +2476,8 @@ export default function EmergencyCallOverlay() {
                   fill="none"
                   stroke={
                     isDark
-                      ? 'rgba(191, 219, 254, 0.7)'
-                      : 'rgba(71, 85, 105, 0.7)'
+                      ? 'rgba(248, 113, 113, 0.8)'
+                      : 'rgba(220, 38, 38, 0.7)'
                   }
                   strokeWidth="2.2"
                   strokeLinecap="round"
@@ -2311,6 +2485,7 @@ export default function EmergencyCallOverlay() {
                 >
                   <rect x="1" y="5" width="15" height="14" rx="2" />
                   <polygon points="23 7 16 12 23 17 23 7" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
                 </svg>
               </div>
               {/* Reaction (smiley) */}

@@ -104,26 +104,21 @@ export default function CvDownloadButton() {
               </div>
 
               <div className="p-3">
-                <div className="flex items-start gap-3 rounded-sm px-4 py-2.5">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm bg-emerald-500/10 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300">
-                    <DownloadIcon className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <h2 className="font-mono text-sm font-medium text-neutral-800 dark:text-neutral-200">
-                      Grab my CV
-                    </h2>
-                    <p className="mt-1 text-xs leading-5 text-neutral-600 dark:text-neutral-300">
-                      Download the latest PDF version to your device.
-                    </p>
-                  </div>
+                <div className="px-4 py-2.5">
+                  <h2 className="font-mono text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                    Grab my CV
+                  </h2>
+                  <p className="mt-1 text-xs leading-5 text-neutral-600 dark:text-neutral-300">
+                    Download the latest PDF version to your device.
+                  </p>
                 </div>
 
-                <div className="mt-2 flex gap-2 px-4">
+                <div className="mt-2 flex justify-end gap-2 px-4">
                   <Button
                     type="button"
                     variant="secondary"
                     onClick={() => setIsOpen(false)}
-                    className="min-h-11 flex-1"
+                    className="min-h-11 rounded-sm border border-neutral-300 bg-neutral-50 px-5 font-mono text-neutral-900 hover:border-emerald-300 hover:text-emerald-800 dark:border-neutral-800 dark:bg-neutral-900/50 dark:text-neutral-100 dark:hover:border-emerald-700 dark:hover:text-emerald-200"
                   >
                     Cancel
                   </Button>
@@ -131,9 +126,10 @@ export default function CvDownloadButton() {
                     href={CV_PDF_URL}
                     download
                     onClick={() => setIsOpen(false)}
-                    className="inline-flex min-h-11 flex-1 items-center justify-center rounded-sm bg-neutral-900 px-3 py-2 text-sm font-semibold text-neutral-100 outline-offset-2 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-neutral-800 hover:shadow-lg active:bg-neutral-900 active:text-neutral-100/70 active:transition-none dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:active:bg-neutral-800 dark:active:text-neutral-100/70"
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-sm border border-emerald-300 bg-neutral-50 px-5 py-2 font-mono text-sm font-medium whitespace-nowrap text-emerald-900 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-emerald-400 hover:bg-emerald-100 hover:shadow-lg active:transition-none dark:border-emerald-800 dark:bg-neutral-900/50 dark:text-emerald-100 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/70"
                   >
-                    Download PDF
+                    <DownloadIcon className="h-4 w-4" />
+                    <span>download PDF</span>
                   </a>
                 </div>
               </div>

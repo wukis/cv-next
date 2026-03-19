@@ -290,11 +290,19 @@ export default function CvPage() {
           </div>
 
           <div className="flex flex-wrap gap-3 print:hidden">
-            <Button href="/jonas-petrik-cv.pdf" variant="secondary">
+            <Button
+              href="/jonas-petrik-cv.pdf"
+              variant="secondary"
+              className="rounded-sm border border-emerald-300 bg-neutral-50 font-mono text-emerald-900 hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-neutral-900/50 dark:text-emerald-100 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/70"
+            >
               <DownloadIcon className="h-4 w-4" />
               download PDF
             </Button>
-            <Button href="/resume.json" variant="secondary">
+            <Button
+              href="/resume.json"
+              variant="secondary"
+              className="rounded-sm border border-neutral-300 bg-neutral-50 font-mono text-neutral-900 hover:border-emerald-300 hover:text-emerald-800 dark:border-neutral-800 dark:bg-neutral-900/50 dark:text-neutral-100 dark:hover:border-emerald-700 dark:hover:text-emerald-200"
+            >
               <CodeFileIcon className="h-4 w-4" />
               view JSON resume
             </Button>

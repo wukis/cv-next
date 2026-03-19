@@ -2073,7 +2073,7 @@ function MetricWidget({
 
       {/* ── Body ── */}
       <div
-        className="flex min-h-0 flex-1 items-center"
+        className="flex min-h-0 flex-1 items-center overflow-hidden"
         style={{ height: bodyHeight }}
       >
         {type === 'sparkline' ? (
@@ -2360,9 +2360,9 @@ function MetricWidget({
         {type === 'fanout' ? (
           <div className="flex w-full flex-col gap-1">
             {/* Target count + health pills */}
-            <div className="flex items-end justify-between">
+            <div className="flex items-center justify-between gap-2">
               <span
-                className="font-mono text-[11px] font-semibold tabular-nums transition-all duration-300"
+                className="font-mono text-[11px] leading-none font-semibold tabular-nums transition-all duration-300"
                 style={{
                   color: effectiveColor,
                   opacity: isPreviewing ? 1 : isDark ? 0.38 : 0.5,
@@ -2374,7 +2374,7 @@ function MetricWidget({
               >
                 {cluster.loadBalancerTargets.length}/{cluster.replicaTarget}
               </span>
-              <div className="flex gap-[2.5px]">
+              <div className="flex items-center gap-[2.5px]">
                 {Array.from(
                   { length: Math.max(cluster.replicaTarget, 1) },
                   (_, i) => {
