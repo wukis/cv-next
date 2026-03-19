@@ -2197,6 +2197,53 @@ export default function EmergencyCallOverlay() {
 
   return (
     <div className="pointer-events-none fixed bottom-5 left-5 z-10 hidden origin-bottom-left scale-[0.8] xl:block">
+      {/* System notice – appears above the call panel */}
+      <div
+        className="mb-1.5 rounded-sm border px-2.5 py-1.5 backdrop-blur-xl transition-all duration-300"
+        style={{
+          opacity: activeSystemNotice && isSystemNoticeVisible ? 1 : 0,
+          transform:
+            activeSystemNotice && isSystemNoticeVisible
+              ? 'translateY(0) scale(1)'
+              : 'translateY(6px) scale(0.98)',
+          backgroundColor: isDark
+            ? 'rgba(30, 41, 59, 0.3)'
+            : 'rgba(255, 255, 255, 0.68)',
+          borderColor: isDark
+            ? 'rgba(148, 163, 184, 0.12)'
+            : 'rgba(148, 163, 184, 0.14)',
+          color: isDark
+            ? 'rgba(191, 219, 254, 0.82)'
+            : 'rgba(71, 85, 105, 0.84)',
+          width: `${CALL_PANEL_WIDTH_REM}rem`,
+        }}
+      >
+        {activeSystemNotice ? (
+          <div className="flex items-center gap-2">
+            <span
+              className="inline-flex h-5 min-w-5 items-center justify-center rounded-full border font-mono text-[8px] font-semibold uppercase"
+              style={{
+                backgroundColor: isDark
+                  ? 'rgba(15, 23, 42, 0.94)'
+                  : 'rgba(248, 250, 252, 0.96)',
+                borderColor: isDark
+                  ? 'rgba(148, 163, 184, 0.22)'
+                  : 'rgba(148, 163, 184, 0.2)',
+                color: isDark
+                  ? 'rgba(191, 219, 254, 0.9)'
+                  : 'rgba(71, 85, 105, 0.86)',
+              }}
+            >
+              {activeSystemNotice.initials}
+            </span>
+            <span className="line-clamp-1 block min-w-0 font-mono text-[9px] tracking-[0.12em] uppercase">
+              {activeSystemNotice.text}
+            </span>
+          </div>
+        ) : (
+          <div className="h-[1.1rem]" />
+        )}
+      </div>
       <div
         className="overflow-hidden rounded-sm border shadow-2xl backdrop-blur-xl"
         style={{
@@ -2397,13 +2444,9 @@ export default function EmergencyCallOverlay() {
           <div className="relative mt-2 min-h-[2.1rem]">
             {/* Meet-style action buttons – visible when no system notice */}
             <div
-              className="absolute inset-0 flex items-center justify-center gap-1.5 transition-all duration-300"
+              className="absolute inset-0 flex items-center justify-center gap-1.5"
               style={{
-                opacity: activeSystemNotice && isSystemNoticeVisible ? 0 : 0.85,
-                transform:
-                  activeSystemNotice && isSystemNoticeVisible
-                    ? 'scale(0.96)'
-                    : 'scale(1)',
+                opacity: 0.85,
                 pointerEvents: 'none',
               }}
             >
@@ -2624,52 +2667,6 @@ export default function EmergencyCallOverlay() {
                   <line x1="23" y1="1" x2="1" y2="23" />
                 </svg>
               </div>
-            </div>
-            {/* System notice – overlays buttons when active */}
-            <div
-              className="relative rounded-sm border px-2.5 py-1.5 transition-all duration-300"
-              style={{
-                opacity: activeSystemNotice && isSystemNoticeVisible ? 1 : 0,
-                transform:
-                  activeSystemNotice && isSystemNoticeVisible
-                    ? 'translateY(0) scale(1)'
-                    : 'translateY(6px) scale(0.98)',
-                backgroundColor: isDark
-                  ? 'rgba(30, 41, 59, 0.3)'
-                  : 'rgba(255, 255, 255, 0.68)',
-                borderColor: isDark
-                  ? 'rgba(148, 163, 184, 0.12)'
-                  : 'rgba(148, 163, 184, 0.14)',
-                color: isDark
-                  ? 'rgba(191, 219, 254, 0.82)'
-                  : 'rgba(71, 85, 105, 0.84)',
-              }}
-            >
-              {activeSystemNotice ? (
-                <div className="flex items-center gap-2">
-                  <span
-                    className="inline-flex h-5 min-w-5 items-center justify-center rounded-full border font-mono text-[8px] font-semibold uppercase"
-                    style={{
-                      backgroundColor: isDark
-                        ? 'rgba(15, 23, 42, 0.94)'
-                        : 'rgba(248, 250, 252, 0.96)',
-                      borderColor: isDark
-                        ? 'rgba(148, 163, 184, 0.22)'
-                        : 'rgba(148, 163, 184, 0.2)',
-                      color: isDark
-                        ? 'rgba(191, 219, 254, 0.9)'
-                        : 'rgba(71, 85, 105, 0.86)',
-                    }}
-                  >
-                    {activeSystemNotice.initials}
-                  </span>
-                  <span className="line-clamp-1 block min-w-0 font-mono text-[9px] tracking-[0.12em] uppercase">
-                    {activeSystemNotice.text}
-                  </span>
-                </div>
-              ) : (
-                <div className="h-[1.1rem]" />
-              )}
             </div>
           </div>
 
