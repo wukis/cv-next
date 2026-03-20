@@ -295,8 +295,10 @@ export function AnimatedTerminalText({
         className="col-start-1 row-start-1 wrap-break-word whitespace-pre-wrap"
       >
         {renderVisibleSegments(segmentData, displayedCharacters)}
-        {status === 'animating' || status === 'settling' ? (
-          <span className="animate-terminal-caret ml-0.5 inline-block h-[0.92em] w-[0.58em] rounded-[1px] bg-current align-[-0.12em]" />
+        {status === 'animating' ? (
+          <span className="animate-terminal-caret ml-0.5 inline-block h-[0.92em] w-[0.58em] rounded-[1px] bg-emerald-500/80 align-[-0.12em] dark:bg-emerald-400/70" />
+        ) : status === 'settling' ? (
+          <span className="animate-terminal-caret-slow ml-0.5 inline-block h-[0.92em] w-[0.58em] rounded-[1px] bg-emerald-500/80 align-[-0.12em] dark:bg-emerald-400/70" />
         ) : null}
       </span>
       <span className="sr-only">{fullText}</span>

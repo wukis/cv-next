@@ -33,18 +33,31 @@ function MobileNavItem({
         href={href}
         onClick={close}
         className={clsx(
-          'flex min-h-11 items-center gap-2 rounded-sm px-4 py-2.5 font-mono text-sm font-medium transition-colors',
+          'flex min-h-11 items-center gap-1 rounded-sm px-4 py-2.5 font-mono text-sm font-medium transition-colors',
           isActive
             ? 'bg-emerald-500/10 text-emerald-800 shadow-[inset_2px_0_0_0] shadow-emerald-500/50 dark:bg-emerald-400/10 dark:text-emerald-200 dark:shadow-emerald-400/40'
             : isParentActive
-              ? 'text-neutral-800 shadow-[inset_2px_0_0_0] shadow-emerald-500/50 dark:text-neutral-200 dark:shadow-emerald-400/40'
+              ? 'text-neutral-800 dark:text-neutral-200'
               : 'text-neutral-800 hover:bg-neutral-100 hover:text-emerald-700 dark:text-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-emerald-300',
         )}
       >
         {isActive ? (
-          <TerminalPromptIcon className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-        ) : null}
-        <span>{label}</span>
+          <>
+            <span
+              aria-hidden="true"
+              className="text-emerald-500/70 dark:text-emerald-400/60"
+            >
+              ~/
+            </span>
+            <span>{label}</span>
+            <span
+              aria-hidden="true"
+              className="animate-terminal-caret-slow ml-0.5 inline-block h-3.5 w-1.5 bg-emerald-500/80 dark:bg-emerald-400/70"
+            />
+          </>
+        ) : (
+          <span>{label}</span>
+        )}
       </Link>
     </li>
   )
@@ -53,11 +66,13 @@ function MobileNavItem({
 function MobileSubNavItem({
   href,
   label,
+  parentLabel,
   isActive,
   close,
 }: {
   href: string
   label: string
+  parentLabel: string
   isActive: boolean
   close: () => void
 }) {
@@ -67,17 +82,35 @@ function MobileSubNavItem({
         href={href}
         onClick={close}
         className={clsx(
-          'flex min-h-9 items-center gap-1.5 rounded-sm px-3 py-2 font-mono text-xs font-medium transition-colors',
+          'flex min-h-9 items-center gap-1 rounded-sm px-3 py-2 font-mono text-xs font-medium transition-colors',
           isActive
             ? 'bg-emerald-500/10 text-emerald-600 shadow-[inset_2px_0_0_0] shadow-emerald-500/50 dark:bg-emerald-400/10 dark:text-emerald-400 dark:shadow-emerald-400/40'
             : 'text-neutral-600 hover:bg-neutral-100 hover:text-emerald-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-emerald-300',
         )}
       >
-        <span className="text-emerald-500/50 dark:text-emerald-400/50">└─</span>
+        <span
+          aria-hidden="true"
+          className="text-emerald-500/50 dark:text-emerald-400/50"
+        >
+          └─
+        </span>
         {isActive ? (
-          <TerminalPromptIcon className="h-3 w-3 shrink-0 text-emerald-500" />
-        ) : null}
-        <span>{label}</span>
+          <>
+            <span
+              aria-hidden="true"
+              className="text-emerald-500/70 dark:text-emerald-400/60"
+            >
+              ~/{parentLabel}/
+            </span>
+            <span>{label}</span>
+            <span
+              aria-hidden="true"
+              className="animate-terminal-caret-slow ml-0.5 inline-block h-3 w-1.5 bg-emerald-500/80 dark:bg-emerald-400/70"
+            />
+          </>
+        ) : (
+          <span>{label}</span>
+        )}
       </Link>
     </li>
   )
@@ -225,6 +258,7 @@ export default function MobileNavigation({
                                 key={child.href}
                                 href={child.href}
                                 label={child.label}
+                                parentLabel={item.label}
                                 isActive={pathname === child.href}
                                 close={close}
                               />
