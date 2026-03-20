@@ -130,7 +130,7 @@ export const profileContent = {
         value: '€6.5B+',
         label: 'platform yearly volume',
         detail:
-          'Worked in the checkout part of a commerce platform processing this volume each year.',
+          'Working in the checkout part of a commerce platform processing this volume each year.',
       },
       {
         value: '4M+',
