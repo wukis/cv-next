@@ -1,7 +1,7 @@
 'use client'
 
 import clsx from 'clsx'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useReducer, useState } from 'react'
 
 import {
   animationFocusButtonClassName,
@@ -13,10 +13,40 @@ import { TRIGGER_NETWORK_EMERGENCY_EVENT } from '@/lib/ambientCluster'
 import { useAmbientClusterSnapshot } from '@/lib/ambientClusterClient'
 import { deriveAmbientMonitoringState } from '@/lib/ambientMonitoring'
 
+interface TooltipTimerState {
+  suppressed: boolean
+  expiryKey: number
+  durationMs: number | null
+}
+
+type TooltipTimerAction =
+  | { type: 'activate'; durationMs: number }
+  | { type: 'suppress' }
+
+function tooltipTimerReducer(
+  state: TooltipTimerState,
+  action: TooltipTimerAction,
+): TooltipTimerState {
+  switch (action.type) {
+    case 'activate':
+      return {
+        suppressed: false,
+        expiryKey: state.expiryKey + 1,
+        durationMs: action.durationMs,
+      }
+    case 'suppress':
+      return { ...state, suppressed: true }
+  }
+}
+
 export default function AnimationPreviewButton() {
   const isAmbientEligible = useAmbientEligibility()
   const [isHovering, setIsHovering] = useState(false)
-  const [isTooltipSuppressed, setIsTooltipSuppressed] = useState(false)
+  const [tooltipTimer, dispatchTooltip] = useReducer(tooltipTimerReducer, {
+    suppressed: false,
+    expiryKey: 0,
+    durationMs: null,
+  })
   const cluster = useAmbientClusterSnapshot()
   const monitoring = deriveAmbientMonitoringState(cluster)
 
@@ -70,22 +100,29 @@ export default function AnimationPreviewButton() {
     [isHovering, monitoring.buttonDescription, keyboardRotationHint],
   )
 
+  const tooltipExpiryDuration = useMemo(() => {
+    if (monitoring.tooltipExpiryMs != null) {
+      return monitoring.tooltipExpiryMs
+    }
+    const wordCount = tooltipDescription.split(/\s+/).length
+    return Math.max(10000, Math.min(30000, (wordCount / 200) * 60000))
+  }, [monitoring.tooltipExpiryMs, tooltipDescription])
+
   useEffect(() => {
     if (!isAmbientEligible || !isHovering) {
       return
     }
 
-    const wordCount = tooltipDescription.split(/\s+/).length
-    const duration = Math.max(10000, Math.min(30000, (wordCount / 200) * 60000))
+    dispatchTooltip({ type: 'activate', durationMs: tooltipExpiryDuration })
 
     const tooltipFadeTimeout = window.setTimeout(() => {
-      setIsTooltipSuppressed(true)
-    }, duration)
+      dispatchTooltip({ type: 'suppress' })
+    }, tooltipExpiryDuration)
 
     return () => {
       window.clearTimeout(tooltipFadeTimeout)
     }
-  }, [isAmbientEligible, isHovering, tooltipDescription])
+  }, [isAmbientEligible, isHovering, tooltipDescription, tooltipExpiryDuration])
 
   if (!isAmbientEligible) {
     return null
@@ -97,19 +134,19 @@ export default function AnimationPreviewButton() {
       align="right"
       label={monitoring.buttonLabel}
       description={tooltipDescription}
-      isSuppressed={isTooltipSuppressed}
+      isSuppressed={tooltipTimer.suppressed}
+      expiryDurationMs={tooltipTimer.durationMs ?? undefined}
+      expiryKey={tooltipTimer.expiryKey}
       panelClassName="min-w-[20rem] max-w-104"
     >
       <button
         type="button"
         className={`${animationFocusButtonClassName} h-11 w-11 cursor-pointer`}
         onMouseEnter={() => {
-          setIsTooltipSuppressed(false)
           setIsHovering(true)
         }}
         onMouseLeave={() => {
           setIsHovering(false)
-          setIsTooltipSuppressed(false)
         }}
         onClick={() => {
           if (!canTriggerEmergency) {

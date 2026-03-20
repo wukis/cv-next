@@ -234,9 +234,9 @@ const HexagonServiceNetwork: React.FC = () => {
     scenarioKey: 'failover' as EmergencyScenarioKey,
     triggerSource: null as TriggerSource,
     startTime: 0,
-    duration: 9,
+    duration: 10,
     recoveryStartTime: 0,
-    recoveryDuration: 4.5,
+    recoveryDuration: 5,
     lastEmergencyTime: 0,
     nextEmergencyInterval: AUTO_EMERGENCY_INTERVAL_SECONDS,
     hasTriggeredFirstEmergency: false,
@@ -388,16 +388,15 @@ const HexagonServiceNetwork: React.FC = () => {
       const focusFactor = focusTransitionRef.current
       const spikeFactor = clusterRef.current.trafficSpikeLevel
 
+      const emergency = emergencyRef.current
+
       return {
         emergencyState,
         focusMode: isFocusedRef.current ? 'preview' : 'idle',
-        scenarioKey:
-          emergencyState === 'normal' ? null : emergencyRef.current.scenarioKey,
+        scenarioKey: emergencyState === 'normal' ? null : emergency.scenarioKey,
         isTrafficSpike: clusterRef.current.isTrafficSpike,
         triggerSource:
-          emergencyState === 'normal'
-            ? null
-            : emergencyRef.current.triggerSource,
+          emergencyState === 'normal' ? null : emergency.triggerSource,
         replicaTarget,
         liveReplicas: appPods.length,
         readyReplicas,

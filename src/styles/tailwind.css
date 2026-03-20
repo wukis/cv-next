@@ -20,6 +20,15 @@
   }
 }
 
+@keyframes tooltip-expiry-shrink {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
 @utility animation-focus {
   & main {
     opacity: 0.03;

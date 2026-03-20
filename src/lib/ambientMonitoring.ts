@@ -84,6 +84,7 @@ export function deriveAmbientMonitoringState(snapshot: ClusterSnapshot) {
         heartbeatLevel: 'INFO' as TerminalLogLevel,
         modeAnnouncementLevel: 'INFO' as TerminalLogLevel,
         scrollDurationMs: 19000,
+        tooltipExpiryMs: null,
         terminalVisible: true,
         buttonLabel: 'Cluster preview',
         buttonDescription:
@@ -103,6 +104,7 @@ export function deriveAmbientMonitoringState(snapshot: ClusterSnapshot) {
         heartbeatLevel: 'INFO' as TerminalLogLevel,
         modeAnnouncementLevel: 'INFO' as TerminalLogLevel,
         scrollDurationMs: 26000,
+        tooltipExpiryMs: null,
         terminalVisible: snapshot.focusMode === 'preview',
         buttonLabel: 'Traffic surge',
         buttonDescription:
@@ -121,6 +123,7 @@ export function deriveAmbientMonitoringState(snapshot: ClusterSnapshot) {
         heartbeatLevel: 'ERROR' as TerminalLogLevel,
         modeAnnouncementLevel: 'ERROR' as TerminalLogLevel,
         scrollDurationMs: 11000,
+        tooltipExpiryMs: 10000,
         terminalVisible: snapshot.focusMode === 'preview',
         buttonLabel: 'Incident active',
         buttonDescription:
@@ -140,6 +143,7 @@ export function deriveAmbientMonitoringState(snapshot: ClusterSnapshot) {
         heartbeatLevel: 'OK' as TerminalLogLevel,
         modeAnnouncementLevel: 'INFO' as TerminalLogLevel,
         scrollDurationMs: 16000,
+        tooltipExpiryMs: 5000,
         terminalVisible: snapshot.focusMode === 'preview',
         buttonLabel: 'Recovery active',
         buttonDescription:
@@ -159,6 +163,7 @@ export function deriveAmbientMonitoringState(snapshot: ClusterSnapshot) {
         heartbeatLevel: 'DEBUG' as TerminalLogLevel,
         modeAnnouncementLevel: 'INFO' as TerminalLogLevel,
         scrollDurationMs: 60000,
+        tooltipExpiryMs: null,
         terminalVisible: false,
         buttonLabel: 'Background preview',
         buttonDescription:

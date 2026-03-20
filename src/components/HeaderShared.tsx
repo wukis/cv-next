@@ -32,6 +32,8 @@ export function DesktopTooltip({
   description,
   panelClassName,
   isSuppressed = false,
+  expiryDurationMs,
+  expiryKey,
   children,
 }: {
   align?: 'left' | 'center' | 'right'
@@ -39,6 +41,8 @@ export function DesktopTooltip({
   description: string
   panelClassName?: string
   isSuppressed?: boolean
+  expiryDurationMs?: number
+  expiryKey?: number
   children: React.ReactNode
 }) {
   return (
@@ -72,6 +76,15 @@ export function DesktopTooltip({
           <span className="text-xs leading-5 text-neutral-600 dark:text-neutral-300">
             {description}
           </span>
+          {expiryDurationMs != null && (
+            <span
+              key={expiryKey}
+              className="mt-1 h-px bg-emerald-500/40 dark:bg-emerald-400/40"
+              style={{
+                animation: `tooltip-expiry-shrink ${expiryDurationMs}ms linear forwards`,
+              }}
+            />
+          )}
         </span>
       </span>
     </span>
