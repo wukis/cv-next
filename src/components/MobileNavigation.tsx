@@ -41,22 +41,22 @@ function MobileNavItem({
               : 'text-neutral-800 hover:bg-neutral-100 hover:text-emerald-700 dark:text-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-emerald-300',
         )}
       >
-        {isActive ? (
-          <>
-            <span
-              aria-hidden="true"
-              className="text-emerald-500/70 dark:text-emerald-400/60"
-            >
-              ~/
-            </span>
-            <span>{label}</span>
-            <span
-              aria-hidden="true"
-              className="animate-terminal-caret-slow ml-0.5 inline-block h-3.5 w-1.5 bg-emerald-500/80 dark:bg-emerald-400/70"
-            />
-          </>
-        ) : (
-          <span>{label}</span>
+        <span
+          aria-hidden="true"
+          className={clsx(
+            isActive
+              ? 'text-emerald-500/70 dark:text-emerald-400/60'
+              : 'text-neutral-400 dark:text-neutral-600',
+          )}
+        >
+          ~/
+        </span>
+        <span>{label}</span>
+        {isActive && (
+          <span
+            aria-hidden="true"
+            className="animate-terminal-caret-slow ml-0.5 inline-block h-3.5 w-1.5 bg-emerald-500/80 dark:bg-emerald-400/70"
+          />
         )}
       </Link>
     </li>
@@ -94,22 +94,22 @@ function MobileSubNavItem({
         >
           └─
         </span>
-        {isActive ? (
-          <>
-            <span
-              aria-hidden="true"
-              className="text-emerald-500/70 dark:text-emerald-400/60"
-            >
-              ~/{parentLabel}/
-            </span>
-            <span>{label}</span>
-            <span
-              aria-hidden="true"
-              className="animate-terminal-caret-slow ml-0.5 inline-block h-3 w-1.5 bg-emerald-500/80 dark:bg-emerald-400/70"
-            />
-          </>
-        ) : (
-          <span>{label}</span>
+        <span
+          aria-hidden="true"
+          className={clsx(
+            isActive
+              ? 'text-emerald-500/70 dark:text-emerald-400/60'
+              : 'text-neutral-400 dark:text-neutral-600',
+          )}
+        >
+          ~/{parentLabel}/
+        </span>
+        <span>{label}</span>
+        {isActive && (
+          <span
+            aria-hidden="true"
+            className="animate-terminal-caret-slow ml-0.5 inline-block h-3 w-1.5 bg-emerald-500/80 dark:bg-emerald-400/70"
+          />
         )}
       </Link>
     </li>

@@ -111,7 +111,7 @@
   }
 
   .animate-terminal-caret-slow {
-    animation: terminalCaretBlink 1.8s steps(1, end) infinite;
+    animation: terminalCaretBlink 1.8s steps(1, end) 3 forwards;
   }
 
   /* Animation focus mode - makes content transparent to show background animation */
