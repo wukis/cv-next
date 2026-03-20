@@ -114,6 +114,14 @@ function main() {
     process.exit(cvPdfResult.status ?? 1)
   }
 
+  // Next.js may regenerate next-env.d.ts when the server starts during PDF
+  // export, leaving an unintended dirty file. Restore it so lint-staged does
+  // not see a phantom change and block the commit as empty.
+  spawnSync('git', ['checkout', '--', 'next-env.d.ts'], {
+    cwd: rootDir,
+    stdio: 'ignore',
+  })
+
   const gitAddResult = spawnSync('git', ['add', outputPdfPath], {
     cwd: rootDir,
     stdio: 'inherit',
