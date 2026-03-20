@@ -36,6 +36,7 @@ import {
   BASE_HEX_SIZE,
   CAMERA_BASE_ZOOM_FOCUSED,
   CAMERA_BASE_ZOOM_IDLE,
+  CAMERA_CENTER_Y_OFFSET,
   CAMERA_ZOOM_MAX,
   CAMERA_ZOOM_MIN,
   COLORS,
@@ -633,7 +634,7 @@ const HexagonServiceNetwork: React.FC = () => {
     const width = canvas.clientWidth || canvas.width || 1
     const height = canvas.clientHeight || canvas.height || 1
     const centerX = width / 2
-    const centerY = height / 2
+    const centerY = height / 2 + height * CAMERA_CENTER_Y_OFFSET
     const { x: rotX, y: rotY } = rotationRef.current
 
     return [...services]
@@ -2768,14 +2769,14 @@ const HexagonServiceNetwork: React.FC = () => {
     let width = window.innerWidth
     let height = window.innerHeight
     let centerX = width / 2
-    let centerY = height / 2
+    let centerY = height / 2 + height * CAMERA_CENTER_Y_OFFSET
 
     const resize = () => {
       const dpr = window.devicePixelRatio || 1
       width = window.innerWidth
       height = window.innerHeight
       centerX = width / 2
-      centerY = height / 2
+      centerY = height / 2 + height * CAMERA_CENTER_Y_OFFSET
       canvas.width = width * dpr
       canvas.height = height * dpr
       canvas.style.width = `${width}px`

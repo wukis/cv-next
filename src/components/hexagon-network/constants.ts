@@ -216,7 +216,8 @@ export const POD_LAYOUT_STIFFNESS = 0.09
 export const POD_LAYOUT_DAMPING = 0.76
 export const CAMERA_BASE_ZOOM_IDLE = 92
 export const CAMERA_BASE_ZOOM_FOCUSED = 54
-export const CAMERA_ZOOM_MIN = -340
+export const CAMERA_ZOOM_MIN = -480
 export const CAMERA_ZOOM_MAX = 420
 
+export const CAMERA_CENTER_Y_OFFSET = -0.06
 export const Y_AXIS_COMPRESSION = 0.96

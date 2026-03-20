@@ -133,52 +133,74 @@ export function CloseIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
   )
 }
 
-export function HexagonNetworkIcon(
-  props: React.ComponentPropsWithoutRef<'svg'>,
-) {
+const HEX_ICON_CX = 12
+const HEX_ICON_CY = 12
+const HEX_ICON_ORBIT_R = 9.5
+const HEX_ICON_SAT_R = 2.8
+const HEX_ICON_ORBIT_DUR = '3s'
+
+function hexPoints(x: number, y: number, r: number) {
+  return Array.from({ length: 6 }, (_, i) => {
+    const a = (Math.PI / 3) * i - Math.PI / 2
+    return `${x + r * Math.cos(a)},${y + r * Math.sin(a)}`
+  }).join(' ')
+}
+
+const SATELLITE_POINTS = hexPoints(
+  HEX_ICON_CX,
+  HEX_ICON_CY - HEX_ICON_ORBIT_R,
+  HEX_ICON_SAT_R,
+)
+
+export function HexagonNetworkIcon({
+  orbitActive,
+  ...props
+}: React.ComponentPropsWithoutRef<'svg'> & {
+  orbitActive?: boolean
+}) {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path
-        d="M12 3L17.196 6V12L12 15L6.804 12V6L12 3Z"
+      {/* Central hexagon */}
+      <polygon
+        points={hexPoints(HEX_ICON_CX, HEX_ICON_CY, 5.5)}
         stroke="currentColor"
         strokeWidth="1.2"
         strokeLinejoin="round"
+        fill="none"
       />
-      <circle cx="12" cy="3" r="1.2" fill="currentColor" />
-      <circle cx="17.196" cy="6" r="1.2" fill="currentColor" />
-      <circle cx="17.196" cy="12" r="1.2" fill="currentColor" />
-      <circle cx="12" cy="15" r="1.2" fill="currentColor" />
-      <circle cx="6.804" cy="12" r="1.2" fill="currentColor" />
-      <circle cx="6.804" cy="6" r="1.2" fill="currentColor" />
-      <path
-        d="M12 15V19M6.804 12L3 14M17.196 12L21 14"
-        stroke="currentColor"
-        strokeWidth="1"
-        strokeLinecap="round"
-        strokeDasharray="2 2"
-        className="opacity-60"
-      />
-      <circle
-        cx="12"
-        cy="20"
-        r="1"
-        fill="currentColor"
-        className="opacity-60"
-      />
-      <circle
-        cx="2.5"
-        cy="14.5"
-        r="1"
-        fill="currentColor"
-        className="opacity-60"
-      />
-      <circle
-        cx="21.5"
-        cy="14.5"
-        r="1"
-        fill="currentColor"
-        className="opacity-60"
-      />
+      {/* Orbiting satellite hexagons */}
+      {[0, 1, 2].map((i) => {
+        const startAngle = i * 120
+        return (
+          <g key={i}>
+            {orbitActive ? (
+              <animateTransform
+                attributeName="transform"
+                type="rotate"
+                from={`${startAngle} ${HEX_ICON_CX} ${HEX_ICON_CY}`}
+                to={`${startAngle + 360} ${HEX_ICON_CX} ${HEX_ICON_CY}`}
+                dur={HEX_ICON_ORBIT_DUR}
+                repeatCount="2"
+                fill="freeze"
+              />
+            ) : (
+              <animateTransform
+                attributeName="transform"
+                type="rotate"
+                from={`${startAngle} ${HEX_ICON_CX} ${HEX_ICON_CY}`}
+                to={`${startAngle} ${HEX_ICON_CX} ${HEX_ICON_CY}`}
+                dur="0.01s"
+                fill="freeze"
+              />
+            )}
+            <polygon
+              points={SATELLITE_POINTS}
+              fill="currentColor"
+              opacity={0.7}
+            />
+          </g>
+        )
+      })}
     </svg>
   )
 }

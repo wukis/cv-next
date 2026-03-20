@@ -1038,7 +1038,17 @@ function ReplicationPipelineChart({
       : isDark
         ? '#38bdf8'
         : '#0369a1'
-  const readColor = isDark ? '#a78bfa' : '#7c3aed'
+  const readColor = isIncident
+    ? isDark
+      ? '#fb7185'
+      : '#be123c'
+    : isRecovery
+      ? isDark
+        ? '#4ade80'
+        : '#15803d'
+      : isDark
+        ? '#a78bfa'
+        : '#7c3aed'
   const walColor = isDark
     ? 'rgba(56, 189, 248, 0.22)'
     : 'rgba(2, 132, 199, 0.18)'
@@ -1159,11 +1169,11 @@ function ReplicationPipelineChart({
             <circle
               cx={rn.x}
               cy={rn.y}
-              r={3.2}
+              r={4.2}
               fill={
                 isDark ? 'rgba(2, 6, 23, 0.82)' : 'rgba(255, 255, 255, 0.88)'
               }
-              stroke={isIncident ? walColor : readColor}
+              stroke={readColor}
               strokeWidth={1}
               opacity={isIncident ? 0.5 : 0.85}
             />
@@ -1175,7 +1185,7 @@ function ReplicationPipelineChart({
               fill={readColor}
               style={{
                 fontFamily: 'ui-monospace, monospace',
-                fontSize: '4px',
+                fontSize: '5px',
                 fontWeight: 600,
                 opacity: isIncident ? 0.4 : 0.8,
               }}

@@ -124,6 +124,28 @@ export default function AnimationPreviewButton() {
     }
   }, [isAmbientEligible, isHovering, tooltipDescription, tooltipExpiryDuration])
 
+  const [orbitKey, setOrbitKey] = useState(0)
+  const [orbitActive, setOrbitActive] = useState(false)
+
+  useEffect(() => {
+    if (!isAmbientEligible || isHovering || orbitActive) return
+
+    const timerId = window.setTimeout(() => {
+      setOrbitKey((k) => k + 1)
+      setOrbitActive(true)
+    }, 10_000)
+    return () => window.clearTimeout(timerId)
+  }, [isAmbientEligible, isHovering, orbitActive])
+
+  useEffect(() => {
+    if (!orbitActive) return
+
+    const endTimer = window.setTimeout(() => {
+      setOrbitActive(false)
+    }, 6000)
+    return () => window.clearTimeout(endTimer)
+  }, [orbitActive])
+
   if (!isAmbientEligible) {
     return null
   }
@@ -165,8 +187,10 @@ export default function AnimationPreviewButton() {
         aria-label="Preview background animation"
       >
         <HexagonNetworkIcon
+          key={orbitKey}
+          orbitActive={orbitActive}
           className={clsx(
-            'h-5 w-5 transition-all duration-300',
+            'h-5 w-5 transition-[color,transform] duration-300',
             isHovering
               ? 'scale-110 text-emerald-500 dark:text-emerald-400'
               : 'text-neutral-600 dark:text-neutral-300',
