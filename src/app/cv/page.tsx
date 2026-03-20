@@ -173,7 +173,7 @@ function CompanyWorkEntry({ company }: { company: WorkGroup }) {
 
             <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2 print:mt-2.5 print:gap-2.5">
               <div>
-                <h4 className="font-mono text-[11px] tracking-[0.2em] text-neutral-500 uppercase dark:text-neutral-400">
+                <h4 className="border-l-2 border-emerald-500/30 pl-2.5 font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:border-emerald-400/30 dark:text-neutral-300">
                   highlights
                 </h4>
                 <ul className="mt-2 space-y-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 print:mt-1 print:space-y-1 print:text-[12px] print:leading-[1.3]">
@@ -189,7 +189,7 @@ function CompanyWorkEntry({ company }: { company: WorkGroup }) {
               </div>
 
               <div>
-                <h4 className="font-mono text-[11px] tracking-[0.2em] text-neutral-500 uppercase dark:text-neutral-400">
+                <h4 className="border-l-2 border-emerald-500/30 pl-2.5 font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:border-emerald-400/30 dark:text-neutral-300">
                   scope
                 </h4>
                 <ul className="mt-2 space-y-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 print:mt-1 print:space-y-1 print:text-[12px] print:leading-[1.3]">
@@ -310,7 +310,7 @@ export default function CvPage() {
         </div>
 
         <section className="mt-8 print:mt-5">
-          <h2 className="font-mono text-[11px] tracking-[0.2em] text-neutral-500 uppercase dark:text-neutral-400">
+          <h2 className="border-l-2 border-emerald-500/30 pl-2.5 font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:border-emerald-400/30 dark:text-neutral-300">
             selected impact
           </h2>
           <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3 print:mt-2.5 print:gap-2">
@@ -333,7 +333,7 @@ export default function CvPage() {
         </section>
 
         <section className="mt-8 print:mt-5">
-          <h2 className="font-mono text-[11px] tracking-[0.2em] text-neutral-500 uppercase dark:text-neutral-400 print:hidden">
+          <h2 className="border-l-2 border-emerald-500/30 pl-2.5 font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:border-emerald-400/30 dark:text-neutral-300 print:hidden">
             experience
           </h2>
           <div className="mt-4 space-y-4 print:mt-2.5 print:space-y-2.5">
@@ -347,7 +347,7 @@ export default function CvPage() {
         </section>
 
         <section className="mt-8 border-t border-neutral-200 pt-6 dark:border-neutral-700 print:mt-5 print:pt-3">
-          <h2 className="font-mono text-[11px] tracking-[0.2em] text-neutral-500 uppercase dark:text-neutral-400">
+          <h2 className="border-l-2 border-emerald-500/30 pl-2.5 font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:border-emerald-400/30 dark:text-neutral-300">
             education
           </h2>
           <div className="mt-4 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 print:mt-2.5 print:text-[12px] print:leading-[1.3]">
