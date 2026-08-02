@@ -1,6 +1,29 @@
 import { withSentryConfig } from '@sentry/nextjs'
 
 /** @type {import('next').NextConfig} */
+const securityHeaders = [
+  {
+    key: 'Content-Security-Policy',
+    value: "frame-ancestors 'none'",
+  },
+  {
+    key: 'X-Frame-Options',
+    value: 'DENY',
+  },
+  {
+    key: 'Cross-Origin-Opener-Policy',
+    value: 'same-origin',
+  },
+  {
+    key: 'Strict-Transport-Security',
+    value: 'max-age=31536000; includeSubDomains; preload',
+  },
+  {
+    key: 'X-Content-Type-Options',
+    value: 'nosniff',
+  },
+]
+
 const nextConfig = {
   productionBrowserSourceMaps: false,
   // Performance optimizations
@@ -12,11 +35,24 @@ const nextConfig = {
   },
   headers: async () => [
     {
+      source: '/:path*',
+      headers: securityHeaders,
+    },
+    {
       source: '/jonas-petrik-cv.pdf',
       headers: [
         {
           key: 'X-Robots-Tag',
           value: 'noindex',
+        },
+      ],
+    },
+    {
+      source: '/:path*.:ext(png|jpg|jpeg|webp|avif|ico|woff|woff2)',
+      headers: [
+        {
+          key: 'Cache-Control',
+          value: 'public, max-age=31536000, immutable',
         },
       ],
     },
@@ -33,39 +69,6 @@ const nextConfig = {
             exclude: ['error', 'warn', 'log'], // Keep console.log for easter egg
           }
         : false,
-  },
-  // Optimize bundle splitting
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      // Split chunks more aggressively
-      config.optimization = {
-        ...config.optimization,
-        splitChunks: {
-          chunks: 'all',
-          cacheGroups: {
-            default: false,
-            vendors: false,
-            // Vendor chunk for react-icons
-            reactIcons: {
-              name: 'react-icons',
-              chunks: 'all',
-              test: /[\\/]node_modules[\\/]react-icons[\\/]/,
-              priority: 20,
-              reuseExistingChunk: true,
-            },
-            // Common vendor chunk
-            vendor: {
-              name: 'vendor',
-              chunks: 'all',
-              test: /[\\/]node_modules[\\/]/,
-              priority: 10,
-              reuseExistingChunk: true,
-            },
-          },
-        },
-      }
-    }
-    return config
   },
 }
 
@@ -113,11 +116,10 @@ export default withSentryConfig(nextConfig, {
     if (nextConfig.webpack) {
       config = nextConfig.webpack(config, options)
     }
-    // Optimize tree-shaking
+    // Keep tree-shaking explicit without overriding Next's production chunking.
     config.optimization = {
       ...config.optimization,
       usedExports: true,
-      sideEffects: false,
     }
 
     return config

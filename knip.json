@@ -6,5 +6,6 @@
     "scripts/**/*.{ts,mjs}",
     "*.config.{js,mjs,ts}"
   ],
-  "include": ["files", "dependencies", "unlisted", "exports"]
+  "include": ["files", "dependencies", "unlisted", "exports"],
+  "ignoreDependencies": ["lighthouse"]
 }

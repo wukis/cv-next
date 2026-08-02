@@ -25,7 +25,10 @@
     "linkedin:import": "tsx scripts/linkedin-sync.ts import",
     "linkedin:sync": "tsx scripts/linkedin-sync.ts sync",
     "linkedin:accept": "tsx scripts/linkedin-sync.ts accept",
-    "linkedin:restore": "tsx scripts/linkedin-sync.ts restore"
+    "linkedin:restore": "tsx scripts/linkedin-sync.ts restore",
+    "lighthouse:home": "node scripts/run-lighthouse.mjs home",
+    "lighthouse:experience": "node scripts/run-lighthouse.mjs experience",
+    "lighthouse:all": "node scripts/run-lighthouse.mjs all"
   },
   "lint-staged": {
     "**/*.{js,jsx,ts,tsx,mjs,cjs,json,css,md,mdx,yml,yaml}": [
@@ -35,7 +38,15 @@
       "eslint --fix"
     ]
   },
-  "browserslist": "defaults, not ie <= 11",
+  "browserslist": [
+    "last 2 Chrome versions",
+    "last 2 Edge versions",
+    "last 2 Firefox versions",
+    "last 2 Safari versions",
+    "last 2 iOS versions",
+    "last 2 ChromeAndroid versions",
+    "not dead"
+  ],
   "overrides": {
     "postcss": "$postcss",
     "sharp": "0.35.3"
@@ -67,6 +78,7 @@
     "globals": "^17.9.0",
     "husky": "^9.1.7",
     "knip": "^6.31.0",
+    "lighthouse": "^13.4.1",
     "lint-staged": "^17.3.0",
     "playwright": "^1.62.1",
     "postcss": "^8.5.25",

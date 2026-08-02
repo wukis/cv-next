@@ -208,7 +208,7 @@ function TechIcon({
   const normalizedTech = tech.toLowerCase()
 
   // Map of technology names to their icons
-  const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  const iconMap: Record<string, React.ElementType<{ className?: string }>> = {
     // Languages
     php: SiPhp,
     go: SiGo,
@@ -266,7 +266,7 @@ function TechIcon({
   // VSCode icons for concepts/methods (monoline style)
   const conceptIcons: Record<
     string,
-    React.ComponentType<{ className?: string }>
+    React.ElementType<{ className?: string }>
   > = {
     'rest api': VscSymbolInterface,
     rest: VscSymbolInterface,
@@ -313,11 +313,25 @@ function TechIcon({
   const IconComponent = iconMap[normalizedTech] || conceptIcons[normalizedTech]
 
   if (IconComponent) {
-    return <IconComponent className={className} />
+    return (
+      <IconComponent
+        className={className}
+        aria-hidden="true"
+        focusable="false"
+        role="presentation"
+      />
+    )
   }
 
   // Default code icon for unknown technologies
-  return <VscCode className={className} />
+  return (
+    <VscCode
+      className={className}
+      aria-hidden="true"
+      focusable="false"
+      role="presentation"
+    />
+  )
 }
 
 // Technology pill component for expanded view
@@ -342,8 +356,9 @@ function TechPill({
   )
 }
 
-// Technology icon (collapsed view)
-function TechIconButton({
+// Technology icon (collapsed view). The surrounding disclosure label and
+// expanded tech names carry the accessible text.
+function TechIconBadge({
   tech,
   tone = 'default',
 }: {
@@ -357,8 +372,7 @@ function TechIconButton({
           ? 'border-neutral-200 bg-transparent text-neutral-600 dark:border-neutral-700 dark:text-neutral-300'
           : 'border-neutral-300 bg-neutral-100 text-neutral-700 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200'
       }`}
-      role="img"
-      aria-label={tech}
+      aria-hidden="true"
     >
       <TechIcon tech={tech} className="h-4 w-4 shrink-0" />
     </span>
@@ -377,7 +391,7 @@ function TechStackPreview({
   return (
     <div className="flex items-center gap-1.5 overflow-hidden">
       {visibleTechs.map((tech, index) => (
-        <TechIconButton key={`${tech}-${index}`} tech={tech} tone={tone} />
+        <TechIconBadge key={`${tech}-${index}`} tech={tech} tone={tone} />
       ))}
       {hiddenCount > 0 ? (
         <span

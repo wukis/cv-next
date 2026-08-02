@@ -90,7 +90,8 @@ export default function About() {
                     alt="Jonas Petrik - Staff Engineer and Team Lead"
                     sizes="(min-width: 1024px) 14rem, (min-width: 640px) 14rem, 9rem"
                     className="h-full w-full object-cover"
-                    priority={false}
+                    fetchPriority="high"
+                    preload
                   />
                 </div>
 

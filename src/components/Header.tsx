@@ -1,6 +1,6 @@
-import AnimationPreviewButton from '@/components/AnimationPreviewButton'
 import { Container } from '@/components/Container'
 import CvDownloadButton from '@/components/CvDownloadButton'
+import DeferredAnimationPreviewButton from '@/components/DeferredAnimationPreviewButton'
 import HeaderNavLink from '@/components/HeaderNavLink'
 import { navItems } from '@/components/HeaderShared'
 import HeaderVisibility from '@/components/HeaderVisibility'
@@ -41,7 +41,7 @@ export function Header() {
               <div className="flex justify-end md:flex-1">
                 <div className="pointer-events-auto flex items-center gap-2">
                   <CvDownloadButton />
-                  <AnimationPreviewButton />
+                  <DeferredAnimationPreviewButton />
                   <ThemeToggleButton />
                 </div>
               </div>
