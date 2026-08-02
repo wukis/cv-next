@@ -46,13 +46,8 @@ function dispatchAnimationFocusHover(isHovering: boolean) {
   )
 }
 
-function restoreAnimationFocus(
-  previousHtmlOverflow: string,
-  previousBodyOverflow: string,
-) {
+function restoreAnimationFocus() {
   document.documentElement.classList.remove('animation-focus')
-  document.documentElement.style.overflow = previousHtmlOverflow
-  document.body.style.overflow = previousBodyOverflow
   dispatchAnimationFocusHover(false)
 }
 
@@ -140,24 +135,19 @@ export default function AnimationPreviewButton() {
       return
     }
 
-    const previousHtmlOverflow = document.documentElement.style.overflow
-    const previousBodyOverflow = document.body.style.overflow
-
     if (isHovering) {
       document.documentElement.classList.add('animation-focus')
-      document.documentElement.style.overflow = 'hidden'
-      document.body.style.overflow = 'hidden'
       window.dispatchEvent(
         new CustomEvent('animation-focus-hover', {
           detail: { isHovering: true },
         }),
       )
     } else {
-      restoreAnimationFocus(previousHtmlOverflow, previousBodyOverflow)
+      restoreAnimationFocus()
     }
 
     return () => {
-      restoreAnimationFocus(previousHtmlOverflow, previousBodyOverflow)
+      restoreAnimationFocus()
     }
   }, [isAmbientEligible, isHovering])
 
