@@ -38,8 +38,14 @@ jobs:
       - name: Run strict typecheck
         run: npm run typecheck:strict
 
+      - name: Run tests
+        run: npm run test
+
       - name: Run knip
         run: npm run knip
+
+      - name: Run Fallow
+        run: npm run fallow
 
       - name: Run build
         run: npm run build

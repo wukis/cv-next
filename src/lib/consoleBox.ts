@@ -10,35 +10,49 @@ export interface BoxLineOptions {
   width?: number
 }
 
-/**
- * Calculates the visual width of a string in a monospace font
- * Emojis and wide characters count as 2 characters
- * @param str The string to measure
- * @returns The visual width in character cells
- */
-function getVisualWidth(str: string): number {
-  let width = 0
-  // Use for...of to properly handle surrogate pairs (emojis)
-  for (const char of str) {
-    const codePoint = char.codePointAt(0) || 0
+const WIDE_GLYPH_RANGES = [
+  [0x1f300, 0x1f9ff],
+  [0x2600, 0x26ff],
+  [0x2700, 0x27bf],
+  [0xfe00, 0xfe0f],
+  [0x1f600, 0x1f64f],
+  [0x1f900, 0x1f9ff],
+  [0x1fa00, 0x1faff],
+] as const
 
-    // Emojis and wide characters take 2 spaces in monospace fonts
-    if (
-      (codePoint >= 0x1f300 && codePoint <= 0x1f9ff) || // Emoticons & Symbols
-      (codePoint >= 0x2600 && codePoint <= 0x26ff) || // Miscellaneous Symbols
-      (codePoint >= 0x2700 && codePoint <= 0x27bf) || // Dingbats
-      (codePoint >= 0xfe00 && codePoint <= 0xfe0f) || // Variation Selectors
-      (codePoint >= 0x1f600 && codePoint <= 0x1f64f) || // Emoticons
-      (codePoint >= 0x1f900 && codePoint <= 0x1f9ff) || // Supplemental Symbols
-      (codePoint >= 0x1fa00 && codePoint <= 0x1faff) || // Chess Symbols
-      codePoint > 0xffff // Most wide characters (CJK, etc.)
-    ) {
-      width += 2
+function isWideGlyph(char: string): boolean {
+  const codePoint = char.codePointAt(0) ?? 0
+
+  return (
+    codePoint > 0xffff ||
+    WIDE_GLYPH_RANGES.some(
+      ([rangeStart, rangeEnd]) =>
+        codePoint >= rangeStart && codePoint <= rangeEnd,
+    )
+  )
+}
+
+function getGlyphMetrics(str: string): {
+  visualWidth: number
+  hasEmoji: boolean
+} {
+  let visualWidth = 0
+  let containsWideGlyph = false
+
+  for (const char of str) {
+    if (isWideGlyph(char)) {
+      visualWidth += 2
+      containsWideGlyph = true
     } else {
-      width += 1
+      visualWidth += 1
     }
   }
-  return width
+
+  return { visualWidth, hasEmoji: containsWideGlyph }
+}
+
+function getVisualWidth(str: string): number {
+  return getGlyphMetrics(str).visualWidth
 }
 
 /**
@@ -47,22 +61,7 @@ function getVisualWidth(str: string): number {
  * @returns True if the string contains emojis
  */
 function hasEmoji(str: string): boolean {
-  for (const char of str) {
-    const codePoint = char.codePointAt(0) || 0
-    if (
-      (codePoint >= 0x1f300 && codePoint <= 0x1f9ff) ||
-      (codePoint >= 0x2600 && codePoint <= 0x26ff) ||
-      (codePoint >= 0x2700 && codePoint <= 0x27bf) ||
-      (codePoint >= 0xfe00 && codePoint <= 0xfe0f) ||
-      (codePoint >= 0x1f600 && codePoint <= 0x1f64f) ||
-      (codePoint >= 0x1f900 && codePoint <= 0x1f9ff) ||
-      (codePoint >= 0x1fa00 && codePoint <= 0x1faff) ||
-      codePoint > 0xffff
-    ) {
-      return true
-    }
-  }
-  return false
+  return getGlyphMetrics(str).hasEmoji
 }
 
 /**

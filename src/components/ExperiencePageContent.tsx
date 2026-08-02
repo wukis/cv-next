@@ -7,7 +7,7 @@ import { TechStack } from '@/components/TechStack'
 import { TerminalPageHeader } from '@/components/TerminalHeader'
 import { EducationInterface, getDuration } from '@/lib/experience'
 import {
-  calculateTotalExperienceYears,
+  calculateGroupedExperienceYears,
   formatDuration,
   getAllUniqueItems,
   getPromotionDiff,
@@ -20,7 +20,7 @@ import { profileContent } from '@/lib/profileContent'
 const groupedWorkExperiences = groupWorkExperiencesForDisplay(
   profileContent.work,
 )
-const totalExperienceYears = calculateTotalExperienceYears(
+const totalExperienceYears = calculateGroupedExperienceYears(
   groupedWorkExperiences,
 )
 
@@ -53,6 +53,48 @@ function PromotionDiff({
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+function LocationMeta({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="flex items-center gap-1">
+      <svg
+        className="h-3.5 w-3.5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+        />
+      </svg>
+      {children}
+    </span>
+  )
+}
+
+function ResponsibilityList({ items }: { items: string[] }) {
+  return (
+    <div className="space-y-1.5 border-l-2 border-neutral-300 pl-2 dark:border-neutral-600">
+      {items.map((item, i) => (
+        <div key={i} className="flex items-baseline gap-2 text-sm">
+          <span className="shrink-0 font-mono text-neutral-500 select-none dark:text-neutral-400">
+            •
+          </span>
+          <span className="text-neutral-700 dark:text-neutral-200">{item}</span>
+        </div>
+      ))}
     </div>
   )
 }
@@ -206,28 +248,7 @@ function Education({
                   <span className="hidden text-neutral-300 sm:inline dark:text-neutral-600">
                     ·
                   </span>
-                  <span className="flex items-center gap-1">
-                    <svg
-                      className="h-3.5 w-3.5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                    </svg>
-                    Vilnius, Lithuania
-                  </span>
+                  <LocationMeta>Vilnius, Lithuania</LocationMeta>
                 </div>
               </div>
             </div>
@@ -397,30 +418,11 @@ function Work({
                         <span className="hidden text-neutral-300 sm:inline dark:text-neutral-600">
                           ·
                         </span>
-                        <span className="flex items-center gap-1">
-                          <svg
-                            className="h-3.5 w-3.5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                          </svg>
+                        <LocationMeta>
                           <span className="text-neutral-500 dark:text-neutral-400">
                             {companyData.location}
                           </span>
-                        </span>
+                        </LocationMeta>
                         {hasMultipleRoles && (
                           <>
                             <span className="hidden text-neutral-300 sm:inline dark:text-neutral-600">
@@ -541,42 +543,18 @@ function Work({
                                       core scope
                                     </span>
                                   </div>
-                                  <div className="space-y-1.5 border-l-2 border-neutral-300 pl-2 dark:border-neutral-600">
-                                    {responsibilitiesToShow.map((item, i) => (
-                                      <div
-                                        key={i}
-                                        className="flex items-baseline gap-2 text-sm"
-                                      >
-                                        <span className="shrink-0 font-mono text-neutral-500 select-none dark:text-neutral-400">
-                                          •
-                                        </span>
-                                        <span className="text-neutral-700 dark:text-neutral-200">
-                                          {item}
-                                        </span>
-                                      </div>
-                                    ))}
-                                  </div>
+                                  <ResponsibilityList
+                                    items={responsibilitiesToShow}
+                                  />
                                 </div>
                               )}
 
                             {!hasMultipleRoles &&
                               responsibilitiesToShow.length > 0 && (
                                 <div className="mt-3">
-                                  <div className="space-y-1.5 border-l-2 border-neutral-300 pl-2 dark:border-neutral-600">
-                                    {responsibilitiesToShow.map((item, i) => (
-                                      <div
-                                        key={i}
-                                        className="flex items-baseline gap-2 text-sm"
-                                      >
-                                        <span className="shrink-0 font-mono text-neutral-500 select-none dark:text-neutral-400">
-                                          •
-                                        </span>
-                                        <span className="text-neutral-700 dark:text-neutral-200">
-                                          {item}
-                                        </span>
-                                      </div>
-                                    ))}
-                                  </div>
+                                  <ResponsibilityList
+                                    items={responsibilitiesToShow}
+                                  />
                                 </div>
                               )}
                           </div>

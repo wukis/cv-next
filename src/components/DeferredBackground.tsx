@@ -1,7 +1,8 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { useEffect, useState } from 'react'
+
+import { useDeferredRender } from '@/components/useDeferredRender'
 
 // Lazy load the heavy canvas animation component
 const HexagonServiceNetwork = dynamic(
@@ -15,23 +16,7 @@ const HexagonServiceNetwork = dynamic(
  * improving Total Blocking Time (TBT) and other Core Web Vitals.
  */
 export default function DeferredBackground() {
-  const [shouldRender, setShouldRender] = useState(false)
-
-  useEffect(() => {
-    // Wait for the browser to be idle before loading the animation
-    // This ensures the main content is painted first
-    if ('requestIdleCallback' in window) {
-      const id = requestIdleCallback(
-        () => setShouldRender(true),
-        { timeout: 2000 }, // Fallback timeout of 2 seconds
-      )
-      return () => cancelIdleCallback(id)
-    } else {
-      // Fallback for browsers without requestIdleCallback (Safari)
-      const timer = setTimeout(() => setShouldRender(true), 300)
-      return () => clearTimeout(timer)
-    }
-  }, [])
+  const shouldRender = useDeferredRender()
 
   if (!shouldRender) {
     return null

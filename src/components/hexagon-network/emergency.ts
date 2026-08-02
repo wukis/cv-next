@@ -10,6 +10,56 @@ import {
 import { clamp } from './math'
 import type { AppServiceGroup, ColorKey, ServiceNode } from './types'
 
+type NodePalette = { colorKey: ColorKey; attention: number }
+
+const EMERGENCY_NODE_COLORS = {
+  failover: 'red',
+  dbDown: 'red',
+  cacheReload: 'amber',
+  queueFull: 'orange',
+} satisfies Record<EmergencyScenarioKey, ColorKey>
+
+const RECOVERY_NODE_COLORS = {
+  failover: null,
+  dbDown: 'indigo',
+  cacheReload: null,
+  queueFull: 'amber',
+} satisfies Record<EmergencyScenarioKey, ColorKey | null>
+
+const LIFECYCLE_PALETTES = {
+  unhealthy: () => ({ colorKey: 'red', attention: 0.92 }),
+  terminating: () => ({ colorKey: 'red', attention: 0.92 }),
+  starting: () => ({ colorKey: 'amber', attention: 0.72 }),
+  healthy: null,
+  ready: null,
+  draining: getDrainingNodePalette,
+} satisfies Record<
+  ServiceNode['lifecycleState'],
+  ((node: ServiceNode, time: number) => NodePalette) | null
+>
+
+const LIFECYCLE_VISIBILITY = {
+  starting: (node: ServiceNode, time: number) =>
+    clamp((time - node.statusSince) / STARTING_DURATION, 0, 1),
+  terminating: (node: ServiceNode, time: number) =>
+    clamp(1 - (time - node.statusSince) / TERMINATING_DURATION, 0, 1),
+  unhealthy: () => 0.92,
+  draining: () => 0.84,
+  healthy: () => 1,
+  ready: () => 1,
+} satisfies Record<ServiceNode['lifecycleState'], typeof getLifecycleValue>
+
+const ROLE_SCALE_MULTIPLIERS = {
+  ingress: 1.04,
+  loadBalancer: 1.12,
+  appPod: 1,
+  worker: 1,
+  queue: 1,
+  cache: 1,
+  database: 1,
+  observability: 1,
+} satisfies Record<ServiceNode['role'], number>
+
 export function getEmergencyScenario(key: EmergencyScenarioKey) {
   return EMERGENCY_SCENARIOS[key]
 }
@@ -149,63 +199,17 @@ export function getNodePalette(
   time: number,
   emergencyState: EmergencyState,
   emergencyScenarioKey: EmergencyScenarioKey,
-): { colorKey: ColorKey; attention: number } {
-  if (
-    node.lifecycleState === 'unhealthy' ||
-    node.lifecycleState === 'terminating'
-  ) {
-    return {
-      colorKey: 'red',
-      attention: 0.92,
-    }
-  }
-
-  if (node.lifecycleState === 'draining') {
-    return {
-      colorKey: node.scaleDownTarget
-        ? 'amber'
-        : Math.sin(time * 8 + node.id) > 0
-          ? 'red'
-          : 'amber',
-      attention: 0.82,
-    }
-  }
-
-  if (node.lifecycleState === 'starting') {
-    return {
-      colorKey: 'amber',
-      attention: 0.72,
-    }
-  }
+): NodePalette {
+  const lifecyclePalette = LIFECYCLE_PALETTES[node.lifecycleState]
+  if (lifecyclePalette) return lifecyclePalette(node, time)
 
   const scenarioAffectsNode = isScenarioAffectingNode(
     node,
     emergencyState,
     emergencyScenarioKey,
   )
-  if (scenarioAffectsNode) {
-    if (emergencyState === 'emergency') {
-      return {
-        colorKey:
-          emergencyScenarioKey === 'cacheReload'
-            ? 'amber'
-            : emergencyScenarioKey === 'queueFull'
-              ? 'orange'
-              : 'red',
-        attention: 0.9,
-      }
-    }
-
-    return {
-      colorKey:
-        emergencyScenarioKey === 'dbDown'
-          ? 'indigo'
-          : emergencyScenarioKey === 'queueFull'
-            ? 'amber'
-            : node.color,
-      attention: 0.84,
-    }
-  }
+  if (scenarioAffectsNode)
+    return getScenarioNodePalette(node, emergencyState, emergencyScenarioKey)
 
   return {
     colorKey: node.color,
@@ -214,49 +218,58 @@ export function getNodePalette(
 }
 
 export function getNodeVisibility(node: ServiceNode, time: number) {
-  const age = time - node.statusSince
-  if (node.lifecycleState === 'starting') {
-    return clamp(age / STARTING_DURATION, 0, 1)
-  }
-
-  if (node.lifecycleState === 'terminating') {
-    return clamp(1 - age / TERMINATING_DURATION, 0, 1)
-  }
-
-  if (node.lifecycleState === 'unhealthy') {
-    return 0.92
-  }
-
-  if (node.lifecycleState === 'draining') {
-    return 0.84
-  }
-
-  return 1
+  return LIFECYCLE_VISIBILITY[node.lifecycleState](node, time)
 }
 
 export function getNodeScaleMultiplier(node: ServiceNode, time: number) {
-  if (node.lifecycleState === 'starting') {
-    return (
-      0.34 + 0.66 * clamp((time - node.statusSince) / STARTING_DURATION, 0, 1)
-    )
-  }
+  const lifecycleScale = getLifecycleScaleMultiplier(node, time)
+  return lifecycleScale ?? ROLE_SCALE_MULTIPLIERS[node.role]
+}
 
-  if (node.lifecycleState === 'terminating') {
-    return (
-      0.72 +
-      0.28 * clamp(1 - (time - node.statusSince) / TERMINATING_DURATION, 0, 1)
-    )
-  }
-
-  if (node.role === 'loadBalancer') {
-    return 1.12
-  }
-
-  if (node.role === 'ingress') {
-    return 1.04
-  }
-
+function getLifecycleValue(_node: ServiceNode, _time: number) {
   return 1
+}
+
+function getDrainingNodePalette(node: ServiceNode, time: number): NodePalette {
+  return {
+    colorKey:
+      node.scaleDownTarget || Math.sin(time * 8 + node.id) <= 0
+        ? 'amber'
+        : 'red',
+    attention: 0.82,
+  }
+}
+
+function getScenarioNodePalette(
+  node: ServiceNode,
+  emergencyState: EmergencyState,
+  emergencyScenarioKey: EmergencyScenarioKey,
+): NodePalette {
+  if (emergencyState === 'emergency') {
+    return {
+      colorKey: EMERGENCY_NODE_COLORS[emergencyScenarioKey],
+      attention: 0.9,
+    }
+  }
+
+  return {
+    colorKey: RECOVERY_NODE_COLORS[emergencyScenarioKey] ?? node.color,
+    attention: 0.84,
+  }
+}
+
+function getLifecycleScaleMultiplier(node: ServiceNode, time: number) {
+  const age = time - node.statusSince
+  const scaleMap = {
+    starting: 0.34 + 0.66 * clamp(age / STARTING_DURATION, 0, 1),
+    terminating: 0.72 + 0.28 * clamp(1 - age / TERMINATING_DURATION, 0, 1),
+    healthy: null,
+    ready: null,
+    unhealthy: null,
+    draining: null,
+  } satisfies Record<ServiceNode['lifecycleState'], number | null>
+
+  return scaleMap[node.lifecycleState]
 }
 
 export function getEmergencyStateFromRef(state: {

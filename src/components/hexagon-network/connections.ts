@@ -10,6 +10,93 @@ import type {
   StatusIndicator,
 } from './types'
 
+type PodCounts = {
+  ready: number
+  starting: number
+  draining: number
+  unhealthy: number
+  total: number
+  desired: number
+}
+
+type ServiceStatusContext = {
+  emergencyState: EmergencyState
+  emergencyScenarioKey: EmergencyScenarioKey
+  isTrafficSpike: boolean
+  isDark: boolean
+  metaOpacity: number
+}
+
+type ServiceStatusDisplay = {
+  text: string
+  color: string
+}
+
+type ServiceStatusFactory = (
+  counts: PodCounts,
+  context: ServiceStatusContext,
+) => ServiceStatusDisplay
+
+const PACKET_SPEED_RANGES = {
+  ingress: [0.009, 0.013],
+  loadBalancer: [0.008, 0.0115],
+  service: [0.006, 0.009],
+  storage: [0.0055, 0.008],
+  telemetry: [0.0045, 0.007],
+} satisfies Record<ConnectionKind, readonly [number, number]>
+
+const PACKET_SIZES = {
+  ingress: 3.8,
+  loadBalancer: 3.2,
+  service: 2.2,
+  storage: 2.6,
+  telemetry: 2.2,
+} satisfies Record<ConnectionKind, number>
+
+const CONNECTION_OPACITY_BASE = {
+  ingress: [0.14, 0.18],
+  loadBalancer: [0.11, 0.16],
+  service: [0.06, 0.08],
+  storage: [0.07, 0.08],
+  telemetry: [0.08, 0.09],
+} satisfies Record<ConnectionKind, readonly [number, number]>
+
+const STABLE_SERVICE_STATUS = {
+  edge: {
+    text: 'routing ingress',
+    dark: '125, 211, 252',
+    light: '3, 105, 161',
+  },
+  auth: {
+    text: 'verifying jwt',
+    dark: '110, 231, 183',
+    light: '5, 150, 105',
+  },
+  basket: {
+    text: 'holding carts',
+    dark: '110, 231, 183',
+    light: '4, 120, 87',
+  },
+  warehouse: {
+    text: 'checking stock',
+    dark: '251, 191, 36',
+    light: '180, 83, 9',
+  },
+  catalog: {
+    text: 'serving reads',
+    dark: '251, 191, 36',
+    light: '161, 98, 7',
+  },
+  checkout: {
+    text: 'committing orders',
+    dark: '196, 181, 253',
+    light: '109, 40, 217',
+  },
+} satisfies Record<
+  AppServiceGroup,
+  { text: string; dark: string; light: string }
+>
+
 export function getBasePacketInterval(kind: ConnectionKind) {
   const [min, max] = CONNECTION_INTERVALS[kind]
   return randomInRange(min, max)
@@ -20,31 +107,12 @@ export function getPacketType(kind: ConnectionKind) {
 }
 
 export function getPacketSpeed(kind: ConnectionKind) {
-  switch (kind) {
-    case 'ingress':
-      return randomInRange(0.009, 0.013)
-    case 'loadBalancer':
-      return randomInRange(0.008, 0.0115)
-    case 'service':
-      return randomInRange(0.006, 0.009)
-    case 'storage':
-      return randomInRange(0.0055, 0.008)
-    case 'telemetry':
-      return randomInRange(0.0045, 0.007)
-  }
+  const [min, max] = PACKET_SPEED_RANGES[kind]
+  return randomInRange(min, max)
 }
 
 export function getPacketSize(kind: ConnectionKind) {
-  switch (kind) {
-    case 'ingress':
-      return 3.8
-    case 'loadBalancer':
-      return 3.2
-    case 'storage':
-      return 2.6
-    default:
-      return 2.2
-  }
+  return PACKET_SIZES[kind]
 }
 
 export function getPacketDirection(kind: ConnectionKind): 1 | -1 {
@@ -74,6 +142,73 @@ export function createStatusIndicator(
     duration: 1.8 + Math.random() * 0.5,
     ...(label ? { label } : {}),
   }
+}
+
+function drawSuccessIndicator(ctx: CanvasRenderingContext2D, size: number) {
+  ctx.lineWidth = 1.6
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+  ctx.beginPath()
+  ctx.moveTo(-size * 0.5, 0)
+  ctx.lineTo(-size * 0.08, size * 0.42)
+  ctx.lineTo(size * 0.52, -size * 0.28)
+  ctx.stroke()
+}
+
+function drawWarningIndicator(ctx: CanvasRenderingContext2D, size: number) {
+  ctx.fillStyle = ctx.strokeStyle
+  ctx.lineWidth = 1.2
+  ctx.beginPath()
+  ctx.moveTo(0, -size * 0.52)
+  ctx.lineTo(-size * 0.45, size * 0.34)
+  ctx.lineTo(size * 0.45, size * 0.34)
+  ctx.closePath()
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.moveTo(0, -size * 0.12)
+  ctx.lineTo(0, size * 0.1)
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.arc(0, size * 0.22, 1, 0, Math.PI * 2)
+  ctx.fill()
+}
+
+function drawFailureIndicator(ctx: CanvasRenderingContext2D, size: number) {
+  ctx.lineWidth = 1.55
+  ctx.lineCap = 'round'
+  ctx.beginPath()
+  ctx.moveTo(-size * 0.32, -size * 0.32)
+  ctx.lineTo(size * 0.32, size * 0.32)
+  ctx.moveTo(size * 0.32, -size * 0.32)
+  ctx.lineTo(-size * 0.32, size * 0.32)
+  ctx.stroke()
+}
+
+function getStatusIndicatorStroke(
+  type: StatusIndicator['type'],
+  isDark: boolean,
+) {
+  const colorMap = {
+    success: isDark ? 'rgba(52, 211, 153, 1)' : 'rgba(16, 185, 129, 1)',
+    warning: isDark ? 'rgba(251, 191, 36, 1)' : 'rgba(245, 158, 11, 1)',
+    failure: isDark ? 'rgba(248, 113, 113, 1)' : 'rgba(239, 68, 68, 1)',
+  }
+
+  return colorMap[type]
+}
+
+function drawIndicatorGlyph(
+  ctx: CanvasRenderingContext2D,
+  type: StatusIndicator['type'],
+  size: number,
+) {
+  const drawGlyph = {
+    success: drawSuccessIndicator,
+    warning: drawWarningIndicator,
+    failure: drawFailureIndicator,
+  }
+
+  drawGlyph[type](ctx, size)
 }
 
 export function drawStatusIndicator(
@@ -108,44 +243,8 @@ export function drawStatusIndicator(
   )
   ctx.globalAlpha = baseOpacity
 
-  if (indicator.type === 'success') {
-    ctx.strokeStyle = isDark ? 'rgba(52, 211, 153, 1)' : 'rgba(16, 185, 129, 1)'
-    ctx.lineWidth = 1.6
-    ctx.lineCap = 'round'
-    ctx.lineJoin = 'round'
-    ctx.beginPath()
-    ctx.moveTo(-size * 0.5, 0)
-    ctx.lineTo(-size * 0.08, size * 0.42)
-    ctx.lineTo(size * 0.52, -size * 0.28)
-    ctx.stroke()
-  } else if (indicator.type === 'warning') {
-    ctx.strokeStyle = isDark ? 'rgba(251, 191, 36, 1)' : 'rgba(245, 158, 11, 1)'
-    ctx.fillStyle = ctx.strokeStyle
-    ctx.lineWidth = 1.2
-    ctx.beginPath()
-    ctx.moveTo(0, -size * 0.52)
-    ctx.lineTo(-size * 0.45, size * 0.34)
-    ctx.lineTo(size * 0.45, size * 0.34)
-    ctx.closePath()
-    ctx.stroke()
-    ctx.beginPath()
-    ctx.moveTo(0, -size * 0.12)
-    ctx.lineTo(0, size * 0.1)
-    ctx.stroke()
-    ctx.beginPath()
-    ctx.arc(0, size * 0.22, 1, 0, Math.PI * 2)
-    ctx.fill()
-  } else {
-    ctx.strokeStyle = isDark ? 'rgba(248, 113, 113, 1)' : 'rgba(239, 68, 68, 1)'
-    ctx.lineWidth = 1.55
-    ctx.lineCap = 'round'
-    ctx.beginPath()
-    ctx.moveTo(-size * 0.32, -size * 0.32)
-    ctx.lineTo(size * 0.32, size * 0.32)
-    ctx.moveTo(size * 0.32, -size * 0.32)
-    ctx.lineTo(-size * 0.32, size * 0.32)
-    ctx.stroke()
-  }
+  ctx.strokeStyle = getStatusIndicatorStroke(indicator.type, isDark)
+  drawIndicatorGlyph(ctx, indicator.type, size)
 
   if (indicator.label) {
     ctx.fillStyle = isDark
@@ -164,18 +263,8 @@ export function getConnectionBaseOpacity(
   kind: ConnectionKind,
   focusLevel: number,
 ) {
-  switch (kind) {
-    case 'ingress':
-      return 0.14 + focusLevel * 0.18
-    case 'loadBalancer':
-      return 0.11 + focusLevel * 0.16
-    case 'storage':
-      return 0.07 + focusLevel * 0.08
-    case 'telemetry':
-      return 0.08 + focusLevel * 0.09
-    default:
-      return 0.06 + focusLevel * 0.08
-  }
+  const [base, multiplier] = CONNECTION_OPACITY_BASE[kind]
+  return base + focusLevel * multiplier
 }
 
 export function getConnectionStrokeColor(
@@ -203,155 +292,138 @@ export function getConnectionStrokeColor(
 
 export function getServiceStatusDisplay(
   serviceName: AppServiceGroup,
-  counts: {
-    ready: number
-    starting: number
-    draining: number
-    unhealthy: number
-    total: number
-    desired: number
-  },
-  context: {
-    emergencyState: EmergencyState
-    emergencyScenarioKey: EmergencyScenarioKey
-    isTrafficSpike: boolean
-    isDark: boolean
-    metaOpacity: number
-  },
+  counts: PodCounts,
+  context: ServiceStatusContext,
 ) {
-  const { ready, starting, draining, unhealthy, total, desired } = counts
-  const {
-    emergencyState,
-    emergencyScenarioKey,
-    isTrafficSpike,
-    isDark,
-    metaOpacity,
-  } = context
-  const missingReplicas = Math.max(desired - ready, 0)
   const serviceAffectedByScenario = isScenarioAffectingService(
     serviceName,
-    emergencyState,
-    emergencyScenarioKey,
+    context.emergencyState,
+    context.emergencyScenarioKey,
   )
 
-  if (
-    unhealthy > 0 ||
-    (emergencyState === 'emergency' && serviceAffectedByScenario)
-  ) {
-    return {
-      text:
-        unhealthy > 0
-          ? `degraded ${unhealthy} failing`
-          : `rerouting ${Math.max(missingReplicas, 1)} impact`,
-      color: isDark
-        ? `rgba(248, 113, 113, ${metaOpacity})`
-        : `rgba(220, 38, 38, ${metaOpacity})`,
-    }
-  }
+  const factories: Array<{
+    applies: boolean
+    createDisplay: ServiceStatusFactory
+  }> = [
+    {
+      applies:
+        counts.unhealthy > 0 ||
+        (context.emergencyState === 'emergency' && serviceAffectedByScenario),
+      createDisplay: createDegradedServiceStatus,
+    },
+    {
+      applies: counts.starting > 0 && counts.desired > counts.total,
+      createDisplay: createScalingServiceStatus,
+    },
+    {
+      applies: counts.starting > 0,
+      createDisplay: createWarmingServiceStatus,
+    },
+    {
+      applies: counts.draining > 0,
+      createDisplay: createDrainingServiceStatus,
+    },
+    {
+      applies:
+        context.emergencyState === 'recovery' && serviceAffectedByScenario,
+      createDisplay: createRecoveryServiceStatus,
+    },
+    {
+      applies: context.isTrafficSpike && counts.desired > counts.ready,
+      createDisplay: createTrafficSpikeServiceStatus,
+    },
+  ]
 
-  if (starting > 0 && desired > total) {
-    return {
-      text: `scaling +${Math.max(desired - total, starting)}`,
-      color: isDark
-        ? `rgba(250, 204, 21, ${metaOpacity * 0.96})`
-        : `rgba(180, 83, 9, ${metaOpacity})`,
-    }
-  }
+  return (
+    factories
+      .find((factory) => factory.applies)
+      ?.createDisplay(counts, context) ??
+    createStableServiceStatus(serviceName, context)
+  )
+}
 
-  if (starting > 0) {
-    return {
-      text: `warming ${starting} pending`,
-      color: isDark
-        ? `rgba(251, 191, 36, ${metaOpacity * 0.94})`
-        : `rgba(202, 138, 4, ${metaOpacity})`,
-    }
-  }
+function rgbaForTheme(
+  context: Pick<ServiceStatusContext, 'isDark' | 'metaOpacity'>,
+  darkRgb: string,
+  lightRgb: string,
+  opacityMultiplier = 1,
+) {
+  const rgb = context.isDark ? darkRgb : lightRgb
+  const opacity = context.metaOpacity * opacityMultiplier
+  return `rgba(${rgb}, ${opacity})`
+}
 
-  if (draining > 0) {
-    return {
-      text: `rotating ${draining} drain`,
-      color: isDark
-        ? `rgba(251, 191, 36, ${metaOpacity * 0.9})`
-        : `rgba(180, 83, 9, ${metaOpacity})`,
-    }
-  }
-
-  if (emergencyState === 'recovery' && serviceAffectedByScenario) {
-    return {
-      text: 'stabilizing mesh',
-      color: isDark
-        ? `rgba(74, 222, 128, ${metaOpacity})`
-        : `rgba(22, 163, 74, ${metaOpacity})`,
-    }
-  }
-
-  if (isTrafficSpike && desired > ready) {
-    return {
-      text: `surge target ${desired}`,
-      color: isDark
-        ? `rgba(56, 189, 248, ${metaOpacity})`
-        : `rgba(2, 132, 199, ${metaOpacity})`,
-    }
-  }
-
-  if (serviceName === 'edge') {
-    return {
-      text: 'routing ingress',
-      color: isDark
-        ? `rgba(125, 211, 252, ${metaOpacity})`
-        : `rgba(3, 105, 161, ${metaOpacity})`,
-    }
-  }
-
-  if (serviceName === 'auth') {
-    return {
-      text: 'verifying jwt',
-      color: isDark
-        ? `rgba(110, 231, 183, ${metaOpacity})`
-        : `rgba(5, 150, 105, ${metaOpacity})`,
-    }
-  }
-
-  if (serviceName === 'basket') {
-    return {
-      text: 'holding carts',
-      color: isDark
-        ? `rgba(110, 231, 183, ${metaOpacity})`
-        : `rgba(4, 120, 87, ${metaOpacity})`,
-    }
-  }
-
-  if (serviceName === 'warehouse') {
-    return {
-      text: 'checking stock',
-      color: isDark
-        ? `rgba(251, 191, 36, ${metaOpacity})`
-        : `rgba(180, 83, 9, ${metaOpacity})`,
-    }
-  }
-
-  if (serviceName === 'catalog') {
-    return {
-      text: 'serving reads',
-      color: isDark
-        ? `rgba(251, 191, 36, ${metaOpacity})`
-        : `rgba(161, 98, 7, ${metaOpacity})`,
-    }
-  }
-
-  if (serviceName === 'checkout') {
-    return {
-      text: 'committing orders',
-      color: isDark
-        ? `rgba(196, 181, 253, ${metaOpacity})`
-        : `rgba(109, 40, 217, ${metaOpacity})`,
-    }
-  }
-
+function createDegradedServiceStatus(
+  counts: PodCounts,
+  context: ServiceStatusContext,
+) {
+  const missingReplicas = Math.max(counts.desired - counts.ready, 0)
   return {
-    text: 'stable',
-    color: isDark
-      ? `rgba(148, 163, 184, ${metaOpacity})`
-      : `rgba(71, 85, 105, ${metaOpacity})`,
+    text:
+      counts.unhealthy > 0
+        ? `degraded ${counts.unhealthy} failing`
+        : `rerouting ${Math.max(missingReplicas, 1)} impact`,
+    color: rgbaForTheme(context, '248, 113, 113', '220, 38, 38'),
+  }
+}
+
+function createScalingServiceStatus(
+  counts: PodCounts,
+  context: ServiceStatusContext,
+) {
+  return {
+    text: `scaling +${Math.max(counts.desired - counts.total, counts.starting)}`,
+    color: rgbaForTheme(context, '250, 204, 21', '180, 83, 9', 0.96),
+  }
+}
+
+function createWarmingServiceStatus(
+  counts: PodCounts,
+  context: ServiceStatusContext,
+) {
+  return {
+    text: `warming ${counts.starting} pending`,
+    color: rgbaForTheme(context, '251, 191, 36', '202, 138, 4', 0.94),
+  }
+}
+
+function createDrainingServiceStatus(
+  counts: PodCounts,
+  context: ServiceStatusContext,
+) {
+  return {
+    text: `rotating ${counts.draining} drain`,
+    color: rgbaForTheme(context, '251, 191, 36', '180, 83, 9', 0.9),
+  }
+}
+
+function createRecoveryServiceStatus(
+  _counts: PodCounts,
+  context: ServiceStatusContext,
+) {
+  return {
+    text: 'stabilizing mesh',
+    color: rgbaForTheme(context, '74, 222, 128', '22, 163, 74'),
+  }
+}
+
+function createTrafficSpikeServiceStatus(
+  counts: PodCounts,
+  context: ServiceStatusContext,
+) {
+  return {
+    text: `surge target ${counts.desired}`,
+    color: rgbaForTheme(context, '56, 189, 248', '2, 132, 199'),
+  }
+}
+
+function createStableServiceStatus(
+  serviceName: AppServiceGroup,
+  context: ServiceStatusContext,
+) {
+  const display = STABLE_SERVICE_STATUS[serviceName]
+  return {
+    text: display.text,
+    color: rgbaForTheme(context, display.dark, display.light),
   }
 }

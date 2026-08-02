@@ -1,7 +1,17 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  type CSSProperties,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 
+import {
+  useBrowserDarkMode,
+  useWindowResizeHandler,
+} from '@/components/browserState'
 import { type ClusterSnapshot } from '@/lib/ambientCluster'
 import { useAmbientClusterSnapshot } from '@/lib/ambientClusterClient'
 import {
@@ -107,9 +117,110 @@ type WidgetMeta = {
   lead: string
   detail: string
 }
+type StatusDisplay = { text: string; tone: StatusTone }
+type WidgetStatusRule = {
+  applies: (cluster: ClusterSnapshot, mode: AmbientSemanticMode) => boolean
+  display: (
+    cluster: ClusterSnapshot,
+    mode: AmbientSemanticMode,
+  ) => StatusDisplay
+}
+type WidgetTargetResolver = (
+  cluster: ClusterSnapshot,
+  mode: AmbientSemanticMode,
+) => number
+type WidgetMetaResolver = (
+  cluster: ClusterSnapshot,
+  mode: AmbientSemanticMode,
+) => WidgetMeta
+type ChartTone = 'incident' | 'recovery' | 'normal'
+type MetricMotionState = {
+  previousErrorRate: number
+  previousQueueDepth: number
+  previousUnhealthyReplicas: number
+  errorShock: number
+  queueShock: number
+}
+type SingleMetricRuntime = {
+  cluster: ClusterSnapshot
+  mode: AmbientSemanticMode
+  metricMotion: MetricMotionState
+}
+type ControlPlaneLane = {
+  label: string
+  value: number
+  color: string
+}
+type CapacityMetricId = 'cpu' | 'memory'
+type MetricWidgetBodyProps = {
+  type: WidgetType
+  id: WidgetId
+  data: number[]
+  bars: number[]
+  value: number
+  counterText: string
+  statusDisplay: StatusDisplay
+  statusColor: string
+  cluster: ClusterSnapshot
+  mode: AmbientSemanticMode
+  animationPhase: number
+  effectiveColor: string
+  isPreviewing: boolean
+  isDark: boolean
+  bodyHeight: number
+}
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value))
+}
+
+function pickThemeColor(
+  isDark: boolean,
+  darkColor: string,
+  lightColor: string,
+) {
+  return isDark ? darkColor : lightColor
+}
+
+function getChartTone(cluster: ClusterSnapshot, mode: AmbientSemanticMode) {
+  if (mode === 'incident' || cluster.emergencyState === 'emergency') {
+    return 'incident'
+  }
+
+  if (mode === 'recovery' || cluster.emergencyState === 'recovery') {
+    return 'recovery'
+  }
+
+  return 'normal'
+}
+
+function getToneColor(
+  tone: ChartTone,
+  isDark: boolean,
+  normalDark: string,
+  normalLight: string,
+) {
+  const colors = {
+    incident: pickThemeColor(isDark, '#fb7185', '#be123c'),
+    recovery: pickThemeColor(isDark, '#4ade80', '#15803d'),
+    normal: pickThemeColor(isDark, normalDark, normalLight),
+  } satisfies Record<ChartTone, string>
+
+  return colors[tone]
+}
+
+function getDimNodeColor(
+  isDark: boolean,
+  darkOpacity = 0.22,
+  lightOpacity = 0.32,
+) {
+  return isDark
+    ? `rgba(148, 163, 184, ${darkOpacity})`
+    : `rgba(148, 163, 184, ${lightOpacity})`
+}
+
+function getChartOpacity(isFocused: boolean, isDark: boolean) {
+  return isFocused ? (isDark ? 0.85 : 1) : isDark ? 0.35 : 0.4
 }
 
 function Sparkline({
@@ -238,6 +349,76 @@ function MiniBarChart({
   )
 }
 
+function getGaugeChrome(
+  size: number,
+  isDark: boolean,
+  isFocused: boolean,
+  value: number,
+) {
+  const strokeWidth = isDark ? 3 : 3.5
+  const radius = (size - strokeWidth) / 2
+  const circumference = 2 * Math.PI * radius
+  const glowSize = isFocused ? (isDark ? 5 : 2) : 0
+
+  return {
+    strokeWidth,
+    radius,
+    circumference,
+    offset: circumference - (value / 100) * circumference,
+    opacity: isFocused ? (isDark ? 0.85 : 1) : isDark ? 0.35 : 0.4,
+    glowSize,
+    padding: Math.max(glowSize + strokeWidth, 4),
+  }
+}
+
+function getGaugeLabelStyle(
+  color: string,
+  isDark: boolean,
+  isFocused: boolean,
+): CSSProperties {
+  return {
+    opacity: isFocused ? 0.98 : isDark ? 0.82 : 0.9,
+    filter: isFocused && isDark ? `drop-shadow(0 0 4px ${color})` : 'none',
+  }
+}
+
+function CircularGaugeLabel({
+  color,
+  isDark,
+  isFocused,
+  label,
+  labelFontSize,
+  size,
+}: {
+  color: string
+  isDark: boolean
+  isFocused: boolean
+  label?: string
+  labelFontSize?: number
+  size: number
+}) {
+  if (!label) {
+    return null
+  }
+
+  return (
+    <text
+      x={size / 2}
+      y={size / 2}
+      textAnchor="middle"
+      dominantBaseline="central"
+      fontSize={labelFontSize ?? size * 0.34}
+      fontFamily="ui-monospace, monospace"
+      fontWeight={700}
+      letterSpacing="-0.03em"
+      fill={color}
+      style={getGaugeLabelStyle(color, isDark, isFocused)}
+    >
+      {label}
+    </text>
+  )
+}
+
 function CircularGauge({
   value,
   color,
@@ -255,13 +436,15 @@ function CircularGauge({
   label?: string
   labelFontSize?: number
 }) {
-  const strokeWidth = isDark ? 3 : 3.5
-  const radius = (size - strokeWidth) / 2
-  const circumference = 2 * Math.PI * radius
-  const offset = circumference - (value / 100) * circumference
-  const opacity = isFocused ? (isDark ? 0.85 : 1) : isDark ? 0.35 : 0.4
-  const glowSize = isFocused ? (isDark ? 5 : 2) : 0
-  const padding = Math.max(glowSize + strokeWidth, 4)
+  const {
+    strokeWidth,
+    radius,
+    circumference,
+    offset,
+    opacity,
+    glowSize,
+    padding,
+  } = getGaugeChrome(size, isDark, isFocused, value)
 
   return (
     <svg
@@ -301,28 +484,14 @@ function CircularGauge({
           }}
         />
       </g>
-      {label ? (
-        <>
-          <text
-            x={size / 2}
-            y={size / 2}
-            textAnchor="middle"
-            dominantBaseline="central"
-            fontSize={labelFontSize ?? size * 0.34}
-            fontFamily="ui-monospace, monospace"
-            fontWeight={700}
-            letterSpacing="-0.03em"
-            fill={color}
-            style={{
-              opacity: isFocused ? 0.98 : isDark ? 0.82 : 0.9,
-              filter:
-                isFocused && isDark ? `drop-shadow(0 0 4px ${color})` : 'none',
-            }}
-          >
-            {label}
-          </text>
-        </>
-      ) : null}
+      <CircularGaugeLabel
+        color={color}
+        isDark={isDark}
+        isFocused={isFocused}
+        size={size}
+        {...(label === undefined ? {} : { label })}
+        {...(labelFontSize === undefined ? {} : { labelFontSize })}
+      />
     </svg>
   )
 }
@@ -359,43 +528,14 @@ function AvailabilityRings({
   const orbitRadius = radius + 3.5
   const orbitX = center + Math.cos(orbitAngle - Math.PI / 2) * orbitRadius
   const orbitY = center + Math.sin(orbitAngle - Math.PI / 2) * orbitRadius
-  const ringsEmergency = cluster.emergencyState === 'emergency'
-  const ringsRecovery = cluster.emergencyState === 'recovery'
-  const startingColor = ringsEmergency
-    ? isDark
-      ? '#f87171'
-      : '#dc2626'
-    : ringsRecovery
-      ? isDark
-        ? '#86efac'
-        : '#22c55e'
-      : isDark
-        ? '#38bdf8'
-        : '#0369a1'
-  const drainingColor = ringsEmergency
-    ? isDark
-      ? '#fb7185'
-      : '#be123c'
-    : ringsRecovery
-      ? isDark
-        ? '#4ade80'
-        : '#15803d'
-      : isDark
-        ? '#f59e0b'
-        : '#c2410c'
-  const unhealthyColor = ringsEmergency
-    ? isDark
-      ? '#ef4444'
-      : '#b91c1c'
-    : ringsRecovery
-      ? isDark
-        ? '#4ade80'
-        : '#16a34a'
-      : isDark
-        ? '#fb7185'
-        : '#be123c'
-
-  const ringsOpacity = isFocused ? (isDark ? 0.85 : 1) : isDark ? 0.35 : 0.4
+  const tone = getChartTone(
+    cluster,
+    cluster.emergencyState === 'emergency' ? 'incident' : 'steady',
+  )
+  const startingColor = getToneColor(tone, isDark, '#38bdf8', '#0369a1')
+  const drainingColor = getToneColor(tone, isDark, '#f59e0b', '#c2410c')
+  const unhealthyColor = getToneColor(tone, isDark, '#fb7185', '#be123c')
+  const ringsOpacity = getChartOpacity(isFocused, isDark)
 
   return (
     <svg
@@ -495,10 +635,174 @@ function AvailabilityRings({
   )
 }
 
+interface FanoutTargetNodePresentation {
+  isActive: boolean
+  lineOpacity: number
+  nodeColor: string
+  nodeRadius: number
+  nodeFilter: string
+  animation: string
+}
+
+function getFanoutTargetNodePresentation({
+  activeNodes,
+  blinkNode,
+  color,
+  dimNodeColor,
+  isDark,
+  nodeIndex,
+}: {
+  activeNodes: number
+  blinkNode: number | null
+  color: string
+  dimNodeColor: string
+  isDark: boolean
+  nodeIndex: number
+}): FanoutTargetNodePresentation {
+  const isActive = nodeIndex < activeNodes
+  const isBlinking = isFanoutNodeBlinking(nodeIndex, blinkNode, activeNodes)
+  const nodeColor = getFanoutNodeColor({
+    color,
+    dimNodeColor,
+    isActive,
+    isBlinking,
+    isDark,
+  })
+
+  return {
+    isActive,
+    lineOpacity: getFanoutLineOpacity(isActive, isBlinking),
+    nodeColor,
+    nodeRadius: getFanoutNodeRadius(isActive, isBlinking),
+    nodeFilter: getFanoutNodeFilter({
+      color,
+      isActive,
+      isBlinking,
+      isDark,
+      nodeColor,
+    }),
+    animation: getFanoutNodeAnimation(isBlinking),
+  }
+}
+
+function isFanoutNodeBlinking(
+  nodeIndex: number,
+  blinkNode: number | null,
+  activeNodes: number,
+): boolean {
+  return (
+    blinkNode !== null && nodeIndex === blinkNode && nodeIndex >= activeNodes
+  )
+}
+
+function getFanoutNodeColor({
+  color,
+  dimNodeColor,
+  isActive,
+  isBlinking,
+  isDark,
+}: {
+  color: string
+  dimNodeColor: string
+  isActive: boolean
+  isBlinking: boolean
+  isDark: boolean
+}): string {
+  if (isActive) {
+    return color
+  }
+
+  if (isBlinking) {
+    return pickThemeColor(isDark, '#fb7185', '#be123c')
+  }
+
+  return dimNodeColor
+}
+
+function getFanoutLineOpacity(isActive: boolean, isBlinking: boolean): number {
+  if (isActive) {
+    return 0.82
+  }
+
+  return isBlinking ? 0.45 : 0.12
+}
+
+function getFanoutNodeRadius(isActive: boolean, isBlinking: boolean): number {
+  if (isActive) {
+    return 2.8
+  }
+
+  return isBlinking ? 3.2 : 2.2
+}
+
+function getFanoutNodeFilter({
+  color,
+  isActive,
+  isBlinking,
+  isDark,
+  nodeColor,
+}: {
+  color: string
+  isActive: boolean
+  isBlinking: boolean
+  isDark: boolean
+  nodeColor: string
+}): string {
+  if (!isBlinking && (!isActive || !isDark)) {
+    return 'none'
+  }
+
+  const glowSize = isBlinking ? 6 : 4
+  const glowColor = isBlinking ? nodeColor : color
+  return `drop-shadow(0 0 ${glowSize}px ${glowColor})`
+}
+
+function getFanoutNodeAnimation(isBlinking: boolean): string {
+  return isBlinking ? 'pulse 0.6s ease-in-out infinite' : 'none'
+}
+
+function FanoutTargetNode({
+  centerX,
+  centerY,
+  color,
+  presentation,
+  x,
+  y,
+}: {
+  centerX: number
+  centerY: number
+  color: string
+  presentation: FanoutTargetNodePresentation
+  x: number
+  y: number
+}) {
+  return (
+    <g>
+      <path
+        d={`M ${centerX} ${centerY} Q 42 ${centerY} ${x} ${y}`}
+        fill="none"
+        stroke={presentation.isActive ? color : presentation.nodeColor}
+        strokeWidth={presentation.isActive ? 1.6 : 1}
+        strokeOpacity={presentation.lineOpacity}
+        strokeDasharray={presentation.isActive ? '0' : '2 4'}
+      />
+      <circle
+        cx={x}
+        cy={y}
+        r={presentation.nodeRadius}
+        fill={presentation.nodeColor}
+        style={{
+          filter: presentation.nodeFilter,
+          animation: presentation.animation,
+        }}
+      />
+    </g>
+  )
+}
+
 function TargetFanoutChart({
   cluster,
   color,
-  phase,
   isFocused = false,
   isDark = true,
   width = 102,
@@ -506,7 +810,6 @@ function TargetFanoutChart({
 }: {
   cluster: ClusterSnapshot
   color: string
-  phase: number
   isFocused?: boolean
   isDark?: boolean
   width?: number
@@ -532,6 +835,7 @@ function TargetFanoutChart({
   const columns = [62, 82]
   const rows = [height * 0.2, height * 0.5, height * 0.8]
   const fanoutOpacity = isFocused ? (isDark ? 0.85 : 1) : isDark ? 0.35 : 0.4
+  const dimNodeColor = getDimNodeColor(isDark, 0.28, 0.4)
 
   return (
     <svg
@@ -544,48 +848,24 @@ function TargetFanoutChart({
       {rows.flatMap((y, rowIndex) =>
         columns.map((x, columnIndex) => {
           const nodeIndex = rowIndex * columns.length + columnIndex
-          const isActive = nodeIndex < activeNodes
-          const isBlinking =
-            blinkNode !== null &&
-            nodeIndex === blinkNode &&
-            nodeIndex >= activeNodes
-          const lineOpacity = isActive ? 0.82 : isBlinking ? 0.45 : 0.12
-          const nodeColor = isActive
-            ? color
-            : isBlinking
-              ? isDark
-                ? '#fb7185'
-                : '#be123c'
-              : isDark
-                ? 'rgba(148, 163, 184, 0.28)'
-                : 'rgba(148, 163, 184, 0.4)'
 
           return (
-            <g key={`${x}-${y}`}>
-              <path
-                d={`M ${centerX} ${centerY} Q 42 ${centerY} ${x} ${y}`}
-                fill="none"
-                stroke={isActive ? color : nodeColor}
-                strokeWidth={isActive ? 1.6 : 1}
-                strokeOpacity={lineOpacity}
-                strokeDasharray={isActive ? '0' : '2 4'}
-              />
-              <circle
-                cx={x}
-                cy={y}
-                r={isActive ? 2.8 : isBlinking ? 3.2 : 2.2}
-                fill={nodeColor}
-                style={{
-                  filter:
-                    (isActive && isDark) || isBlinking
-                      ? `drop-shadow(0 0 ${isBlinking ? 6 : 4}px ${isBlinking ? nodeColor : color})`
-                      : 'none',
-                  animation: isBlinking
-                    ? 'pulse 0.6s ease-in-out infinite'
-                    : 'none',
-                }}
-              />
-            </g>
+            <FanoutTargetNode
+              key={`${x}-${y}`}
+              centerX={centerX}
+              centerY={centerY}
+              color={color}
+              presentation={getFanoutTargetNodePresentation({
+                activeNodes,
+                blinkNode,
+                color,
+                dimNodeColor,
+                isDark,
+                nodeIndex,
+              })}
+              x={x}
+              y={y}
+            />
           )
         }),
       )}
@@ -631,16 +911,11 @@ function LoadBalancerRouteChart({
     0,
     targetYs.length,
   )
+  const routeTone = getChartTone(cluster, mode)
   const routeColor =
-    mode === 'incident' || cluster.emergencyState === 'emergency'
-      ? isDark
-        ? '#fb7185'
-        : '#be123c'
-      : mode === 'recovery' || cluster.emergencyState === 'recovery'
-        ? isDark
-          ? '#4ade80'
-          : '#15803d'
-        : color
+    routeTone === 'normal'
+      ? color
+      : getToneColor(routeTone, isDark, color, color)
   const pulseCount = activeTargets > 2 ? 3 : 2
   const pulseSpeed =
     mode === 'incident' || cluster.errorRate > 3.5
@@ -648,7 +923,8 @@ function LoadBalancerRouteChart({
       : isFocused
         ? 0.12
         : 0.08
-  const routerOpacity = isFocused ? (isDark ? 0.85 : 1) : isDark ? 0.35 : 0.4
+  const routerOpacity = getChartOpacity(isFocused, isDark)
+  const inactiveRouteColor = getDimNodeColor(isDark)
 
   return (
     <svg
@@ -667,11 +943,7 @@ function LoadBalancerRouteChart({
       {targetYs.map((targetY, index) => {
         const isActive = index < activeTargets
         const lineOpacity = isActive ? 0.86 : 0.12
-        const nodeFill = isActive
-          ? routeColor
-          : isDark
-            ? 'rgba(148, 163, 184, 0.22)'
-            : 'rgba(148, 163, 184, 0.32)'
+        const nodeFill = isActive ? routeColor : inactiveRouteColor
         const pulseNodes = isActive
           ? Array.from({ length: pulseCount }, (_, pulseIndex) => {
               const t =
@@ -750,6 +1022,118 @@ function LoadBalancerRouteChart({
   )
 }
 
+function getControlPlaneReconcileLoad(
+  cluster: ClusterSnapshot,
+  mode: AmbientSemanticMode,
+  scalePressure: number,
+  lbDegraded: boolean,
+) {
+  return clamp(
+    cluster.startingReplicas * 20 +
+      cluster.drainingReplicas * 22 +
+      cluster.unhealthyReplicas * 28 +
+      cluster.terminatingReplicas * 16 +
+      scalePressure * 14 +
+      cluster.trafficIntensity * 18 +
+      cluster.errorRate * 3 +
+      (cluster.queueDepth > 40 ? 12 : cluster.queueDepth * 0.2) +
+      (lbDegraded ? 14 : 0) +
+      (mode === 'incident' ? 22 : 0) +
+      (mode === 'surge' ? 14 : 0) +
+      (mode === 'recovery' ? 8 : 0),
+    4,
+    100,
+  )
+}
+
+function getControlPlaneLanes({
+  cluster,
+  mode,
+  isDark,
+  scalePressure,
+  lbDegraded,
+}: {
+  cluster: ClusterSnapshot
+  mode: AmbientSemanticMode
+  isDark: boolean
+  scalePressure: number
+  lbDegraded: boolean
+}): ControlPlaneLane[] {
+  const tone = getChartTone(cluster, mode)
+  return [
+    {
+      label: 'starting',
+      value: getControlPlaneStartingValue(cluster, mode, scalePressure),
+      color: getToneColor(tone, isDark, '#38bdf8', '#0369a1'),
+    },
+    {
+      label: 'draining',
+      value: getControlPlaneDrainingValue(cluster, mode, lbDegraded),
+      color: getToneColor(tone, isDark, '#f59e0b', '#c2410c'),
+    },
+    {
+      label: 'healing',
+      value: getControlPlaneHealingValue(cluster, mode, lbDegraded),
+      color: getToneColor(tone, isDark, '#fb7185', '#be123c'),
+    },
+  ]
+}
+
+function getControlPlaneStartingValue(
+  cluster: ClusterSnapshot,
+  mode: AmbientSemanticMode,
+  scalePressure: number,
+) {
+  return clamp(
+    cluster.startingReplicas * 28 +
+      scalePressure * 18 +
+      cluster.trafficIntensity * 22 +
+      (cluster.queueDepth > 30 ? 14 : 0) +
+      (mode === 'surge' ? 16 : 0) +
+      (mode === 'incident' ? 10 : 0),
+    0,
+    100,
+  )
+}
+
+function getControlPlaneDrainingValue(
+  cluster: ClusterSnapshot,
+  mode: AmbientSemanticMode,
+  lbDegraded: boolean,
+) {
+  const missingTargets = Math.max(
+    cluster.replicaTarget - cluster.loadBalancerTargets.length,
+    0,
+  )
+  return clamp(
+    cluster.drainingReplicas * 32 +
+      cluster.terminatingReplicas * 22 +
+      (lbDegraded ? 18 : 0) +
+      missingTargets * 12 +
+      (mode === 'recovery' ? 14 : 0) +
+      (mode === 'incident' ? 8 : 0),
+    0,
+    100,
+  )
+}
+
+function getControlPlaneHealingValue(
+  cluster: ClusterSnapshot,
+  mode: AmbientSemanticMode,
+  lbDegraded: boolean,
+) {
+  return clamp(
+    cluster.unhealthyReplicas * 30 +
+      cluster.errorRate * 6 +
+      Math.max(cluster.latencyMs - 60, 0) * 1.4 +
+      (lbDegraded ? 10 : 0) +
+      (mode === 'incident' ? 16 : 0) +
+      (mode === 'recovery' ? 22 : 0),
+    0,
+    100,
+  )
+}
+
 function ControlPlaneChart({
   cluster,
   mode,
@@ -774,115 +1158,26 @@ function ControlPlaneChart({
   const lbDegraded =
     !cluster.loadBalancerHealthy ||
     cluster.readyReplicas < Math.max(2, cluster.replicaTarget - 1)
-  const reconcileLoad = clamp(
-    cluster.startingReplicas * 20 +
-      cluster.drainingReplicas * 22 +
-      cluster.unhealthyReplicas * 28 +
-      cluster.terminatingReplicas * 16 +
-      scalePressure * 14 +
-      cluster.trafficIntensity * 18 +
-      cluster.errorRate * 3 +
-      (cluster.queueDepth > 40 ? 12 : cluster.queueDepth * 0.2) +
-      (lbDegraded ? 14 : 0) +
-      (mode === 'incident' ? 22 : 0) +
-      (mode === 'surge' ? 14 : 0) +
-      (mode === 'recovery' ? 8 : 0),
-    4,
-    100,
+  const reconcileLoad = getControlPlaneReconcileLoad(
+    cluster,
+    mode,
+    scalePressure,
+    lbDegraded,
   )
   const track = 2 * Math.PI * radius
-  const reconcileColor =
-    mode === 'incident'
-      ? isDark
-        ? '#fb7185'
-        : '#be123c'
-      : mode === 'recovery'
-        ? isDark
-          ? '#4ade80'
-          : '#15803d'
-        : isDark
-          ? '#38bdf8'
-          : '#0369a1'
-  const laneEmergency =
-    cluster.emergencyState === 'emergency' || mode === 'incident'
-  const laneRecovery =
-    cluster.emergencyState === 'recovery' || mode === 'recovery'
-  const laneData = [
-    {
-      label: 'starting',
-      value: clamp(
-        cluster.startingReplicas * 28 +
-          scalePressure * 18 +
-          cluster.trafficIntensity * 22 +
-          (cluster.queueDepth > 30 ? 14 : 0) +
-          (mode === 'surge' ? 16 : 0) +
-          (mode === 'incident' ? 10 : 0),
-        0,
-        100,
-      ),
-      color: laneEmergency
-        ? isDark
-          ? '#fb7185'
-          : '#be123c'
-        : laneRecovery
-          ? isDark
-            ? '#4ade80'
-            : '#15803d'
-          : isDark
-            ? '#38bdf8'
-            : '#0369a1',
-    },
-    {
-      label: 'draining',
-      value: clamp(
-        cluster.drainingReplicas * 32 +
-          cluster.terminatingReplicas * 22 +
-          (lbDegraded ? 18 : 0) +
-          (cluster.loadBalancerTargets.length < cluster.replicaTarget
-            ? (cluster.replicaTarget - cluster.loadBalancerTargets.length) * 12
-            : 0) +
-          (mode === 'recovery' ? 14 : 0) +
-          (mode === 'incident' ? 8 : 0),
-        0,
-        100,
-      ),
-      color: laneEmergency
-        ? isDark
-          ? '#f87171'
-          : '#dc2626'
-        : laneRecovery
-          ? isDark
-            ? '#86efac'
-            : '#22c55e'
-          : isDark
-            ? '#f59e0b'
-            : '#c2410c',
-    },
-    {
-      label: 'healing',
-      value: clamp(
-        cluster.unhealthyReplicas * 30 +
-          cluster.errorRate * 6 +
-          (cluster.latencyMs > 60 ? (cluster.latencyMs - 60) * 1.4 : 0) +
-          (lbDegraded ? 10 : 0) +
-          (mode === 'incident' ? 16 : 0) +
-          (mode === 'recovery' ? 22 : 0),
-        0,
-        100,
-      ),
-      color: laneEmergency
-        ? isDark
-          ? '#ef4444'
-          : '#b91c1c'
-        : laneRecovery
-          ? isDark
-            ? '#4ade80'
-            : '#15803d'
-          : isDark
-            ? '#fb7185'
-            : '#be123c',
-    },
-  ]
+  const reconcileColor = getToneColor(
+    getChartTone(cluster, mode),
+    isDark,
+    '#38bdf8',
+    '#0369a1',
+  )
+  const laneData = getControlPlaneLanes({
+    cluster,
+    mode,
+    isDark,
+    scalePressure,
+    lbDegraded,
+  })
   const laneX = 36
   const barWidth = width - laneX - 8
   const controlOpacity = isFocused ? (isDark ? 0.85 : 1) : isDark ? 0.35 : 0.4
@@ -1023,32 +1318,10 @@ function ReplicationPipelineChart({
   width?: number
   height?: number
 }) {
-  const isIncident =
-    mode === 'incident' || cluster.emergencyState === 'emergency'
-  const isRecovery =
-    mode === 'recovery' || cluster.emergencyState === 'recovery'
-  const pipelineColor = isIncident
-    ? isDark
-      ? '#fb7185'
-      : '#be123c'
-    : isRecovery
-      ? isDark
-        ? '#4ade80'
-        : '#15803d'
-      : isDark
-        ? '#38bdf8'
-        : '#0369a1'
-  const readColor = isIncident
-    ? isDark
-      ? '#fb7185'
-      : '#be123c'
-    : isRecovery
-      ? isDark
-        ? '#4ade80'
-        : '#15803d'
-      : isDark
-        ? '#a78bfa'
-        : '#7c3aed'
+  const tone = getChartTone(cluster, mode)
+  const isIncident = tone === 'incident'
+  const pipelineColor = getToneColor(tone, isDark, '#38bdf8', '#0369a1')
+  const readColor = getToneColor(tone, isDark, '#a78bfa', '#7c3aed')
   const walColor = isDark
     ? 'rgba(56, 189, 248, 0.22)'
     : 'rgba(2, 132, 199, 0.18)'
@@ -1069,7 +1342,7 @@ function ReplicationPipelineChart({
   const walSegments = 8
   const walY = 4
   const walSegWidth = (width - 12) / walSegments
-  const pipelineOpacity = isFocused ? (isDark ? 0.85 : 1) : isDark ? 0.35 : 0.4
+  const pipelineOpacity = getChartOpacity(isFocused, isDark)
 
   return (
     <svg
@@ -1089,7 +1362,7 @@ function ReplicationPipelineChart({
             width={walSegWidth - 2}
             height={3}
             rx={1.5}
-            fill={isIncident ? (isDark ? '#fb7185' : '#be123c') : pipelineColor}
+            fill={pipelineColor}
             opacity={clamp(intensity * 0.45, 0.08, 0.5)}
           />
         )
@@ -1229,6 +1502,124 @@ function ReplicationPipelineChart({
   )
 }
 
+interface HeatGridCellPresentation {
+  fill: string
+  opacity: number
+}
+
+const HEAT_GRID_FILL_SETS = {
+  emergency: {
+    high: { dark: '#fb7185', light: '#e11d48' },
+    medium: { dark: '#f87171', light: '#dc2626' },
+    low: {
+      dark: 'rgba(248, 113, 113, 0.22)',
+      light: 'rgba(220, 38, 38, 0.18)',
+    },
+  },
+  recovery: {
+    high: { dark: '#4ade80', light: '#16a34a' },
+    medium: { dark: '#86efac', light: '#22c55e' },
+    low: {
+      dark: 'rgba(74, 222, 128, 0.22)',
+      light: 'rgba(22, 163, 74, 0.18)',
+    },
+  },
+  normal: {
+    high: { dark: '#fb7185', light: '#e11d48' },
+    elevated: { dark: '#f59e0b', light: '#d97706' },
+    medium: { dark: '#38bdf8', light: '#0284c7' },
+    low: {
+      dark: 'rgba(56, 189, 248, 0.18)',
+      light: 'rgba(2, 132, 199, 0.16)',
+    },
+  },
+} as const
+
+const HEAT_GRID_FILL_TIERS = {
+  emergency: [
+    { minimum: 54, color: HEAT_GRID_FILL_SETS.emergency.high },
+    { minimum: 30, color: HEAT_GRID_FILL_SETS.emergency.medium },
+    {
+      minimum: Number.NEGATIVE_INFINITY,
+      color: HEAT_GRID_FILL_SETS.emergency.low,
+    },
+  ],
+  recovery: [
+    { minimum: 54, color: HEAT_GRID_FILL_SETS.recovery.high },
+    { minimum: 30, color: HEAT_GRID_FILL_SETS.recovery.medium },
+    {
+      minimum: Number.NEGATIVE_INFINITY,
+      color: HEAT_GRID_FILL_SETS.recovery.low,
+    },
+  ],
+  normal: [
+    { minimum: 76, color: HEAT_GRID_FILL_SETS.normal.high },
+    { minimum: 54, color: HEAT_GRID_FILL_SETS.normal.elevated },
+    { minimum: 34, color: HEAT_GRID_FILL_SETS.normal.medium },
+    {
+      minimum: Number.NEGATIVE_INFINITY,
+      color: HEAT_GRID_FILL_SETS.normal.low,
+    },
+  ],
+} as const
+
+function pickHeatFill(
+  color: { dark: string; light: string },
+  isDark: boolean,
+): string {
+  return isDark ? color.dark : color.light
+}
+
+function getHeatGridFill({
+  heatEmergency,
+  heatRecovery,
+  intensity,
+  isDark,
+}: {
+  heatEmergency: boolean
+  heatRecovery: boolean
+  intensity: number
+  isDark: boolean
+}): string {
+  const tiers = heatEmergency
+    ? HEAT_GRID_FILL_TIERS.emergency
+    : heatRecovery
+      ? HEAT_GRID_FILL_TIERS.recovery
+      : HEAT_GRID_FILL_TIERS.normal
+  const tier = tiers.find(({ minimum }) => intensity > minimum) ?? tiers[0]
+  return pickHeatFill(tier.color, isDark)
+}
+
+function getHeatGridCellPresentation({
+  column,
+  heatBias,
+  heatEmergency,
+  heatRecovery,
+  index,
+  isDark,
+  phase,
+  row,
+}: {
+  column: number
+  heatBias: number
+  heatEmergency: boolean
+  heatRecovery: boolean
+  index: number
+  isDark: boolean
+  phase: number
+  row: number
+}): HeatGridCellPresentation {
+  const wave =
+    Math.sin(phase * 0.24 + index * 0.8) * 12 +
+    Math.cos(phase * 0.12 + row * 0.6) * 8
+  const intensity = clamp(heatBias + wave + column * 6 - row * 3, 0, 100)
+
+  return {
+    fill: getHeatGridFill({ heatEmergency, heatRecovery, intensity, isDark }),
+    opacity: 0.3 + intensity / 120,
+  }
+}
+
 function CacheHeatGrid({
   cluster,
   mode,
@@ -1273,49 +1664,16 @@ function CacheHeatGrid({
       {Array.from({ length: rows * columns }, (_, index) => {
         const column = index % columns
         const row = Math.floor(index / columns)
-        const wave =
-          Math.sin(phase * 0.24 + index * 0.8) * 12 +
-          Math.cos(phase * 0.12 + row * 0.6) * 8
-        const intensity = clamp(heatBias + wave + column * 6 - row * 3, 0, 100)
-        const fill = heatEmergency
-          ? intensity > 54
-            ? isDark
-              ? '#fb7185'
-              : '#e11d48'
-            : intensity > 30
-              ? isDark
-                ? '#f87171'
-                : '#dc2626'
-              : isDark
-                ? 'rgba(248, 113, 113, 0.22)'
-                : 'rgba(220, 38, 38, 0.18)'
-          : heatRecovery
-            ? intensity > 54
-              ? isDark
-                ? '#4ade80'
-                : '#16a34a'
-              : intensity > 30
-                ? isDark
-                  ? '#86efac'
-                  : '#22c55e'
-                : isDark
-                  ? 'rgba(74, 222, 128, 0.22)'
-                  : 'rgba(22, 163, 74, 0.18)'
-            : intensity > 76
-              ? isDark
-                ? '#fb7185'
-                : '#e11d48'
-              : intensity > 54
-                ? isDark
-                  ? '#f59e0b'
-                  : '#d97706'
-                : intensity > 34
-                  ? isDark
-                    ? '#38bdf8'
-                    : '#0284c7'
-                  : isDark
-                    ? 'rgba(56, 189, 248, 0.18)'
-                    : 'rgba(2, 132, 199, 0.16)'
+        const presentation = getHeatGridCellPresentation({
+          column,
+          heatBias,
+          heatEmergency,
+          heatRecovery,
+          index,
+          isDark,
+          phase,
+          row,
+        })
 
         return (
           <rect
@@ -1325,8 +1683,8 @@ function CacheHeatGrid({
             width={cellWidth}
             height={cellHeight}
             rx={2.4}
-            fill={fill}
-            opacity={0.3 + intensity / 120}
+            fill={presentation.fill}
+            opacity={presentation.opacity}
           />
         )
       })}
@@ -1345,67 +1703,52 @@ function getWidgetAppearance(
   const visualState = getWidgetVisualState(cluster)
   const emergencyRed = isDark ? '#ff3333' : '#cc0000'
   const recoveryGreen = isDark ? '#33ff66' : '#009933'
-  const effectiveColor =
-    visualState === 'error'
-      ? emergencyRed
-      : visualState === 'recovered'
-        ? recoveryGreen
-        : (normalColorOverride ?? baseColor)
-
-  const containerOpacity = isPreviewing
-    ? 1
-    : isComposite
-      ? isDark
-        ? 0.2
-        : 0.3
-      : isDark
-        ? 0.16
-        : 0.24
-
-  const textOpacity = isPreviewing
-    ? isDark
-      ? 0.82
-      : 0.94
-    : isDark
-      ? 0.24
-      : 0.4
-
-  const borderColor =
-    visualState === 'error'
-      ? isDark
-        ? 'border-red-500/50'
-        : 'border-red-600/60'
-      : visualState === 'recovered'
-        ? isDark
-          ? 'border-green-500/50'
-          : 'border-green-600/60'
-        : isDark
-          ? 'border-neutral-700/20'
-          : 'border-neutral-400/40'
-
-  const bgColor =
-    visualState === 'error'
-      ? isDark
-        ? 'bg-red-950/40'
-        : 'bg-red-100/60'
-      : visualState === 'recovered'
-        ? isDark
-          ? 'bg-green-950/40'
-          : 'bg-green-100/60'
-        : isDark
-          ? 'bg-neutral-900/30'
-          : 'bg-white/55'
+  const colorByState = {
+    error: emergencyRed,
+    recovered: recoveryGreen,
+    normal: normalColorOverride ?? baseColor,
+  } satisfies Record<WidgetVisualState, string>
+  const borderByState = {
+    error: isDark ? 'border-red-500/50' : 'border-red-600/60',
+    recovered: isDark ? 'border-green-500/50' : 'border-green-600/60',
+    normal: isDark ? 'border-neutral-700/20' : 'border-neutral-400/40',
+  } satisfies Record<WidgetVisualState, string>
+  const backgroundByState = {
+    error: isDark ? 'bg-red-950/40' : 'bg-red-100/60',
+    recovered: isDark ? 'bg-green-950/40' : 'bg-green-100/60',
+    normal: isDark ? 'bg-neutral-900/30' : 'bg-white/55',
+  } satisfies Record<WidgetVisualState, string>
 
   return {
     visualState,
     emergencyRed,
     recoveryGreen,
-    effectiveColor,
-    containerOpacity,
-    textOpacity,
-    borderColor,
-    bgColor,
+    effectiveColor: colorByState[visualState],
+    containerOpacity: getWidgetContainerOpacity(
+      isPreviewing,
+      isComposite,
+      isDark,
+    ),
+    textOpacity: getWidgetTextOpacity(isPreviewing, isDark),
+    borderColor: borderByState[visualState],
+    bgColor: backgroundByState[visualState],
   }
+}
+
+function getWidgetContainerOpacity(
+  isPreviewing: boolean,
+  isComposite: boolean | undefined,
+  isDark: boolean,
+) {
+  if (isPreviewing) return 1
+  const darkOpacity = isComposite ? 0.2 : 0.16
+  const lightOpacity = isComposite ? 0.3 : 0.24
+  return isDark ? darkOpacity : lightOpacity
+}
+
+function getWidgetTextOpacity(isPreviewing: boolean, isDark: boolean) {
+  if (isPreviewing) return isDark ? 0.82 : 0.94
+  return isDark ? 0.24 : 0.4
 }
 
 function isScenario(
@@ -1432,32 +1775,35 @@ function getTargetValue(
   cluster: ClusterSnapshot,
   mode: AmbientSemanticMode,
 ) {
-  switch (widgetId) {
-    case 'req_rate':
-      return clamp(
-        cluster.requestRate / 24 + (mode === 'preview' ? 4 : 0),
-        16,
-        98,
-      )
-    case 'latency':
-      return clamp(
+  return (WIDGET_TARGET_RESOLVERS[widgetId] ?? getDefaultTargetValue)(
+    cluster,
+    mode,
+  )
+}
+
+const WIDGET_TARGET_RESOLVERS: Partial<Record<WidgetId, WidgetTargetResolver>> =
+  {
+    req_rate: (cluster, mode) =>
+      clamp(cluster.requestRate / 24 + (mode === 'preview' ? 4 : 0), 16, 98),
+    latency: (cluster, mode) =>
+      clamp(
         cluster.latencyMs * 1.45 +
           (mode === 'preview' ? 6 : 0) +
           (mode === 'incident' ? 8 : 0),
         12,
         99,
-      )
-    case 'errors':
-      return clamp(
+      ),
+    errors: (cluster, mode) =>
+      clamp(
         cluster.errorRate * 9 +
           cluster.unhealthyReplicas * 8 +
           cluster.drainingReplicas * 5 +
           (mode === 'preview' ? 2 : 0),
         3,
         100,
-      )
-    case 'cpu':
-      return clamp(
+      ),
+    cpu: (cluster, mode) =>
+      clamp(
         28 +
           cluster.trafficIntensity * 38 +
           Math.min(cluster.requestRate / 600, 12) +
@@ -1465,9 +1811,9 @@ function getTargetValue(
           (mode === 'preview' ? 4 : 0),
         28,
         88,
-      )
-    case 'memory':
-      return clamp(
+      ),
+    memory: (cluster, mode) =>
+      clamp(
         52 +
           Math.min(cluster.liveReplicas, 6) * 3 +
           cluster.startingReplicas * 6 +
@@ -1476,19 +1822,20 @@ function getTargetValue(
           (mode === 'preview' ? 4 : 0),
         52,
         90,
-      )
-    case 'uptime':
-      return clamp(
+      ),
+    uptime: (cluster) =>
+      clamp(
         99.9 -
           cluster.errorRate * 0.08 -
           cluster.unhealthyReplicas * 0.12 -
           cluster.drainingReplicas * 0.04,
         98.6,
         99.99,
-      )
-    default:
-      return clamp(cluster.trafficIntensity * 100, 10, 90)
+      ),
   }
+
+function getDefaultTargetValue(cluster: ClusterSnapshot) {
+  return clamp(cluster.trafficIntensity * 100, 10, 90)
 }
 
 function getNextBarValue(cluster: ClusterSnapshot, mode: AmbientSemanticMode) {
@@ -1519,94 +1866,144 @@ function getStatusDisplay(
   cluster: ClusterSnapshot,
   mode: AmbientSemanticMode,
 ) {
-  switch (widgetId) {
-    case 'lb':
-      if (mode === 'incident' && isScenario(cluster, 'failover')) {
-        return { text: 'REROUTE', tone: 'critical' as const }
-      }
-      if (mode === 'recovery' && isScenario(cluster, 'failover')) {
-        return { text: 'REJOIN', tone: 'healthy' as const }
-      }
-      if (
+  const rules = WIDGET_STATUS_RULES[widgetId]
+  return (
+    rules
+      ?.find((rule) => rule.applies(cluster, mode))
+      ?.display(cluster, mode) ?? DEFAULT_STATUS_DISPLAY
+  )
+}
+
+const DEFAULT_STATUS_DISPLAY = {
+  text: 'OK',
+  tone: 'healthy',
+} satisfies StatusDisplay
+
+const WIDGET_STATUS_RULES: Partial<Record<WidgetId, WidgetStatusRule[]>> = {
+  lb: [
+    {
+      applies: (cluster, mode) =>
+        mode === 'incident' && isScenario(cluster, 'failover'),
+      display: () => ({ text: 'REROUTE', tone: 'critical' }),
+    },
+    {
+      applies: (cluster, mode) =>
+        mode === 'recovery' && isScenario(cluster, 'failover'),
+      display: () => ({ text: 'REJOIN', tone: 'healthy' }),
+    },
+    {
+      applies: (cluster) =>
         !cluster.loadBalancerHealthy ||
-        cluster.readyReplicas < Math.max(2, cluster.replicaTarget - 1)
-      ) {
-        return {
-          text: mode === 'preview' ? 'WATCH' : 'SHIFT',
-          tone:
-            mode === 'preview' ? ('preview' as const) : ('degraded' as const),
-        }
-      }
-      if (mode === 'preview') {
-        return { text: 'WATCH', tone: 'preview' as const }
-      }
-      if (mode === 'surge') {
-        return { text: 'SURGE', tone: 'surge' as const }
-      }
-      return { text: 'ROUTE', tone: 'healthy' as const }
-    case 'k8s':
-      if (mode === 'incident') {
-        return {
-          text: isScenario(cluster, 'queueFull') ? 'BACKPR' : 'ROLL',
-          tone: 'critical' as const,
-        }
-      }
-      if (mode === 'recovery') {
-        return { text: 'RECON', tone: 'healthy' as const }
-      }
-      if (cluster.startingReplicas > 0 || cluster.drainingReplicas > 0) {
-        return {
-          text: mode === 'surge' ? 'SCALE' : 'RECON',
-          tone: mode === 'surge' ? ('surge' as const) : ('degraded' as const),
-        }
-      }
-      if (mode === 'preview') {
-        return { text: 'SCAN', tone: 'preview' as const }
-      }
-      return { text: 'READY', tone: 'healthy' as const }
-    case 'postgres':
-      if (mode === 'incident' && isScenario(cluster, 'dbDown')) {
-        return { text: 'RETRY', tone: 'critical' as const }
-      }
-      if (mode === 'recovery' && isScenario(cluster, 'dbDown')) {
-        return { text: 'RESYNC', tone: 'healthy' as const }
-      }
-      if (mode === 'preview') {
-        return { text: 'GUARD', tone: 'preview' as const }
-      }
-      if (cluster.errorRate > 6 || cluster.latencyMs > 70) {
-        return {
-          text: 'LAG',
-          tone: mode === 'surge' ? ('surge' as const) : ('degraded' as const),
-        }
-      }
-      if (mode === 'surge') {
-        return { text: 'SYNC+', tone: 'surge' as const }
-      }
-      return { text: 'SYNC', tone: 'healthy' as const }
-    case 'redis':
-      if (mode === 'incident' && isScenario(cluster, 'cacheReload')) {
-        return { text: 'WARM', tone: 'degraded' as const }
-      }
-      if (mode === 'recovery' && isScenario(cluster, 'cacheReload')) {
-        return { text: 'REHIT', tone: 'healthy' as const }
-      }
-      if (mode === 'preview') {
-        return { text: 'MISS?', tone: 'preview' as const }
-      }
-      if (cluster.queueDepth > 40 || cluster.latencyMs > 60) {
-        return {
-          text: 'HOT',
-          tone: mode === 'surge' ? ('surge' as const) : ('degraded' as const),
-        }
-      }
-      if (mode === 'surge') {
-        return { text: 'PRIME', tone: 'surge' as const }
-      }
-      return { text: 'HIT', tone: 'healthy' as const }
-    default:
-      return { text: 'OK', tone: 'healthy' as const }
-  }
+        cluster.readyReplicas < Math.max(2, cluster.replicaTarget - 1),
+      display: (_cluster, mode) =>
+        mode === 'preview'
+          ? { text: 'WATCH', tone: 'preview' }
+          : { text: 'SHIFT', tone: 'degraded' },
+    },
+    {
+      applies: (_cluster, mode) => mode === 'preview',
+      display: () => ({ text: 'WATCH', tone: 'preview' }),
+    },
+    {
+      applies: (_cluster, mode) => mode === 'surge',
+      display: () => ({ text: 'SURGE', tone: 'surge' }),
+    },
+    {
+      applies: () => true,
+      display: () => ({ text: 'ROUTE', tone: 'healthy' }),
+    },
+  ],
+  k8s: [
+    {
+      applies: (_cluster, mode) => mode === 'incident',
+      display: (cluster) => ({
+        text: isScenario(cluster, 'queueFull') ? 'BACKPR' : 'ROLL',
+        tone: 'critical',
+      }),
+    },
+    {
+      applies: (_cluster, mode) => mode === 'recovery',
+      display: () => ({ text: 'RECON', tone: 'healthy' }),
+    },
+    {
+      applies: (cluster) =>
+        cluster.startingReplicas > 0 || cluster.drainingReplicas > 0,
+      display: (_cluster, mode) =>
+        mode === 'surge'
+          ? { text: 'SCALE', tone: 'surge' }
+          : { text: 'RECON', tone: 'degraded' },
+    },
+    {
+      applies: (_cluster, mode) => mode === 'preview',
+      display: () => ({ text: 'SCAN', tone: 'preview' }),
+    },
+    {
+      applies: () => true,
+      display: () => ({ text: 'READY', tone: 'healthy' }),
+    },
+  ],
+  postgres: [
+    {
+      applies: (cluster, mode) =>
+        mode === 'incident' && isScenario(cluster, 'dbDown'),
+      display: () => ({ text: 'RETRY', tone: 'critical' }),
+    },
+    {
+      applies: (cluster, mode) =>
+        mode === 'recovery' && isScenario(cluster, 'dbDown'),
+      display: () => ({ text: 'RESYNC', tone: 'healthy' }),
+    },
+    {
+      applies: (_cluster, mode) => mode === 'preview',
+      display: () => ({ text: 'GUARD', tone: 'preview' }),
+    },
+    {
+      applies: (cluster) => cluster.errorRate > 6 || cluster.latencyMs > 70,
+      display: (_cluster, mode) => ({
+        text: 'LAG',
+        tone: mode === 'surge' ? 'surge' : 'degraded',
+      }),
+    },
+    {
+      applies: (_cluster, mode) => mode === 'surge',
+      display: () => ({ text: 'SYNC+', tone: 'surge' }),
+    },
+    {
+      applies: () => true,
+      display: () => ({ text: 'SYNC', tone: 'healthy' }),
+    },
+  ],
+  redis: [
+    {
+      applies: (cluster, mode) =>
+        mode === 'incident' && isScenario(cluster, 'cacheReload'),
+      display: () => ({ text: 'WARM', tone: 'degraded' }),
+    },
+    {
+      applies: (cluster, mode) =>
+        mode === 'recovery' && isScenario(cluster, 'cacheReload'),
+      display: () => ({ text: 'REHIT', tone: 'healthy' }),
+    },
+    {
+      applies: (_cluster, mode) => mode === 'preview',
+      display: () => ({ text: 'MISS?', tone: 'preview' }),
+    },
+    {
+      applies: (cluster) => cluster.queueDepth > 40 || cluster.latencyMs > 60,
+      display: (_cluster, mode) => ({
+        text: 'HOT',
+        tone: mode === 'surge' ? 'surge' : 'degraded',
+      }),
+    },
+    {
+      applies: (_cluster, mode) => mode === 'surge',
+      display: () => ({ text: 'PRIME', tone: 'surge' }),
+    },
+    {
+      applies: () => true,
+      display: () => ({ text: 'HIT', tone: 'healthy' }),
+    },
+  ],
 }
 
 function getCounterDisplay(
@@ -1637,142 +2034,128 @@ function getWidgetMeta(
   cluster: ClusterSnapshot,
   mode: AmbientSemanticMode,
 ): WidgetMeta {
-  switch (widgetId) {
-    case 'req_rate':
-      return {
-        lead:
-          mode === 'preview'
-            ? 'traffic paths opening'
-            : cluster.requestRate > 2600
-              ? 'edge burst active'
-              : 'steady ingress',
-        detail: `${Math.round(cluster.requestRate)} req/min`,
-      }
-    case 'latency':
-      return {
-        lead:
-          cluster.latencyMs > 65
-            ? 'tail latency climbing'
-            : mode === 'recovery'
-              ? 'latency settling'
-              : 'mesh latency stable',
-        detail: `p95 ${Math.round(cluster.latencyMs)}ms`,
-      }
-    case 'errors':
-      return {
-        lead:
-          cluster.errorRate > 4
-            ? 'error budget burning'
-            : mode === 'recovery'
-              ? 'error rate cooling'
-              : 'healthy request mix',
-        detail: `${cluster.errorRate.toFixed(1)}% errors`,
-      }
-    case 'queue':
-      return {
-        lead:
-          cluster.queueDepth > 40
-            ? 'backlog under pressure'
-            : mode === 'surge'
-              ? 'workers pre-scaling'
-              : 'queue draining cleanly',
-        detail: `${cluster.queueDepth} jobs buffered`,
-      }
-    case 'cpu':
-      return {
-        lead:
-          cluster.trafficIntensity > 0.72
-            ? 'cpu pressure rising'
-            : 'compute headroom ok',
-        detail: `${Math.round(36 + cluster.trafficIntensity * 26)}% load`,
-      }
-    case 'memory':
-      return {
-        lead:
-          cluster.startingReplicas > 0
-            ? 'warm pods reserving'
-            : 'memory envelope calm',
-        detail: `${cluster.liveReplicas} live / ${Math.round(getTargetValue('memory', cluster, mode))}%`,
-      }
-    case 'uptime':
-      return {
-        lead:
-          mode === 'recovery'
-            ? 'availability horizon healing'
-            : 'availability envelope',
-        detail: `${cluster.readyReplicas}/${cluster.replicaTarget} ready`,
-      }
-    case 'traffic':
-      return {
-        lead:
-          mode === 'preview'
-            ? 'hover preview uplift'
-            : mode === 'surge'
-              ? 'surge routing active'
-              : 'public edge traffic',
-        detail: `${Math.round(cluster.requestRate)} req/min`,
-      }
-    case 'targets':
-      return {
-        lead:
-          cluster.loadBalancerTargets.length <
-          Math.max(2, cluster.replicaTarget - 1)
-            ? 'fanout lanes narrowed'
-            : 'fanout lanes open',
-        detail: `${cluster.loadBalancerTargets.join(', ') || 'none ready'}`,
-      }
-    case 'pods':
-      return {
-        lead:
-          cluster.startingReplicas > 0 || cluster.drainingReplicas > 0
-            ? 'replica set moving'
-            : 'replicas in balance',
-        detail: `${cluster.liveReplicas} live / ${cluster.readyReplicas} serving`,
-      }
-    case 'lb':
-      return {
-        lead:
-          mode === 'incident' && isScenario(cluster, 'failover')
-            ? 'rerouting hot traffic'
-            : 'edge routes stable',
-        detail: `${cluster.loadBalancerHealthy ? 'clean' : 'degraded'} | ${Math.round(cluster.latencyMs)}ms`,
-      }
-    case 'postgres':
-      return {
-        lead:
-          mode === 'incident' && isScenario(cluster, 'dbDown')
-            ? 'replication path backing off'
-            : 'primary replica path aligned',
-        detail:
-          cluster.errorRate > 6
-            ? 'replication lag visible'
-            : 'commit path healthy',
-      }
-    case 'redis':
-      return {
-        lead:
-          mode === 'incident' && isScenario(cluster, 'cacheReload')
-            ? 'cache tiles warming'
-            : 'cache heat balanced',
-        detail:
-          cluster.queueDepth > 40
-            ? 'miss pressure elevated'
-            : 'misses within budget',
-      }
-    case 'k8s':
-      return {
-        lead:
-          cluster.startingReplicas > 0 || cluster.drainingReplicas > 0
-            ? 'controllers reconciling'
-            : 'cluster control ready',
-        detail: `${cluster.startingReplicas} starting / ${cluster.drainingReplicas} draining`,
-      }
-    default:
-      return {
-        lead: 'cluster telemetry',
-        detail: 'ambient signal online',
-      }
-  }
+  return WIDGET_META_RESOLVERS[widgetId]?.(cluster, mode) ?? DEFAULT_WIDGET_META
+}
+
+const DEFAULT_WIDGET_META = {
+  lead: 'cluster telemetry',
+  detail: 'ambient signal online',
+} satisfies WidgetMeta
+
+const WIDGET_META_RESOLVERS: Partial<Record<WidgetId, WidgetMetaResolver>> = {
+  req_rate: (cluster, mode) => ({
+    lead:
+      mode === 'preview'
+        ? 'traffic paths opening'
+        : cluster.requestRate > 2600
+          ? 'edge burst active'
+          : 'steady ingress',
+    detail: `${Math.round(cluster.requestRate)} req/min`,
+  }),
+  latency: (cluster, mode) => ({
+    lead:
+      cluster.latencyMs > 65
+        ? 'tail latency climbing'
+        : mode === 'recovery'
+          ? 'latency settling'
+          : 'mesh latency stable',
+    detail: `p95 ${Math.round(cluster.latencyMs)}ms`,
+  }),
+  errors: (cluster, mode) => ({
+    lead:
+      cluster.errorRate > 4
+        ? 'error budget burning'
+        : mode === 'recovery'
+          ? 'error rate cooling'
+          : 'healthy request mix',
+    detail: `${cluster.errorRate.toFixed(1)}% errors`,
+  }),
+  queue: (cluster, mode) => ({
+    lead:
+      cluster.queueDepth > 40
+        ? 'backlog under pressure'
+        : mode === 'surge'
+          ? 'workers pre-scaling'
+          : 'queue draining cleanly',
+    detail: `${cluster.queueDepth} jobs buffered`,
+  }),
+  cpu: (cluster) => ({
+    lead:
+      cluster.trafficIntensity > 0.72
+        ? 'cpu pressure rising'
+        : 'compute headroom ok',
+    detail: `${Math.round(36 + cluster.trafficIntensity * 26)}% load`,
+  }),
+  memory: (cluster, mode) => ({
+    lead:
+      cluster.startingReplicas > 0
+        ? 'warm pods reserving'
+        : 'memory envelope calm',
+    detail: `${cluster.liveReplicas} live / ${Math.round(getTargetValue('memory', cluster, mode))}%`,
+  }),
+  uptime: (cluster, mode) => ({
+    lead:
+      mode === 'recovery'
+        ? 'availability horizon healing'
+        : 'availability envelope',
+    detail: `${cluster.readyReplicas}/${cluster.replicaTarget} ready`,
+  }),
+  traffic: (cluster, mode) => ({
+    lead:
+      mode === 'preview'
+        ? 'hover preview uplift'
+        : mode === 'surge'
+          ? 'surge routing active'
+          : 'public edge traffic',
+    detail: `${Math.round(cluster.requestRate)} req/min`,
+  }),
+  targets: (cluster) => ({
+    lead:
+      cluster.loadBalancerTargets.length <
+      Math.max(2, cluster.replicaTarget - 1)
+        ? 'fanout lanes narrowed'
+        : 'fanout lanes open',
+    detail: `${cluster.loadBalancerTargets.join(', ') || 'none ready'}`,
+  }),
+  pods: (cluster) => ({
+    lead:
+      cluster.startingReplicas > 0 || cluster.drainingReplicas > 0
+        ? 'replica set moving'
+        : 'replicas in balance',
+    detail: `${cluster.liveReplicas} live / ${cluster.readyReplicas} serving`,
+  }),
+  lb: (cluster, mode) => ({
+    lead:
+      mode === 'incident' && isScenario(cluster, 'failover')
+        ? 'rerouting hot traffic'
+        : 'edge routes stable',
+    detail: `${cluster.loadBalancerHealthy ? 'clean' : 'degraded'} | ${Math.round(cluster.latencyMs)}ms`,
+  }),
+  postgres: (cluster, mode) => ({
+    lead:
+      mode === 'incident' && isScenario(cluster, 'dbDown')
+        ? 'replication path backing off'
+        : 'primary replica path aligned',
+    detail:
+      cluster.errorRate > 6 ? 'replication lag visible' : 'commit path healthy',
+  }),
+  redis: (cluster, mode) => ({
+    lead:
+      mode === 'incident' && isScenario(cluster, 'cacheReload')
+        ? 'cache tiles warming'
+        : 'cache heat balanced',
+    detail:
+      cluster.queueDepth > 40
+        ? 'miss pressure elevated'
+        : 'misses within budget',
+  }),
+  k8s: (cluster) => ({
+    lead:
+      cluster.startingReplicas > 0 || cluster.drainingReplicas > 0
+        ? 'controllers reconciling'
+        : 'cluster control ready',
+    detail: `${cluster.startingReplicas} starting / ${cluster.drainingReplicas} draining`,
+  }),
 }
 
 function getCompositeWidgetMeta(
@@ -1812,6 +2195,111 @@ function getShouldRenderMetricWidgets() {
   return width >= 1280 && width / height >= 1.6
 }
 
+function updateMetricMotion({
+  cluster,
+  mode,
+  metricMotion,
+}: SingleMetricRuntime) {
+  const errorJump = Math.max(
+    0,
+    cluster.errorRate - metricMotion.previousErrorRate,
+  )
+  const unhealthyJump = Math.max(
+    0,
+    cluster.unhealthyReplicas - metricMotion.previousUnhealthyReplicas,
+  )
+  const queueJump = Math.max(
+    0,
+    cluster.queueDepth - metricMotion.previousQueueDepth,
+  )
+
+  metricMotion.errorShock = clamp(
+    metricMotion.errorShock * 0.42 +
+      errorJump * 18 +
+      unhealthyJump * 10 +
+      (cluster.emergencyState === 'emergency' ? 8 : 0) +
+      (mode === 'incident' ? 6 : 0),
+    0,
+    54,
+  )
+  metricMotion.queueShock = clamp(
+    metricMotion.queueShock * 0.56 +
+      queueJump * 0.62 +
+      (cluster.scenarioKey === 'queueFull' &&
+      cluster.emergencyState === 'emergency'
+        ? 10
+        : 0),
+    0,
+    28,
+  )
+}
+
+function rememberMetricMotionSnapshot(
+  metricMotion: MetricMotionState,
+  cluster: ClusterSnapshot,
+) {
+  metricMotion.previousErrorRate = cluster.errorRate
+  metricMotion.previousQueueDepth = cluster.queueDepth
+  metricMotion.previousUnhealthyReplicas = cluster.unhealthyReplicas
+}
+
+function getSparklineNextValue(
+  id: WidgetId,
+  targetValue: number,
+  current: number,
+  metricMotion: MetricMotionState,
+) {
+  const drift =
+    id === 'errors'
+      ? (targetValue - current) * 0.44 +
+        metricMotion.errorShock * (0.34 + Math.random() * 0.12) +
+        (Math.random() - 0.5) * 4
+      : (targetValue - current) * 0.32 + (Math.random() - 0.5) * 5
+  const nextValue = clamp(current + drift, 4, 98)
+
+  return id === 'errors'
+    ? Math.max(
+        nextValue,
+        clamp(targetValue + metricMotion.errorShock * 0.38, 6, 100),
+      )
+    : nextValue
+}
+
+function appendSparklineValue(
+  previous: number[],
+  id: WidgetId,
+  targetValue: number,
+  metricMotion: MetricMotionState,
+) {
+  const next = [...previous.slice(1)]
+  const current = getRequiredArrayItem(
+    previous,
+    previous.length - 1,
+    'Expected a previous sparkline point.',
+  )
+  next.push(getSparklineNextValue(id, targetValue, current, metricMotion))
+  return next
+}
+
+function appendQueueBarValue(
+  previous: number[],
+  cluster: ClusterSnapshot,
+  mode: AmbientSemanticMode,
+  metricMotion: MetricMotionState,
+) {
+  const shifted = [...previous.slice(1)]
+  shifted.push(
+    clamp(
+      getNextBarValue(cluster, mode) +
+        metricMotion.queueShock * 0.36 +
+        (cluster.emergencyState === 'emergency' ? 4 : 0),
+      8,
+      100,
+    ),
+  )
+  return shifted
+}
+
 function getGroupDelay(
   groups: MetricLayoutGroup[],
   groupIndex: number,
@@ -1825,17 +2313,1019 @@ function getGroupDelay(
   return (priorItems + itemIndex) * 130 + offset
 }
 
-function MetricWidget({
+function getWidgetBaseColor(isDark: boolean, colorIndex: number) {
+  return getRequiredArrayItem(
+    isDark ? darkModeColors : lightModeColors,
+    colorIndex,
+    `Missing ${isDark ? 'dark' : 'light'} widget color at index ${colorIndex}.`,
+  )
+}
+
+function getGaugeNormalColor(id: WidgetId, type: WidgetType, isDark: boolean) {
+  const gaugeColors: Partial<Record<WidgetId, string>> = {
+    cpu: pickThemeColor(isDark, '#38bdf8', '#0369a1'),
+    memory: pickThemeColor(isDark, '#f59e0b', '#c2410c'),
+  }
+
+  return type === 'gauge' ? gaugeColors[id] : undefined
+}
+
+function getMetricStatusColor({
+  statusDisplay,
+  visualState,
+  isDark,
+}: {
+  statusDisplay: StatusDisplay
+  visualState: WidgetVisualState
+  isDark: boolean
+}) {
+  const healthy = pickThemeColor(isDark, '#00ff88', '#009955')
+  const colors = {
+    healthy,
+    error: pickThemeColor(isDark, '#ff5555', '#c62828'),
+    recovered: healthy,
+    degraded: pickThemeColor(isDark, '#ffaa00', '#cc7700'),
+    fallback: pickThemeColor(isDark, '#ff5555', '#c62828'),
+  }
+
+  if (statusDisplay.tone === 'healthy') return colors.healthy
+  if (visualState === 'error') return colors.error
+  if (visualState === 'recovered') return colors.recovered
+  if (statusDisplay.tone === 'degraded') return colors.degraded
+  return colors.fallback
+}
+
+function shouldShowWidgetFooter(id: WidgetId) {
+  return !(
+    ['queue', 'targets', 'postgres', 'redis', 'k8s'] as WidgetId[]
+  ).includes(id)
+}
+
+function getWidgetLabelColor(
+  visualState: WidgetVisualState,
+  emergencyRed: string,
+  recoveryGreen: string,
+) {
+  const colors = {
+    error: emergencyRed,
+    recovered: recoveryGreen,
+    normal: undefined,
+  } satisfies Record<WidgetVisualState, string | undefined>
+
+  return colors[visualState]
+}
+
+function getVisualStateColor(
+  visualState: WidgetVisualState,
+  normalColor: string,
+  emergencyRed: string,
+  recoveryGreen: string,
+) {
+  const colors = {
+    error: emergencyRed,
+    recovered: recoveryGreen,
+    normal: normalColor,
+  } satisfies Record<WidgetVisualState, string>
+
+  return colors[visualState]
+}
+
+function MetricWidgetBody(props: MetricWidgetBodyProps) {
+  const renderBody = METRIC_WIDGET_BODY_RENDERERS[props.type]
+  return renderBody(props)
+}
+
+const METRIC_WIDGET_BODY_RENDERERS = {
+  sparkline: renderSparklineMetricBody,
+  bars: renderBarsMetricBody,
+  gauge: renderGaugeMetricBody,
+  rings: renderRingsMetricBody,
+  counter: renderCounterMetricBody,
+  status: renderStatusMetricBody,
+  fanout: renderFanoutMetricBody,
+  router: renderRouterMetricBody,
+  orchestrator: renderOrchestratorMetricBody,
+  pipeline: renderPipelineMetricBody,
+  heatmap: renderHeatmapMetricBody,
+} satisfies Record<
+  WidgetType,
+  (props: MetricWidgetBodyProps) => React.ReactNode
+>
+
+function getCommonChartProps({
+  cluster,
+  mode,
+  animationPhase,
+  isPreviewing,
+  isDark,
+  bodyHeight,
+}: MetricWidgetBodyProps) {
+  return {
+    cluster,
+    mode,
+    phase: animationPhase,
+    isFocused: isPreviewing,
+    isDark,
+    height: bodyHeight,
+  }
+}
+
+function renderSparklineMetricBody({
+  data,
+  effectiveColor,
+  bodyHeight,
+  isPreviewing,
+  isDark,
+}: MetricWidgetBodyProps) {
+  return (
+    <Sparkline
+      data={data}
+      color={effectiveColor}
+      width={102}
+      height={bodyHeight}
+      isFocused={isPreviewing}
+      isDark={isDark}
+    />
+  )
+}
+
+function renderBarsMetricBody({
+  bars,
+  cluster,
+  effectiveColor,
+  isPreviewing,
+  isDark,
+  bodyHeight,
+}: MetricWidgetBodyProps) {
+  return (
+    <div className="flex w-full flex-col gap-1">
+      <MetricValueRow
+        value={String(cluster.queueDepth)}
+        color={effectiveColor}
+        isPreviewing={isPreviewing}
+        isDark={isDark}
+      />
+      <MiniBarChart
+        values={bars}
+        color={effectiveColor}
+        width={102}
+        height={bodyHeight - 18}
+        isFocused={isPreviewing}
+        isDark={isDark}
+      />
+    </div>
+  )
+}
+
+function renderGaugeMetricBody(props: MetricWidgetBodyProps) {
+  return (
+    <MetricGaugeBody
+      id={props.id}
+      value={props.value}
+      color={props.effectiveColor}
+      isPreviewing={props.isPreviewing}
+      isDark={props.isDark}
+    />
+  )
+}
+
+function renderRingsMetricBody(props: MetricWidgetBodyProps) {
+  return (
+    <MetricRingsBody
+      cluster={props.cluster}
+      value={props.value}
+      color={props.effectiveColor}
+      phase={props.animationPhase}
+      isPreviewing={props.isPreviewing}
+      isDark={props.isDark}
+    />
+  )
+}
+
+function renderCounterMetricBody(props: MetricWidgetBodyProps) {
+  return (
+    <MetricCounter
+      text={props.counterText}
+      color={props.effectiveColor}
+      isPreviewing={props.isPreviewing}
+      isDark={props.isDark}
+    />
+  )
+}
+
+function renderStatusMetricBody(props: MetricWidgetBodyProps) {
+  return (
+    <MetricStatus
+      display={props.statusDisplay}
+      color={props.statusColor}
+      isPreviewing={props.isPreviewing}
+      isDark={props.isDark}
+    />
+  )
+}
+
+function renderFanoutMetricBody(props: MetricWidgetBodyProps) {
+  return (
+    <TargetFanoutChart
+      cluster={props.cluster}
+      color={props.effectiveColor}
+      isFocused={props.isPreviewing}
+      isDark={props.isDark}
+      height={props.bodyHeight}
+    />
+  )
+}
+
+function renderRouterMetricBody(props: MetricWidgetBodyProps) {
+  return (
+    <LoadBalancerRouteChart
+      {...getCommonChartProps(props)}
+      color={props.effectiveColor}
+    />
+  )
+}
+
+function renderOrchestratorMetricBody(props: MetricWidgetBodyProps) {
+  return <ControlPlaneChart {...getCommonChartProps(props)} />
+}
+
+function renderPipelineMetricBody(props: MetricWidgetBodyProps) {
+  return <ReplicationPipelineChart {...getCommonChartProps(props)} />
+}
+
+function renderHeatmapMetricBody(props: MetricWidgetBodyProps) {
+  return <CacheHeatGrid {...getCommonChartProps(props)} />
+}
+
+function MetricValueRow({
+  value,
+  color,
+  isPreviewing,
+  isDark,
+}: {
+  value: string
+  color: string
+  isPreviewing: boolean
+  isDark: boolean
+}) {
+  return (
+    <span
+      className="font-mono text-[11px] font-semibold tabular-nums transition-all duration-300"
+      style={{
+        color,
+        opacity: isPreviewing ? 1 : isDark ? 0.38 : 0.5,
+        textShadow: isPreviewing && isDark ? `0 0 6px ${color}` : 'none',
+      }}
+    >
+      {value}
+    </span>
+  )
+}
+
+function MetricGaugeBody({
+  id,
+  value,
+  color,
+  isPreviewing,
+  isDark,
+}: {
+  id: WidgetId
+  value: number
+  color: string
+  isPreviewing: boolean
+  isDark: boolean
+}) {
+  const label = id === 'uptime' ? undefined : `${Math.round(value)}%`
+  const display =
+    id === 'uptime' ? `${value.toFixed(2)}%` : `${Math.round(value)}%`
+
+  return (
+    <div className="flex w-full items-center justify-between gap-2">
+      <CircularGauge
+        value={clamp(value, 0, 100)}
+        color={color}
+        size={28}
+        isFocused={isPreviewing}
+        isDark={isDark}
+        {...(label ? { label } : {})}
+      />
+      <MetricCounter
+        text={display}
+        color={color}
+        isPreviewing={isPreviewing}
+        isDark={isDark}
+        className="min-w-[52px] text-right text-[9px]"
+      />
+    </div>
+  )
+}
+
+function MetricRingsBody({
+  cluster,
+  value,
+  color,
+  phase,
+  isPreviewing,
+  isDark,
+}: {
+  cluster: ClusterSnapshot
+  value: number
+  color: string
+  phase: number
+  isPreviewing: boolean
+  isDark: boolean
+}) {
+  return (
+    <div className="relative flex h-full w-full items-center overflow-hidden">
+      <AvailabilityRings
+        cluster={cluster}
+        uptimeValue={value}
+        color={color}
+        phase={phase}
+        isFocused={isPreviewing}
+        isDark={isDark}
+        size={42}
+      />
+      <div className="absolute right-0 bottom-0 text-right font-mono">
+        <MetricCounter
+          text={`${value.toFixed(2)}%`}
+          color={color}
+          isPreviewing={isPreviewing}
+          isDark={isDark}
+          className="text-[9px]"
+        />
+        <div
+          className={`text-[7px] tracking-[0.1em] whitespace-nowrap uppercase ${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}
+          style={{ opacity: isPreviewing ? 0.68 : 0.42 }}
+        >
+          {cluster.readyReplicas}/{cluster.replicaTarget} ready
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MetricCounter({
+  text,
+  color,
+  isPreviewing,
+  isDark,
+  className = 'min-h-[16px] text-[13px]',
+}: {
+  text: string
+  color: string
+  isPreviewing: boolean
+  isDark: boolean
+  className?: string
+}) {
+  return (
+    <span
+      className={`${className} font-mono font-medium whitespace-nowrap tabular-nums transition-all duration-300`}
+      style={{
+        color,
+        opacity: isPreviewing ? 1 : isDark ? 0.34 : 0.48,
+        textShadow: isPreviewing && isDark ? `0 0 6px ${color}` : 'none',
+      }}
+    >
+      {text}
+    </span>
+  )
+}
+
+function MetricStatus({
+  display,
+  color,
+  isPreviewing,
+  isDark,
+}: {
+  display: StatusDisplay
+  color: string
+  isPreviewing: boolean
+  isDark: boolean
+}) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span
+        className={`h-2 w-2 rounded-full transition-all duration-300 ${isPreviewing || display.tone !== 'healthy' ? 'animate-pulse' : ''}`}
+        style={{
+          backgroundColor: color,
+          boxShadow: isPreviewing ? `0 0 ${isDark ? 8 : 4}px ${color}` : 'none',
+          opacity: isPreviewing ? 1 : isDark ? 0.35 : 0.5,
+        }}
+      />
+      <span
+        className={`min-w-[44px] font-mono text-[9px] whitespace-nowrap transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
+        style={{
+          opacity: isPreviewing ? 0.82 : isDark ? 0.3 : 0.42,
+          color,
+          fontWeight: isDark ? 'normal' : 500,
+        }}
+      >
+        {display.text}
+      </span>
+    </div>
+  )
+}
+
+function MetricWidgetHeader({
+  label,
+  widgetMeta,
+  visualState,
+  emergencyRed,
+  recoveryGreen,
+  effectiveColor,
+  textOpacity,
+  isPreviewing,
+  isDark,
+  headerHeight,
+}: {
+  label: string
+  widgetMeta: WidgetMeta
+  visualState: WidgetVisualState
+  emergencyRed: string
+  recoveryGreen: string
+  effectiveColor: string
+  textOpacity: number
+  isPreviewing: boolean
+  isDark: boolean
+  headerHeight: number
+}) {
+  return (
+    <div className="min-w-0 shrink-0" style={{ height: headerHeight }}>
+      <span
+        className={`block h-[10px] truncate font-mono text-[8px] tracking-wider uppercase transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
+        style={{
+          opacity: textOpacity,
+          color: getWidgetLabelColor(visualState, emergencyRed, recoveryGreen),
+        }}
+      >
+        {label}
+      </span>
+      <span
+        className={`block h-[10px] truncate font-mono text-[7px] tracking-[0.16em] whitespace-nowrap uppercase ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
+        style={{
+          opacity: isPreviewing ? 0.7 : 0.42,
+          color: effectiveColor,
+        }}
+      >
+        {widgetMeta.lead}
+      </span>
+    </div>
+  )
+}
+
+function MetricWidgetFooter({
+  showFooter,
+  widgetMeta,
+  visualState,
+  effectiveColor,
+  footerHeight,
+  isPreviewing,
+  isDark,
+}: {
+  showFooter: boolean
+  widgetMeta: WidgetMeta
+  visualState: WidgetVisualState
+  effectiveColor: string
+  footerHeight: number
+  isPreviewing: boolean
+  isDark: boolean
+}) {
+  if (!showFooter) return null
+
+  return (
+    <div
+      className={`flex shrink-0 items-center overflow-hidden border-t font-mono text-[7px] ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
+      style={{
+        height: footerHeight,
+        opacity: isPreviewing ? 0.9 : isDark ? 0.42 : 0.56,
+        color: visualState === 'normal' ? undefined : effectiveColor,
+      }}
+    >
+      {widgetMeta.detail}
+    </div>
+  )
+}
+
+function updateTrafficFlowSeries({
+  snapshot,
+  currentMode,
+  requestPace,
+  setReqData,
+  setLatencyData,
+}: {
+  snapshot: ClusterSnapshot
+  currentMode: AmbientSemanticMode
+  requestPace: { previousRate: number; phase: number; burst: number }
+  setReqData: React.Dispatch<React.SetStateAction<number[]>>
+  setLatencyData: React.Dispatch<React.SetStateAction<number[]>>
+}) {
+  const rateDelta = snapshot.requestRate - requestPace.previousRate
+  requestPace.previousRate = snapshot.requestRate
+  requestPace.phase += 0.45 + snapshot.trafficIntensity * 0.28
+  requestPace.burst =
+    requestPace.burst * 0.72 + Math.min(Math.abs(rateDelta) / 180, 18)
+
+  const requestTarget = getRequestPaceTarget(snapshot, requestPace, rateDelta)
+  const latencyTarget = getTargetValue('latency', snapshot, currentMode)
+
+  setReqData((previous) =>
+    appendCompositeSeriesPoint(
+      previous,
+      requestTarget,
+      (requestTarget - getLastSeriesPoint(previous)) * 0.46 +
+        Math.sin(requestPace.phase * 1.3) * 2.4 +
+        (Math.random() - 0.5) * (6 + requestPace.burst * 0.16),
+    ),
+  )
+  setLatencyData((previous) =>
+    appendCompositeSeriesPoint(
+      previous,
+      latencyTarget,
+      (latencyTarget - getLastSeriesPoint(previous)) * 0.3 +
+        (Math.random() - 0.5) * 3,
+    ),
+  )
+}
+
+function getRequestPaceTarget(
+  snapshot: ClusterSnapshot,
+  requestPace: { phase: number; burst: number },
+  rateDelta: number,
+) {
+  const valleyWave =
+    Math.sin(requestPace.phase) * 10 +
+    Math.sin(requestPace.phase * 0.48 + 0.8) * 6
+  const spikeWave =
+    Math.max(0, Math.sin(requestPace.phase * 1.7 - 0.6)) *
+    (7 + requestPace.burst)
+
+  return clamp(
+    snapshot.requestRate / 24 +
+      valleyWave +
+      spikeWave +
+      rateDelta / 95 +
+      snapshot.trafficIntensity * 8,
+    8,
+    98,
+  )
+}
+
+function getLastSeriesPoint(previous: number[]) {
+  return getRequiredArrayItem(
+    previous,
+    previous.length - 1,
+    'Expected a previous series point.',
+  )
+}
+
+function appendCompositeSeriesPoint(
+  previous: number[],
+  _target: number,
+  drift: number,
+) {
+  const next = [...previous.slice(1)]
+  next.push(clamp(getLastSeriesPoint(previous) + drift, 4, 98))
+  return next
+}
+
+function updateCapacitySeries({
+  snapshot,
+  currentMode,
+  setCpuValue,
+  setMemoryValue,
+  setCpuHistory,
+  setMemoryHistory,
+  setPodHistory,
+}: {
+  snapshot: ClusterSnapshot
+  currentMode: AmbientSemanticMode
+  setCpuValue: React.Dispatch<React.SetStateAction<number>>
+  setMemoryValue: React.Dispatch<React.SetStateAction<number>>
+  setCpuHistory: React.Dispatch<React.SetStateAction<number[]>>
+  setMemoryHistory: React.Dispatch<React.SetStateAction<number[]>>
+  setPodHistory: React.Dispatch<React.SetStateAction<number[]>>
+}) {
+  setCpuValue((previous) => {
+    const next = getNextCapacityValue(previous, 'cpu', snapshot, currentMode)
+    setCpuHistory((history) => [...history.slice(1), next])
+    return next
+  })
+  setMemoryValue((previous) => {
+    const next = getNextCapacityValue(previous, 'memory', snapshot, currentMode)
+    setMemoryHistory((history) => [...history.slice(1), next])
+    return next
+  })
+  setPodHistory((history) => [
+    ...history.slice(1),
+    clamp(
+      (snapshot.readyReplicas / Math.max(snapshot.replicaTarget, 1)) * 100,
+      5,
+      100,
+    ),
+  ])
+}
+
+function getNextCapacityValue(
+  previous: number,
+  id: CapacityMetricId,
+  snapshot: ClusterSnapshot,
+  currentMode: AmbientSemanticMode,
+) {
+  const isEmergency = currentMode === 'incident'
+  const config = CAPACITY_METRIC_CONFIG[id]
+  const profile = isEmergency ? config.emergency : config.normal
+  const target = getTargetValue(id, snapshot, currentMode)
+  const spikeSize = profile.spikeBase + Math.random() * profile.spikeRange
+  const jitter = isEmergency
+    ? (Math.random() - 0.4) * profile.jitterRange
+    : (Math.random() - 0.5) * profile.jitterRange
+  const spike =
+    Math.random() < profile.chance
+      ? (Math.random() < (isEmergency ? 0.75 : 0.5) ? 1 : -1) * spikeSize
+      : jitter
+
+  return clamp(
+    previous + (target - previous) * 0.22 + spike,
+    config.minValue,
+    98,
+  )
+}
+
+const CAPACITY_METRIC_CONFIG = {
+  cpu: {
+    minValue: 12,
+    emergency: { chance: 0.4, spikeBase: 14, spikeRange: 22, jitterRange: 12 },
+    normal: { chance: 0.22, spikeBase: 10, spikeRange: 16, jitterRange: 8 },
+  },
+  memory: {
+    minValue: 20,
+    emergency: { chance: 0.35, spikeBase: 12, spikeRange: 18, jitterRange: 10 },
+    normal: { chance: 0.2, spikeBase: 8, spikeRange: 14, jitterRange: 6 },
+  },
+} satisfies Record<
+  CapacityMetricId,
+  {
+    minValue: number
+    emergency: {
+      chance: number
+      spikeBase: number
+      spikeRange: number
+      jitterRange: number
+    }
+    normal: {
+      chance: number
+      spikeBase: number
+      spikeRange: number
+      jitterRange: number
+    }
+  }
+>
+
+function CompositeMetricBody({
+  id,
+  cluster,
+  mode,
+  reqData,
+  latencyData,
+  cpuValue,
+  memoryValue,
+  cpuHistory,
+  memoryHistory,
+  podHistory,
+  effectiveColor,
+  cpuGaugeColor,
+  memoryGaugeColor,
+  latencyTraceColor,
+  isPreviewing,
+  isDark,
+}: {
+  id: CompositeWidgetId
+  cluster: ClusterSnapshot
+  mode: AmbientSemanticMode
+  reqData: number[]
+  latencyData: number[]
+  cpuValue: number
+  memoryValue: number
+  cpuHistory: number[]
+  memoryHistory: number[]
+  podHistory: number[]
+  effectiveColor: string
+  cpuGaugeColor: string
+  memoryGaugeColor: string
+  latencyTraceColor: string
+  isPreviewing: boolean
+  isDark: boolean
+}) {
+  if (id === 'traffic_flow') {
+    return (
+      <CompositeTrafficFlowBody
+        cluster={cluster}
+        mode={mode}
+        reqData={reqData}
+        latencyData={latencyData}
+        effectiveColor={effectiveColor}
+        latencyTraceColor={latencyTraceColor}
+        isPreviewing={isPreviewing}
+        isDark={isDark}
+      />
+    )
+  }
+
+  return (
+    <CompositeCapacityBody
+      cluster={cluster}
+      cpuValue={cpuValue}
+      memoryValue={memoryValue}
+      cpuHistory={cpuHistory}
+      memoryHistory={memoryHistory}
+      podHistory={podHistory}
+      effectiveColor={effectiveColor}
+      cpuGaugeColor={cpuGaugeColor}
+      memoryGaugeColor={memoryGaugeColor}
+      isPreviewing={isPreviewing}
+      isDark={isDark}
+    />
+  )
+}
+
+function CompositeTrafficFlowBody({
+  cluster,
+  mode,
+  reqData,
+  latencyData,
+  effectiveColor,
+  latencyTraceColor,
+  isPreviewing,
+  isDark,
+}: {
+  cluster: ClusterSnapshot
+  mode: AmbientSemanticMode
+  reqData: number[]
+  latencyData: number[]
+  effectiveColor: string
+  latencyTraceColor: string
+  isPreviewing: boolean
+  isDark: boolean
+}) {
+  const trafficCounter = getCounterDisplay('traffic', cluster, mode)
+
+  return (
+    <div className="grid grid-cols-[72px_minmax(0,1fr)] gap-3">
+      <div className="flex flex-col justify-between rounded-sm border border-white/5 bg-black/5 px-2.5 py-2">
+        <span
+          className="font-mono text-[7px] tracking-[0.16em] uppercase"
+          style={{ color: effectiveColor, opacity: isPreviewing ? 0.8 : 0.5 }}
+        >
+          ingress
+        </span>
+        <MetricCounter
+          text={trafficCounter}
+          color={effectiveColor}
+          isPreviewing={isPreviewing}
+          isDark={isDark}
+          className="text-[18px]"
+        />
+        <span
+          className={`font-mono text-[8px] ${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}
+        >
+          {getWidgetMeta('traffic', cluster, mode).detail}
+        </span>
+      </div>
+
+      <div className="flex min-w-0 flex-col gap-2">
+        <CompositeTrace
+          label="request pace"
+          value={String(Math.round(cluster.requestRate))}
+          data={reqData}
+          color={effectiveColor}
+          isPreviewing={isPreviewing}
+          isDark={isDark}
+        />
+        <CompositeTrace
+          label="tail latency"
+          value={`${Math.round(cluster.latencyMs)}ms`}
+          data={latencyData}
+          color={latencyTraceColor}
+          isPreviewing={isPreviewing}
+          isDark={isDark}
+        />
+      </div>
+    </div>
+  )
+}
+
+function CompositeTrace({
+  label,
+  value,
+  data,
+  color,
+  isPreviewing,
+  isDark,
+}: {
+  label: string
+  value: string
+  data: number[]
+  color: string
+  isPreviewing: boolean
+  isDark: boolean
+}) {
+  return (
+    <div className="rounded-sm border border-white/5 bg-black/5 px-2 py-1.5">
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <span
+          className="font-mono text-[7px] tracking-[0.16em] uppercase"
+          style={{ color, opacity: 0.78 }}
+        >
+          {label}
+        </span>
+        <span
+          className="min-w-[52px] text-right font-mono text-[8px] whitespace-nowrap tabular-nums"
+          style={{ color, opacity: 0.72 }}
+        >
+          {value}
+        </span>
+      </div>
+      <Sparkline
+        data={data}
+        color={color}
+        width={148}
+        height={24}
+        isFocused={isPreviewing}
+        isDark={isDark}
+      />
+    </div>
+  )
+}
+
+function CompositeCapacityBody({
+  cluster,
+  cpuValue,
+  memoryValue,
+  cpuHistory,
+  memoryHistory,
+  podHistory,
+  effectiveColor,
+  cpuGaugeColor,
+  memoryGaugeColor,
+  isPreviewing,
+  isDark,
+}: {
+  cluster: ClusterSnapshot
+  cpuValue: number
+  memoryValue: number
+  cpuHistory: number[]
+  memoryHistory: number[]
+  podHistory: number[]
+  effectiveColor: string
+  cpuGaugeColor: string
+  memoryGaugeColor: string
+  isPreviewing: boolean
+  isDark: boolean
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2 rounded-sm border border-white/5 bg-black/5 px-2 py-1">
+        <MetricCounter
+          text={`${cluster.readyReplicas}/${cluster.replicaTarget}`}
+          color={effectiveColor}
+          isPreviewing={isPreviewing}
+          isDark={isDark}
+          className="text-[11px]"
+        />
+        <div className="min-w-0 flex-1">
+          <Sparkline
+            data={podHistory}
+            color={effectiveColor}
+            width={120}
+            height={16}
+            isFocused={isPreviewing}
+            isDark={isDark}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <CompositeGaugePanel
+          label="cpu"
+          value={cpuValue}
+          history={cpuHistory}
+          color={cpuGaugeColor}
+          isPreviewing={isPreviewing}
+          isDark={isDark}
+        />
+        <CompositeGaugePanel
+          label="mem"
+          value={memoryValue}
+          history={memoryHistory}
+          color={memoryGaugeColor}
+          isPreviewing={isPreviewing}
+          isDark={isDark}
+        />
+      </div>
+    </div>
+  )
+}
+
+function CompositeGaugePanel({
+  label,
+  value,
+  history,
+  color,
+  isPreviewing,
+  isDark,
+}: {
+  label: string
+  value: number
+  history: number[]
+  color: string
+  isPreviewing: boolean
+  isDark: boolean
+}) {
+  return (
+    <div className="flex flex-col items-center gap-1 rounded-sm border border-white/5 bg-black/5 px-2 py-1.5">
+      <div className="flex w-full items-center justify-between">
+        <span
+          className="font-mono text-[7px] tracking-[0.16em] uppercase"
+          style={{ color, opacity: 0.82 }}
+        >
+          {label}
+        </span>
+        <span
+          className="font-mono text-[9px] font-semibold tabular-nums"
+          style={{ color, opacity: isPreviewing ? 0.95 : 0.55 }}
+        >
+          {Math.round(value)}%
+        </span>
+      </div>
+      <CircularGauge
+        value={clamp(value, 0, 100)}
+        color={color}
+        size={40}
+        isFocused={isPreviewing}
+        isDark={isDark}
+        label={`${Math.round(value)}%`}
+        labelFontSize={12}
+      />
+      <Sparkline
+        data={history}
+        color={color}
+        width={90}
+        height={16}
+        isFocused={isPreviewing}
+        isDark={isDark}
+      />
+    </div>
+  )
+}
+
+function CompositeMetricFooter({
+  id,
+  meta,
+  visualState,
+  effectiveColor,
+  isPreviewing,
+  isDark,
+}: {
+  id: CompositeWidgetId
+  meta: WidgetMeta
+  visualState: WidgetVisualState
+  effectiveColor: string
+  isPreviewing: boolean
+  isDark: boolean
+}) {
+  if (id !== 'traffic_flow') return null
+
+  return (
+    <div
+      className={`flex h-[33px] items-start gap-2 overflow-hidden border-t pt-1 font-mono text-[8px] leading-3.5 ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
+      style={{
+        opacity: isPreviewing ? 0.9 : isDark ? 0.42 : 0.56,
+        color: visualState === 'normal' ? undefined : effectiveColor,
+      }}
+    >
+      <div className="min-w-0 shrink">
+        {meta.detail.split('\n').map((line, index) => (
+          <div key={index}>{line}</div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function useSingleMetricState({
   id,
   type,
-  label,
-  colorIndex,
-  delay = 0,
-  isFocused = false,
+  delay,
   cluster,
-  isDark = true,
   mode,
-}: MetricWidgetProps) {
+}: {
+  id: WidgetId
+  type: WidgetType
+  delay: number
+  cluster: ClusterSnapshot
+  mode: AmbientSemanticMode
+}) {
   const [data, setData] = useState<number[]>(() =>
     Array.from({ length: 20 }, () => 40),
   )
@@ -1864,94 +3354,32 @@ function MetricWidget({
       const { cluster: snapshot, mode: currentMode } = stateRef.current
       const targetValue = getTargetValue(id, snapshot, currentMode)
       const metricMotion = metricMotionRef.current
-      const errorJump = Math.max(
-        0,
-        snapshot.errorRate - metricMotion.previousErrorRate,
-      )
-      const unhealthyJump = Math.max(
-        0,
-        snapshot.unhealthyReplicas - metricMotion.previousUnhealthyReplicas,
-      )
-      const queueJump = Math.max(
-        0,
-        snapshot.queueDepth - metricMotion.previousQueueDepth,
-      )
 
-      metricMotion.errorShock = clamp(
-        metricMotion.errorShock * 0.42 +
-          errorJump * 18 +
-          unhealthyJump * 10 +
-          (snapshot.emergencyState === 'emergency' ? 8 : 0) +
-          (currentMode === 'incident' ? 6 : 0),
-        0,
-        54,
-      )
-      metricMotion.queueShock = clamp(
-        metricMotion.queueShock * 0.56 +
-          queueJump * 0.62 +
-          (snapshot.scenarioKey === 'queueFull' &&
-          snapshot.emergencyState === 'emergency'
-            ? 10
-            : 0),
-        0,
-        28,
-      )
+      updateMetricMotion({
+        cluster: snapshot,
+        mode: currentMode,
+        metricMotion,
+      })
 
       if (type === 'sparkline') {
-        setData((previous) => {
-          const next = [...previous.slice(1)]
-          const current = getRequiredArrayItem(
-            previous,
-            previous.length - 1,
-            'Expected a previous sparkline point.',
-          )
-          const drift =
-            id === 'errors'
-              ? (targetValue - current) * 0.44 +
-                metricMotion.errorShock * (0.34 + Math.random() * 0.12) +
-                (Math.random() - 0.5) * 4
-              : (targetValue - current) * 0.32 + (Math.random() - 0.5) * 5
-          const nextValue = clamp(current + drift, 4, 98)
-          next.push(
-            id === 'errors'
-              ? Math.max(
-                  nextValue,
-                  clamp(targetValue + metricMotion.errorShock * 0.38, 6, 100),
-                )
-              : nextValue,
-          )
-          return next
-        })
+        setData((previous) =>
+          appendSparklineValue(previous, id, targetValue, metricMotion),
+        )
       }
 
       if (type === 'bars') {
-        if (id === 'queue') {
-          const newValue = getNextBarValue(snapshot, currentMode)
-          setBars((prev) => {
-            const shifted = [...prev.slice(1)]
-            shifted.push(
-              clamp(
-                newValue +
-                  metricMotion.queueShock * 0.36 +
-                  (snapshot.emergencyState === 'emergency' ? 4 : 0),
-                8,
-                100,
-              ),
-            )
-            return shifted
-          })
-        } else {
-          setBars(Array.from({ length: 12 }, () => 40))
-        }
+        setBars((previous) =>
+          id === 'queue'
+            ? appendQueueBarValue(previous, snapshot, currentMode, metricMotion)
+            : Array.from({ length: 12 }, () => 40),
+        )
       }
 
       if (type === 'gauge' || type === 'rings') {
         setValue((previous) => previous + (targetValue - previous) * 0.28)
       }
 
-      metricMotion.previousErrorRate = snapshot.errorRate
-      metricMotion.previousQueueDepth = snapshot.queueDepth
-      metricMotion.previousUnhealthyReplicas = snapshot.unhealthyReplicas
+      rememberMetricMotionSnapshot(metricMotion, snapshot)
     }, 1200)
     const animationInterval = setInterval(() => {
       setAnimationPhase((previous) => previous + 1)
@@ -1964,30 +3392,30 @@ function MetricWidget({
     }
   }, [delay, id, type])
 
-  const baseColor = isDark
-    ? getRequiredArrayItem(
-        darkModeColors,
-        colorIndex,
-        `Missing dark widget color at index ${colorIndex}.`,
-      )
-    : getRequiredArrayItem(
-        lightModeColors,
-        colorIndex,
-        `Missing light widget color at index ${colorIndex}.`,
-      )
-  const gaugeNormalColor =
-    type === 'gauge' && id === 'cpu'
-      ? isDark
-        ? '#38bdf8'
-        : '#0369a1'
-      : type === 'gauge' && id === 'memory'
-        ? isDark
-          ? '#f59e0b'
-          : '#c2410c'
-        : undefined
-  const statusHealthyColor = isDark ? '#00ff88' : '#009955'
-  const statusDegradedColor = isDark ? '#ffaa00' : '#cc7700'
-  const statusCriticalColor = isDark ? '#ff5555' : '#c62828'
+  return { data, bars, value, visible, animationPhase }
+}
+
+function MetricWidget({
+  id,
+  type,
+  label,
+  colorIndex,
+  delay = 0,
+  isFocused = false,
+  cluster,
+  isDark = true,
+  mode,
+}: MetricWidgetProps) {
+  const { data, bars, value, visible, animationPhase } = useSingleMetricState({
+    id,
+    type,
+    delay,
+    cluster,
+    mode,
+  })
+
+  const baseColor = getWidgetBaseColor(isDark, colorIndex)
+  const gaugeNormalColor = getGaugeNormalColor(id, type, isDark)
   const isPreviewing = isFocused
   const {
     visualState,
@@ -2007,26 +3435,15 @@ function MetricWidget({
   )
 
   const statusDisplay = getStatusDisplay(id, cluster, mode)
-  const statusColor =
-    statusDisplay.tone === 'healthy'
-      ? statusHealthyColor
-      : visualState === 'error'
-        ? statusCriticalColor
-        : visualState === 'recovered'
-          ? statusHealthyColor
-          : statusDisplay.tone === 'degraded'
-            ? statusDegradedColor
-            : statusCriticalColor
+  const statusColor = getMetricStatusColor({
+    statusDisplay,
+    visualState,
+    isDark,
+  })
   const counterText = getCounterDisplay(id, cluster, mode)
-  const uptimeDisplay = `${value.toFixed(2)}%`
   const widgetMeta = getWidgetMeta(id, cluster, mode)
   const hideWidgetLead = false
-  const showFooter =
-    id !== 'queue' &&
-    id !== 'targets' &&
-    id !== 'postgres' &&
-    id !== 'redis' &&
-    id !== 'k8s'
+  const showFooter = shouldShowWidgetFooter(id)
   // Card heights: 20px header (or 10px when lead is hidden) + body + 10px footer (when shown)
   const headerHeight = hideWidgetLead ? 10 : 20
   const footerHeight = showFooter ? 10 : 0
@@ -2052,550 +3469,67 @@ function MetricWidget({
           animation: 'pulse 1.2s ease infinite',
         }}
       />
-      {/* ── Header ── */}
-      <div className="min-w-0 shrink-0" style={{ height: headerHeight }}>
-        <span
-          className={`block h-[10px] truncate font-mono text-[8px] tracking-wider uppercase transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
-          style={{
-            opacity: textOpacity,
-            color:
-              visualState === 'error'
-                ? emergencyRed
-                : visualState === 'recovered'
-                  ? recoveryGreen
-                  : undefined,
-          }}
-        >
-          {label}
-        </span>
-        {!hideWidgetLead ? (
-          <span
-            className={`block h-[10px] truncate font-mono text-[7px] tracking-[0.16em] whitespace-nowrap uppercase ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
-            style={{
-              opacity: isPreviewing ? 0.7 : 0.42,
-              color: effectiveColor,
-            }}
-          >
-            {widgetMeta.lead}
-          </span>
-        ) : null}
-      </div>
+      <MetricWidgetHeader
+        label={label}
+        widgetMeta={widgetMeta}
+        visualState={visualState}
+        emergencyRed={emergencyRed}
+        recoveryGreen={recoveryGreen}
+        effectiveColor={effectiveColor}
+        textOpacity={textOpacity}
+        isPreviewing={isPreviewing}
+        isDark={isDark}
+        headerHeight={headerHeight}
+      />
 
-      {/* ── Body ── */}
+      {/* -- Body -- */}
       <div
         className="flex min-h-0 flex-1 items-center overflow-hidden"
         style={{ height: bodyHeight }}
       >
-        {type === 'sparkline' ? (
-          <div className="w-full">
-            <Sparkline
-              data={data}
-              color={effectiveColor}
-              width={102}
-              height={bodyHeight}
-              isFocused={isPreviewing}
-              isDark={isDark}
-            />
-          </div>
-        ) : null}
-
-        {type === 'bars' ? (
-          <div className="flex w-full flex-col gap-1">
-            {/* Queue depth + workers row */}
-            <div className="flex items-end justify-between">
-              <span
-                className="font-mono text-[11px] font-semibold tabular-nums transition-all duration-300"
-                style={{
-                  color: effectiveColor,
-                  opacity: isPreviewing ? 1 : isDark ? 0.38 : 0.5,
-                  textShadow:
-                    isPreviewing && isDark
-                      ? `0 0 6px ${effectiveColor}`
-                      : 'none',
-                }}
-              >
-                {cluster.queueDepth}
-              </span>
-              <div className="flex items-center gap-[3px]">
-                {Array.from(
-                  { length: Math.min(cluster.readyReplicas, 6) },
-                  (_, i) => (
-                    <span
-                      key={i}
-                      className="block h-[4px] w-[4px] rounded-sm transition-all duration-500"
-                      style={{
-                        backgroundColor: effectiveColor,
-                        opacity: isPreviewing
-                          ? 0.8 - i * 0.06
-                          : 0.35 - i * 0.03,
-                        boxShadow:
-                          isPreviewing && isDark
-                            ? `0 0 3px ${effectiveColor}`
-                            : 'none',
-                      }}
-                    />
-                  ),
-                )}
-                <span
-                  className={`font-mono text-[6px] tracking-[0.1em] uppercase ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
-                  style={{ opacity: isPreviewing ? 0.6 : 0.32 }}
-                >
-                  wkr
-                </span>
-              </div>
-            </div>
-            {/* Throughput bar */}
-            <div
-              className="h-[3px] w-full overflow-hidden rounded-full"
-              style={{
-                backgroundColor: isDark
-                  ? 'rgba(31, 41, 55, 0.48)'
-                  : 'rgba(203, 213, 225, 0.5)',
-              }}
-            >
-              <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{
-                  width: `${clamp(100 - (cluster.queueDepth / 80) * 100, 5, 100)}%`,
-                  backgroundColor: effectiveColor,
-                  opacity: isPreviewing ? 0.7 : 0.35,
-                }}
-              />
-            </div>
-            {/* Bar chart */}
-            <MiniBarChart
-              values={bars}
-              color={effectiveColor}
-              width={102}
-              height={bodyHeight - 26}
-              isFocused={isPreviewing}
-              isDark={isDark}
-            />
-          </div>
-        ) : null}
-
-        {type === 'gauge' ? (
-          <div className="flex w-full items-center justify-between gap-2">
-            <CircularGauge
-              value={
-                id === 'uptime' ? clamp(value, 0, 100) : clamp(value, 0, 100)
-              }
-              color={effectiveColor}
-              size={28}
-              isFocused={isPreviewing}
-              isDark={isDark}
-              {...(id === 'uptime' ? {} : { label: `${Math.round(value)}%` })}
-            />
-            <span
-              className="min-w-[52px] text-right font-mono text-[9px] whitespace-nowrap tabular-nums transition-all duration-300"
-              style={{
-                color: effectiveColor,
-                opacity: isPreviewing ? 1 : isDark ? 0.34 : 0.48,
-                textShadow:
-                  isPreviewing && isDark ? `0 0 6px ${effectiveColor}` : 'none',
-                fontWeight: isDark ? 500 : 600,
-              }}
-            >
-              {id === 'uptime' ? uptimeDisplay : `${Math.round(value)}%`}
-            </span>
-          </div>
-        ) : null}
-
-        {type === 'rings' ? (
-          <div className="relative flex h-full w-full items-center overflow-hidden">
-            <div className="shrink-0">
-              <AvailabilityRings
-                cluster={cluster}
-                uptimeValue={value}
-                color={effectiveColor}
-                phase={animationPhase}
-                isFocused={isPreviewing}
-                isDark={isDark}
-                size={42}
-              />
-            </div>
-            {/* Replica pod grid – fixed 6×3 cells, each dot = ≥1 pod */}
-            {(() => {
-              const GRID_COLS = 6
-              const GRID_ROWS = 8
-              const GRID_TOTAL = GRID_COLS * GRID_ROWS
-              const target = Math.max(cluster.replicaTarget, 1)
-              const podsPerDot = Math.max(1, Math.ceil(target / GRID_TOTAL))
-              const toDots = (n: number) =>
-                Math.round(clamp(n, 0, target) / podsPerDot)
-              const readyDots = toDots(cluster.readyReplicas)
-              const startingDots = toDots(cluster.startingReplicas)
-              const drainingDots = toDots(cluster.drainingReplicas)
-              const unhealthyDots = toDots(cluster.unhealthyReplicas)
-              const usedDots = Math.min(
-                readyDots + startingDots + drainingDots + unhealthyDots,
-                GRID_TOTAL,
-              )
-              const emptyDots = GRID_TOTAL - usedDots
-              const gridEmergency = cluster.emergencyState === 'emergency'
-              const gridRecovery = cluster.emergencyState === 'recovery'
-              const startingColor = gridEmergency
-                ? isDark
-                  ? '#f87171'
-                  : '#dc2626'
-                : gridRecovery
-                  ? isDark
-                    ? '#86efac'
-                    : '#22c55e'
-                  : isDark
-                    ? '#38bdf8'
-                    : '#0369a1'
-              const drainingColor = gridEmergency
-                ? isDark
-                  ? '#fb7185'
-                  : '#be123c'
-                : gridRecovery
-                  ? isDark
-                    ? '#4ade80'
-                    : '#15803d'
-                  : isDark
-                    ? '#f59e0b'
-                    : '#c2410c'
-              const unhealthyColor = gridEmergency
-                ? isDark
-                  ? '#ef4444'
-                  : '#b91c1c'
-                : gridRecovery
-                  ? isDark
-                    ? '#4ade80'
-                    : '#16a34a'
-                  : isDark
-                    ? '#fb7185'
-                    : '#be123c'
-              const emptyColor = isDark
-                ? 'rgba(148, 163, 184, 0.14)'
-                : 'rgba(148, 163, 184, 0.26)'
-
-              const dots: { color: string; glow: boolean; active: boolean }[] =
-                []
-              for (let i = 0; i < readyDots; i++)
-                dots.push({ color: effectiveColor, glow: true, active: true })
-              for (let i = 0; i < startingDots; i++)
-                dots.push({ color: startingColor, glow: false, active: true })
-              for (let i = 0; i < drainingDots; i++)
-                dots.push({ color: drainingColor, glow: false, active: true })
-              for (let i = 0; i < unhealthyDots; i++)
-                dots.push({ color: unhealthyColor, glow: true, active: true })
-              for (let i = 0; i < emptyDots; i++)
-                dots.push({ color: emptyColor, glow: false, active: false })
-              // Trim to exact grid size in case rounding produced extra
-              dots.length = GRID_TOTAL
-
-              return (
-                <div className="absolute top-0 right-0 flex flex-col items-end gap-[2px]">
-                  <div
-                    className="grid gap-[2.5px]"
-                    style={{
-                      gridTemplateColumns: `repeat(${GRID_COLS}, 4px)`,
-                      gridTemplateRows: `repeat(${GRID_ROWS}, 4px)`,
-                    }}
-                  >
-                    {dots.map((dot, i) => (
-                      <span
-                        key={i}
-                        className="block h-[4px] w-[4px] rounded-full transition-all duration-500"
-                        style={{
-                          backgroundColor: dot.color,
-                          opacity: dot.active
-                            ? isPreviewing
-                              ? 0.9
-                              : 0.45
-                            : isPreviewing
-                              ? 0.5
-                              : 0.25,
-                          boxShadow:
-                            isPreviewing && isDark && dot.glow
-                              ? `0 0 3px ${dot.color}`
-                              : 'none',
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <span
-                    className={`font-mono text-[5.5px] leading-none tracking-[0.1em] uppercase ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
-                    style={{ opacity: isPreviewing ? 0.6 : 0.32 }}
-                  >
-                    {podsPerDot > 1 ? `×${podsPerDot}` : 'pods'}
-                  </span>
-                </div>
-              )
-            })()}
-            <div className="absolute right-0 bottom-0 text-right font-mono">
-              <div
-                className="text-[9px] whitespace-nowrap tabular-nums transition-all duration-300"
-                style={{
-                  color: effectiveColor,
-                  opacity: isPreviewing ? 1 : isDark ? 0.34 : 0.48,
-                  textShadow:
-                    isPreviewing && isDark
-                      ? `0 0 6px ${effectiveColor}`
-                      : 'none',
-                  fontWeight: isDark ? 500 : 600,
-                }}
-              >
-                {value.toFixed(2)}%
-              </div>
-              <div
-                className={`text-[7px] tracking-[0.1em] whitespace-nowrap uppercase ${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}
-                style={{
-                  opacity: isPreviewing ? 0.68 : 0.42,
-                  color: visualState !== 'normal' ? effectiveColor : undefined,
-                }}
-              >
-                {cluster.readyReplicas}/{cluster.replicaTarget} ready
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        {type === 'counter' ? (
-          <span
-            className="min-h-[16px] font-mono text-[13px] font-medium whitespace-nowrap tabular-nums transition-all duration-300"
-            style={{
-              color: effectiveColor,
-              opacity: isPreviewing ? 1 : isDark ? 0.34 : 0.48,
-              textShadow:
-                isPreviewing && isDark ? `0 0 6px ${effectiveColor}` : 'none',
-            }}
-          >
-            {counterText}
-          </span>
-        ) : null}
-
-        {type === 'fanout' ? (
-          <div className="flex w-full flex-col gap-1">
-            {/* Target count + health pills */}
-            <div className="flex items-center justify-between gap-2">
-              <span
-                className="font-mono text-[11px] leading-none font-semibold tabular-nums transition-all duration-300"
-                style={{
-                  color: effectiveColor,
-                  opacity: isPreviewing ? 1 : isDark ? 0.38 : 0.5,
-                  textShadow:
-                    isPreviewing && isDark
-                      ? `0 0 6px ${effectiveColor}`
-                      : 'none',
-                }}
-              >
-                {cluster.loadBalancerTargets.length}/{cluster.replicaTarget}
-              </span>
-              <div className="flex items-center gap-[2.5px]">
-                {Array.from(
-                  { length: Math.max(cluster.replicaTarget, 1) },
-                  (_, i) => {
-                    const isLive = i < cluster.loadBalancerTargets.length
-                    return (
-                      <span
-                        key={i}
-                        className="block h-[4px] w-[3px] rounded-sm transition-all duration-500"
-                        style={{
-                          backgroundColor: isLive
-                            ? effectiveColor
-                            : isDark
-                              ? 'rgba(148, 163, 184, 0.18)'
-                              : 'rgba(148, 163, 184, 0.3)',
-                          opacity: isLive
-                            ? isPreviewing
-                              ? 0.85
-                              : 0.45
-                            : isPreviewing
-                              ? 0.4
-                              : 0.2,
-                          boxShadow:
-                            isLive && isPreviewing && isDark
-                              ? `0 0 3px ${effectiveColor}`
-                              : 'none',
-                        }}
-                      />
-                    )
-                  },
-                )}
-              </div>
-            </div>
-            {/* Fanout diagram */}
-            <TargetFanoutChart
-              cluster={cluster}
-              color={effectiveColor}
-              phase={animationPhase}
-              isFocused={isPreviewing}
-              isDark={isDark}
-              height={bodyHeight - 18}
-            />
-          </div>
-        ) : null}
-
-        {type === 'router' ? (
-          <div className="flex w-full flex-col gap-1">
-            {/* LB status row */}
-            <div className="flex items-end justify-between">
-              <div className="flex items-center gap-1.5">
-                {(() => {
-                  const routerDotColor =
-                    visualState === 'error'
-                      ? emergencyRed
-                      : visualState === 'recovered'
-                        ? recoveryGreen
-                        : cluster.loadBalancerHealthy
-                          ? isDark
-                            ? '#4ade80'
-                            : '#16a34a'
-                          : isDark
-                            ? '#fb7185'
-                            : '#e11d48'
-                  const routerLabel =
-                    visualState === 'error'
-                      ? 'emergency'
-                      : visualState === 'recovered'
-                        ? 'recovering'
-                        : cluster.loadBalancerHealthy
-                          ? 'healthy'
-                          : 'degraded'
-                  return (
-                    <>
-                      <span
-                        className="block h-[5px] w-[5px] rounded-full transition-all duration-300"
-                        style={{
-                          backgroundColor: routerDotColor,
-                          opacity: isPreviewing ? 0.9 : 0.5,
-                          boxShadow:
-                            isPreviewing && isDark
-                              ? `0 0 4px ${routerDotColor}`
-                              : 'none',
-                        }}
-                      />
-                      <span
-                        className="font-mono text-[7px] font-semibold tracking-[0.08em] uppercase transition-all duration-300"
-                        style={{
-                          color: routerDotColor,
-                          opacity: isPreviewing ? 0.85 : 0.45,
-                        }}
-                      >
-                        {routerLabel}
-                      </span>
-                    </>
-                  )
-                })()}
-              </div>
-              <span
-                className="font-mono text-[8px] tabular-nums transition-all duration-300"
-                style={{
-                  color: effectiveColor,
-                  opacity: isPreviewing ? 0.9 : isDark ? 0.34 : 0.48,
-                }}
-              >
-                {Math.round(cluster.latencyMs)}ms
-              </span>
-            </div>
-            {/* Route diagram */}
-            <LoadBalancerRouteChart
-              cluster={cluster}
-              mode={mode}
-              phase={animationPhase}
-              color={effectiveColor}
-              isFocused={isPreviewing}
-              isDark={isDark}
-              height={bodyHeight - 16}
-            />
-          </div>
-        ) : null}
-
-        {type === 'status' ? (
-          <div className="flex items-center gap-1.5">
-            <span
-              className={`h-2 w-2 rounded-full transition-all duration-300 ${isPreviewing || statusDisplay.tone !== 'healthy' ? 'animate-pulse' : ''}`}
-              style={{
-                backgroundColor: statusColor,
-                boxShadow: isPreviewing
-                  ? `0 0 ${isDark ? 8 : 4}px ${statusColor}`
-                  : 'none',
-                opacity: isPreviewing ? 1 : isDark ? 0.35 : 0.5,
-              }}
-            />
-            <span
-              className={`min-w-[44px] font-mono text-[9px] whitespace-nowrap transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
-              style={{
-                opacity: isPreviewing ? 0.82 : isDark ? 0.3 : 0.42,
-                color: statusColor,
-                fontWeight: isDark ? 'normal' : 500,
-              }}
-            >
-              {statusDisplay.text}
-            </span>
-          </div>
-        ) : null}
-
-        {type === 'orchestrator' ? (
-          <div className="w-full">
-            <ControlPlaneChart
-              cluster={cluster}
-              mode={mode}
-              phase={animationPhase}
-              isFocused={isPreviewing}
-              isDark={isDark}
-              height={bodyHeight}
-            />
-          </div>
-        ) : null}
-
-        {type === 'pipeline' ? (
-          <div className="w-full">
-            <ReplicationPipelineChart
-              cluster={cluster}
-              mode={mode}
-              phase={animationPhase}
-              isFocused={isPreviewing}
-              isDark={isDark}
-              height={bodyHeight}
-            />
-          </div>
-        ) : null}
-
-        {type === 'heatmap' ? (
-          <div className="w-full">
-            <CacheHeatGrid
-              cluster={cluster}
-              mode={mode}
-              phase={animationPhase}
-              isFocused={isPreviewing}
-              isDark={isDark}
-              height={bodyHeight}
-            />
-          </div>
-        ) : null}
+        <MetricWidgetBody
+          type={type}
+          id={id}
+          data={data}
+          bars={bars}
+          value={value}
+          counterText={counterText}
+          statusDisplay={statusDisplay}
+          statusColor={statusColor}
+          cluster={cluster}
+          mode={mode}
+          animationPhase={animationPhase}
+          effectiveColor={effectiveColor}
+          isPreviewing={isPreviewing}
+          isDark={isDark}
+          bodyHeight={bodyHeight}
+        />
       </div>
 
-      {/* ── Footer ── */}
-      {showFooter ? (
-        <div
-          className={`flex shrink-0 items-center overflow-hidden border-t font-mono text-[7px] ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
-          style={{
-            height: footerHeight,
-            opacity: isPreviewing ? 0.9 : isDark ? 0.42 : 0.56,
-            color: visualState === 'normal' ? undefined : effectiveColor,
-          }}
-        >
-          {widgetMeta.detail}
-        </div>
-      ) : null}
+      <MetricWidgetFooter
+        showFooter={showFooter}
+        widgetMeta={widgetMeta}
+        visualState={visualState}
+        effectiveColor={effectiveColor}
+        footerHeight={footerHeight}
+        isPreviewing={isPreviewing}
+        isDark={isDark}
+      />
     </div>
   )
 }
 
-function CompositeMetricWidget({
+function useCompositeMetricState({
   id,
-  label,
-  colorIndex,
-  delay = 0,
-  isFocused = false,
+  delay,
   cluster,
-  isDark = true,
   mode,
-}: CompositeMetricWidgetProps) {
+}: {
+  id: CompositeWidgetId
+  delay: number
+  cluster: ClusterSnapshot
+  mode: AmbientSemanticMode
+}) {
   const [visible, setVisible] = useState(false)
   const [reqData, setReqData] = useState<number[]>(() =>
     Array.from({ length: 20 }, () => 40),
@@ -2630,13 +3564,12 @@ function CompositeMetricWidget({
     phase: (cluster.requestRate % 360) * (Math.PI / 180),
     burst: 0,
   })
+  const prevModeRef = useRef(mode)
 
   useEffect(() => {
     stateRef.current = { cluster, mode }
   }, [cluster, mode])
 
-  // Immediate spike when emergency begins
-  const prevModeRef = useRef(mode)
   useEffect(() => {
     const prev = prevModeRef.current
     prevModeRef.current = mode
@@ -2668,114 +3601,25 @@ function CompositeMetricWidget({
       const { cluster: snapshot, mode: currentMode } = stateRef.current
 
       if (id === 'traffic_flow') {
-        const requestPace = requestPaceRef.current
-        const rateDelta = snapshot.requestRate - requestPace.previousRate
-        requestPace.previousRate = snapshot.requestRate
-        requestPace.phase += 0.45 + snapshot.trafficIntensity * 0.28
-        requestPace.burst =
-          requestPace.burst * 0.72 + Math.min(Math.abs(rateDelta) / 180, 18)
-
-        const valleyWave =
-          Math.sin(requestPace.phase) * 10 +
-          Math.sin(requestPace.phase * 0.48 + 0.8) * 6
-        const spikeWave =
-          Math.max(0, Math.sin(requestPace.phase * 1.7 - 0.6)) *
-          (7 + requestPace.burst)
-        const requestTarget = clamp(
-          snapshot.requestRate / 24 +
-            valleyWave +
-            spikeWave +
-            rateDelta / 95 +
-            snapshot.trafficIntensity * 8,
-          8,
-          98,
-        )
-        const latencyTarget = getTargetValue('latency', snapshot, currentMode)
-
-        setReqData((previous) => {
-          const next = [...previous.slice(1)]
-          const current = getRequiredArrayItem(
-            previous,
-            previous.length - 1,
-            'Expected a previous request-rate point.',
-          )
-          const drift =
-            (requestTarget - current) * 0.46 +
-            Math.sin(requestPace.phase * 1.3) * 2.4 +
-            (Math.random() - 0.5) * (6 + requestPace.burst * 0.16)
-          next.push(clamp(current + drift, 4, 98))
-          return next
-        })
-
-        setLatencyData((previous) => {
-          const next = [...previous.slice(1)]
-          const current = getRequiredArrayItem(
-            previous,
-            previous.length - 1,
-            'Expected a previous latency point.',
-          )
-          const drift =
-            (latencyTarget - current) * 0.3 + (Math.random() - 0.5) * 3
-          next.push(clamp(current + drift, 4, 98))
-          return next
+        updateTrafficFlowSeries({
+          snapshot,
+          currentMode,
+          requestPace: requestPaceRef.current,
+          setReqData,
+          setLatencyData,
         })
       }
 
       if (id === 'capacity') {
-        const isEmergency = currentMode === 'incident'
-        setCpuValue((previous) => {
-          const target = getTargetValue('cpu', snapshot, currentMode)
-          const spikeChance = isEmergency ? 0.4 : 0.22
-          const spikeSize = isEmergency
-            ? 14 + Math.random() * 22
-            : 10 + Math.random() * 16
-          const jitter = isEmergency
-            ? (Math.random() - 0.4) * 12
-            : (Math.random() - 0.5) * 8
-          const spike =
-            Math.random() < spikeChance
-              ? (Math.random() < (isEmergency ? 0.75 : 0.5) ? 1 : -1) *
-                spikeSize
-              : jitter
-          const next = clamp(
-            previous + (target - previous) * 0.22 + spike,
-            12,
-            98,
-          )
-          setCpuHistory((hist) => [...hist.slice(1), next])
-          return next
+        updateCapacitySeries({
+          snapshot,
+          currentMode,
+          setCpuValue,
+          setMemoryValue,
+          setCpuHistory,
+          setMemoryHistory,
+          setPodHistory,
         })
-        setMemoryValue((previous) => {
-          const target = getTargetValue('memory', snapshot, currentMode)
-          const spikeChance = isEmergency ? 0.35 : 0.2
-          const spikeSize = isEmergency
-            ? 12 + Math.random() * 18
-            : 8 + Math.random() * 14
-          const jitter = isEmergency
-            ? (Math.random() - 0.4) * 10
-            : (Math.random() - 0.5) * 6
-          const spike =
-            Math.random() < spikeChance
-              ? (Math.random() < (isEmergency ? 0.75 : 0.5) ? 1 : -1) *
-                spikeSize
-              : jitter
-          const next = clamp(
-            previous + (target - previous) * 0.22 + spike,
-            20,
-            98,
-          )
-          setMemoryHistory((hist) => [...hist.slice(1), next])
-          return next
-        })
-        setPodHistory((hist) => [
-          ...hist.slice(1),
-          clamp(
-            (snapshot.readyReplicas / Math.max(snapshot.replicaTarget, 1)) *
-              100,
-            5,
-            100,
-          ),
-        ])
       }
     }, 1200)
 
@@ -2785,21 +3629,49 @@ function CompositeMetricWidget({
     }
   }, [delay, id])
 
+  return {
+    visible,
+    reqData,
+    latencyData,
+    cpuValue,
+    memoryValue,
+    cpuHistory,
+    memoryHistory,
+    podHistory,
+  }
+}
+
+function CompositeMetricWidget({
+  id,
+  label,
+  colorIndex,
+  delay = 0,
+  isFocused = false,
+  cluster,
+  isDark = true,
+  mode,
+}: CompositeMetricWidgetProps) {
+  const {
+    visible,
+    reqData,
+    latencyData,
+    cpuValue,
+    memoryValue,
+    cpuHistory,
+    memoryHistory,
+    podHistory,
+  } = useCompositeMetricState({
+    id,
+    delay,
+    cluster,
+    mode,
+  })
+
   const isPreviewing = isFocused
-  const baseColor = isDark
-    ? getRequiredArrayItem(
-        darkModeColors,
-        colorIndex,
-        `Missing dark widget color at index ${colorIndex}.`,
-      )
-    : getRequiredArrayItem(
-        lightModeColors,
-        colorIndex,
-        `Missing light widget color at index ${colorIndex}.`,
-      )
-  const cpuNormalColor = isDark ? '#38bdf8' : '#0369a1'
-  const memoryNormalColor = isDark ? '#f59e0b' : '#c2410c'
-  const latencyNormalColor = isDark ? '#f472b6' : '#be185d'
+  const baseColor = getWidgetBaseColor(isDark, colorIndex)
+  const cpuNormalColor = pickThemeColor(isDark, '#38bdf8', '#0369a1')
+  const memoryNormalColor = pickThemeColor(isDark, '#f59e0b', '#c2410c')
+  const latencyNormalColor = pickThemeColor(isDark, '#f472b6', '#be185d')
   const {
     visualState,
     emergencyRed,
@@ -2817,29 +3689,25 @@ function CompositeMetricWidget({
     undefined,
     true,
   )
-  const cpuGaugeColor =
-    visualState === 'error'
-      ? emergencyRed
-      : visualState === 'recovered'
-        ? recoveryGreen
-        : cpuNormalColor
-  const memoryGaugeColor =
-    visualState === 'error'
-      ? emergencyRed
-      : visualState === 'recovered'
-        ? recoveryGreen
-        : memoryNormalColor
-  const latencyTraceColor =
-    visualState === 'error'
-      ? emergencyRed
-      : visualState === 'recovered'
-        ? recoveryGreen
-        : latencyNormalColor
+  const cpuGaugeColor = getVisualStateColor(
+    visualState,
+    cpuNormalColor,
+    emergencyRed,
+    recoveryGreen,
+  )
+  const memoryGaugeColor = getVisualStateColor(
+    visualState,
+    memoryNormalColor,
+    emergencyRed,
+    recoveryGreen,
+  )
+  const latencyTraceColor = getVisualStateColor(
+    visualState,
+    latencyNormalColor,
+    emergencyRed,
+    recoveryGreen,
+  )
   const compositeMeta = getCompositeWidgetMeta(id, cluster, mode)
-  const trafficCounter = getCounterDisplay('traffic', cluster, mode)
-  const podsCounter = getCounterDisplay('pods', cluster, mode)
-  const podCounterFontSizePx =
-    podsCounter.length >= 7 ? 14 : podsCounter.length >= 6 ? 15 : 18
 
   return (
     <div
@@ -2861,368 +3729,46 @@ function CompositeMetricWidget({
           animation: 'pulse 1.2s ease infinite',
         }}
       />
-      <div className="min-w-0">
-        <span
-          className={`block h-[10px] truncate font-mono text-[8px] tracking-wider uppercase transition-all duration-300 ${isDark ? 'text-neutral-400' : 'text-neutral-600'}`}
-          style={{
-            opacity: textOpacity,
-            color:
-              visualState === 'error'
-                ? emergencyRed
-                : visualState === 'recovered'
-                  ? recoveryGreen
-                  : undefined,
-          }}
-        >
-          {label}
-        </span>
-        <span
-          className={`block h-[10px] truncate font-mono text-[7px] tracking-[0.16em] whitespace-nowrap uppercase ${isDark ? 'text-neutral-500' : 'text-neutral-500'}`}
-          style={{
-            opacity: isPreviewing ? 0.7 : 0.42,
-            color: effectiveColor,
-          }}
-        >
-          {compositeMeta.lead}
-        </span>
-      </div>
+      <MetricWidgetHeader
+        label={label}
+        widgetMeta={compositeMeta}
+        visualState={visualState}
+        emergencyRed={emergencyRed}
+        recoveryGreen={recoveryGreen}
+        effectiveColor={effectiveColor}
+        textOpacity={textOpacity}
+        isPreviewing={isPreviewing}
+        isDark={isDark}
+        headerHeight={20}
+      />
 
-      {id === 'traffic_flow' ? (
-        <div className="grid grid-cols-[72px_minmax(0,1fr)] gap-3">
-          <div className="flex flex-col justify-between rounded-sm border border-white/5 bg-black/5 px-2.5 py-2">
-            <span
-              className="font-mono text-[7px] tracking-[0.16em] uppercase"
-              style={{
-                color: effectiveColor,
-                opacity: isPreviewing ? 0.8 : 0.5,
-              }}
-            >
-              ingress
-            </span>
-            <span
-              className="font-mono text-[18px] font-semibold"
-              style={{
-                color: effectiveColor,
-                opacity: isPreviewing ? 1 : isDark ? 0.42 : 0.56,
-                textShadow:
-                  isPreviewing && isDark ? `0 0 8px ${effectiveColor}` : 'none',
-              }}
-            >
-              {trafficCounter}
-            </span>
-            <span
-              className={`font-mono text-[8px] ${isDark ? 'text-neutral-500' : 'text-neutral-600'}`}
-            >
-              {getWidgetMeta('traffic', cluster, mode).detail}
-            </span>
-          </div>
+      <CompositeMetricBody
+        id={id}
+        cluster={cluster}
+        mode={mode}
+        reqData={reqData}
+        latencyData={latencyData}
+        cpuValue={cpuValue}
+        memoryValue={memoryValue}
+        cpuHistory={cpuHistory}
+        memoryHistory={memoryHistory}
+        podHistory={podHistory}
+        effectiveColor={effectiveColor}
+        cpuGaugeColor={cpuGaugeColor}
+        memoryGaugeColor={memoryGaugeColor}
+        latencyTraceColor={latencyTraceColor}
+        isPreviewing={isPreviewing}
+        isDark={isDark}
+      />
 
-          <div className="flex min-w-0 flex-col gap-2">
-            <div className="rounded-sm border border-white/5 bg-black/5 px-2 py-1.5">
-              <div className="mb-1 flex items-center justify-between gap-2">
-                <span
-                  className="font-mono text-[7px] tracking-[0.16em] uppercase"
-                  style={{ color: effectiveColor, opacity: 0.78 }}
-                >
-                  request pace
-                </span>
-                <span
-                  className="min-w-[52px] text-right font-mono text-[8px] whitespace-nowrap tabular-nums"
-                  style={{ color: effectiveColor, opacity: 0.72 }}
-                >
-                  {Math.round(cluster.requestRate)}
-                </span>
-              </div>
-              <Sparkline
-                data={reqData}
-                color={effectiveColor}
-                width={148}
-                height={24}
-                isFocused={isPreviewing}
-                isDark={isDark}
-              />
-            </div>
-            <div className="rounded-sm border border-white/5 bg-black/5 px-2 py-1.5">
-              <div className="mb-1 flex items-center justify-between gap-2">
-                <span
-                  className="font-mono text-[7px] tracking-[0.16em] uppercase"
-                  style={{ color: latencyTraceColor, opacity: 0.82 }}
-                >
-                  tail latency
-                </span>
-                <span
-                  className="min-w-[52px] text-right font-mono text-[8px] whitespace-nowrap tabular-nums"
-                  style={{ color: latencyTraceColor, opacity: 0.78 }}
-                >
-                  {Math.round(cluster.latencyMs)}ms
-                </span>
-              </div>
-              <Sparkline
-                data={latencyData}
-                color={latencyTraceColor}
-                width={148}
-                height={24}
-                isFocused={isPreviewing}
-                isDark={isDark}
-              />
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {id === 'capacity' ? (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 rounded-sm border border-white/5 bg-black/5 px-2 py-1">
-            <div className="flex shrink-0 items-baseline gap-1.5">
-              <span
-                className="font-mono text-[7px] tracking-[0.16em] uppercase"
-                style={{
-                  color: effectiveColor,
-                  opacity: isPreviewing ? 0.8 : 0.5,
-                }}
-              >
-                pods
-              </span>
-              <span
-                className="font-mono text-[11px] font-semibold whitespace-nowrap tabular-nums"
-                style={{
-                  color: effectiveColor,
-                  opacity: isPreviewing ? 1 : isDark ? 0.42 : 0.56,
-                  textShadow:
-                    isPreviewing && isDark
-                      ? `0 0 6px ${effectiveColor}`
-                      : 'none',
-                }}
-              >
-                {podsCounter}
-              </span>
-              {cluster.startingReplicas > 0 || cluster.drainingReplicas > 0 ? (
-                <span
-                  className="font-mono text-[7px] tabular-nums"
-                  style={{
-                    color: isDark
-                      ? 'rgba(251, 191, 36, 0.9)'
-                      : 'rgba(194, 65, 12, 0.9)',
-                    opacity: isPreviewing ? 0.8 : 0.5,
-                  }}
-                >
-                  {cluster.startingReplicas}↑{cluster.drainingReplicas}↓
-                </span>
-              ) : null}
-            </div>
-            <div className="min-w-0 flex-1">
-              <Sparkline
-                data={podHistory}
-                color={effectiveColor}
-                width={120}
-                height={16}
-                isFocused={isPreviewing}
-                isDark={isDark}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex flex-col items-center gap-1 rounded-sm border border-white/5 bg-black/5 px-2 py-1.5">
-              <div className="flex w-full items-center justify-between">
-                <span
-                  className="font-mono text-[7px] tracking-[0.16em] uppercase"
-                  style={{ color: cpuGaugeColor, opacity: 0.82 }}
-                >
-                  cpu
-                </span>
-                <span
-                  className="font-mono text-[9px] font-semibold tabular-nums"
-                  style={{
-                    color: cpuGaugeColor,
-                    opacity: isPreviewing ? 0.95 : 0.55,
-                  }}
-                >
-                  {Math.round(cpuValue)}%
-                </span>
-              </div>
-              <CircularGauge
-                value={clamp(cpuValue, 0, 100)}
-                color={cpuGaugeColor}
-                size={40}
-                isFocused={isPreviewing}
-                isDark={isDark}
-                label={`${Math.round(cpuValue)}%`}
-                labelFontSize={12}
-              />
-              <Sparkline
-                data={cpuHistory}
-                color={cpuGaugeColor}
-                width={90}
-                height={16}
-                isFocused={isPreviewing}
-                isDark={isDark}
-              />
-            </div>
-            <div className="flex flex-col items-center gap-1 rounded-sm border border-white/5 bg-black/5 px-2 py-1.5">
-              <div className="flex w-full items-center justify-between">
-                <span
-                  className="font-mono text-[7px] tracking-[0.16em] uppercase"
-                  style={{ color: memoryGaugeColor, opacity: 0.82 }}
-                >
-                  mem
-                </span>
-                <span
-                  className="font-mono text-[9px] font-semibold tabular-nums"
-                  style={{
-                    color: memoryGaugeColor,
-                    opacity: isPreviewing ? 0.95 : 0.55,
-                  }}
-                >
-                  {Math.round(memoryValue)}%
-                </span>
-              </div>
-              <CircularGauge
-                value={clamp(memoryValue, 0, 100)}
-                color={memoryGaugeColor}
-                size={40}
-                isFocused={isPreviewing}
-                isDark={isDark}
-                label={`${Math.round(memoryValue)}%`}
-                labelFontSize={12}
-              />
-              <Sparkline
-                data={memoryHistory}
-                color={memoryGaugeColor}
-                width={90}
-                height={16}
-                isFocused={isPreviewing}
-                isDark={isDark}
-              />
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {id === 'traffic_flow' ? (
-        <div
-          className={`flex h-[33px] items-start gap-2 overflow-hidden border-t pt-1 font-mono text-[8px] leading-3.5 ${isDark ? 'border-white/5 text-neutral-500' : 'border-black/5 text-neutral-500'}`}
-          style={{
-            opacity: isPreviewing ? 0.9 : isDark ? 0.42 : 0.56,
-            color: visualState === 'normal' ? undefined : effectiveColor,
-          }}
-        >
-          <div className="min-w-0 shrink">
-            {compositeMeta.detail.split('\n').map((line, i) => (
-              <div key={i}>{line}</div>
-            ))}
-          </div>
-          {/* SLO pills */}
-          <div
-            className="ml-auto flex shrink-0 flex-wrap justify-end gap-[3px] pt-0.5"
-            style={{ maxWidth: 72 }}
-          >
-            {[
-              {
-                label: 'avl',
-                ok:
-                  cluster.readyReplicas >= cluster.replicaTarget &&
-                  cluster.unhealthyReplicas === 0,
-              },
-              {
-                label: 'lat',
-                ok: cluster.latencyMs <= 65,
-              },
-              {
-                label: 'err',
-                ok: cluster.errorRate <= 4,
-              },
-              {
-                label: 'lb',
-                ok: cluster.loadBalancerHealthy,
-              },
-              {
-                label: 'queue',
-                ok: cluster.queueDepth <= 40,
-              },
-              {
-                label: 'pods',
-                ok:
-                  cluster.startingReplicas === 0 &&
-                  cluster.drainingReplicas === 0,
-              },
-              {
-                label: 'p99',
-                ok: cluster.latencyMs * 1.4 <= 90,
-              },
-              {
-                label: 'tput',
-                ok: cluster.requestRate > 800 && cluster.requestRate < 3200,
-              },
-            ].map((slo) => {
-              const sloEmergency = visualState === 'error'
-              const sloRecovery = visualState === 'recovered'
-              const green = isDark ? '#4ade80' : '#16a34a'
-              const red = isDark ? '#fb7185' : '#e11d48'
-              const sloColor = sloEmergency
-                ? emergencyRed
-                : sloRecovery
-                  ? recoveryGreen
-                  : slo.ok
-                    ? green
-                    : red
-              const sloBg = sloEmergency
-                ? isDark
-                  ? 'rgba(255, 51, 51, 0.14)'
-                  : 'rgba(204, 0, 0, 0.1)'
-                : sloRecovery
-                  ? isDark
-                    ? 'rgba(51, 255, 102, 0.12)'
-                    : 'rgba(0, 153, 51, 0.1)'
-                  : slo.ok
-                    ? isDark
-                      ? 'rgba(74, 222, 128, 0.12)'
-                      : 'rgba(22, 163, 74, 0.1)'
-                    : isDark
-                      ? 'rgba(251, 113, 133, 0.14)'
-                      : 'rgba(225, 29, 72, 0.1)'
-              const sloBorder = sloEmergency
-                ? isDark
-                  ? 'rgba(255, 51, 51, 0.22)'
-                  : 'rgba(204, 0, 0, 0.18)'
-                : sloRecovery
-                  ? isDark
-                    ? 'rgba(51, 255, 102, 0.2)'
-                    : 'rgba(0, 153, 51, 0.18)'
-                  : slo.ok
-                    ? isDark
-                      ? 'rgba(74, 222, 128, 0.2)'
-                      : 'rgba(22, 163, 74, 0.18)'
-                    : isDark
-                      ? 'rgba(251, 113, 133, 0.22)'
-                      : 'rgba(225, 29, 72, 0.18)'
-              const sloGlow = sloEmergency
-                ? 'rgba(255, 51, 51, 0.15)'
-                : sloRecovery
-                  ? 'rgba(51, 255, 102, 0.15)'
-                  : slo.ok
-                    ? 'rgba(74, 222, 128, 0.15)'
-                    : 'rgba(251, 113, 133, 0.15)'
-              return (
-                <span
-                  key={slo.label}
-                  className="inline-block rounded-full px-[5px] py-[1px] font-mono text-[6px] leading-tight tracking-[0.06em] uppercase transition-all duration-300"
-                  style={{
-                    backgroundColor: sloBg,
-                    color: sloColor,
-                    border: `1px solid ${sloBorder}`,
-                    opacity: isPreviewing ? 0.9 : 0.65,
-                    boxShadow:
-                      isPreviewing && isDark ? `0 0 4px ${sloGlow}` : 'none',
-                  }}
-                >
-                  {slo.label}
-                </span>
-              )
-            })}
-          </div>
-        </div>
-      ) : null}
+      <CompositeMetricFooter
+        id={id}
+        meta={compositeMeta}
+        visualState={visualState}
+        effectiveColor={effectiveColor}
+        isPreviewing={isPreviewing}
+        isDark={isDark}
+      />
     </div>
   )
 }
@@ -3318,36 +3864,73 @@ const rightWidgetGroups: MetricLayoutGroup[] = [
   },
 ]
 
+function MetricWidgetPanel({
+  groups,
+  side,
+  cluster,
+  isDark,
+  mode,
+  delayOffset = 0,
+}: {
+  groups: MetricLayoutGroup[]
+  side: 'left' | 'right'
+  cluster: ClusterSnapshot
+  isDark: boolean
+  mode: AmbientSemanticMode
+  delayOffset?: number
+}) {
+  const isFocused = cluster.focusMode === 'preview'
+  const positionClass = side === 'left' ? 'left-5' : 'right-5'
+
+  return (
+    <div
+      className={`absolute top-1/2 ${positionClass} flex max-h-[80vh] -translate-y-1/2 flex-col gap-3 overflow-hidden`}
+    >
+      {groups.map((group, groupIndex) => (
+        <div
+          key={`${side}-group-${groupIndex}`}
+          className={`flex gap-2 ${group.direction === 'row' ? 'flex-row' : 'flex-col'}`}
+        >
+          {group.items.map((widget, itemIndex) => {
+            const sharedProps = {
+              delay: getGroupDelay(groups, groupIndex, itemIndex, delayOffset),
+              isFocused,
+              cluster,
+              isDark,
+              mode,
+            }
+
+            return widget.kind === 'single' ? (
+              <MetricWidget
+                key={`${side}-${widget.id}`}
+                {...widget}
+                {...sharedProps}
+              />
+            ) : (
+              <CompositeMetricWidget
+                key={`${side}-${widget.id}`}
+                {...widget}
+                {...sharedProps}
+              />
+            )
+          })}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function MetricWidgets() {
   const [shouldRender, setShouldRender] = useState(getShouldRenderMetricWidgets)
   const cluster = useAmbientClusterSnapshot()
-  const [isDark, setIsDark] = useState(true)
+  const isDark = useBrowserDarkMode()
   const monitoring = deriveAmbientMonitoringState(cluster)
 
   const checkScreenSize = useCallback(() => {
     setShouldRender(getShouldRenderMetricWidgets())
   }, [])
 
-  useEffect(() => {
-    window.addEventListener('resize', checkScreenSize)
-    return () => window.removeEventListener('resize', checkScreenSize)
-  }, [checkScreenSize])
-
-  useEffect(() => {
-    const checkDarkMode = () => {
-      setIsDark(document.documentElement.classList.contains('dark'))
-    }
-
-    checkDarkMode()
-
-    const observer = new MutationObserver(checkDarkMode)
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class'],
-    })
-
-    return () => observer.disconnect()
-  }, [])
+  useWindowResizeHandler(checkScreenSize)
 
   if (!shouldRender) {
     return null
@@ -3355,81 +3938,21 @@ export default function MetricWidgets() {
 
   return (
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-      <div className="absolute top-1/2 left-5 flex max-h-[80vh] -translate-y-1/2 flex-col gap-3 overflow-hidden">
-        {leftWidgetGroups.map((group, groupIndex) => (
-          <div
-            key={`left-group-${groupIndex}`}
-            className={`flex gap-2 ${group.direction === 'row' ? 'flex-row' : 'flex-col'}`}
-          >
-            {group.items.map((widget, itemIndex) =>
-              widget.kind === 'single' ? (
-                <MetricWidget
-                  key={`left-${widget.id}`}
-                  {...widget}
-                  delay={getGroupDelay(leftWidgetGroups, groupIndex, itemIndex)}
-                  isFocused={cluster.focusMode === 'preview'}
-                  cluster={cluster}
-                  isDark={isDark}
-                  mode={monitoring.mode}
-                />
-              ) : (
-                <CompositeMetricWidget
-                  key={`left-${widget.id}`}
-                  {...widget}
-                  delay={getGroupDelay(leftWidgetGroups, groupIndex, itemIndex)}
-                  isFocused={cluster.focusMode === 'preview'}
-                  cluster={cluster}
-                  isDark={isDark}
-                  mode={monitoring.mode}
-                />
-              ),
-            )}
-          </div>
-        ))}
-      </div>
-
-      <div className="absolute top-1/2 right-5 flex max-h-[80vh] -translate-y-1/2 flex-col gap-3 overflow-hidden">
-        {rightWidgetGroups.map((group, groupIndex) => (
-          <div
-            key={`right-group-${groupIndex}`}
-            className={`flex gap-2 ${group.direction === 'row' ? 'flex-row' : 'flex-col'}`}
-          >
-            {group.items.map((widget, itemIndex) =>
-              widget.kind === 'single' ? (
-                <MetricWidget
-                  key={`right-${widget.id}`}
-                  {...widget}
-                  delay={getGroupDelay(
-                    rightWidgetGroups,
-                    groupIndex,
-                    itemIndex,
-                    100,
-                  )}
-                  isFocused={cluster.focusMode === 'preview'}
-                  cluster={cluster}
-                  isDark={isDark}
-                  mode={monitoring.mode}
-                />
-              ) : (
-                <CompositeMetricWidget
-                  key={`right-${widget.id}`}
-                  {...widget}
-                  delay={getGroupDelay(
-                    rightWidgetGroups,
-                    groupIndex,
-                    itemIndex,
-                    100,
-                  )}
-                  isFocused={cluster.focusMode === 'preview'}
-                  cluster={cluster}
-                  isDark={isDark}
-                  mode={monitoring.mode}
-                />
-              ),
-            )}
-          </div>
-        ))}
-      </div>
+      <MetricWidgetPanel
+        groups={leftWidgetGroups}
+        side="left"
+        cluster={cluster}
+        isDark={isDark}
+        mode={monitoring.mode}
+      />
+      <MetricWidgetPanel
+        groups={rightWidgetGroups}
+        side="right"
+        cluster={cluster}
+        isDark={isDark}
+        mode={monitoring.mode}
+        delayOffset={100}
+      />
     </div>
   )
 }

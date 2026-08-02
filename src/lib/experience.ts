@@ -22,11 +22,13 @@ export interface EducationInterface {
   endDate: string
 }
 
+export interface Duration {
+  years: number
+  months: number
+}
+
 // Calculate duration between two dates
-export const getDuration = (
-  startDate: string,
-  endDate: string,
-): { years: number; months: number } => {
+export const getDuration = (startDate: string, endDate: string): Duration => {
   const start = new Date(startDate)
   const end = endDate === 'now' ? new Date() : new Date(endDate)
 
@@ -44,6 +46,25 @@ export const getDuration = (
   return { years, months }
 }
 
+export function addDuration(total: Duration, duration: Duration): Duration {
+  const months = total.months + duration.months
+
+  return {
+    years: total.years + duration.years + Math.floor(months / 12),
+    months: months % 12,
+  }
+}
+
+export function calculateDurationYears(durations: Iterable<Duration>): number {
+  let total = { years: 0, months: 0 }
+
+  for (const duration of durations) {
+    total = addDuration(total, duration)
+  }
+
+  return total.years + Math.floor(total.months / 12)
+}
+
 // Group work experiences by company
 const groupWorkExperiences = (workExperiences: WorkInterface[]) => {
   return workExperiences.reduce(
@@ -57,15 +78,10 @@ const groupWorkExperiences = (workExperiences: WorkInterface[]) => {
       }
 
       const experienceDuration = getDuration(startDate, endDate)
-      acc[name].totalDuration.years += experienceDuration.years
-      acc[name].totalDuration.months += experienceDuration.months
-
-      if (acc[name].totalDuration.months >= 12) {
-        acc[name].totalDuration.years += Math.floor(
-          acc[name].totalDuration.months / 12,
-        )
-        acc[name].totalDuration.months = acc[name].totalDuration.months % 12
-      }
+      acc[name].totalDuration = addDuration(
+        acc[name].totalDuration,
+        experienceDuration,
+      )
 
       return acc
     },
@@ -84,14 +100,7 @@ export const calculateTotalExperienceYears = (
   workExperiences: WorkInterface[],
 ): number => {
   const grouped = groupWorkExperiences(workExperiences)
-  const total = Object.values(grouped).reduce(
-    (acc, { totalDuration }) => {
-      acc.years += totalDuration.years
-      acc.months += totalDuration.months
-      return acc
-    },
-    { years: 0, months: 0 },
+  return calculateDurationYears(
+    Object.values(grouped).map(({ totalDuration }) => totalDuration),
   )
-
-  return total.years + Math.floor(total.months / 12)
 }

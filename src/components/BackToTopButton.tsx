@@ -24,38 +24,35 @@ export default function BackToTopButton() {
   }, [])
 
   useEffect(() => {
-    const handleAnimationFocusHover = (event: Event) => {
+    const handleAnimationFocusHover: EventListener = (event) => {
       const customEvent = event as CustomEvent<{ isHovering: boolean }>
       setIsAnimationHovering(customEvent.detail.isHovering)
     }
 
-    window.addEventListener(
-      'animation-focus-hover',
-      handleAnimationFocusHover as EventListener,
-    )
+    window.addEventListener('animation-focus-hover', handleAnimationFocusHover)
 
     return () =>
       window.removeEventListener(
         'animation-focus-hover',
-        handleAnimationFocusHover as EventListener,
+        handleAnimationFocusHover,
       )
   }, [])
 
   useEffect(() => {
-    const handleMobileNavigationToggle = (event: Event) => {
+    const handleMobileNavigationToggle: EventListener = (event) => {
       const customEvent = event as CustomEvent<{ isOpen: boolean }>
       setIsMobileMenuOpen(customEvent.detail.isOpen)
     }
 
     window.addEventListener(
       'mobile-navigation-toggle',
-      handleMobileNavigationToggle as EventListener,
+      handleMobileNavigationToggle,
     )
 
     return () =>
       window.removeEventListener(
         'mobile-navigation-toggle',
-        handleMobileNavigationToggle as EventListener,
+        handleMobileNavigationToggle,
       )
   }, [])
 

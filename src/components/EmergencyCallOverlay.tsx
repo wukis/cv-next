@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  type ReactNode,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -74,6 +75,35 @@ type CallSession = {
     optional: string[]
   }
   participantSchedule: Record<string, ParticipantScheduleEntry>
+}
+
+function getReactionParticipant(
+  reaction: ScriptLine,
+  connectedParticipants: CallParticipant[],
+) {
+  return PARTICIPANT_LOOKUP[reaction.speakerId] ?? connectedParticipants[0]
+}
+
+function CallControlIcon({
+  children,
+  isDark,
+}: {
+  children: ReactNode
+  isDark: boolean
+}) {
+  return (
+    <div
+      className="flex h-[1.85rem] w-[1.85rem] items-center justify-center rounded-full"
+      style={{
+        backgroundColor: isDark
+          ? 'rgba(30, 41, 59, 0.5)'
+          : 'rgba(241, 245, 249, 0.82)',
+        border: `1px solid ${isDark ? 'rgba(148, 163, 184, 0.12)' : 'rgba(148, 163, 184, 0.16)'}`,
+      }}
+    >
+      {children}
+    </div>
+  )
 }
 
 type ScenarioParticipantPool = {
@@ -1012,6 +1042,433 @@ function mergeScenarioParticipants(
   }
 }
 
+function sortParticipantsByLeaveOrder(participants: typeof PARTICIPANTS) {
+  return [...participants].sort((left, right) => {
+    if (left.id === FINAL_OWNER_ID) {
+      return 1
+    }
+
+    if (right.id === FINAL_OWNER_ID) {
+      return -1
+    }
+
+    return left.leaveAfterHoldMs - right.leaveAfterHoldMs
+  })
+}
+
+function buildLeaveOffsets(includedParticipants: typeof PARTICIPANTS) {
+  const leaveOffsetsByParticipantId = new Map<string, number>()
+  let previousLeaveOffset = 0
+
+  sortParticipantsByLeaveOrder(includedParticipants).forEach(
+    (participant, index) => {
+      const minimumOffset =
+        index === 0
+          ? WINDING_FIRST_DROP_DELAY_MS
+          : previousLeaveOffset + WINDING_DROP_SPACING_MS
+      const targetOffset =
+        participant.id === FINAL_OWNER_ID
+          ? Math.max(
+              participant.leaveAfterHoldMs,
+              minimumOffset + WINDING_FINAL_OWNER_LINGER_MS,
+            )
+          : Math.max(participant.leaveAfterHoldMs, minimumOffset)
+
+      leaveOffsetsByParticipantId.set(participant.id, targetOffset)
+      previousLeaveOffset = targetOffset
+    },
+  )
+
+  return leaveOffsetsByParticipantId
+}
+
+function getDepartingParticipantIds(
+  includedIds: Set<string>,
+  cycleStartedAt: number,
+  previousSchedule?: Record<string, ParticipantScheduleEntry>,
+) {
+  if (!previousSchedule) {
+    return []
+  }
+
+  return PARTICIPANTS.filter((participant) => {
+    if (includedIds.has(participant.id)) {
+      return false
+    }
+
+    const previousEntry = previousSchedule[participant.id]
+    if (!previousEntry?.included || previousEntry.departing) {
+      return false
+    }
+
+    return (
+      previousEntry.joinAt <= cycleStartedAt &&
+      previousEntry.leaveAt > cycleStartedAt
+    )
+  }).map((participant) => participant.id)
+}
+
+function createAbsentParticipantScheduleEntry(options: {
+  participantId: string
+  cycleStartedAt: number
+  departingIds: string[]
+  previousEntry?: ParticipantScheduleEntry
+}): ParticipantScheduleEntry {
+  const { cycleStartedAt, departingIds, participantId, previousEntry } = options
+  const departureIndex = departingIds.indexOf(participantId)
+
+  if (departureIndex >= 0 && previousEntry) {
+    return {
+      included: true,
+      optional: false,
+      departing: true,
+      joinAt: previousEntry.joinAt,
+      leaveAt:
+        cycleStartedAt +
+        TRANSITION_FIRST_DEPARTURE_MS +
+        departureIndex * TRANSITION_DEPARTURE_SPACING_MS,
+    }
+  }
+
+  if (
+    previousEntry?.departing &&
+    previousEntry.included &&
+    previousEntry.leaveAt > cycleStartedAt
+  ) {
+    return { ...previousEntry }
+  }
+
+  return {
+    included: false,
+    optional: false,
+    departing: false,
+    joinAt: cycleStartedAt,
+    leaveAt: cycleStartedAt,
+  }
+}
+
+type VisibleCallParticipant = CallParticipant & {
+  hasJoined: boolean
+  isConnected: boolean
+  isVisible: boolean
+  isJoining: boolean
+  isDropping: boolean
+  leaveAt: number
+  isOptional: boolean
+}
+
+function getParticipantAccentTone(
+  participant: VisibleCallParticipant,
+  isDark: boolean,
+) {
+  if (!participant.isDropping) {
+    return participant.accent
+  }
+
+  return isDark ? 'rgba(148, 163, 184, 0.68)' : 'rgba(100, 116, 139, 0.72)'
+}
+
+function getParticipantTileState(options: {
+  participant: VisibleCallParticipant
+  activeSpeakerId: string | null
+  currentTime: number
+  phase: CallPhase
+  isDark: boolean
+}) {
+  const { activeSpeakerId, currentTime, isDark, participant, phase } = options
+  const isSpeaker = participant.id === activeSpeakerId
+  const isFullyLeaving =
+    phase === 'winding' && currentTime >= participant.leaveAt
+
+  return {
+    accentTone: getParticipantAccentTone(participant, isDark),
+    isFullyLeaving,
+    isSpeaker,
+  }
+}
+
+function getParticipantTileOpacity(
+  participant: VisibleCallParticipant,
+  isFullyLeaving: boolean,
+) {
+  if (isFullyLeaving) {
+    return 0
+  }
+
+  return participant.isDropping ? 0.72 : 1
+}
+
+function getParticipantTileTransform(
+  participant: VisibleCallParticipant,
+  isFullyLeaving: boolean,
+) {
+  if (isFullyLeaving) {
+    return 'scale(0.78)'
+  }
+
+  return participant.isJoining ? 'scale(0.94)' : 'scale(1)'
+}
+
+function getParticipantGlowTransform(
+  isFullyLeaving: boolean,
+  isSpeaker: boolean,
+) {
+  if (isFullyLeaving) {
+    return 'scale(0.86)'
+  }
+
+  return isSpeaker ? 'scale(1.3)' : 'scale(1.02)'
+}
+
+function getParticipantGlowOpacity(
+  isFullyLeaving: boolean,
+  isSpeaker: boolean,
+) {
+  if (isFullyLeaving) {
+    return 0.18
+  }
+
+  return isSpeaker ? 1 : 0.82
+}
+
+function ParticipantTile({
+  activeSpeakerId,
+  currentTime,
+  isDark,
+  participant,
+  phase,
+  setParticipantTileRef,
+  tileCoreSizeRem,
+  tileInitialsFontSizePx,
+  tileInnerInsetRem,
+  tileOuterSizeRem,
+}: {
+  activeSpeakerId: string | null
+  currentTime: number
+  isDark: boolean
+  participant: VisibleCallParticipant
+  phase: CallPhase
+  setParticipantTileRef: (id: string, node: HTMLDivElement | null) => void
+  tileCoreSizeRem: number
+  tileInitialsFontSizePx: number
+  tileInnerInsetRem: number
+  tileOuterSizeRem: number
+}) {
+  const { accentTone, isFullyLeaving, isSpeaker } = getParticipantTileState({
+    participant,
+    activeSpeakerId,
+    currentTime,
+    phase,
+    isDark,
+  })
+
+  return (
+    <div
+      ref={(node) => {
+        setParticipantTileRef(participant.id, node)
+      }}
+      className="flex flex-col items-center text-center will-change-transform"
+    >
+      <div
+        className="transition-all duration-500"
+        style={{
+          opacity: getParticipantTileOpacity(participant, isFullyLeaving),
+          transform: getParticipantTileTransform(participant, isFullyLeaving),
+        }}
+      >
+        <div
+          className="relative flex items-center justify-center"
+          style={{
+            height: `${tileOuterSizeRem}rem`,
+            width: `${tileOuterSizeRem}rem`,
+          }}
+        >
+          <div
+            className={`absolute inset-0 rounded-full transition-all duration-500 ${
+              isSpeaker || participant.isJoining ? 'animate-pulse' : ''
+            }`}
+            style={{
+              background: `radial-gradient(circle, ${softenAccent(
+                participant.accent,
+                isSpeaker ? '0.28' : '0.18',
+              )}, transparent 68%)`,
+              transform: getParticipantGlowTransform(isFullyLeaving, isSpeaker),
+              opacity: getParticipantGlowOpacity(isFullyLeaving, isSpeaker),
+            }}
+          />
+          <div
+            className="absolute rounded-full border transition-all duration-500"
+            style={{
+              inset: `${tileInnerInsetRem}rem`,
+              borderColor: accentTone,
+              opacity: isSpeaker ? 1 : 0.84,
+              boxShadow: isSpeaker
+                ? `0 0 0 1px ${accentTone}, 0 0 30px ${softenAccent(
+                    participant.accent,
+                    '0.34',
+                  )}`
+                : 'none',
+            }}
+          />
+          <div
+            className="relative flex items-center justify-center rounded-full border font-mono font-semibold transition-all duration-500"
+            style={{
+              height: `${tileCoreSizeRem}rem`,
+              width: `${tileCoreSizeRem}rem`,
+              backgroundColor: isDark
+                ? 'rgba(15, 23, 42, 0.94)'
+                : 'rgba(255, 255, 255, 0.96)',
+              borderColor: softenAccent(accentTone, '0.78'),
+              color: isDark
+                ? 'rgba(248, 250, 252, 0.96)'
+                : 'rgba(15, 23, 42, 0.92)',
+              fontSize: `${tileInitialsFontSizePx}px`,
+            }}
+          >
+            {participant.initials}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MicrophoneControlIcon({
+  isDark,
+  isSpeaking,
+}: {
+  isDark: boolean
+  isSpeaking: boolean
+}) {
+  const { backgroundColor, borderColor, strokeColor } =
+    getMicrophoneControlColors(isDark, isSpeaking)
+
+  return (
+    <div
+      className="flex h-[1.85rem] w-[1.85rem] items-center justify-center rounded-full transition-colors duration-300"
+      style={{
+        backgroundColor,
+        border: `1px solid ${borderColor}`,
+      }}
+    >
+      <svg
+        width="11"
+        height="11"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={strokeColor}
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <rect x="9" y="1" width="6" height="13" rx="3" />
+        <path d="M19 10v1a7 7 0 0 1-14 0v-1" />
+        <line x1="12" y1="19" x2="12" y2="23" />
+        <line x1="8" y1="23" x2="16" y2="23" />
+        {!isSpeaking && <line x1="1" y1="1" x2="23" y2="23" />}
+      </svg>
+    </div>
+  )
+}
+
+function getMicrophoneControlColors(isDark: boolean, isSpeaking: boolean) {
+  if (isSpeaking) {
+    return {
+      backgroundColor: isDark
+        ? 'rgba(30, 41, 59, 0.5)'
+        : 'rgba(241, 245, 249, 0.82)',
+      borderColor: isDark
+        ? 'rgba(148, 163, 184, 0.12)'
+        : 'rgba(148, 163, 184, 0.16)',
+      strokeColor: isDark
+        ? 'rgba(191, 219, 254, 0.7)'
+        : 'rgba(71, 85, 105, 0.7)',
+    }
+  }
+
+  return {
+    backgroundColor: isDark
+      ? 'rgba(239, 68, 68, 0.25)'
+      : 'rgba(239, 68, 68, 0.14)',
+    borderColor: isDark ? 'rgba(239, 68, 68, 0.25)' : 'rgba(239, 68, 68, 0.18)',
+    strokeColor: isDark ? 'rgba(248, 113, 113, 0.8)' : 'rgba(220, 38, 38, 0.7)',
+  }
+}
+
+function getCallParticipants(
+  session: CallSession | null,
+  phase: CallPhase | null,
+  currentTime: number,
+): VisibleCallParticipant[] {
+  if (!session || !phase) {
+    return []
+  }
+
+  return PARTICIPANTS.map((participant) =>
+    getCallParticipantState(participant, session, phase, currentTime),
+  ).filter((participant): participant is VisibleCallParticipant =>
+    Boolean(participant?.hasJoined),
+  )
+}
+
+function getCallParticipantState(
+  participant: CallParticipant,
+  session: CallSession,
+  phase: CallPhase,
+  currentTime: number,
+): VisibleCallParticipant | null {
+  const schedule = session.participantSchedule[participant.id]
+  if (!schedule?.included) {
+    return null
+  }
+
+  const joinedAt = schedule.joinAt
+  const leaveAt = schedule.leaveAt
+  const hasJoined = currentTime >= joinedAt
+  const isDeparting = schedule.departing
+
+  return {
+    ...participant,
+    hasJoined,
+    isConnected: hasJoined && currentTime < leaveAt,
+    isVisible: getParticipantVisibility({
+      hasJoined,
+      isDeparting,
+      phase,
+      currentTime,
+      leaveAt,
+    }),
+    isJoining: hasJoined && currentTime - joinedAt < 1_600,
+    isDropping:
+      (isDeparting || phase === 'winding') &&
+      currentTime >= leaveAt - 1_800 &&
+      currentTime < leaveAt + PARTICIPANT_EXIT_ANIMATION_MS,
+    leaveAt,
+    isOptional: schedule.optional,
+  }
+}
+
+function getParticipantVisibility(options: {
+  hasJoined: boolean
+  isDeparting: boolean
+  phase: CallPhase
+  currentTime: number
+  leaveAt: number
+}) {
+  const { currentTime, hasJoined, isDeparting, leaveAt, phase } = options
+  if (!hasJoined) {
+    return false
+  }
+
+  if (isDeparting) {
+    return currentTime < leaveAt + PARTICIPANT_EXIT_ANIMATION_MS
+  }
+
+  return (
+    phase !== 'winding' || currentTime < leaveAt + PARTICIPANT_EXIT_ANIMATION_MS
+  )
+}
+
 function buildParticipantSchedule(
   scenarioParticipants: CallSession['scenarioParticipants'],
   cycleStartedAt: number,
@@ -1025,60 +1482,12 @@ function buildParticipantSchedule(
   const includedParticipants = PARTICIPANTS.filter((participant) =>
     includedIds.has(participant.id),
   )
-  const leaveOrder = [...includedParticipants].sort((left, right) => {
-    if (left.id === FINAL_OWNER_ID) {
-      return 1
-    }
-
-    if (right.id === FINAL_OWNER_ID) {
-      return -1
-    }
-
-    return left.leaveAfterHoldMs - right.leaveAfterHoldMs
-  })
-  const leaveOffsetsByParticipantId = new Map<string, number>()
-  let previousLeaveOffset = 0
-
-  leaveOrder.forEach((participant, index) => {
-    const minimumOffset =
-      index === 0
-        ? WINDING_FIRST_DROP_DELAY_MS
-        : previousLeaveOffset + WINDING_DROP_SPACING_MS
-    const targetOffset =
-      participant.id === FINAL_OWNER_ID
-        ? Math.max(
-            participant.leaveAfterHoldMs,
-            minimumOffset + WINDING_FINAL_OWNER_LINGER_MS,
-          )
-        : Math.max(participant.leaveAfterHoldMs, minimumOffset)
-
-    leaveOffsetsByParticipantId.set(participant.id, targetOffset)
-    previousLeaveOffset = targetOffset
-  })
-
-  const departingIds: string[] = []
-  if (previousSchedule) {
-    for (const participant of PARTICIPANTS) {
-      if (includedIds.has(participant.id)) {
-        continue
-      }
-
-      const prev = previousSchedule[participant.id]
-      if (!prev || !prev.included) {
-        continue
-      }
-
-      if (prev.departing) {
-        continue
-      }
-
-      const wasConnected =
-        prev.joinAt <= cycleStartedAt && prev.leaveAt > cycleStartedAt
-      if (wasConnected) {
-        departingIds.push(participant.id)
-      }
-    }
-  }
+  const leaveOffsetsByParticipantId = buildLeaveOffsets(includedParticipants)
+  const departingIds = getDepartingParticipantIds(
+    includedIds,
+    cycleStartedAt,
+    previousSchedule,
+  )
 
   return Object.fromEntries(
     PARTICIPANTS.map((participant, index) => {
@@ -1086,41 +1495,14 @@ function buildParticipantSchedule(
       const included = includedIds.has(participant.id)
 
       if (!included) {
-        const departureIndex = departingIds.indexOf(participant.id)
-
-        if (departureIndex >= 0 && previousEntry) {
-          return [
-            participant.id,
-            {
-              included: true,
-              optional: false,
-              departing: true,
-              joinAt: previousEntry.joinAt,
-              leaveAt:
-                cycleStartedAt +
-                TRANSITION_FIRST_DEPARTURE_MS +
-                departureIndex * TRANSITION_DEPARTURE_SPACING_MS,
-            },
-          ]
-        }
-
-        if (
-          previousEntry?.departing &&
-          previousEntry.included &&
-          previousEntry.leaveAt > cycleStartedAt
-        ) {
-          return [participant.id, { ...previousEntry }]
-        }
-
         return [
           participant.id,
-          {
-            included: false,
-            optional: false,
-            departing: false,
-            joinAt: cycleStartedAt,
-            leaveAt: cycleStartedAt,
-          },
+          createAbsentParticipantScheduleEntry({
+            participantId: participant.id,
+            cycleStartedAt,
+            departingIds,
+            ...(previousEntry ? { previousEntry } : {}),
+          }),
         ]
       }
 
@@ -1196,6 +1578,57 @@ export default function EmergencyCallOverlay() {
   const consecutiveManualEmergencyCountRef = useRef(0)
   const departureChatterShownRef = useRef<Set<string>>(new Set())
 
+  const setParticipantTileRef = useCallback(
+    (id: string, node: HTMLDivElement | null) => {
+      participantTileRefs.current[id] = node
+    },
+    [],
+  )
+
+  const clearSystemNoticeTimers = useCallback(() => {
+    if (activeSystemNoticeTimeoutRef.current !== null) {
+      window.clearTimeout(activeSystemNoticeTimeoutRef.current)
+      activeSystemNoticeTimeoutRef.current = null
+    }
+
+    if (systemNoticeFadeTimeoutRef.current !== null) {
+      window.clearTimeout(systemNoticeFadeTimeoutRef.current)
+      systemNoticeFadeTimeoutRef.current = null
+    }
+  }, [])
+
+  const showTransientReactionBubble = useCallback(
+    (
+      reaction: ScriptLine,
+      reactionParticipant: CallParticipant | undefined,
+      durationMs: number,
+    ) => {
+      if (!reactionParticipant) {
+        return
+      }
+
+      setTransientBubble((current) => {
+        if (
+          lastBubbleByParticipantRef.current[reactionParticipant.id] ===
+            reaction.text ||
+          (current?.participantId === reactionParticipant.id &&
+            current.text === reaction.text)
+        ) {
+          return current
+        }
+
+        return {
+          kind: 'chat',
+          participantId: reactionParticipant.id,
+          initials: reactionParticipant.initials,
+          text: reaction.text,
+          durationMs,
+        }
+      })
+    },
+    [],
+  )
+
   const checkScreenSize = useCallback(() => {
     setShouldRender(getShouldRenderEmergencyCall())
   }, [])
@@ -1219,6 +1652,17 @@ export default function EmergencyCallOverlay() {
       setSystemNoticeVersion((version) => version + 1)
     },
     [activeSystemNotice],
+  )
+
+  const scheduleSystemNotice = useCallback(
+    (participant: CallParticipant, text: string) => {
+      const timeoutId = window.setTimeout(() => {
+        enqueueSystemNotice(createSystemNotice(participant, text))
+      }, 0)
+
+      return () => window.clearTimeout(timeoutId)
+    },
+    [enqueueSystemNotice],
   )
 
   useEffect(() => {
@@ -1267,15 +1711,7 @@ export default function EmergencyCallOverlay() {
         displayedBubbleTimeoutRef.current = null
       }
 
-      if (activeSystemNoticeTimeoutRef.current !== null) {
-        window.clearTimeout(activeSystemNoticeTimeoutRef.current)
-        activeSystemNoticeTimeoutRef.current = null
-      }
-
-      if (systemNoticeFadeTimeoutRef.current !== null) {
-        window.clearTimeout(systemNoticeFadeTimeoutRef.current)
-        systemNoticeFadeTimeoutRef.current = null
-      }
+      clearSystemNoticeTimers()
 
       const timeoutId = window.setTimeout(() => {
         setActiveSystemNotice(null)
@@ -1285,7 +1721,7 @@ export default function EmergencyCallOverlay() {
 
       return () => window.clearTimeout(timeoutId)
     }
-  }, [session])
+  }, [clearSystemNoticeTimers, session])
 
   useEffect(() => {
     if (!session || cluster.emergencyState !== 'normal') {
@@ -1326,58 +1762,10 @@ export default function EmergencyCallOverlay() {
     return 'winding'
   }, [cluster.emergencyState, currentTime, session])
 
-  const participants = useMemo(() => {
-    if (!session || !phase) {
-      return []
-    }
-
-    return PARTICIPANTS.map((participant) => {
-      const schedule = session.participantSchedule[participant.id]
-      if (!schedule?.included) {
-        return null
-      }
-
-      const joinedAt = schedule.joinAt
-      const leaveAt = schedule.leaveAt
-      const hasJoined = currentTime >= joinedAt
-      const isConnected = hasJoined && currentTime < leaveAt
-      const isDeparting = schedule.departing
-      const isVisible =
-        hasJoined &&
-        (isDeparting
-          ? currentTime < leaveAt + PARTICIPANT_EXIT_ANIMATION_MS
-          : phase !== 'winding' ||
-            currentTime < leaveAt + PARTICIPANT_EXIT_ANIMATION_MS)
-      const isJoining = hasJoined && currentTime - joinedAt < 1_600
-      const isDropping =
-        (isDeparting || phase === 'winding') &&
-        currentTime >= leaveAt - 1_800 &&
-        currentTime < leaveAt + PARTICIPANT_EXIT_ANIMATION_MS
-
-      return {
-        ...participant,
-        hasJoined,
-        isConnected,
-        isVisible,
-        isJoining,
-        isDropping,
-        leaveAt,
-        isOptional: schedule.optional,
-      }
-    }).filter(
-      (
-        participant,
-      ): participant is CallParticipant & {
-        hasJoined: boolean
-        isConnected: boolean
-        isVisible: boolean
-        isJoining: boolean
-        isDropping: boolean
-        leaveAt: number
-        isOptional: boolean
-      } => Boolean(participant?.hasJoined),
-    )
-  }, [currentTime, phase, session])
+  const participants = useMemo(
+    () => getCallParticipants(session, phase, currentTime),
+    [currentTime, phase, session],
+  )
 
   const connectedParticipants = useMemo(
     () => participants.filter((participant) => participant.isConnected),
@@ -1498,30 +1886,11 @@ export default function EmergencyCallOverlay() {
             : (MANUAL_REPEAT_REACTIONS.find((line) =>
                 connectedParticipantIds.includes(line.speakerId),
               ) ?? seededReaction)
-          const reactionParticipant =
-            PARTICIPANT_LOOKUP[availableReaction.speakerId] ??
-            connectedParticipants[0]
-
-          if (reactionParticipant) {
-            setTransientBubble((current) => {
-              if (
-                lastBubbleByParticipantRef.current[reactionParticipant.id] ===
-                  availableReaction.text ||
-                (current?.participantId === reactionParticipant.id &&
-                  current.text === availableReaction.text)
-              ) {
-                return current
-              }
-
-              return {
-                kind: 'chat',
-                participantId: reactionParticipant.id,
-                initials: reactionParticipant.initials,
-                text: availableReaction.text,
-                durationMs: 3_400,
-              }
-            })
-          }
+          showTransientReactionBubble(
+            availableReaction,
+            getReactionParticipant(availableReaction, connectedParticipants),
+            3_400,
+          )
         } else if (session && previous.state !== 'normal') {
           const reactionPool = RESTART_REACTIONS[scenarioKey]
           const seededReaction = getRequiredArrayItem(
@@ -1533,30 +1902,11 @@ export default function EmergencyCallOverlay() {
             reactionPool.find((line) =>
               connectedParticipantIds.includes(line.speakerId),
             ) ?? seededReaction
-          const reactionParticipant =
-            PARTICIPANT_LOOKUP[availableReaction.speakerId] ??
-            connectedParticipants[0]
-
-          if (reactionParticipant) {
-            setTransientBubble((current) => {
-              if (
-                lastBubbleByParticipantRef.current[reactionParticipant.id] ===
-                  availableReaction.text ||
-                (current?.participantId === reactionParticipant.id &&
-                  current.text === availableReaction.text)
-              ) {
-                return current
-              }
-
-              return {
-                kind: 'chat',
-                participantId: reactionParticipant.id,
-                initials: reactionParticipant.initials,
-                text: availableReaction.text,
-                durationMs: 3_200,
-              }
-            })
-          }
+          showTransientReactionBubble(
+            availableReaction,
+            getReactionParticipant(availableReaction, connectedParticipants),
+            3_200,
+          )
         }
 
         if (cluster.triggerSource === 'button-click') {
@@ -1646,6 +1996,7 @@ export default function EmergencyCallOverlay() {
     connectedParticipantIds,
     connectedParticipants,
     session,
+    showTransientReactionBubble,
   ])
 
   const pendingOptionalParticipant = useMemo(() => {
@@ -1810,12 +2161,9 @@ export default function EmergencyCallOverlay() {
           `Missing participant for joined id: ${joinedId}`,
         )
       const text = `${participant.title ?? participant.name} joined the call.`
-      const timeoutId = window.setTimeout(() => {
-        enqueueSystemNotice(createSystemNotice(participant, text))
-      }, 0)
 
       previousConnectedIdsRef.current = currentConnectedIds
-      return () => window.clearTimeout(timeoutId)
+      return scheduleSystemNotice(participant, text)
     }
 
     if (leftId) {
@@ -1824,16 +2172,13 @@ export default function EmergencyCallOverlay() {
         `Missing participant for left id: ${leftId}`,
       )
       const text = `${participant.title ?? participant.name} left the call.`
-      const timeoutId = window.setTimeout(() => {
-        enqueueSystemNotice(createSystemNotice(participant, text))
-      }, 0)
 
       previousConnectedIdsRef.current = currentConnectedIds
-      return () => window.clearTimeout(timeoutId)
+      return scheduleSystemNotice(participant, text)
     }
 
     previousConnectedIdsRef.current = currentConnectedIds
-  }, [connectedParticipants, enqueueSystemNotice, session])
+  }, [connectedParticipants, scheduleSystemNotice, session])
 
   useEffect(() => {
     if (!session) {
@@ -1933,17 +2278,9 @@ export default function EmergencyCallOverlay() {
     }, activeSystemNotice.durationMs)
 
     return () => {
-      if (activeSystemNoticeTimeoutRef.current !== null) {
-        window.clearTimeout(activeSystemNoticeTimeoutRef.current)
-        activeSystemNoticeTimeoutRef.current = null
-      }
-
-      if (systemNoticeFadeTimeoutRef.current !== null) {
-        window.clearTimeout(systemNoticeFadeTimeoutRef.current)
-        systemNoticeFadeTimeoutRef.current = null
-      }
+      clearSystemNoticeTimers()
     }
-  }, [activeSystemNotice])
+  }, [activeSystemNotice, clearSystemNoticeTimers])
 
   const nextBubble: CallBubble | null = useMemo(() => {
     if (transientBubble) {
@@ -2337,105 +2674,21 @@ export default function EmergencyCallOverlay() {
                     columnGap: `${gridColumnGapRem}rem`,
                   }}
                 >
-                  {rowParticipants.map((participant) => {
-                    const isSpeaker = participant.id === activeSpeakerId
-                    const accentTone = participant.isDropping
-                      ? isDark
-                        ? 'rgba(148, 163, 184, 0.68)'
-                        : 'rgba(100, 116, 139, 0.72)'
-                      : participant.accent
-                    const isFullyLeaving =
-                      phase === 'winding' && currentTime >= participant.leaveAt
-
-                    return (
-                      <div
-                        key={participant.id}
-                        ref={(node) => {
-                          participantTileRefs.current[participant.id] = node
-                        }}
-                        className="flex flex-col items-center text-center will-change-transform"
-                      >
-                        <div
-                          className="transition-all duration-500"
-                          style={{
-                            opacity: isFullyLeaving
-                              ? 0
-                              : participant.isDropping
-                                ? 0.72
-                                : 1,
-                            transform: isFullyLeaving
-                              ? 'scale(0.78)'
-                              : participant.isJoining
-                                ? 'scale(0.94)'
-                                : 'scale(1)',
-                          }}
-                        >
-                          <div
-                            className="relative flex items-center justify-center"
-                            style={{
-                              height: `${tileOuterSizeRem}rem`,
-                              width: `${tileOuterSizeRem}rem`,
-                            }}
-                          >
-                            <div
-                              className={`absolute inset-0 rounded-full transition-all duration-500 ${
-                                isSpeaker || participant.isJoining
-                                  ? 'animate-pulse'
-                                  : ''
-                              }`}
-                              style={{
-                                background: `radial-gradient(circle, ${softenAccent(
-                                  participant.accent,
-                                  isSpeaker ? '0.28' : '0.18',
-                                )}, transparent 68%)`,
-                                transform: isFullyLeaving
-                                  ? 'scale(0.86)'
-                                  : isSpeaker
-                                    ? 'scale(1.3)'
-                                    : 'scale(1.02)',
-                                opacity: isFullyLeaving
-                                  ? 0.18
-                                  : isSpeaker
-                                    ? 1
-                                    : 0.82,
-                              }}
-                            />
-                            <div
-                              className="absolute rounded-full border transition-all duration-500"
-                              style={{
-                                inset: `${tileInnerInsetRem}rem`,
-                                borderColor: accentTone,
-                                opacity: isSpeaker ? 1 : 0.84,
-                                boxShadow: isSpeaker
-                                  ? `0 0 0 1px ${accentTone}, 0 0 30px ${softenAccent(
-                                      participant.accent,
-                                      '0.34',
-                                    )}`
-                                  : 'none',
-                              }}
-                            />
-                            <div
-                              className="relative flex items-center justify-center rounded-full border font-mono font-semibold transition-all duration-500"
-                              style={{
-                                height: `${tileCoreSizeRem}rem`,
-                                width: `${tileCoreSizeRem}rem`,
-                                backgroundColor: isDark
-                                  ? 'rgba(15, 23, 42, 0.94)'
-                                  : 'rgba(255, 255, 255, 0.96)',
-                                borderColor: softenAccent(accentTone, '0.78'),
-                                color: isDark
-                                  ? 'rgba(248, 250, 252, 0.96)'
-                                  : 'rgba(15, 23, 42, 0.92)',
-                                fontSize: `${tileInitialsFontSizePx}px`,
-                              }}
-                            >
-                              {participant.initials}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
+                  {rowParticipants.map((participant) => (
+                    <ParticipantTile
+                      key={participant.id}
+                      activeSpeakerId={activeSpeakerId}
+                      currentTime={currentTime}
+                      isDark={isDark}
+                      participant={participant}
+                      phase={phase}
+                      setParticipantTileRef={setParticipantTileRef}
+                      tileCoreSizeRem={tileCoreSizeRem}
+                      tileInitialsFontSizePx={tileInitialsFontSizePx}
+                      tileInnerInsetRem={tileInnerInsetRem}
+                      tileOuterSizeRem={tileOuterSizeRem}
+                    />
+                  ))}
                 </div>
               ))}
             </div>
@@ -2451,57 +2704,10 @@ export default function EmergencyCallOverlay() {
               }}
             >
               {/* Mic – unmuted when JP speaks, muted otherwise */}
-              {(() => {
-                const jpSpeaking = activeSpeakerId === FINAL_OWNER_ID
-                return (
-                  <div
-                    className="flex h-[1.85rem] w-[1.85rem] items-center justify-center rounded-full transition-colors duration-300"
-                    style={{
-                      backgroundColor: jpSpeaking
-                        ? isDark
-                          ? 'rgba(30, 41, 59, 0.5)'
-                          : 'rgba(241, 245, 249, 0.82)'
-                        : isDark
-                          ? 'rgba(239, 68, 68, 0.25)'
-                          : 'rgba(239, 68, 68, 0.14)',
-                      border: `1px solid ${
-                        jpSpeaking
-                          ? isDark
-                            ? 'rgba(148, 163, 184, 0.12)'
-                            : 'rgba(148, 163, 184, 0.16)'
-                          : isDark
-                            ? 'rgba(239, 68, 68, 0.25)'
-                            : 'rgba(239, 68, 68, 0.18)'
-                      }`,
-                    }}
-                  >
-                    <svg
-                      width="11"
-                      height="11"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke={
-                        jpSpeaking
-                          ? isDark
-                            ? 'rgba(191, 219, 254, 0.7)'
-                            : 'rgba(71, 85, 105, 0.7)'
-                          : isDark
-                            ? 'rgba(248, 113, 113, 0.8)'
-                            : 'rgba(220, 38, 38, 0.7)'
-                      }
-                      strokeWidth="2.2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <rect x="9" y="1" width="6" height="13" rx="3" />
-                      <path d="M19 10v1a7 7 0 0 1-14 0v-1" />
-                      <line x1="12" y1="19" x2="12" y2="23" />
-                      <line x1="8" y1="23" x2="16" y2="23" />
-                      {!jpSpeaking && <line x1="1" y1="1" x2="23" y2="23" />}
-                    </svg>
-                  </div>
-                )
-              })()}
+              <MicrophoneControlIcon
+                isDark={isDark}
+                isSpeaking={activeSpeakerId === FINAL_OWNER_ID}
+              />
               {/* Camera – always disabled (no video in voice call) */}
               <div
                 className="flex h-[1.85rem] w-[1.85rem] items-center justify-center rounded-full"
@@ -2532,15 +2738,7 @@ export default function EmergencyCallOverlay() {
                 </svg>
               </div>
               {/* Reaction (smiley) */}
-              <div
-                className="flex h-[1.85rem] w-[1.85rem] items-center justify-center rounded-full"
-                style={{
-                  backgroundColor: isDark
-                    ? 'rgba(30, 41, 59, 0.5)'
-                    : 'rgba(241, 245, 249, 0.82)',
-                  border: `1px solid ${isDark ? 'rgba(148, 163, 184, 0.12)' : 'rgba(148, 163, 184, 0.16)'}`,
-                }}
-              >
+              <CallControlIcon isDark={isDark}>
                 <svg
                   width="11"
                   height="11"
@@ -2560,17 +2758,9 @@ export default function EmergencyCallOverlay() {
                   <line x1="9" y1="9" x2="9.01" y2="9" />
                   <line x1="15" y1="9" x2="15.01" y2="9" />
                 </svg>
-              </div>
+              </CallControlIcon>
               {/* Screen share */}
-              <div
-                className="flex h-[1.85rem] w-[1.85rem] items-center justify-center rounded-full"
-                style={{
-                  backgroundColor: isDark
-                    ? 'rgba(30, 41, 59, 0.5)'
-                    : 'rgba(241, 245, 249, 0.82)',
-                  border: `1px solid ${isDark ? 'rgba(148, 163, 184, 0.12)' : 'rgba(148, 163, 184, 0.16)'}`,
-                }}
-              >
+              <CallControlIcon isDark={isDark}>
                 <svg
                   width="12"
                   height="11"
@@ -2589,17 +2779,9 @@ export default function EmergencyCallOverlay() {
                   <line x1="8" y1="21" x2="16" y2="21" />
                   <line x1="12" y1="17" x2="12" y2="21" />
                 </svg>
-              </div>
+              </CallControlIcon>
               {/* Hand raise */}
-              <div
-                className="flex h-[1.85rem] w-[1.85rem] items-center justify-center rounded-full"
-                style={{
-                  backgroundColor: isDark
-                    ? 'rgba(30, 41, 59, 0.5)'
-                    : 'rgba(241, 245, 249, 0.82)',
-                  border: `1px solid ${isDark ? 'rgba(148, 163, 184, 0.12)' : 'rgba(148, 163, 184, 0.16)'}`,
-                }}
-              >
+              <CallControlIcon isDark={isDark}>
                 <svg
                   width="11"
                   height="11"
@@ -2619,17 +2801,9 @@ export default function EmergencyCallOverlay() {
                   <path d="M10 10.5V6a2 2 0 0 0-4 0v8" />
                   <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8H12a8 8 0 0 1-6-2.7" />
                 </svg>
-              </div>
+              </CallControlIcon>
               {/* More (three dots) */}
-              <div
-                className="flex h-[1.85rem] w-[1.85rem] items-center justify-center rounded-full"
-                style={{
-                  backgroundColor: isDark
-                    ? 'rgba(30, 41, 59, 0.5)'
-                    : 'rgba(241, 245, 249, 0.82)',
-                  border: `1px solid ${isDark ? 'rgba(148, 163, 184, 0.12)' : 'rgba(148, 163, 184, 0.16)'}`,
-                }}
-              >
+              <CallControlIcon isDark={isDark}>
                 <svg
                   width="11"
                   height="11"
@@ -2644,7 +2818,7 @@ export default function EmergencyCallOverlay() {
                   <circle cx="12" cy="12" r="1.5" />
                   <circle cx="19" cy="12" r="1.5" />
                 </svg>
-              </div>
+              </CallControlIcon>
               {/* End call (red) */}
               <div
                 className="flex h-[1.85rem] w-[2.2rem] items-center justify-center rounded-full"

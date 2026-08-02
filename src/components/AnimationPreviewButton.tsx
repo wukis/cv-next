@@ -38,6 +38,92 @@ function tooltipTimerReducer(
   }
 }
 
+function dispatchAnimationFocusHover(isHovering: boolean) {
+  window.dispatchEvent(
+    new CustomEvent('animation-focus-hover', {
+      detail: { isHovering },
+    }),
+  )
+}
+
+function restoreAnimationFocus(
+  previousHtmlOverflow: string,
+  previousBodyOverflow: string,
+) {
+  document.documentElement.classList.remove('animation-focus')
+  document.documentElement.style.overflow = previousHtmlOverflow
+  document.body.style.overflow = previousBodyOverflow
+  dispatchAnimationFocusHover(false)
+}
+
+function getTooltipDescription(
+  isHovering: boolean,
+  buttonDescription: string,
+  keyboardRotationHint: string,
+) {
+  if (isHovering) {
+    return `${buttonDescription} ${keyboardRotationHint}`
+  }
+
+  return `Hover to preview cluster pressure paths like surge scaling, reroute pressure, cache warmup misses, and queue buildup. While hovering, scroll to zoom the cluster view. ${keyboardRotationHint}`
+}
+
+function getTooltipExpiryDuration(
+  explicitDurationMs: number | null,
+  tooltipDescription: string,
+) {
+  if (explicitDurationMs != null) {
+    return explicitDurationMs
+  }
+
+  const wordCount = tooltipDescription.split(/\s+/).length
+  return Math.max(10000, Math.min(30000, (wordCount / 200) * 60000))
+}
+
+function triggerManualEmergency(canTriggerEmergency: boolean) {
+  if (!canTriggerEmergency) return
+
+  window.dispatchEvent(
+    new CustomEvent(TRIGGER_NETWORK_EMERGENCY_EVENT, {
+      detail: {
+        scenarioKey: 'failover',
+        triggerSource: 'button-click',
+      },
+    }),
+  )
+}
+
+function AnimationPreviewIcon({
+  orbitKey,
+  orbitActive,
+  isHovering,
+}: {
+  orbitKey: number
+  orbitActive: boolean
+  isHovering: boolean
+}) {
+  return (
+    <>
+      <HexagonNetworkIcon
+        key={orbitKey}
+        orbitActive={orbitActive}
+        className={clsx(
+          'h-5 w-5 transition-[color,transform] duration-300',
+          isHovering
+            ? 'scale-110 text-emerald-500 dark:text-emerald-400'
+            : 'text-neutral-600 dark:text-neutral-300',
+        )}
+      />
+      <span
+        className={clsx(
+          'absolute inset-0 rounded-lg ring-2 ring-emerald-400/50 transition-all duration-500',
+          isHovering ? 'scale-100 opacity-100' : 'scale-95 opacity-0',
+        )}
+      />
+    </>
+  )
+}
+
 export default function AnimationPreviewButton() {
   const isAmbientEligible = useAmbientEligibility()
   const [isHovering, setIsHovering] = useState(false)
@@ -67,25 +153,11 @@ export default function AnimationPreviewButton() {
         }),
       )
     } else {
-      document.documentElement.classList.remove('animation-focus')
-      document.documentElement.style.overflow = previousHtmlOverflow
-      document.body.style.overflow = previousBodyOverflow
-      window.dispatchEvent(
-        new CustomEvent('animation-focus-hover', {
-          detail: { isHovering: false },
-        }),
-      )
+      restoreAnimationFocus(previousHtmlOverflow, previousBodyOverflow)
     }
 
     return () => {
-      document.documentElement.classList.remove('animation-focus')
-      document.documentElement.style.overflow = previousHtmlOverflow
-      document.body.style.overflow = previousBodyOverflow
-      window.dispatchEvent(
-        new CustomEvent('animation-focus-hover', {
-          detail: { isHovering: false },
-        }),
-      )
+      restoreAnimationFocus(previousHtmlOverflow, previousBodyOverflow)
     }
   }, [isAmbientEligible, isHovering])
 
@@ -93,19 +165,19 @@ export default function AnimationPreviewButton() {
     'Use the arrow keys to rotate the cluster while preview is active.'
   const tooltipDescription = useMemo(
     () =>
-      isHovering
-        ? `${monitoring.buttonDescription} ${keyboardRotationHint}`
-        : `Hover to preview cluster pressure paths like surge scaling, reroute pressure, cache warmup misses, and queue buildup. While hovering, scroll to zoom the cluster view. ${keyboardRotationHint}`,
+      getTooltipDescription(
+        isHovering,
+        monitoring.buttonDescription,
+        keyboardRotationHint,
+      ),
     [isHovering, monitoring.buttonDescription, keyboardRotationHint],
   )
 
-  const tooltipExpiryDuration = useMemo(() => {
-    if (monitoring.tooltipExpiryMs != null) {
-      return monitoring.tooltipExpiryMs
-    }
-    const wordCount = tooltipDescription.split(/\s+/).length
-    return Math.max(10000, Math.min(30000, (wordCount / 200) * 60000))
-  }, [monitoring.tooltipExpiryMs, tooltipDescription])
+  const tooltipExpiryDuration = useMemo(
+    () =>
+      getTooltipExpiryDuration(monitoring.tooltipExpiryMs, tooltipDescription),
+    [monitoring.tooltipExpiryMs, tooltipDescription],
+  )
 
   useEffect(() => {
     if (!isAmbientEligible || !isHovering) {
@@ -174,36 +246,14 @@ export default function AnimationPreviewButton() {
           setIsHovering(false)
         }}
         onClick={() => {
-          if (!canTriggerEmergency) {
-            return
-          }
-
-          window.dispatchEvent(
-            new CustomEvent(TRIGGER_NETWORK_EMERGENCY_EVENT, {
-              detail: {
-                scenarioKey: 'failover',
-                triggerSource: 'button-click',
-              },
-            }),
-          )
+          triggerManualEmergency(canTriggerEmergency)
         }}
         aria-label="Preview background animation"
       >
-        <HexagonNetworkIcon
-          key={orbitKey}
+        <AnimationPreviewIcon
+          orbitKey={orbitKey}
           orbitActive={orbitActive}
-          className={clsx(
-            'h-5 w-5 transition-[color,transform] duration-300',
-            isHovering
-              ? 'scale-110 text-emerald-500 dark:text-emerald-400'
-              : 'text-neutral-600 dark:text-neutral-300',
-          )}
-        />
-        <span
-          className={clsx(
-            'absolute inset-0 rounded-lg ring-2 ring-emerald-400/50 transition-all duration-500',
-            isHovering ? 'scale-100 opacity-100' : 'scale-95 opacity-0',
-          )}
+          isHovering={isHovering}
         />
       </button>
     </DesktopTooltip>

@@ -11,6 +11,7 @@ import {
   dispatchClusterEvent,
   dispatchClusterSnapshot,
   type EmergencyScenarioKey,
+  type EmergencyState,
   NETWORK_CALL_ASSIGNMENTS_EVENT,
   TRIGGER_NETWORK_EMERGENCY_EVENT,
   type TriggerSource,
@@ -110,6 +111,1946 @@ import type {
   StatusIndicator,
 } from './hexagon-network/types'
 
+const NODE_SIZE_OFFSETS = {
+  ingress: 6,
+  loadBalancer: 7,
+  appPod: 1.5,
+  worker: 3.5,
+  cache: 4,
+  queue: 4,
+  database: 5,
+  observability: 3.5,
+} satisfies Record<ClusterNodeRole, number>
+
+const CONNECTION_BEND_BY_KIND = {
+  ingress: 0,
+  loadBalancer: 22,
+  service: 18,
+  telemetry: 10,
+  storage: 14,
+} satisfies Record<ConnectionKind, number>
+
+function getNodeSize(role: ClusterNodeRole) {
+  return BASE_HEX_SIZE + NODE_SIZE_OFFSETS[role]
+}
+
+function getReplicaServiceName(node: ServiceNode) {
+  return node.replicaGroup &&
+    APP_SERVICE_ORDER.includes(node.replicaGroup as AppServiceGroup)
+    ? (node.replicaGroup as AppServiceGroup)
+    : null
+}
+
+type ProjectedPoint = ReturnType<typeof project3D>
+
+interface ConnectionAnchorResolution {
+  x: number
+  y: number
+  weight: number
+  bendMultiplier: number
+}
+
+interface ConnectionControlPointOptions {
+  connection: Connection
+  fromNode: ServiceNode
+  toNode: ServiceNode
+  from: ProjectedPoint
+  to: ProjectedPoint
+  canvasCenterX: number
+  canvasCenterY: number
+  rotX: number
+  rotY: number
+  getAppServiceConfig: (
+    serviceName: AppServiceGroup,
+  ) => AppServiceConfig | undefined
+}
+
+function getConnectionBundleDirection(
+  connection: Connection,
+  fromNode: ServiceNode,
+  toNode: ServiceNode,
+) {
+  const fromGroup = fromNode.replicaGroup ?? fromNode.role
+  const toGroup = toNode.replicaGroup ?? toNode.role
+  const bundleKey = `${fromGroup}:${toGroup}:${connection.kind}`
+  const bundleHash = Array.from(bundleKey).reduce(
+    (sum, character) => sum + character.charCodeAt(0),
+    0,
+  )
+  return bundleHash % 2 === 0 ? 1 : -1
+}
+
+function getServicePairAnchor(options: {
+  fromService: AppServiceConfig
+  toService: AppServiceConfig
+  canvasCenterX: number
+  canvasCenterY: number
+  rotX: number
+  rotY: number
+}): ConnectionAnchorResolution {
+  const { fromService, toService, canvasCenterX, canvasCenterY, rotX, rotY } =
+    options
+  const fromCluster = getProjectedServiceClusterEnvelope(
+    fromService,
+    canvasCenterX,
+    canvasCenterY,
+    rotX,
+    rotY,
+  )
+  const toCluster = getProjectedServiceClusterEnvelope(
+    toService,
+    canvasCenterX,
+    canvasCenterY,
+    rotX,
+    rotY,
+  )
+  const clusterDx = toCluster.screenX - fromCluster.screenX
+  const clusterDy = toCluster.screenY - fromCluster.screenY
+  const clusterDistance = Math.hypot(clusterDx, clusterDy) || 1
+  const fromOffset = Math.min(fromCluster.radius * 0.34, clusterDistance * 0.22)
+  const toOffset = Math.min(toCluster.radius * 0.34, clusterDistance * 0.22)
+  const fromAnchorX =
+    fromCluster.screenX + (clusterDx / clusterDistance) * fromOffset
+  const fromAnchorY =
+    fromCluster.screenY + (clusterDy / clusterDistance) * fromOffset
+  const toAnchorX = toCluster.screenX - (clusterDx / clusterDistance) * toOffset
+  const toAnchorY = toCluster.screenY - (clusterDy / clusterDistance) * toOffset
+
+  return {
+    x: (fromAnchorX + toAnchorX) / 2,
+    y: (fromAnchorY + toAnchorY) / 2,
+    weight: 0.6,
+    bendMultiplier: 1,
+  }
+}
+
+function getSingleServiceAnchor(options: {
+  service: AppServiceConfig
+  midX: number
+  midY: number
+  canvasCenterX: number
+  canvasCenterY: number
+  rotX: number
+  rotY: number
+}): ConnectionAnchorResolution {
+  const { service, midX, midY, canvasCenterX, canvasCenterY, rotX, rotY } =
+    options
+  const cluster = getProjectedServiceClusterEnvelope(
+    service,
+    canvasCenterX,
+    canvasCenterY,
+    rotX,
+    rotY,
+  )
+  const clusterDx = midX - cluster.screenX
+  const clusterDy = midY - cluster.screenY
+  const clusterDistance = Math.hypot(clusterDx, clusterDy) || 1
+  const clusterOffset = Math.min(cluster.radius * 0.42, clusterDistance * 0.32)
+  const clusterAnchorX =
+    cluster.screenX + (clusterDx / clusterDistance) * clusterOffset
+  const clusterAnchorY =
+    cluster.screenY + (clusterDy / clusterDistance) * clusterOffset
+
+  return {
+    x: lerp(midX, clusterAnchorX, 0.62),
+    y: lerp(midY, clusterAnchorY, 0.62),
+    weight: 0.4,
+    bendMultiplier: 0.85,
+  }
+}
+
+function getLoadBalancerAnchor(
+  midX: number,
+  midY: number,
+  canvasCenterY: number,
+): ConnectionAnchorResolution {
+  return {
+    x: midX,
+    y: lerp(midY, canvasCenterY - 36, 0.42),
+    weight: 0.3,
+    bendMultiplier: 1,
+  }
+}
+
+function resolveConnectionAnchor(
+  options: ConnectionControlPointOptions & { midX: number; midY: number },
+): ConnectionAnchorResolution {
+  const {
+    canvasCenterX,
+    canvasCenterY,
+    connection,
+    fromNode,
+    getAppServiceConfig,
+    midX,
+    midY,
+    rotX,
+    rotY,
+    toNode,
+  } = options
+  const fromServiceName = getReplicaServiceName(fromNode)
+  const toServiceName = getReplicaServiceName(toNode)
+  const fromService = fromServiceName
+    ? getAppServiceConfig(fromServiceName)
+    : undefined
+  const toService = toServiceName
+    ? getAppServiceConfig(toServiceName)
+    : undefined
+
+  if (fromService && toService) {
+    return getServicePairAnchor({
+      fromService,
+      toService,
+      canvasCenterX,
+      canvasCenterY,
+      rotX,
+      rotY,
+    })
+  }
+
+  const service = fromService ?? toService
+  if (service) {
+    return getSingleServiceAnchor({
+      service,
+      midX,
+      midY,
+      canvasCenterX,
+      canvasCenterY,
+      rotX,
+      rotY,
+    })
+  }
+
+  if (connection.kind === 'loadBalancer') {
+    return getLoadBalancerAnchor(midX, midY, canvasCenterY)
+  }
+
+  return {
+    x: midX,
+    y: midY,
+    weight: 0,
+    bendMultiplier: 1,
+  }
+}
+
+function calculateConnectionControlPoint(
+  options: ConnectionControlPointOptions,
+) {
+  const { connection, fromNode, from, to, toNode } = options
+  const midX = (from.screenX + to.screenX) / 2
+  const midY = (from.screenY + to.screenY) / 2
+
+  if (connection.kind === 'ingress') {
+    return { x: midX, y: midY }
+  }
+
+  const dx = to.screenX - from.screenX
+  const dy = to.screenY - from.screenY
+  const distance = Math.hypot(dx, dy) || 1
+  const direction = getConnectionBundleDirection(connection, fromNode, toNode)
+  const sameReplicaGroup =
+    fromNode.replicaGroup && fromNode.replicaGroup === toNode.replicaGroup
+  const anchor = resolveConnectionAnchor({ ...options, midX, midY })
+  const bend =
+    CONNECTION_BEND_BY_KIND[connection.kind] *
+    anchor.bendMultiplier *
+    (sameReplicaGroup ? 0.45 : 1)
+
+  return {
+    x:
+      lerp(midX, anchor.x, anchor.weight) + (-dy / distance) * bend * direction,
+    y: lerp(midY, anchor.y, anchor.weight) + (dx / distance) * bend * direction,
+  }
+}
+
+interface DesiredConnectionDescriptor {
+  fromNodeId: number
+  toNodeId: number
+  kind: ConnectionKind
+}
+
+type PodsByService = Record<AppServiceGroup, ServiceNode[]>
+
+function addDesiredConnection(
+  desiredConnections: DesiredConnectionDescriptor[],
+  fromNode: ServiceNode | undefined,
+  toNode: ServiceNode | undefined,
+  kind: ConnectionKind,
+) {
+  if (!fromNode || !toNode) {
+    return
+  }
+
+  desiredConnections.push({
+    fromNodeId: fromNode.id,
+    toNodeId: toNode.id,
+    kind,
+  })
+}
+
+function getIndexedNode(nodes: ServiceNode[], index: number) {
+  return nodes[index % Math.max(nodes.length, 1)]
+}
+
+function getPodQueueTarget(options: {
+  pod: ServiceNode
+  index: number
+  primaryQueue: ServiceNode | undefined
+  priorityQueue: ServiceNode | undefined
+  deadLetterQueue: ServiceNode | undefined
+  queues: ServiceNode[]
+}) {
+  const { deadLetterQueue, index, pod, primaryQueue, priorityQueue, queues } =
+    options
+
+  if (pod.replicaGroup === 'checkout') {
+    return (
+      [primaryQueue, priorityQueue, deadLetterQueue][
+        index % Math.max(queues.length, 1)
+      ] ?? primaryQueue
+    )
+  }
+
+  if (pod.replicaGroup === 'warehouse') {
+    return priorityQueue ?? primaryQueue
+  }
+
+  return primaryQueue
+}
+
+function getPodConnectionTargets(options: {
+  pod: ServiceNode
+  index: number
+  primaryQueue: ServiceNode | undefined
+  priorityQueue: ServiceNode | undefined
+  deadLetterQueue: ServiceNode | undefined
+  queues: ServiceNode[]
+  workers: ServiceNode[]
+  observability: ServiceNode[]
+  podsByService: PodsByService
+}) {
+  const { index, observability, podsByService, workers } = options
+
+  return {
+    authTarget: getIndexedNode(podsByService.auth, index),
+    basketTarget: getIndexedNode(podsByService.basket, index),
+    catalogTarget: getIndexedNode(podsByService.catalog, index),
+    queue: getPodQueueTarget(options),
+    telemetry: getIndexedNode(observability, index),
+    warehouseTarget: getIndexedNode(podsByService.warehouse, index),
+    worker: getIndexedNode(workers, index),
+  }
+}
+
+type PodConnectionTargets = ReturnType<typeof getPodConnectionTargets>
+
+function addAuthPodConnections(
+  desiredConnections: DesiredConnectionDescriptor[],
+  pod: ServiceNode,
+  redisMaster: ServiceNode | undefined,
+  primaryDb: ServiceNode | undefined,
+) {
+  addDesiredConnection(desiredConnections, pod, redisMaster, 'service')
+  addDesiredConnection(desiredConnections, pod, primaryDb, 'storage')
+}
+
+function addCatalogPodConnections(
+  desiredConnections: DesiredConnectionDescriptor[],
+  pod: ServiceNode,
+  targets: PodConnectionTargets,
+  redisMaster: ServiceNode | undefined,
+  replicaDb: ServiceNode | undefined,
+) {
+  addDesiredConnection(desiredConnections, pod, redisMaster, 'service')
+  addDesiredConnection(desiredConnections, pod, replicaDb, 'storage')
+  addDesiredConnection(
+    desiredConnections,
+    pod,
+    targets.warehouseTarget,
+    'service',
+  )
+}
+
+function addBasketPodConnections(
+  desiredConnections: DesiredConnectionDescriptor[],
+  pod: ServiceNode,
+  targets: PodConnectionTargets,
+  redisMaster: ServiceNode | undefined,
+  primaryDb: ServiceNode | undefined,
+) {
+  addDesiredConnection(desiredConnections, pod, targets.authTarget, 'service')
+  addDesiredConnection(desiredConnections, pod, redisMaster, 'service')
+  addDesiredConnection(desiredConnections, pod, primaryDb, 'storage')
+}
+
+function addCheckoutPodConnections(
+  desiredConnections: DesiredConnectionDescriptor[],
+  pod: ServiceNode,
+  targets: PodConnectionTargets,
+  redisMaster: ServiceNode | undefined,
+  primaryDb: ServiceNode | undefined,
+  standbyDb: ServiceNode | undefined,
+) {
+  addDesiredConnection(desiredConnections, pod, targets.authTarget, 'service')
+  addDesiredConnection(
+    desiredConnections,
+    pod,
+    targets.catalogTarget,
+    'service',
+  )
+  addDesiredConnection(desiredConnections, pod, targets.basketTarget, 'service')
+  addDesiredConnection(
+    desiredConnections,
+    pod,
+    targets.warehouseTarget,
+    'service',
+  )
+  addDesiredConnection(desiredConnections, pod, targets.queue, 'service')
+  addDesiredConnection(desiredConnections, pod, redisMaster, 'service')
+  addDesiredConnection(desiredConnections, pod, primaryDb, 'storage')
+
+  if (standbyDb?.id !== primaryDb?.id) {
+    addDesiredConnection(desiredConnections, pod, standbyDb, 'storage')
+  }
+}
+
+function addWarehousePodConnections(
+  desiredConnections: DesiredConnectionDescriptor[],
+  pod: ServiceNode,
+  targets: PodConnectionTargets,
+  replicaDb: ServiceNode | undefined,
+  standbyDb: ServiceNode | undefined,
+) {
+  addDesiredConnection(
+    desiredConnections,
+    pod,
+    targets.catalogTarget,
+    'service',
+  )
+  addDesiredConnection(desiredConnections, pod, targets.queue, 'service')
+  addDesiredConnection(desiredConnections, pod, replicaDb, 'storage')
+
+  if (standbyDb?.id !== replicaDb?.id) {
+    addDesiredConnection(desiredConnections, pod, standbyDb, 'storage')
+  }
+}
+
+function addAppPodConnections(options: {
+  desiredConnections: DesiredConnectionDescriptor[]
+  pod: ServiceNode
+  index: number
+  primaryQueue: ServiceNode | undefined
+  priorityQueue: ServiceNode | undefined
+  deadLetterQueue: ServiceNode | undefined
+  queues: ServiceNode[]
+  workers: ServiceNode[]
+  observability: ServiceNode[]
+  podsByService: PodsByService
+  redisMaster: ServiceNode | undefined
+  primaryDb: ServiceNode | undefined
+  replicaDb: ServiceNode | undefined
+  standbyDb: ServiceNode | undefined
+}) {
+  const {
+    desiredConnections,
+    pod,
+    primaryDb,
+    redisMaster,
+    replicaDb,
+    standbyDb,
+  } = options
+  const targets = getPodConnectionTargets(options)
+
+  if (pod.replicaGroup === 'auth') {
+    addAuthPodConnections(desiredConnections, pod, redisMaster, primaryDb)
+  }
+
+  if (pod.replicaGroup === 'catalog') {
+    addCatalogPodConnections(
+      desiredConnections,
+      pod,
+      targets,
+      redisMaster,
+      replicaDb,
+    )
+  }
+
+  if (pod.replicaGroup === 'basket') {
+    addBasketPodConnections(
+      desiredConnections,
+      pod,
+      targets,
+      redisMaster,
+      primaryDb,
+    )
+  }
+
+  if (pod.replicaGroup === 'checkout') {
+    addCheckoutPodConnections(
+      desiredConnections,
+      pod,
+      targets,
+      redisMaster,
+      primaryDb,
+      standbyDb,
+    )
+  }
+
+  if (pod.replicaGroup === 'warehouse') {
+    addWarehousePodConnections(
+      desiredConnections,
+      pod,
+      targets,
+      replicaDb,
+      standbyDb,
+    )
+  }
+
+  if (pod.replicaGroup === 'edge') {
+    addDesiredConnection(desiredConnections, targets.worker, pod, 'service')
+  }
+
+  addDesiredConnection(desiredConnections, targets.telemetry, pod, 'telemetry')
+}
+
+function addEdgeServiceConnections(options: {
+  desiredConnections: DesiredConnectionDescriptor[]
+  edgePods: ServiceNode[]
+  loadBalancer: ServiceNode | undefined
+  podsByService: PodsByService
+  appServices: AppServiceConfig[]
+}) {
+  const {
+    appServices,
+    desiredConnections,
+    edgePods,
+    loadBalancer,
+    podsByService,
+  } = options
+  const edgeService = appServices.find((service) => service.name === 'edge')
+
+  edgePods.forEach((pod, index) => {
+    addDesiredConnection(desiredConnections, loadBalancer, pod, 'loadBalancer')
+
+    edgeService?.downstream.forEach((downstreamService) => {
+      addDesiredConnection(
+        desiredConnections,
+        pod,
+        getIndexedNode(podsByService[downstreamService], index),
+        'service',
+      )
+    })
+  })
+}
+
+function addServicePeerConnections(
+  desiredConnections: DesiredConnectionDescriptor[],
+  podsByService: PodsByService,
+) {
+  APP_SERVICE_ORDER.forEach((serviceName) => {
+    const servicePods = podsByService[serviceName]
+
+    if (servicePods.length <= 1) {
+      return
+    }
+
+    servicePods.forEach((pod, index) => {
+      const peerPod = servicePods[(index + 1) % servicePods.length]
+      if (peerPod?.id !== pod.id) {
+        addDesiredConnection(desiredConnections, pod, peerPod, 'service')
+      }
+    })
+  })
+}
+
+function addRedisConnections(options: {
+  desiredConnections: DesiredConnectionDescriptor[]
+  redisMaster: ServiceNode | undefined
+  redisReplicas: ServiceNode[]
+  primaryQueue: ServiceNode | undefined
+}) {
+  const { desiredConnections, primaryQueue, redisMaster, redisReplicas } =
+    options
+
+  addDesiredConnection(desiredConnections, primaryQueue, redisMaster, 'service')
+
+  if (!redisMaster) {
+    return
+  }
+
+  redisReplicas.forEach((replica, index) => {
+    addDesiredConnection(desiredConnections, redisMaster, replica, 'storage')
+
+    const peerReplica = getIndexedNode(redisReplicas, index + 1)
+    if (peerReplica?.id !== replica.id) {
+      addDesiredConnection(
+        desiredConnections,
+        replica,
+        peerReplica,
+        'telemetry',
+      )
+    }
+  })
+}
+
+function addObservabilityCoreConnections(options: {
+  desiredConnections: DesiredConnectionDescriptor[]
+  metricsNode: ServiceNode | undefined
+  logsNode: ServiceNode | undefined
+  ingress: ServiceNode | undefined
+  loadBalancer: ServiceNode | undefined
+  primaryQueue: ServiceNode | undefined
+  caches: ServiceNode[]
+}) {
+  const {
+    caches,
+    desiredConnections,
+    ingress,
+    loadBalancer,
+    logsNode,
+    metricsNode,
+    primaryQueue,
+  } = options
+
+  addDesiredConnection(desiredConnections, metricsNode, ingress, 'telemetry')
+  addDesiredConnection(
+    desiredConnections,
+    metricsNode,
+    loadBalancer,
+    'telemetry',
+  )
+  addDesiredConnection(desiredConnections, logsNode, loadBalancer, 'telemetry')
+  addDesiredConnection(
+    desiredConnections,
+    metricsNode,
+    primaryQueue,
+    'telemetry',
+  )
+  addDesiredConnection(desiredConnections, logsNode, primaryQueue, 'telemetry')
+
+  caches.forEach((cacheNode) => {
+    addDesiredConnection(
+      desiredConnections,
+      metricsNode,
+      cacheNode,
+      'telemetry',
+    )
+    addDesiredConnection(desiredConnections, logsNode, cacheNode, 'telemetry')
+  })
+}
+
+function addQueueConnections(options: {
+  desiredConnections: DesiredConnectionDescriptor[]
+  redisMaster: ServiceNode | undefined
+  primaryQueue: ServiceNode | undefined
+  priorityQueue: ServiceNode | undefined
+  deadLetterQueue: ServiceNode | undefined
+  workers: ServiceNode[]
+}) {
+  const {
+    deadLetterQueue,
+    desiredConnections,
+    primaryQueue,
+    priorityQueue,
+    redisMaster,
+    workers,
+  } = options
+
+  addDesiredConnection(desiredConnections, redisMaster, primaryQueue, 'service')
+
+  if (primaryQueue?.id !== priorityQueue?.id) {
+    addDesiredConnection(
+      desiredConnections,
+      primaryQueue,
+      priorityQueue,
+      'service',
+    )
+  }
+
+  if (priorityQueue?.id !== deadLetterQueue?.id) {
+    addDesiredConnection(
+      desiredConnections,
+      priorityQueue,
+      deadLetterQueue,
+      'service',
+    )
+  }
+
+  workers.forEach((worker, index) => {
+    addDesiredConnection(desiredConnections, primaryQueue, worker, 'service')
+
+    if (index % 2 === 0) {
+      addDesiredConnection(desiredConnections, priorityQueue, worker, 'service')
+    }
+  })
+}
+
+function addWorkerAndDatabaseConnections(options: {
+  desiredConnections: DesiredConnectionDescriptor[]
+  workers: ServiceNode[]
+  databases: ServiceNode[]
+  metricsNode: ServiceNode | undefined
+  logsNode: ServiceNode | undefined
+}) {
+  const { databases, desiredConnections, logsNode, metricsNode, workers } =
+    options
+
+  workers.forEach((worker, index) => {
+    addDesiredConnection(
+      desiredConnections,
+      worker,
+      getIndexedNode(databases, index),
+      'storage',
+    )
+    addDesiredConnection(desiredConnections, metricsNode, worker, 'telemetry')
+    addDesiredConnection(desiredConnections, logsNode, worker, 'telemetry')
+  })
+
+  databases.forEach((database) => {
+    addDesiredConnection(desiredConnections, metricsNode, database, 'telemetry')
+    addDesiredConnection(desiredConnections, logsNode, database, 'telemetry')
+  })
+}
+
+interface AutoscalerServiceState {
+  serviceName: AppServiceGroup
+  currentReplicas: number
+  desiredReplicas: number
+  scaleOutGap: number
+  scaleInGap: number
+  starting: number
+  draining: number
+  trafficWeight: number
+  maxReplicas: number
+  isVisible: boolean
+}
+
+interface AutoscalerBudgets {
+  remainingStartSlots: number
+  remainingDrainSlots: number
+  remainingScaleOutBudget: number
+  remainingScaleInBudget: number
+}
+
+function getAutoscalerBudgets(options: {
+  isTrafficSpike: boolean
+  trafficSpikeSeverity: number
+  starting: number
+  draining: number
+  totalScaleOutGap: number
+  totalScaleInGap: number
+}): AutoscalerBudgets {
+  const {
+    draining,
+    isTrafficSpike,
+    starting,
+    totalScaleInGap,
+    totalScaleOutGap,
+    trafficSpikeSeverity,
+  } = options
+  const maxConcurrentStartingPods = isTrafficSpike
+    ? Math.min(
+        24,
+        8 +
+          Math.round(trafficSpikeSeverity * 7) +
+          Math.ceil(totalScaleOutGap / 6),
+      )
+    : Math.min(12, 4 + Math.ceil(totalScaleOutGap / 7))
+  const maxConcurrentDrainingPods = isTrafficSpike
+    ? Math.min(10, 3 + Math.ceil(totalScaleInGap / 10))
+    : Math.min(14, 5 + Math.ceil(totalScaleInGap / 8))
+  const remainingStartSlots = Math.max(0, maxConcurrentStartingPods - starting)
+  const remainingDrainSlots = Math.max(0, maxConcurrentDrainingPods - draining)
+
+  return {
+    remainingStartSlots,
+    remainingDrainSlots,
+    remainingScaleOutBudget: getScaleOutBudget({
+      isTrafficSpike,
+      remainingStartSlots,
+      totalScaleOutGap,
+      trafficSpikeSeverity,
+    }),
+    remainingScaleInBudget: getScaleInBudget({
+      isTrafficSpike,
+      remainingDrainSlots,
+      totalScaleInGap,
+    }),
+  }
+}
+
+function getScaleOutBudget(options: {
+  isTrafficSpike: boolean
+  remainingStartSlots: number
+  totalScaleOutGap: number
+  trafficSpikeSeverity: number
+}) {
+  const {
+    isTrafficSpike,
+    remainingStartSlots,
+    totalScaleOutGap,
+    trafficSpikeSeverity,
+  } = options
+
+  if (totalScaleOutGap <= 0) {
+    return 0
+  }
+
+  if (isTrafficSpike) {
+    return Math.min(
+      remainingStartSlots,
+      3 +
+        Math.round(trafficSpikeSeverity * 3) +
+        Math.ceil(totalScaleOutGap / 12),
+    )
+  }
+
+  return Math.min(remainingStartSlots, 1 + Math.ceil(totalScaleOutGap / 9))
+}
+
+function getScaleInBudget(options: {
+  isTrafficSpike: boolean
+  remainingDrainSlots: number
+  totalScaleInGap: number
+}) {
+  const { isTrafficSpike, remainingDrainSlots, totalScaleInGap } = options
+
+  if (totalScaleInGap <= 0) {
+    return 0
+  }
+
+  return isTrafficSpike
+    ? Math.min(remainingDrainSlots, 1 + Math.ceil(totalScaleInGap / 16))
+    : Math.min(remainingDrainSlots, 1 + Math.ceil(totalScaleInGap / 10))
+}
+
+function compareScaleOutCandidates(
+  left: AutoscalerServiceState,
+  right: AutoscalerServiceState,
+) {
+  if (left.scaleOutGap !== right.scaleOutGap) {
+    return right.scaleOutGap - left.scaleOutGap
+  }
+
+  if (left.isVisible !== right.isVisible) {
+    return left.isVisible ? -1 : 1
+  }
+
+  if (left.trafficWeight !== right.trafficWeight) {
+    return right.trafficWeight - left.trafficWeight
+  }
+
+  return (
+    APP_SERVICE_ORDER.indexOf(left.serviceName) -
+    APP_SERVICE_ORDER.indexOf(right.serviceName)
+  )
+}
+
+function compareScaleInCandidates(
+  left: AutoscalerServiceState,
+  right: AutoscalerServiceState,
+) {
+  if (left.scaleInGap !== right.scaleInGap) {
+    return right.scaleInGap - left.scaleInGap
+  }
+
+  if (left.isVisible !== right.isVisible) {
+    return left.isVisible ? -1 : 1
+  }
+
+  if (left.trafficWeight !== right.trafficWeight) {
+    return left.trafficWeight - right.trafficWeight
+  }
+
+  return (
+    APP_SERVICE_ORDER.indexOf(left.serviceName) -
+    APP_SERVICE_ORDER.indexOf(right.serviceName)
+  )
+}
+
+function getScaleOutHeadroom(
+  candidate: AutoscalerServiceState,
+  isTrafficSpike: boolean,
+) {
+  const perServiceStartingCap = isTrafficSpike
+    ? Math.min(
+        Math.max(3, Math.ceil(candidate.maxReplicas * 0.34)),
+        4 +
+          Math.ceil(candidate.scaleOutGap / 5) +
+          Math.round(candidate.trafficWeight * 2),
+      )
+    : Math.min(
+        4,
+        1 +
+          Math.ceil(candidate.scaleOutGap / 6) +
+          Math.round(candidate.trafficWeight),
+      )
+
+  return Math.max(0, perServiceStartingCap - candidate.starting)
+}
+
+function runScaleOutPass(options: {
+  serviceStates: AutoscalerServiceState[]
+  budgets: AutoscalerBudgets
+  isTrafficSpike: boolean
+  createScaleUpPods: (
+    serviceName: AppServiceGroup,
+    batchCount: number,
+  ) => number
+}) {
+  const { budgets, createScaleUpPods, isTrafficSpike, serviceStates } = options
+  let scaledOutPods = 0
+
+  while (
+    budgets.remainingStartSlots > 0 &&
+    budgets.remainingScaleOutBudget > 0
+  ) {
+    const candidate = [...serviceStates]
+      .filter((state) => state.scaleOutGap > 0)
+      .sort(compareScaleOutCandidates)[0]
+
+    if (!candidate) {
+      break
+    }
+
+    const serviceStartHeadroom = getScaleOutHeadroom(candidate, isTrafficSpike)
+
+    if (serviceStartHeadroom === 0) {
+      candidate.scaleOutGap = 0
+      continue
+    }
+
+    const batchCount = Math.min(
+      candidate.scaleOutGap,
+      serviceStartHeadroom,
+      budgets.remainingStartSlots,
+      budgets.remainingScaleOutBudget,
+      isTrafficSpike ? Math.max(2, Math.ceil(candidate.scaleOutGap / 8)) : 2,
+    )
+    const created = createScaleUpPods(candidate.serviceName, batchCount)
+
+    if (created === 0) {
+      candidate.scaleOutGap = 0
+      continue
+    }
+
+    candidate.currentReplicas += created
+    candidate.starting += created
+    candidate.scaleOutGap = Math.max(
+      candidate.desiredReplicas - candidate.currentReplicas,
+      0,
+    )
+    budgets.remainingStartSlots -= created
+    budgets.remainingScaleOutBudget -= created
+    scaledOutPods += created
+  }
+
+  return scaledOutPods
+}
+
+function runScaleInPass(options: {
+  serviceStates: AutoscalerServiceState[]
+  budgets: AutoscalerBudgets
+  isTrafficSpike: boolean
+  requestScaleDownPods: (
+    serviceName: AppServiceGroup,
+    batchCount: number,
+  ) => number
+}) {
+  const { budgets, isTrafficSpike, requestScaleDownPods, serviceStates } =
+    options
+  let scaledInPods = 0
+
+  while (
+    budgets.remainingDrainSlots > 0 &&
+    budgets.remainingScaleInBudget > 0
+  ) {
+    const candidate = [...serviceStates]
+      .filter((state) => state.scaleInGap > 0 && state.starting === 0)
+      .sort(compareScaleInCandidates)[0]
+
+    if (!candidate) {
+      break
+    }
+
+    const perServiceDrainingCap = isTrafficSpike
+      ? 2
+      : Math.min(4, 1 + Math.ceil(candidate.scaleInGap / 5))
+    const serviceDrainHeadroom = Math.max(
+      0,
+      perServiceDrainingCap - candidate.draining,
+    )
+
+    if (serviceDrainHeadroom === 0) {
+      candidate.scaleInGap = 0
+      continue
+    }
+
+    const batchCount = Math.min(
+      candidate.scaleInGap,
+      serviceDrainHeadroom,
+      budgets.remainingDrainSlots,
+      budgets.remainingScaleInBudget,
+      isTrafficSpike ? 1 : 2,
+    )
+    const drained = requestScaleDownPods(candidate.serviceName, batchCount)
+
+    if (drained === 0) {
+      candidate.scaleInGap = 0
+      continue
+    }
+
+    candidate.currentReplicas -= drained
+    candidate.draining += drained
+    candidate.scaleInGap = Math.max(
+      candidate.currentReplicas - candidate.desiredReplicas,
+      0,
+    )
+    budgets.remainingDrainSlots -= drained
+    budgets.remainingScaleInBudget -= drained
+    scaledInPods += drained
+  }
+
+  return scaledInPods
+}
+
+function getNextScaleActionTime(options: {
+  isTrafficSpike: boolean
+  scaledOutPods: number
+  scaledInPods: number
+  currentTime: number
+}) {
+  const { currentTime, isTrafficSpike, scaledInPods, scaledOutPods } = options
+
+  if (scaledOutPods > 0) {
+    return isTrafficSpike
+      ? currentTime + 0.12 + Math.random() * 0.14
+      : currentTime + 0.22 + Math.random() * 0.16
+  }
+
+  if (scaledInPods > 0) {
+    return isTrafficSpike
+      ? currentTime + 0.28 + Math.random() * 0.18
+      : currentTime + 0.24 + Math.random() * 0.18
+  }
+
+  return null
+}
+
+function updateAppPodLifecycle(options: {
+  node: ServiceNode
+  allNodes: ServiceNode[]
+  time: number
+  currentEmergencyState: EmergencyState
+  createReplacementPod: (node: ServiceNode) => void
+  pushClusterEvent: (level: ClusterEventEntry['level'], message: string) => void
+}) {
+  const {
+    allNodes,
+    createReplacementPod,
+    currentEmergencyState,
+    node,
+    pushClusterEvent,
+    time,
+  } = options
+
+  if (node.role !== 'appPod') {
+    return [node]
+  }
+
+  const age = time - node.statusSince
+  const drainDuration = node.scaleDownTarget
+    ? SCALE_DOWN_DRAIN_DURATION
+    : DRAIN_DURATION
+
+  if (node.lifecycleState === 'draining' && age > drainDuration) {
+    transitionDrainingPod(node, time, pushClusterEvent)
+  } else if (
+    shouldLaunchReplacementPod(node, allNodes, age) &&
+    node.lifecycleState === 'unhealthy'
+  ) {
+    createReplacementPod(node)
+    node.replacementLaunched = true
+    pushClusterEvent(
+      currentEmergencyState === 'emergency' ? 'error' : 'info',
+      `scheduler is bringing up a replacement for ${node.label} before shutdown`,
+    )
+  } else if (
+    node.lifecycleState === 'terminating' &&
+    age > TERMINATING_DURATION
+  ) {
+    return []
+  } else if (node.lifecycleState === 'starting' && age > STARTING_DURATION) {
+    transitionStartingPod({
+      node,
+      allNodes,
+      time,
+      currentEmergencyState,
+      pushClusterEvent,
+    })
+  }
+
+  return [node]
+}
+
+function transitionDrainingPod(
+  node: ServiceNode,
+  time: number,
+  pushClusterEvent: (
+    level: ClusterEventEntry['level'],
+    message: string,
+  ) => void,
+) {
+  if (node.scaleDownTarget) {
+    node.lifecycleState = 'terminating'
+    node.statusSince = time
+    pushClusterEvent(
+      'info',
+      `autoscaler removed ${node.label} from ${node.replicaGroup} after traffic cooled`,
+    )
+    return
+  }
+
+  node.lifecycleState = 'unhealthy'
+  node.statusSince = time
+  node.replacementLaunched = false
+  pushClusterEvent(
+    'error',
+    `${node.label} failed its last health check; replacement requested`,
+  )
+}
+
+function shouldLaunchReplacementPod(
+  node: ServiceNode,
+  allNodes: ServiceNode[],
+  age: number,
+) {
+  return (
+    age > UNHEALTHY_DURATION &&
+    !node.replacementLaunched &&
+    !allNodes.some(
+      (candidate) =>
+        candidate.role === 'appPod' && candidate.lifecycleState === 'starting',
+    )
+  )
+}
+
+function transitionStartingPod(options: {
+  node: ServiceNode
+  allNodes: ServiceNode[]
+  time: number
+  currentEmergencyState: EmergencyState
+  pushClusterEvent: (level: ClusterEventEntry['level'], message: string) => void
+}) {
+  const { allNodes, currentEmergencyState, node, pushClusterEvent, time } =
+    options
+  node.lifecycleState = 'ready'
+  node.acceptingTraffic = true
+  node.scaleDownTarget = false
+  node.statusSince = time
+  node.replacementLaunched = true
+
+  if (node.replacementFor) {
+    terminateReplacedPod({
+      node,
+      allNodes,
+      time,
+      currentEmergencyState,
+      pushClusterEvent,
+    })
+  } else {
+    pushClusterEvent(
+      'success',
+      `${node.label} is ready; ${node.replicaGroup} has one more pod on the private network`,
+    )
+  }
+
+  if (node.replicaGroup === 'edge') {
+    pushClusterEvent(
+      currentEmergencyState === 'emergency' && node.replacementFor
+        ? 'error'
+        : 'success',
+      `${node.label} became ready; lb-ext added it back into rotation`,
+    )
+  }
+}
+
+function terminateReplacedPod(options: {
+  node: ServiceNode
+  allNodes: ServiceNode[]
+  time: number
+  currentEmergencyState: EmergencyState
+  pushClusterEvent: (level: ClusterEventEntry['level'], message: string) => void
+}) {
+  const { allNodes, currentEmergencyState, node, pushClusterEvent, time } =
+    options
+  const previousPod = allNodes.find(
+    (candidate) =>
+      candidate.role === 'appPod' &&
+      candidate.label === node.replacementFor &&
+      candidate.lifecycleState === 'unhealthy',
+  )
+
+  if (!previousPod) {
+    return
+  }
+
+  previousPod.lifecycleState = 'terminating'
+  previousPod.statusSince = time
+  pushClusterEvent(
+    currentEmergencyState === 'emergency' ? 'error' : 'warn',
+    `rolling update is shutting down ${previousPod.label} after ${node.label} joined the pool`,
+  )
+}
+
+function isConnectionEndpointIncident(node: ServiceNode) {
+  return (
+    node.lifecycleState === 'draining' ||
+    node.lifecycleState === 'unhealthy' ||
+    node.lifecycleState === 'terminating'
+  )
+}
+
+function getConnectionLineWidth(kind: ConnectionKind, isDark: boolean) {
+  const widths = {
+    ingress: isDark ? 1.45 : 1.75,
+    loadBalancer: isDark ? 1.1 : 1.3,
+    telemetry: isDark ? 0.95 : 1.15,
+    service: isDark ? 0.75 : 1.05,
+    storage: isDark ? 0.75 : 1.05,
+  } satisfies Record<ConnectionKind, number>
+
+  return widths[kind]
+}
+
+function applyConnectionDash(
+  ctx: CanvasRenderingContext2D,
+  connection: Connection,
+  time: number,
+) {
+  if (connection.kind === 'loadBalancer' || connection.kind === 'service') {
+    const dashOffset = (time * 18) % 24
+    ctx.setLineDash(connection.kind === 'loadBalancer' ? [5, 7] : [4, 9])
+    ctx.lineDashOffset = -dashOffset
+    return
+  }
+
+  if (connection.kind === 'telemetry') {
+    ctx.setLineDash([2, 8])
+  }
+}
+
+function isConnectionTargetReady(
+  connection: Connection,
+  fromNode: ServiceNode,
+  toNode: ServiceNode,
+) {
+  if (connection.kind === 'loadBalancer') {
+    return toNode.lifecycleState === 'ready' && toNode.acceptingTraffic
+  }
+
+  if (connection.kind === 'ingress') {
+    return true
+  }
+
+  if (connection.kind === 'telemetry') {
+    return (
+      toNode.lifecycleState !== 'starting' &&
+      toNode.lifecycleState !== 'terminating'
+    )
+  }
+
+  return (
+    (fromNode.lifecycleState === 'ready' ||
+      fromNode.lifecycleState === 'healthy') &&
+    (toNode.lifecycleState === 'healthy' || toNode.lifecycleState === 'ready')
+  )
+}
+
+function maybeEmitConnectionPackets(options: {
+  connection: Connection
+  targetReady: boolean
+  focusLevel: number
+  currentEmergencyState: EmergencyState
+  time: number
+  createPacket: (connection: Connection) => DataPacket
+  packets: DataPacket[]
+}) {
+  const {
+    connection,
+    createPacket,
+    currentEmergencyState,
+    focusLevel,
+    packets,
+    targetReady,
+    time,
+  } = options
+  const packetIntervalMultiplier =
+    1.55 -
+    focusLevel * 0.72 -
+    (currentEmergencyState === 'emergency' ? 0.25 : 0)
+
+  if (
+    !connection.isEstablished ||
+    !targetReady ||
+    time - connection.lastPacketTime <=
+      connection.packetInterval * packetIntervalMultiplier
+  ) {
+    return
+  }
+
+  packets.push(createPacket(connection))
+  connection.lastPacketTime = time
+  connection.packetInterval = getBasePacketInterval(connection.kind)
+
+  if (
+    connection.kind !== 'loadBalancer' ||
+    Math.random() >= 0.2 + focusLevel * 0.25
+  ) {
+    return
+  }
+
+  const response = createPacket(connection)
+  response.direction = -1
+  response.type = 'udp'
+  response.size = 2
+  packets.push(response)
+}
+
+function getPacketIndicatorDecision(options: {
+  targetNode: ServiceNode
+  connection: Connection
+  currentEmergencyState: EmergencyState
+  scenarioKey: EmergencyScenarioKey
+  focusLevel: number
+}) {
+  const {
+    connection,
+    currentEmergencyState,
+    focusLevel,
+    scenarioKey,
+    targetNode,
+  } = options
+  const scenarioAffectsTargetNode = isScenarioAffectingNode(
+    targetNode,
+    currentEmergencyState,
+    scenarioKey,
+  )
+
+  if (
+    targetNode.lifecycleState === 'draining' ||
+    targetNode.lifecycleState === 'unhealthy' ||
+    scenarioAffectsTargetNode
+  ) {
+    return {
+      statusType: 'failure' as const,
+      shouldShowIndicator: Math.random() < 0.5,
+    }
+  }
+
+  if (targetNode.lifecycleState === 'starting') {
+    return {
+      statusType: 'warning' as const,
+      shouldShowIndicator: Math.random() < 0.3,
+    }
+  }
+
+  if (currentEmergencyState === 'recovery') {
+    return {
+      statusType: 'success' as const,
+      shouldShowIndicator: Math.random() < 0.12,
+    }
+  }
+
+  if (connection.kind === 'telemetry') {
+    return { statusType: 'warning' as const, shouldShowIndicator: false }
+  }
+
+  return {
+    statusType: 'success' as const,
+    shouldShowIndicator: Math.random() < 0.05 + focusLevel * 0.03,
+  }
+}
+
+function getPacketStrokeWidth(connection: Connection, packet: DataPacket) {
+  if (connection.kind === 'ingress') {
+    return 2.4
+  }
+
+  if (connection.kind === 'loadBalancer') {
+    return 2
+  }
+
+  return packet.type === 'tcp' ? 1.8 : 1.35
+}
+
+function drawPacketHead(
+  ctx: CanvasRenderingContext2D,
+  packet: DataPacket,
+  x: number,
+  y: number,
+  size: number,
+) {
+  if (packet.type === 'tcp') {
+    ctx.beginPath()
+    ctx.moveTo(x, y - size)
+    ctx.lineTo(x + size, y)
+    ctx.lineTo(x, y + size)
+    ctx.lineTo(x - size, y)
+    ctx.closePath()
+    ctx.fill()
+    return
+  }
+
+  ctx.beginPath()
+  ctx.arc(x, y, size * 0.82, 0, Math.PI * 2)
+  ctx.fill()
+}
+
+function drawPacketFrame(options: {
+  ctx: CanvasRenderingContext2D
+  packet: DataPacket
+  connection: Connection
+  fromNode: ServiceNode
+  toNode: ServiceNode
+  from: ProjectedPoint
+  to: ProjectedPoint
+  control: { x: number; y: number }
+  time: number
+  currentEmergencyState: EmergencyState
+  scenarioKey: EmergencyScenarioKey
+  isDark: boolean
+}) {
+  const {
+    connection,
+    control,
+    ctx,
+    currentEmergencyState,
+    from,
+    isDark,
+    packet,
+    scenarioKey,
+    time,
+    to,
+    toNode,
+    fromNode,
+  } = options
+  const headT = packet.direction === 1 ? packet.progress : 1 - packet.progress
+  const headPoint = getQuadraticPoint(
+    from.screenX,
+    from.screenY,
+    control.x,
+    control.y,
+    to.screenX,
+    to.screenY,
+    headT,
+  )
+  const packetZ = from.z + (to.z - from.z) * headT
+  const depthFade = clamp(
+    (PERSPECTIVE + packetZ) / (PERSPECTIVE * 1.9),
+    0.35,
+    1,
+  )
+  const targetNode = packet.direction === 1 ? toNode : fromNode
+  const palette =
+    COLORS[
+      getNodePalette(targetNode, time, currentEmergencyState, scenarioKey)
+        .colorKey
+    ]
+  const trailLength = packet.type === 'tcp' ? 0.16 : 0.1
+  const tailT =
+    packet.direction === 1
+      ? Math.max(0, headT - trailLength)
+      : Math.min(1, headT + trailLength)
+  const tailPoint = getQuadraticPoint(
+    from.screenX,
+    from.screenY,
+    control.x,
+    control.y,
+    to.screenX,
+    to.screenY,
+    tailT,
+  )
+  const gradient = ctx.createLinearGradient(
+    tailPoint.x,
+    tailPoint.y,
+    headPoint.x,
+    headPoint.y,
+  )
+  gradient.addColorStop(0, 'transparent')
+  gradient.addColorStop(
+    1,
+    withOpacity(palette.main, (isDark ? 0.38 : 0.46) * depthFade),
+  )
+
+  ctx.beginPath()
+  drawQuadraticSegment(
+    ctx,
+    from.screenX,
+    from.screenY,
+    control.x,
+    control.y,
+    to.screenX,
+    to.screenY,
+    tailT,
+    headT,
+  )
+  ctx.strokeStyle = gradient
+  ctx.lineWidth = getPacketStrokeWidth(connection, packet)
+  if (packet.type === 'udp') {
+    ctx.setLineDash([4, 4])
+  }
+  ctx.stroke()
+  ctx.setLineDash([])
+
+  const size =
+    packet.size * depthFade * (Math.sin(time * 8 + packet.id) * 0.22 + 1)
+  ctx.fillStyle = withOpacity(palette.main, (isDark ? 0.78 : 0.88) * depthFade)
+  drawPacketHead(ctx, packet, headPoint.x, headPoint.y, size)
+}
+
+function getTopologyNodeBoost(role: ClusterNodeRole) {
+  if (role === 'loadBalancer' || role === 'ingress') {
+    return 1.2
+  }
+
+  if (role === 'database' || role === 'cache') {
+    return 1.1
+  }
+
+  return 1.04
+}
+
+function getNodeLabelFontSize(node: ServiceNode) {
+  if (node.role === 'loadBalancer' || node.role === 'ingress') {
+    return 9
+  }
+
+  if (node.role === 'database' || node.role === 'cache') {
+    return 7
+  }
+
+  return node.label.length > 7 ? 5.5 : 6.5
+}
+
+function getNodeLabelY(node: ServiceNode, currentSize: number) {
+  return node.role === 'ingress' || node.role === 'loadBalancer'
+    ? node.screenY - currentSize * 1.55
+    : node.screenY + currentSize * 1.38
+}
+
+function drawNodeLabel(options: {
+  ctx: CanvasRenderingContext2D
+  node: ServiceNode
+  palette: (typeof COLORS)[keyof typeof COLORS]
+  currentSize: number
+  depthFade: number
+  visibility: number
+  isDark: boolean
+}) {
+  const { ctx, currentSize, depthFade, isDark, node, palette, visibility } =
+    options
+  const labelOpacity = (isDark ? 0.82 : 0.86) * depthFade * visibility
+  const fontSize = getNodeLabelFontSize(node)
+  const labelY = getNodeLabelY(node, currentSize)
+  const font = `bold ${Math.round(fontSize * depthFade)}px ui-monospace, monospace`
+  ctx.font = font
+  const pillWidth = ctx.measureText(node.label).width + 18
+  const pillHeight = Math.max(16, fontSize * 1.9)
+
+  ctx.save()
+  drawRoundedRectPath(
+    ctx,
+    node.screenX - pillWidth / 2,
+    labelY - pillHeight / 2,
+    pillWidth,
+    pillHeight,
+    3,
+  )
+  ctx.fillStyle = isDark
+    ? `rgba(2, 6, 23, ${0.74 * labelOpacity})`
+    : `rgba(255, 255, 255, ${0.84 * labelOpacity})`
+  ctx.fill()
+  ctx.strokeStyle = withOpacity(
+    palette.main,
+    isDark ? 0.34 * labelOpacity : 0.3 * labelOpacity,
+  )
+  ctx.lineWidth = 1
+  ctx.stroke()
+  ctx.restore()
+
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  drawPanelText(ctx, {
+    text: node.label,
+    x: node.screenX,
+    y: labelY,
+    font,
+    fillStyle: isDark
+      ? `rgba(248, 250, 252, ${labelOpacity})`
+      : `rgba(15, 23, 42, ${labelOpacity})`,
+    plateIsDark: isDark,
+    emphasis:
+      node.role === 'loadBalancer' || node.role === 'ingress'
+        ? 'title'
+        : 'meta',
+  })
+}
+
+function drawServiceNodeFrame(options: {
+  ctx: CanvasRenderingContext2D
+  node: ServiceNode
+  time: number
+  currentEmergencyState: EmergencyState
+  scenarioKey: EmergencyScenarioKey
+  isDark: boolean
+}) {
+  const { ctx, currentEmergencyState, isDark, node, scenarioKey, time } =
+    options
+  const { colorKey, attention } = getNodePalette(
+    node,
+    time,
+    currentEmergencyState,
+    scenarioKey,
+  )
+  const palette = COLORS[colorKey]
+  const visibility = getNodeVisibility(node, time)
+  const scaleMultiplier = getNodeScaleMultiplier(node, time)
+  const scale = node.screenScale * scaleMultiplier
+  const currentSize = node.size * scale
+  const depthFade = clamp(scale, 0.28, 1)
+  const pulseOpacity =
+    (attention + Math.sin(node.pulse) * 0.05) * depthFade * visibility
+
+  if (visibility <= 0) {
+    return
+  }
+
+  if (node.role === 'appPod') {
+    drawHexagon(
+      ctx,
+      node.screenX,
+      node.screenY,
+      currentSize * 0.46,
+      withOpacity(palette.main, pulseOpacity * 0.28 * 0.9),
+      withOpacity(palette.fill, pulseOpacity * 0.28 * 0.16),
+      0.9 * depthFade,
+    )
+    return
+  }
+
+  const topologyNodeBoost = getTopologyNodeBoost(node.role)
+  const topologyGlowOpacity =
+    node.role === 'loadBalancer' || node.role === 'ingress' ? 0.2 : 0.14
+
+  drawHexagon(
+    ctx,
+    node.screenX,
+    node.screenY,
+    currentSize * 1.34 * topologyNodeBoost,
+    withOpacity(palette.glow, pulseOpacity * topologyGlowOpacity),
+    withOpacity(palette.fill, pulseOpacity * 0.06),
+    0.72 * depthFade,
+  )
+  drawHexagon(
+    ctx,
+    node.screenX,
+    node.screenY,
+    currentSize * topologyNodeBoost,
+    withOpacity(palette.main, pulseOpacity * 0.95),
+    withOpacity(palette.fill, pulseOpacity * 0.3),
+    1.35 * depthFade,
+  )
+  drawHexagon(
+    ctx,
+    node.screenX,
+    node.screenY,
+    currentSize * 0.52 * topologyNodeBoost,
+    withOpacity(palette.glow, pulseOpacity * 0.34),
+    withOpacity(palette.fill, pulseOpacity * 0.12),
+    0.72 * depthFade,
+  )
+  drawHexagon(
+    ctx,
+    node.screenX,
+    node.screenY,
+    currentSize * 0.24 * topologyNodeBoost,
+    withOpacity(palette.main, pulseOpacity * 0.4),
+    null,
+    0.68 * depthFade,
+  )
+
+  if (depthFade > 0.6) {
+    drawNodeLabel({
+      ctx,
+      node,
+      palette,
+      currentSize,
+      depthFade,
+      visibility,
+      isDark,
+    })
+  }
+}
+
+type ServiceClusterMotionState = {
+  energy: number
+  footprintCount: number
+  degradedCount: number
+  desiredCount: number
+  pendingScaleOutSteps: number
+  pendingScaleInSteps: number
+  scaleRingProgress: number
+  scaleRingDirection: 1 | -1 | 0
+  phase: number
+}
+
+type NetworkClusterState = {
+  desiredReplicas: number
+  nextAmbientFailureTime: number
+  nextAmbientRebalanceTime: number
+  nextTrafficSpikeTime: number
+  trafficSpikeEndTime: number
+  isTrafficSpike: boolean
+  trafficSpikeLevel: number
+  trafficSpikeSeverity: number
+  nextTrafficTargetRefreshTime: number
+  nextScaleActionTime: number
+  nextScaleCooldownTime: number
+  baselineServiceReplicas: Record<AppServiceGroup, number>
+  desiredServiceReplicas: Record<AppServiceGroup, number>
+}
+
+type EmergencyAnimationState = {
+  isActive: boolean
+  isRecovery: boolean
+  scenarioKey: EmergencyScenarioKey
+  triggerSource: TriggerSource
+  startTime: number
+  duration: number
+  recoveryStartTime: number
+  recoveryDuration: number
+  lastEmergencyTime: number
+  nextEmergencyInterval: number
+  hasTriggeredFirstEmergency: boolean
+  hasEverFocused: boolean
+  accumulatedFocusTime: number
+  firstEmergencyDelay: number
+  nextFailureTime: number
+  triggeredFailures: number
+  failureTarget: number
+  recoveryAnnounced: boolean
+}
+
+interface ServiceClusterPodCounts {
+  ready: number
+  starting: number
+  draining: number
+  unhealthy: number
+  desired: number
+  total: number
+  capacity: number
+  footprint: number
+}
+
+function getScaleRingDirection(motionState: ServiceClusterMotionState) {
+  if (motionState.pendingScaleOutSteps > 0) {
+    return 1
+  }
+
+  if (motionState.pendingScaleInSteps > 0) {
+    return -1
+  }
+
+  return 0
+}
+
+function getScaleRingQueueDepth(motionState: ServiceClusterMotionState) {
+  return motionState.scaleRingDirection > 0
+    ? motionState.pendingScaleOutSteps
+    : motionState.pendingScaleInSteps
+}
+
+function updateScaleRingMotion(motionState: ServiceClusterMotionState) {
+  if (motionState.scaleRingDirection === 0) {
+    motionState.scaleRingDirection = getScaleRingDirection(motionState)
+  }
+
+  if (motionState.scaleRingDirection === 0) {
+    motionState.scaleRingProgress = 0
+    return
+  }
+
+  const activeQueueDepth = getScaleRingQueueDepth(motionState)
+  const ringDuration = clamp(
+    1.08 - Math.min(Math.max(activeQueueDepth - 1, 0), 5) * 0.13,
+    0.34,
+    1.08,
+  )
+  motionState.scaleRingProgress = clamp(
+    motionState.scaleRingProgress + 0.016 / ringDuration,
+    0,
+    1.2,
+  )
+
+  if (motionState.scaleRingProgress < 1) {
+    return
+  }
+
+  motionState.scaleRingProgress -= 1
+  if (motionState.scaleRingDirection > 0) {
+    motionState.pendingScaleOutSteps = Math.max(
+      0,
+      motionState.pendingScaleOutSteps - 1,
+    )
+  } else {
+    motionState.pendingScaleInSteps = Math.max(
+      0,
+      motionState.pendingScaleInSteps - 1,
+    )
+  }
+
+  motionState.energy = clamp(motionState.energy + 0.035, 0, 0.44)
+  const hasMoreInCurrentDirection = getScaleRingQueueDepth(motionState) > 0
+  if (hasMoreInCurrentDirection) {
+    return
+  }
+
+  motionState.scaleRingDirection = getScaleRingDirection(motionState)
+  if (motionState.scaleRingDirection === 0) {
+    motionState.scaleRingProgress = 0
+  }
+}
+
+function updateServiceClusterMotionState(options: {
+  motionState: ServiceClusterMotionState
+  counts: ServiceClusterPodCounts
+  degradedPods: number
+}) {
+  const { counts, degradedPods, motionState } = options
+  const footprintDelta = Math.abs(counts.footprint - motionState.footprintCount)
+  const degradedDelta = Math.abs(degradedPods - motionState.degradedCount)
+  const desiredShift = counts.desired - motionState.desiredCount
+  const desiredDelta = Math.abs(desiredShift)
+  const scaleOutStarted = desiredShift > 0
+  const scaleInStarted = desiredShift < 0
+  const impactTarget = clamp(
+    footprintDelta * 0.09 +
+      Math.min(3, degradedDelta) * 0.04 +
+      desiredDelta * 0.025 +
+      (scaleOutStarted ? 0.028 : 0) +
+      (scaleInStarted && degradedPods === 0 ? 0.02 : 0) +
+      (footprintDelta >= 2 ? 0.035 : 0),
+    0,
+    0.32,
+  )
+
+  motionState.energy =
+    impactTarget > 0.015
+      ? clamp(motionState.energy * 0.88 + impactTarget, 0, 0.44)
+      : motionState.energy * 0.95
+
+  if (desiredShift > 0) {
+    motionState.pendingScaleOutSteps += desiredShift
+  } else if (desiredShift < 0) {
+    motionState.pendingScaleInSteps += Math.abs(desiredShift)
+  }
+
+  updateScaleRingMotion(motionState)
+  motionState.footprintCount = counts.footprint
+  motionState.degradedCount = degradedPods
+  motionState.desiredCount = counts.desired
+}
+
+function getToastAccentColor(toast: EventToast, isDark: boolean) {
+  if (toast.mode === 'emergency') {
+    return isDark ? 'rgba(248, 113, 113, 0.92)' : 'rgba(220, 38, 38, 0.9)'
+  }
+
+  return isDark ? 'rgba(74, 222, 128, 0.84)' : 'rgba(22, 163, 74, 0.84)'
+}
+
+function getToastModeLabel(toast: EventToast) {
+  if (toast.mode === 'emergency') {
+    return 'Incident'
+  }
+
+  if (toast.mode === 'recovery') {
+    return 'Recovery'
+  }
+
+  return 'Autoscale'
+}
+
+function NetworkToast({
+  isDark,
+  toast,
+}: {
+  isDark: boolean
+  toast: EventToast
+}) {
+  const accentColor = getToastAccentColor(toast, isDark)
+
+  return (
+    <div
+      className="pointer-events-auto flex min-h-[6.75rem] w-full flex-col overflow-hidden rounded-sm border px-4 py-3 shadow-2xl backdrop-blur-md transition-[opacity,transform] duration-300 ease-out will-change-[opacity,transform]"
+      style={{
+        opacity: toast.exitingAt === null ? 1 : 0,
+        transform:
+          toast.exitingAt === null
+            ? 'translateY(0) scale(1)'
+            : 'translateY(10px) scale(0.985)',
+        backgroundColor: isDark
+          ? 'rgba(10, 14, 24, 0.92)'
+          : 'rgba(255, 255, 255, 0.94)',
+        borderColor: isDark
+          ? 'rgba(148, 163, 184, 0.14)'
+          : 'rgba(148, 163, 184, 0.28)',
+        boxShadow: `0 0 0 1px ${accentColor}, 0 18px 44px ${
+          isDark ? 'rgba(2, 6, 23, 0.35)' : 'rgba(15, 23, 42, 0.12)'
+        }`,
+      }}
+    >
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <span
+          className="font-mono text-[11px] tracking-[0.18em] uppercase"
+          style={{ color: accentColor }}
+        >
+          {getToastModeLabel(toast)}
+        </span>
+        <span
+          className="h-2.5 w-2.5 rounded-full"
+          style={{
+            backgroundColor: accentColor,
+            boxShadow: `0 0 10px ${accentColor}`,
+          }}
+        />
+      </div>
+      <div className="flex-1">
+        <div
+          className="font-mono text-[13px] font-semibold tracking-[0.08em] break-words uppercase"
+          style={{
+            color: isDark
+              ? 'rgba(248, 250, 252, 0.96)'
+              : 'rgba(15, 23, 42, 0.92)',
+          }}
+        >
+          {toast.title}
+        </div>
+        <div
+          className="mt-1 text-sm leading-5 break-words"
+          style={{
+            color: isDark
+              ? 'rgba(226, 232, 240, 0.78)'
+              : 'rgba(51, 65, 85, 0.8)',
+          }}
+        >
+          {toast.subtitle}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const HexagonServiceNetwork: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationRef = useRef<number | undefined>(undefined)
@@ -173,7 +2114,7 @@ const HexagonServiceNetwork: React.FC = () => {
           pendingScaleOutSteps: 0,
           pendingScaleInSteps: 0,
           scaleRingProgress: 0,
-          scaleRingDirection: 0 as 1 | -1 | 0,
+          scaleRingDirection: 0,
           phase: index * 0.82,
         }
         return accumulator
@@ -199,7 +2140,7 @@ const HexagonServiceNetwork: React.FC = () => {
   const [visibleToasts, setVisibleToasts] = useState<EventToast[]>([])
   const mounted = typeof window !== 'undefined'
 
-  const clusterRef = useRef({
+  const clusterRef = useRef<NetworkClusterState>({
     desiredReplicas: 6,
     nextAmbientFailureTime: 10,
     nextAmbientRebalanceTime: 4,
@@ -218,7 +2159,7 @@ const HexagonServiceNetwork: React.FC = () => {
       basket: 1,
       checkout: 1,
       warehouse: 1,
-    } as Record<AppServiceGroup, number>,
+    },
     desiredServiceReplicas: {
       edge: 1,
       auth: 1,
@@ -226,14 +2167,14 @@ const HexagonServiceNetwork: React.FC = () => {
       basket: 1,
       checkout: 1,
       warehouse: 1,
-    } as Record<AppServiceGroup, number>,
+    },
   })
 
-  const emergencyRef = useRef({
+  const emergencyRef = useRef<EmergencyAnimationState>({
     isActive: false,
     isRecovery: false,
-    scenarioKey: 'failover' as EmergencyScenarioKey,
-    triggerSource: null as TriggerSource,
+    scenarioKey: 'failover',
+    triggerSource: null,
     startTime: 0,
     duration: 10,
     recoveryStartTime: 0,
@@ -288,20 +2229,7 @@ const HexagonServiceNetwork: React.FC = () => {
         screenX: 0,
         screenY: 0,
         screenScale: 1,
-        size:
-          role === 'loadBalancer'
-            ? BASE_HEX_SIZE + 7
-            : role === 'ingress'
-              ? BASE_HEX_SIZE + 6
-              : role === 'database'
-                ? BASE_HEX_SIZE + 5
-                : role === 'cache' || role === 'queue'
-                  ? BASE_HEX_SIZE + 4
-                  : role === 'worker' || role === 'observability'
-                    ? BASE_HEX_SIZE + 3.5
-                    : role === 'appPod'
-                      ? BASE_HEX_SIZE + 1.5
-                      : BASE_HEX_SIZE,
+        size: getNodeSize(role),
         pulse: Math.random() * Math.PI * 2,
         pulseSpeed: 0.012 + Math.random() * 0.014,
         statusSince: timeRef.current,
@@ -734,132 +2662,18 @@ const HexagonServiceNetwork: React.FC = () => {
       rotX: number,
       rotY: number,
     ) => {
-      const midX = (from.screenX + to.screenX) / 2
-      const midY = (from.screenY + to.screenY) / 2
-      const dx = to.screenX - from.screenX
-      const dy = to.screenY - from.screenY
-      const distance = Math.hypot(dx, dy) || 1
-      const normalX = -dy / distance
-      const normalY = dx / distance
-      const fromGroup = fromNode.replicaGroup ?? fromNode.role
-      const toGroup = toNode.replicaGroup ?? toNode.role
-      const bundleKey = `${fromGroup}:${toGroup}:${connection.kind}`
-      const bundleHash = Array.from(bundleKey).reduce(
-        (sum, character) => sum + character.charCodeAt(0),
-        0,
-      )
-      const direction = bundleHash % 2 === 0 ? 1 : -1
-
-      if (connection.kind === 'ingress') {
-        return {
-          x: midX,
-          y: midY,
-        }
-      }
-
-      let bend =
-        connection.kind === 'loadBalancer'
-          ? 22
-          : connection.kind === 'service'
-            ? 18
-            : connection.kind === 'telemetry'
-              ? 10
-              : 14
-
-      let anchorX = midX
-      let anchorY = midY
-      let anchorWeight = 0
-
-      const fromService =
-        fromNode.replicaGroup &&
-        APP_SERVICE_ORDER.includes(fromNode.replicaGroup as AppServiceGroup)
-          ? getAppServiceConfig(fromNode.replicaGroup as AppServiceGroup)
-          : undefined
-      const toService =
-        toNode.replicaGroup &&
-        APP_SERVICE_ORDER.includes(toNode.replicaGroup as AppServiceGroup)
-          ? getAppServiceConfig(toNode.replicaGroup as AppServiceGroup)
-          : undefined
-
-      if (fromService && toService) {
-        const fromCluster = getProjectedServiceClusterEnvelope(
-          fromService,
-          canvasCenterX,
-          canvasCenterY,
-          rotX,
-          rotY,
-        )
-        const toCluster = getProjectedServiceClusterEnvelope(
-          toService,
-          canvasCenterX,
-          canvasCenterY,
-          rotX,
-          rotY,
-        )
-        const clusterDx = toCluster.screenX - fromCluster.screenX
-        const clusterDy = toCluster.screenY - fromCluster.screenY
-        const clusterDistance = Math.hypot(clusterDx, clusterDy) || 1
-        const fromOffset = Math.min(
-          fromCluster.radius * 0.34,
-          clusterDistance * 0.22,
-        )
-        const toOffset = Math.min(
-          toCluster.radius * 0.34,
-          clusterDistance * 0.22,
-        )
-        const fromAnchorX =
-          fromCluster.screenX + (clusterDx / clusterDistance) * fromOffset
-        const fromAnchorY =
-          fromCluster.screenY + (clusterDy / clusterDistance) * fromOffset
-        const toAnchorX =
-          toCluster.screenX - (clusterDx / clusterDistance) * toOffset
-        const toAnchorY =
-          toCluster.screenY - (clusterDy / clusterDistance) * toOffset
-        anchorX = (fromAnchorX + toAnchorX) / 2
-        anchorY = (fromAnchorY + toAnchorY) / 2
-        anchorWeight = 0.6
-      } else if (fromService || toService) {
-        const service = fromService ?? toService
-        if (service) {
-          const cluster = getProjectedServiceClusterEnvelope(
-            service,
-            canvasCenterX,
-            canvasCenterY,
-            rotX,
-            rotY,
-          )
-          const clusterDx = midX - cluster.screenX
-          const clusterDy = midY - cluster.screenY
-          const clusterDistance = Math.hypot(clusterDx, clusterDy) || 1
-          const clusterOffset = Math.min(
-            cluster.radius * 0.42,
-            clusterDistance * 0.32,
-          )
-          const clusterAnchorX =
-            cluster.screenX + (clusterDx / clusterDistance) * clusterOffset
-          const clusterAnchorY =
-            cluster.screenY + (clusterDy / clusterDistance) * clusterOffset
-          anchorX = lerp(midX, clusterAnchorX, 0.62)
-          anchorY = lerp(midY, clusterAnchorY, 0.62)
-          anchorWeight = 0.4
-          bend *= 0.85
-        }
-      } else if (connection.kind === 'loadBalancer') {
-        anchorY = lerp(midY, canvasCenterY - 36, 0.42)
-        anchorWeight = 0.3
-      }
-
-      if (
-        fromNode.replicaGroup &&
-        fromNode.replicaGroup === toNode.replicaGroup
-      ) {
-        bend *= 0.45
-      }
-
-      return {
-        x: lerp(midX, anchorX, anchorWeight) + normalX * bend * direction,
-        y: lerp(midY, anchorY, anchorWeight) + normalY * bend * direction,
-      }
+      return calculateConnectionControlPoint({
+        connection,
+        fromNode,
+        toNode,
+        from,
+        to,
+        canvasCenterX,
+        canvasCenterY,
+        rotX,
+        rotY,
+        getAppServiceConfig,
+      })
     },
     [getAppServiceConfig],
   )
@@ -1222,202 +3036,39 @@ const HexagonServiceNetwork: React.FC = () => {
       0,
     )
 
-    const maxConcurrentStartingPods = cluster.isTrafficSpike
-      ? Math.min(
-          24,
-          8 +
-            Math.round(cluster.trafficSpikeSeverity * 7) +
-            Math.ceil(totalScaleOutGap / 6),
-        )
-      : Math.min(12, 4 + Math.ceil(totalScaleOutGap / 7))
-    const maxConcurrentDrainingPods = cluster.isTrafficSpike
-      ? Math.min(10, 3 + Math.ceil(totalScaleInGap / 10))
-      : Math.min(14, 5 + Math.ceil(totalScaleInGap / 8))
+    const budgets = getAutoscalerBudgets({
+      isTrafficSpike: cluster.isTrafficSpike,
+      trafficSpikeSeverity: cluster.trafficSpikeSeverity,
+      starting: scalingActivity.starting,
+      draining: scalingActivity.draining,
+      totalScaleOutGap,
+      totalScaleInGap,
+    })
+    const scaledOutPods = runScaleOutPass({
+      serviceStates,
+      budgets,
+      isTrafficSpike: cluster.isTrafficSpike,
+      createScaleUpPods,
+    })
+    const scaledInPods = runScaleInPass({
+      serviceStates,
+      budgets,
+      isTrafficSpike: cluster.isTrafficSpike,
+      requestScaleDownPods,
+    })
+    const nextScaleActionTime = getNextScaleActionTime({
+      isTrafficSpike: cluster.isTrafficSpike,
+      scaledOutPods,
+      scaledInPods,
+      currentTime: timeRef.current,
+    })
 
-    let remainingStartSlots = Math.max(
-      0,
-      maxConcurrentStartingPods - scalingActivity.starting,
-    )
-    let remainingDrainSlots = Math.max(
-      0,
-      maxConcurrentDrainingPods - scalingActivity.draining,
-    )
-    let remainingScaleOutBudget =
-      totalScaleOutGap > 0
-        ? cluster.isTrafficSpike
-          ? Math.min(
-              remainingStartSlots,
-              3 +
-                Math.round(cluster.trafficSpikeSeverity * 3) +
-                Math.ceil(totalScaleOutGap / 12),
-            )
-          : Math.min(remainingStartSlots, 1 + Math.ceil(totalScaleOutGap / 9))
-        : 0
-    let remainingScaleInBudget =
-      totalScaleInGap > 0
-        ? cluster.isTrafficSpike
-          ? Math.min(remainingDrainSlots, 1 + Math.ceil(totalScaleInGap / 16))
-          : Math.min(remainingDrainSlots, 1 + Math.ceil(totalScaleInGap / 10))
-        : 0
-
-    let scaledOutPods = 0
-    let scaledInPods = 0
-
-    while (remainingStartSlots > 0 && remainingScaleOutBudget > 0) {
-      const candidate = [...serviceStates]
-        .filter((state) => state.scaleOutGap > 0)
-        .sort((left, right) => {
-          if (left.scaleOutGap !== right.scaleOutGap) {
-            return right.scaleOutGap - left.scaleOutGap
-          }
-
-          if (left.isVisible !== right.isVisible) {
-            return left.isVisible ? -1 : 1
-          }
-
-          if (left.trafficWeight !== right.trafficWeight) {
-            return right.trafficWeight - left.trafficWeight
-          }
-
-          return (
-            APP_SERVICE_ORDER.indexOf(left.serviceName) -
-            APP_SERVICE_ORDER.indexOf(right.serviceName)
-          )
-        })[0]
-
-      if (!candidate) {
-        break
-      }
-
-      const perServiceStartingCap = cluster.isTrafficSpike
-        ? Math.min(
-            Math.max(3, Math.ceil(candidate.maxReplicas * 0.34)),
-            4 +
-              Math.ceil(candidate.scaleOutGap / 5) +
-              Math.round(candidate.trafficWeight * 2),
-          )
-        : Math.min(
-            4,
-            1 +
-              Math.ceil(candidate.scaleOutGap / 6) +
-              Math.round(candidate.trafficWeight),
-          )
-      const serviceStartHeadroom = Math.max(
-        0,
-        perServiceStartingCap - candidate.starting,
-      )
-
-      if (serviceStartHeadroom === 0) {
-        candidate.scaleOutGap = 0
-        continue
-      }
-
-      const batchCount = Math.min(
-        candidate.scaleOutGap,
-        serviceStartHeadroom,
-        remainingStartSlots,
-        remainingScaleOutBudget,
-        cluster.isTrafficSpike
-          ? Math.max(2, Math.ceil(candidate.scaleOutGap / 8))
-          : 2,
-      )
-      const created = createScaleUpPods(candidate.serviceName, batchCount)
-
-      if (created === 0) {
-        candidate.scaleOutGap = 0
-        continue
-      }
-
-      candidate.currentReplicas += created
-      candidate.starting += created
-      candidate.scaleOutGap = Math.max(
-        candidate.desiredReplicas - candidate.currentReplicas,
-        0,
-      )
-      remainingStartSlots -= created
-      remainingScaleOutBudget -= created
-      scaledOutPods += created
+    if (nextScaleActionTime === null) {
+      return false
     }
 
-    while (remainingDrainSlots > 0 && remainingScaleInBudget > 0) {
-      const candidate = [...serviceStates]
-        .filter((state) => state.scaleInGap > 0 && state.starting === 0)
-        .sort((left, right) => {
-          if (left.scaleInGap !== right.scaleInGap) {
-            return right.scaleInGap - left.scaleInGap
-          }
-
-          if (left.isVisible !== right.isVisible) {
-            return left.isVisible ? -1 : 1
-          }
-
-          if (left.trafficWeight !== right.trafficWeight) {
-            return left.trafficWeight - right.trafficWeight
-          }
-
-          return (
-            APP_SERVICE_ORDER.indexOf(left.serviceName) -
-            APP_SERVICE_ORDER.indexOf(right.serviceName)
-          )
-        })[0]
-
-      if (!candidate) {
-        break
-      }
-
-      const perServiceDrainingCap = cluster.isTrafficSpike
-        ? 2
-        : Math.min(4, 1 + Math.ceil(candidate.scaleInGap / 5))
-      const serviceDrainHeadroom = Math.max(
-        0,
-        perServiceDrainingCap - candidate.draining,
-      )
-
-      if (serviceDrainHeadroom === 0) {
-        candidate.scaleInGap = 0
-        continue
-      }
-
-      const batchCount = Math.min(
-        candidate.scaleInGap,
-        serviceDrainHeadroom,
-        remainingDrainSlots,
-        remainingScaleInBudget,
-        cluster.isTrafficSpike ? 1 : 2,
-      )
-      const drained = requestScaleDownPods(candidate.serviceName, batchCount)
-
-      if (drained === 0) {
-        candidate.scaleInGap = 0
-        continue
-      }
-
-      candidate.currentReplicas -= drained
-      candidate.draining += drained
-      candidate.scaleInGap = Math.max(
-        candidate.currentReplicas - candidate.desiredReplicas,
-        0,
-      )
-      remainingDrainSlots -= drained
-      remainingScaleInBudget -= drained
-      scaledInPods += drained
-    }
-
-    if (scaledOutPods > 0) {
-      cluster.nextScaleActionTime = cluster.isTrafficSpike
-        ? timeRef.current + 0.12 + Math.random() * 0.14
-        : timeRef.current + 0.22 + Math.random() * 0.16
-      return true
-    }
-
-    if (scaledInPods > 0) {
-      cluster.nextScaleActionTime = cluster.isTrafficSpike
-        ? timeRef.current + 0.28 + Math.random() * 0.18
-        : timeRef.current + 0.24 + Math.random() * 0.18
-      return true
-    }
-
-    return false
+    cluster.nextScaleActionTime = nextScaleActionTime
+    return true
   }, [
     createScaleUpPods,
     getAppServiceConfig,
@@ -2201,446 +3852,75 @@ const HexagonServiceNetwork: React.FC = () => {
       toNodeId: number
       kind: ConnectionKind
     }> = []
-
-    if (ingress && loadBalancer) {
-      desiredConnections.push({
-        fromNodeId: ingress.id,
-        toNodeId: loadBalancer.id,
-        kind: 'ingress',
-      })
+    const addDesiredConnection = (
+      fromNodeId: number,
+      toNodeId: number,
+      kind: ConnectionKind,
+    ) => {
+      desiredConnections.push({ fromNodeId, toNodeId, kind })
     }
 
-    podsByService.edge.forEach((pod, index) => {
-      if (loadBalancer) {
-        desiredConnections.push({
-          fromNodeId: loadBalancer.id,
-          toNodeId: pod.id,
-          kind: 'loadBalancer',
-        })
-      }
+    if (ingress && loadBalancer) {
+      addDesiredConnection(ingress.id, loadBalancer.id, 'ingress')
+    }
 
-      appServicesRef.current
-        .find((service) => service.name === 'edge')
-        ?.downstream.forEach((downstreamService) => {
-          const downstreamPods = podsByService[downstreamService]
-          const targetPod =
-            downstreamPods[index % Math.max(downstreamPods.length, 1)]
-
-          if (targetPod) {
-            desiredConnections.push({
-              fromNodeId: pod.id,
-              toNodeId: targetPod.id,
-              kind: 'service',
-            })
-          }
-        })
+    addEdgeServiceConnections({
+      desiredConnections,
+      edgePods: podsByService.edge,
+      loadBalancer,
+      podsByService,
+      appServices: appServicesRef.current,
     })
 
     connectedAppPods.forEach((pod, index) => {
-      const queue =
-        pod.replicaGroup === 'checkout'
-          ? ([primaryQueue, priorityQueue, deadLetterQueue][
-              index % Math.max(queues.length, 1)
-            ] ?? primaryQueue)
-          : pod.replicaGroup === 'warehouse'
-            ? (priorityQueue ?? primaryQueue)
-            : primaryQueue
-      const worker = workers[index % Math.max(workers.length, 1)]
-      const telemetry = observability[index % Math.max(observability.length, 1)]
-      const authTarget =
-        podsByService.auth[index % Math.max(podsByService.auth.length, 1)]
-      const catalogTarget =
-        podsByService.catalog[index % Math.max(podsByService.catalog.length, 1)]
-      const basketTarget =
-        podsByService.basket[index % Math.max(podsByService.basket.length, 1)]
-      const warehouseTarget =
-        podsByService.warehouse[
-          index % Math.max(podsByService.warehouse.length, 1)
-        ]
-
-      if (pod.replicaGroup === 'auth') {
-        if (redisMaster) {
-          desiredConnections.push({
-            fromNodeId: pod.id,
-            toNodeId: redisMaster.id,
-            kind: 'service',
-          })
-        }
-
-        if (primaryDb) {
-          desiredConnections.push({
-            fromNodeId: pod.id,
-            toNodeId: primaryDb.id,
-            kind: 'storage',
-          })
-        }
-      }
-
-      if (pod.replicaGroup === 'catalog') {
-        if (redisMaster) {
-          desiredConnections.push({
-            fromNodeId: pod.id,
-            toNodeId: redisMaster.id,
-            kind: 'service',
-          })
-        }
-
-        if (replicaDb) {
-          desiredConnections.push({
-            fromNodeId: pod.id,
-            toNodeId: replicaDb.id,
-            kind: 'storage',
-          })
-        }
-
-        if (warehouseTarget) {
-          desiredConnections.push({
-            fromNodeId: pod.id,
-            toNodeId: warehouseTarget.id,
-            kind: 'service',
-          })
-        }
-      }
-
-      if (pod.replicaGroup === 'basket') {
-        if (authTarget) {
-          desiredConnections.push({
-            fromNodeId: pod.id,
-            toNodeId: authTarget.id,
-            kind: 'service',
-          })
-        }
-
-        if (redisMaster) {
-          desiredConnections.push({
-            fromNodeId: pod.id,
-            toNodeId: redisMaster.id,
-            kind: 'service',
-          })
-        }
-
-        if (primaryDb) {
-          desiredConnections.push({
-            fromNodeId: pod.id,
-            toNodeId: primaryDb.id,
-            kind: 'storage',
-          })
-        }
-      }
-
-      if (pod.replicaGroup === 'checkout') {
-        if (authTarget) {
-          desiredConnections.push({
-            fromNodeId: pod.id,
-            toNodeId: authTarget.id,
-            kind: 'service',
-          })
-        }
-
-        if (catalogTarget) {
-          desiredConnections.push({
-            fromNodeId: pod.id,
-            toNodeId: catalogTarget.id,
-            kind: 'service',
-          })
-        }
-
-        if (basketTarget) {
-          desiredConnections.push({
-            fromNodeId: pod.id,
-            toNodeId: basketTarget.id,
-            kind: 'service',
-          })
-        }
-
-        if (warehouseTarget) {
-          desiredConnections.push({
-            fromNodeId: pod.id,
-            toNodeId: warehouseTarget.id,
-            kind: 'service',
-          })
-        }
-
-        if (queue) {
-          desiredConnections.push({
-            fromNodeId: pod.id,
-            toNodeId: queue.id,
-            kind: 'service',
-          })
-        }
-
-        if (redisMaster) {
-          desiredConnections.push({
-            fromNodeId: pod.id,
-            toNodeId: redisMaster.id,
-            kind: 'service',
-          })
-        }
-
-        if (primaryDb) {
-          desiredConnections.push({
-            fromNodeId: pod.id,
-            toNodeId: primaryDb.id,
-            kind: 'storage',
-          })
-        }
-
-        if (standbyDb && standbyDb.id !== primaryDb?.id) {
-          desiredConnections.push({
-            fromNodeId: pod.id,
-            toNodeId: standbyDb.id,
-            kind: 'storage',
-          })
-        }
-      }
-
-      if (pod.replicaGroup === 'warehouse') {
-        if (catalogTarget) {
-          desiredConnections.push({
-            fromNodeId: pod.id,
-            toNodeId: catalogTarget.id,
-            kind: 'service',
-          })
-        }
-
-        if (queue) {
-          desiredConnections.push({
-            fromNodeId: pod.id,
-            toNodeId: queue.id,
-            kind: 'service',
-          })
-        }
-
-        if (replicaDb) {
-          desiredConnections.push({
-            fromNodeId: pod.id,
-            toNodeId: replicaDb.id,
-            kind: 'storage',
-          })
-        }
-
-        if (standbyDb && standbyDb.id !== replicaDb?.id) {
-          desiredConnections.push({
-            fromNodeId: pod.id,
-            toNodeId: standbyDb.id,
-            kind: 'storage',
-          })
-        }
-      }
-
-      if (pod.replicaGroup === 'edge' && worker) {
-        desiredConnections.push({
-          fromNodeId: worker.id,
-          toNodeId: pod.id,
-          kind: 'service',
-        })
-      }
-
-      if (telemetry) {
-        desiredConnections.push({
-          fromNodeId: telemetry.id,
-          toNodeId: pod.id,
-          kind: 'telemetry',
-        })
-      }
+      addAppPodConnections({
+        desiredConnections,
+        pod,
+        index,
+        primaryQueue,
+        priorityQueue,
+        deadLetterQueue,
+        queues,
+        workers,
+        observability,
+        podsByService,
+        redisMaster,
+        primaryDb,
+        replicaDb,
+        standbyDb,
+      })
     })
 
-    APP_SERVICE_ORDER.forEach((serviceName) => {
-      const servicePods = podsByService[serviceName]
-
-      if (servicePods.length > 1) {
-        servicePods.forEach((pod, index) => {
-          const peerPod = servicePods[(index + 1) % servicePods.length]
-          if (peerPod && peerPod.id !== pod.id) {
-            desiredConnections.push({
-              fromNodeId: pod.id,
-              toNodeId: peerPod.id,
-              kind: 'service',
-            })
-          }
-        })
-      }
+    addServicePeerConnections(desiredConnections, podsByService)
+    addRedisConnections({
+      desiredConnections,
+      redisMaster,
+      redisReplicas,
+      primaryQueue,
     })
-
-    if (primaryQueue && redisMaster) {
-      desiredConnections.push({
-        fromNodeId: primaryQueue.id,
-        toNodeId: redisMaster.id,
-        kind: 'service',
-      })
-    }
-
-    if (redisMaster) {
-      redisReplicas.forEach((replica, index) => {
-        desiredConnections.push({
-          fromNodeId: redisMaster.id,
-          toNodeId: replica.id,
-          kind: 'storage',
-        })
-
-        const peerReplica =
-          redisReplicas[(index + 1) % Math.max(redisReplicas.length, 1)]
-        if (peerReplica && peerReplica.id !== replica.id) {
-          desiredConnections.push({
-            fromNodeId: replica.id,
-            toNodeId: peerReplica.id,
-            kind: 'telemetry',
-          })
-        }
-      })
-    }
-
-    if (metricsNode && ingress) {
-      desiredConnections.push({
-        fromNodeId: metricsNode.id,
-        toNodeId: ingress.id,
-        kind: 'telemetry',
-      })
-    }
-
-    if (metricsNode && loadBalancer) {
-      desiredConnections.push({
-        fromNodeId: metricsNode.id,
-        toNodeId: loadBalancer.id,
-        kind: 'telemetry',
-      })
-    }
-
-    if (logsNode && loadBalancer) {
-      desiredConnections.push({
-        fromNodeId: logsNode.id,
-        toNodeId: loadBalancer.id,
-        kind: 'telemetry',
-      })
-    }
-
-    if (metricsNode && primaryQueue) {
-      desiredConnections.push({
-        fromNodeId: metricsNode.id,
-        toNodeId: primaryQueue.id,
-        kind: 'telemetry',
-      })
-    }
-
-    if (logsNode && primaryQueue) {
-      desiredConnections.push({
-        fromNodeId: logsNode.id,
-        toNodeId: primaryQueue.id,
-        kind: 'telemetry',
-      })
-    }
-
-    caches.forEach((cacheNode) => {
-      if (metricsNode) {
-        desiredConnections.push({
-          fromNodeId: metricsNode.id,
-          toNodeId: cacheNode.id,
-          kind: 'telemetry',
-        })
-      }
-
-      if (logsNode) {
-        desiredConnections.push({
-          fromNodeId: logsNode.id,
-          toNodeId: cacheNode.id,
-          kind: 'telemetry',
-        })
-      }
+    addObservabilityCoreConnections({
+      desiredConnections,
+      metricsNode,
+      logsNode,
+      ingress,
+      loadBalancer,
+      primaryQueue,
+      caches,
     })
-
-    if (redisMaster && primaryQueue) {
-      desiredConnections.push({
-        fromNodeId: redisMaster.id,
-        toNodeId: primaryQueue.id,
-        kind: 'service',
-      })
-    }
-
-    if (primaryQueue && priorityQueue && primaryQueue.id !== priorityQueue.id) {
-      desiredConnections.push({
-        fromNodeId: primaryQueue.id,
-        toNodeId: priorityQueue.id,
-        kind: 'service',
-      })
-    }
-
-    if (
-      priorityQueue &&
-      deadLetterQueue &&
-      priorityQueue.id !== deadLetterQueue.id
-    ) {
-      desiredConnections.push({
-        fromNodeId: priorityQueue.id,
-        toNodeId: deadLetterQueue.id,
-        kind: 'service',
-      })
-    }
-
-    if (primaryQueue) {
-      workers.forEach((worker) => {
-        desiredConnections.push({
-          fromNodeId: primaryQueue.id,
-          toNodeId: worker.id,
-          kind: 'service',
-        })
-      })
-    }
-
-    if (priorityQueue) {
-      workers.forEach((worker, index) => {
-        if (index % 2 === 0) {
-          desiredConnections.push({
-            fromNodeId: priorityQueue.id,
-            toNodeId: worker.id,
-            kind: 'service',
-          })
-        }
-      })
-    }
-
-    workers.forEach((worker, index) => {
-      const database = databases[index % Math.max(databases.length, 1)]
-      if (database) {
-        desiredConnections.push({
-          fromNodeId: worker.id,
-          toNodeId: database.id,
-          kind: 'storage',
-        })
-      }
-
-      if (metricsNode) {
-        desiredConnections.push({
-          fromNodeId: metricsNode.id,
-          toNodeId: worker.id,
-          kind: 'telemetry',
-        })
-      }
-
-      if (logsNode) {
-        desiredConnections.push({
-          fromNodeId: logsNode.id,
-          toNodeId: worker.id,
-          kind: 'telemetry',
-        })
-      }
+    addQueueConnections({
+      desiredConnections,
+      redisMaster,
+      primaryQueue,
+      priorityQueue,
+      deadLetterQueue,
+      workers,
     })
-
-    databases.forEach((database) => {
-      if (metricsNode) {
-        desiredConnections.push({
-          fromNodeId: metricsNode.id,
-          toNodeId: database.id,
-          kind: 'telemetry',
-        })
-      }
-
-      if (logsNode) {
-        desiredConnections.push({
-          fromNodeId: logsNode.id,
-          toNodeId: database.id,
-          kind: 'telemetry',
-        })
-      }
+    addWorkerAndDatabaseConnections({
+      desiredConnections,
+      workers,
+      databases,
+      metricsNode,
+      logsNode,
     })
 
     const existingByKey = new Map(
@@ -2866,20 +4146,15 @@ const HexagonServiceNetwork: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown)
     window.addEventListener('keyup', handleKeyUp)
 
-    const animate = () => {
-      if (!isFocusedRef.current && frameSkipRef.current % 2 === 0) {
-        frameSkipRef.current += 1
-        timeRef.current += 0.016
-        emitClusterSnapshot()
-        animationRef.current = requestAnimationFrame(animate)
-        return
-      }
+    const shouldSkipIdleFrame = () =>
+      !isFocusedRef.current && frameSkipRef.current % 2 === 0
 
+    const advanceFrameClock = () => {
       frameSkipRef.current += 1
       timeRef.current += 0.016
+    }
 
-      ctx.clearRect(0, 0, width, height)
-
+    const updateFocusAndZoom = () => {
       const targetFocus = isFocusedRef.current ? 1 : 0
       focusTransitionRef.current +=
         (targetFocus - focusTransitionRef.current) * 0.05
@@ -2902,13 +4177,16 @@ const HexagonServiceNetwork: React.FC = () => {
       ) {
         zoomState.current = 0
       }
-      const baseZoomOffset = lerp(
-        CAMERA_BASE_ZOOM_IDLE,
-        CAMERA_BASE_ZOOM_FOCUSED,
-        focusLevel,
-      )
-      setCameraZoomOffset(baseZoomOffset + zoomState.current)
 
+      setCameraZoomOffset(
+        lerp(CAMERA_BASE_ZOOM_IDLE, CAMERA_BASE_ZOOM_FOCUSED, focusLevel) +
+          zoomState.current,
+      )
+
+      return { focusLevel, motionFocusLevel }
+    }
+
+    const updateRotation = (focusLevel: number, motionFocusLevel: number) => {
       const rotationSpeed =
         ROTATION_SPEED_NORMAL +
         (ROTATION_SPEED_FOCUSED - ROTATION_SPEED_NORMAL) * motionFocusLevel
@@ -2921,9 +4199,6 @@ const HexagonServiceNetwork: React.FC = () => {
       const manualRotation = manualRotationRef.current
       const hasKeyboardRotationInput =
         isFocusedRef.current && (horizontalInput !== 0 || verticalInput !== 0)
-      const yawSteerSpeed = (0.014 + motionFocusLevel * 0.008) * focusLevel
-      const pitchSteerSpeed = (0.014 + motionFocusLevel * 0.008) * focusLevel
-      const recoverySpeed = rotationSpeed
 
       if (!hasKeyboardRotationInput) {
         autoRotationYRef.current += rotationSpeed
@@ -2935,45 +4210,105 @@ const HexagonServiceNetwork: React.FC = () => {
         )
       }
 
-      const autoRotationY = autoRotationYRef.current
-      const autoRotationX = autoRotationXRef.current
-
       if (hasKeyboardRotationInput) {
+        const steerSpeed = (0.014 + motionFocusLevel * 0.008) * focusLevel
         manualRotation.y = wrapAngle(
-          manualRotation.y + horizontalInput * yawSteerSpeed,
+          manualRotation.y + horizontalInput * steerSpeed,
         )
         manualRotation.x = wrapAngle(
-          manualRotation.x + verticalInput * pitchSteerSpeed,
+          manualRotation.x + verticalInput * steerSpeed,
         )
       } else {
         manualRotation.y = wrapAngle(
           manualRotation.y +
-            clamp(-manualRotation.y, -recoverySpeed, recoverySpeed),
+            clamp(-manualRotation.y, -rotationSpeed, rotationSpeed),
         )
         manualRotation.x = wrapAngle(
           manualRotation.x +
-            clamp(-manualRotation.x, -recoverySpeed, recoverySpeed),
+            clamp(-manualRotation.x, -rotationSpeed, rotationSpeed),
         )
       }
 
-      rotationRef.current.y = autoRotationY + manualRotation.y
-      rotationRef.current.x = autoRotationX + manualRotation.x
+      rotationRef.current.y = autoRotationYRef.current + manualRotation.y
+      rotationRef.current.x = autoRotationXRef.current + manualRotation.x
 
-      const rotX = rotationRef.current.x
-      const rotY = rotationRef.current.y
+      return {
+        rotX: rotationRef.current.x,
+        rotY: rotationRef.current.y,
+      }
+    }
 
-      if (isFocusedRef.current) {
-        const emergency = emergencyRef.current
-        if (!emergency.hasEverFocused) {
-          emergency.hasEverFocused = true
-        }
-        emergency.accumulatedFocusTime += 0.016
+    const updateFocusTracking = () => {
+      if (!isFocusedRef.current) {
+        return
       }
 
       const emergency = emergencyRef.current
-      const currentEmergencyState = getEmergencyState()
-      const cluster = clusterRef.current
+      emergency.hasEverFocused = true
+      emergency.accumulatedFocusTime += 0.016
+    }
 
+    const startTrafficSpike = () => {
+      const cluster = clusterRef.current
+      cluster.isTrafficSpike = true
+      cluster.trafficSpikeEndTime = timeRef.current + 10 + Math.random() * 6
+      cluster.trafficSpikeSeverity = 0.5 + Math.random() * 0.5
+      cluster.nextTrafficTargetRefreshTime = timeRef.current + 1.8
+      cluster.desiredServiceReplicas = {
+        edge: getTrafficSpikeReplicaTarget(
+          'edge',
+          cluster.trafficSpikeSeverity,
+        ),
+        auth: getTrafficSpikeReplicaTarget(
+          'auth',
+          cluster.trafficSpikeSeverity,
+        ),
+        catalog: getTrafficSpikeReplicaTarget(
+          'catalog',
+          cluster.trafficSpikeSeverity,
+        ),
+        basket: getTrafficSpikeReplicaTarget(
+          'basket',
+          cluster.trafficSpikeSeverity,
+        ),
+        checkout: getTrafficSpikeReplicaTarget(
+          'checkout',
+          cluster.trafficSpikeSeverity,
+        ),
+        warehouse: getTrafficSpikeReplicaTarget(
+          'warehouse',
+          cluster.trafficSpikeSeverity,
+        ),
+      }
+      cluster.desiredReplicas = Object.values(
+        cluster.desiredServiceReplicas,
+      ).reduce((sum, count) => sum + count, 0)
+      cluster.nextScaleActionTime = timeRef.current + 0.14
+      pushClusterEvent(
+        'warn',
+        'ingress traffic spike detected; autoscaler is rolling more service pods into the private network',
+      )
+    }
+
+    const endTrafficSpike = () => {
+      const cluster = clusterRef.current
+      cluster.isTrafficSpike = false
+      cluster.trafficSpikeSeverity = 0
+      cluster.nextTrafficTargetRefreshTime = 0
+      cluster.desiredReplicas = Object.values(
+        cluster.desiredServiceReplicas,
+      ).reduce((sum, count) => sum + count, 0)
+      cluster.nextTrafficSpikeTime = timeRef.current + 5 + Math.random() * 7
+      cluster.nextScaleActionTime = timeRef.current + 0.22
+      cluster.nextScaleCooldownTime = timeRef.current + 0.45
+      pushClusterEvent(
+        'info',
+        'ingress traffic normalized; autoscaler is tapering excess pods back out',
+      )
+    }
+
+    const updateTrafficState = (currentEmergencyState: EmergencyState) => {
+      const cluster = clusterRef.current
       cluster.trafficSpikeLevel +=
         ((cluster.isTrafficSpike ? cluster.trafficSpikeSeverity : 0) -
           cluster.trafficSpikeLevel) *
@@ -2984,65 +4319,19 @@ const HexagonServiceNetwork: React.FC = () => {
         !cluster.isTrafficSpike &&
         timeRef.current > cluster.nextTrafficSpikeTime
       ) {
-        cluster.isTrafficSpike = true
-        cluster.trafficSpikeEndTime = timeRef.current + 10 + Math.random() * 6
-        cluster.trafficSpikeSeverity = 0.5 + Math.random() * 0.5
-        cluster.nextTrafficTargetRefreshTime = timeRef.current + 1.8
-        cluster.desiredServiceReplicas = {
-          edge: getTrafficSpikeReplicaTarget(
-            'edge',
-            cluster.trafficSpikeSeverity,
-          ),
-          auth: getTrafficSpikeReplicaTarget(
-            'auth',
-            cluster.trafficSpikeSeverity,
-          ),
-          catalog: getTrafficSpikeReplicaTarget(
-            'catalog',
-            cluster.trafficSpikeSeverity,
-          ),
-          basket: getTrafficSpikeReplicaTarget(
-            'basket',
-            cluster.trafficSpikeSeverity,
-          ),
-          checkout: getTrafficSpikeReplicaTarget(
-            'checkout',
-            cluster.trafficSpikeSeverity,
-          ),
-          warehouse: getTrafficSpikeReplicaTarget(
-            'warehouse',
-            cluster.trafficSpikeSeverity,
-          ),
-        }
-        cluster.desiredReplicas = Object.values(
-          cluster.desiredServiceReplicas,
-        ).reduce((sum, count) => sum + count, 0)
-        cluster.nextScaleActionTime = timeRef.current + 0.14
-        pushClusterEvent(
-          'warn',
-          'ingress traffic spike detected; autoscaler is rolling more service pods into the private network',
-        )
+        startTrafficSpike()
       } else if (
         cluster.isTrafficSpike &&
         timeRef.current > cluster.trafficSpikeEndTime
       ) {
-        cluster.isTrafficSpike = false
-        cluster.trafficSpikeSeverity = 0
-        cluster.nextTrafficTargetRefreshTime = 0
-        cluster.desiredReplicas = Object.values(
-          cluster.desiredServiceReplicas,
-        ).reduce((sum, count) => sum + count, 0)
-        cluster.nextTrafficSpikeTime = timeRef.current + 5 + Math.random() * 7
-        cluster.nextScaleActionTime = timeRef.current + 0.22
-        cluster.nextScaleCooldownTime = timeRef.current + 0.45
-        pushClusterEvent(
-          'info',
-          'ingress traffic normalized; autoscaler is tapering excess pods back out',
-        )
+        endTrafficSpike()
       } else if (cluster.isTrafficSpike) {
         rebalanceTrafficSpikeTargets()
       }
+    }
 
+    const maybeRunAutoscaling = (currentEmergencyState: EmergencyState) => {
+      const cluster = clusterRef.current
       if (currentEmergencyState === 'normal' && !cluster.isTrafficSpike) {
         relaxReplicaTargetsTowardsBaseline()
         rebalanceAmbientReplicaTargets()
@@ -3051,95 +4340,149 @@ const HexagonServiceNetwork: React.FC = () => {
       if (currentEmergencyState === 'normal') {
         runAutoscaler()
       }
+    }
+
+    const maybeStartScheduledEmergency = () => {
+      const emergency = emergencyRef.current
+      const isIdle = !emergency.isActive && !emergency.isRecovery
 
       if (
         emergency.hasEverFocused &&
         !emergency.hasTriggeredFirstEmergency &&
-        !emergency.isActive &&
-        !emergency.isRecovery &&
+        isIdle &&
         emergency.accumulatedFocusTime > emergency.firstEmergencyDelay
       ) {
         startEmergency(undefined, 'hover-auto')
-      } else if (
+        return
+      }
+
+      if (
         emergency.hasTriggeredFirstEmergency &&
-        !emergency.isActive &&
-        !emergency.isRecovery &&
+        isIdle &&
         timeRef.current - emergency.lastEmergencyTime >
           emergency.nextEmergencyInterval
       ) {
         startEmergency()
       }
+    }
+
+    const maybeTriggerAmbientFailure = (
+      currentEmergencyState: EmergencyState,
+    ) => {
+      const cluster = clusterRef.current
+      if (
+        currentEmergencyState !== 'normal' ||
+        cluster.isTrafficSpike ||
+        hasRollingReplacementInFlight() ||
+        timeRef.current <= cluster.nextAmbientFailureTime
+      ) {
+        return
+      }
+
+      if (triggerPodFailure('ambient')) {
+        cluster.nextAmbientFailureTime =
+          timeRef.current + 14 + Math.random() * 14
+      }
+    }
+
+    const updateActiveEmergency = () => {
+      const emergency = emergencyRef.current
+      if (!emergency.isActive) {
+        return
+      }
 
       if (
-        currentEmergencyState === 'normal' &&
-        !cluster.isTrafficSpike &&
-        !hasRollingReplacementInFlight() &&
-        timeRef.current > cluster.nextAmbientFailureTime
+        emergency.triggeredFailures < emergency.failureTarget &&
+        timeRef.current >= emergency.nextFailureTime &&
+        !hasRollingReplacementInFlight()
       ) {
-        if (triggerPodFailure('ambient')) {
-          cluster.nextAmbientFailureTime =
-            timeRef.current + 14 + Math.random() * 14
+        if (triggerPodFailure('emergency')) {
+          emergency.triggeredFailures += 1
         }
+        emergency.nextFailureTime = timeRef.current + 2.8
       }
 
-      if (emergency.isActive) {
-        if (
-          emergency.triggeredFailures < emergency.failureTarget &&
-          timeRef.current >= emergency.nextFailureTime &&
-          !hasRollingReplacementInFlight()
-        ) {
-          if (triggerPodFailure('emergency')) {
-            emergency.triggeredFailures += 1
-          }
-          emergency.nextFailureTime = timeRef.current + 2.8
-        }
+      if (timeRef.current - emergency.startTime > emergency.duration) {
+        emergency.isActive = false
+        emergency.isRecovery = true
+        emergency.recoveryStartTime = timeRef.current
+        emergency.recoveryAnnounced = false
+        window.dispatchEvent(
+          new CustomEvent('network-emergency', {
+            detail: { type: 'recovery' },
+          }),
+        )
+      }
+    }
 
-        if (timeRef.current - emergency.startTime > emergency.duration) {
-          emergency.isActive = false
-          emergency.isRecovery = true
-          emergency.recoveryStartTime = timeRef.current
-          emergency.recoveryAnnounced = false
-          window.dispatchEvent(
-            new CustomEvent('network-emergency', {
-              detail: { type: 'recovery' },
-            }),
-          )
-        }
+    const updateRecoveryEmergency = () => {
+      const emergency = emergencyRef.current
+      if (!emergency.isRecovery) {
+        return
       }
 
-      if (emergency.isRecovery) {
-        if (!emergency.recoveryAnnounced) {
-          emergency.recoveryAnnounced = true
-          pushClusterEvent(
-            'success',
-            'deployment controller is reconciling replicas; healthy pods are taking traffic again',
-          )
-          enqueueEventToast({
-            title: 'CLUSTER RECOVERING',
-            subtitle: 'replacement pods are joining the service mesh',
-            mode: 'recovery',
-            accentColor: 'rgba(74, 222, 128, 0.84)',
-            duration: 6,
-          })
-        }
-
-        if (
-          timeRef.current - emergency.recoveryStartTime >
-          emergency.recoveryDuration
-        ) {
-          emergency.isRecovery = false
-          emergency.lastEmergencyTime = timeRef.current
-          emergency.triggerSource = null
-          emergency.nextEmergencyInterval = isFocusedRef.current
-            ? AUTO_EMERGENCY_INTERVAL_SECONDS
-            : AUTO_EMERGENCY_INTERVAL_SECONDS +
-              Math.random() * AUTO_EMERGENCY_JITTER_SECONDS
-          window.dispatchEvent(
-            new CustomEvent('network-emergency', { detail: { type: 'end' } }),
-          )
-          emitClusterSnapshot(true)
-        }
+      if (!emergency.recoveryAnnounced) {
+        emergency.recoveryAnnounced = true
+        pushClusterEvent(
+          'success',
+          'deployment controller is reconciling replicas; healthy pods are taking traffic again',
+        )
+        enqueueEventToast({
+          title: 'CLUSTER RECOVERING',
+          subtitle: 'replacement pods are joining the service mesh',
+          mode: 'recovery',
+          accentColor: 'rgba(74, 222, 128, 0.84)',
+          duration: 6,
+        })
       }
+
+      if (
+        timeRef.current - emergency.recoveryStartTime >
+        emergency.recoveryDuration
+      ) {
+        emergency.isRecovery = false
+        emergency.lastEmergencyTime = timeRef.current
+        emergency.triggerSource = null
+        emergency.nextEmergencyInterval = isFocusedRef.current
+          ? AUTO_EMERGENCY_INTERVAL_SECONDS
+          : AUTO_EMERGENCY_INTERVAL_SECONDS +
+            Math.random() * AUTO_EMERGENCY_JITTER_SECONDS
+        window.dispatchEvent(
+          new CustomEvent('network-emergency', { detail: { type: 'end' } }),
+        )
+        emitClusterSnapshot(true)
+      }
+    }
+
+    const updateNetworkScenarioState = (
+      currentEmergencyState: EmergencyState,
+    ) => {
+      updateFocusTracking()
+      updateTrafficState(currentEmergencyState)
+      maybeRunAutoscaling(currentEmergencyState)
+      maybeStartScheduledEmergency()
+      maybeTriggerAmbientFailure(currentEmergencyState)
+      updateActiveEmergency()
+      updateRecoveryEmergency()
+    }
+
+    const animate = () => {
+      if (shouldSkipIdleFrame()) {
+        advanceFrameClock()
+        emitClusterSnapshot()
+        animationRef.current = requestAnimationFrame(animate)
+        return
+      }
+
+      advanceFrameClock()
+
+      ctx.clearRect(0, 0, width, height)
+
+      const { focusLevel, motionFocusLevel } = updateFocusAndZoom()
+      const { rotX, rotY } = updateRotation(focusLevel, motionFocusLevel)
+
+      const currentEmergencyState = getEmergencyState()
+      updateNetworkScenarioState(currentEmergencyState)
 
       activeToastRef.current = activeToastRef.current.flatMap((toast) => {
         const age = timeRef.current - toast.shownAt
@@ -3171,95 +4514,14 @@ const HexagonServiceNetwork: React.FC = () => {
       syncVisibleToasts()
 
       nodesRef.current = nodesRef.current.flatMap((node) => {
-        if (node.role !== 'appPod') {
-          return [node]
-        }
-
-        const age = timeRef.current - node.statusSince
-        const drainDuration = node.scaleDownTarget
-          ? SCALE_DOWN_DRAIN_DURATION
-          : DRAIN_DURATION
-
-        if (node.lifecycleState === 'draining' && age > drainDuration) {
-          if (node.scaleDownTarget) {
-            node.lifecycleState = 'terminating'
-            node.statusSince = timeRef.current
-            pushClusterEvent(
-              'info',
-              `autoscaler removed ${node.label} from ${node.replicaGroup} after traffic cooled`,
-            )
-          } else {
-            node.lifecycleState = 'unhealthy'
-            node.statusSince = timeRef.current
-            node.replacementLaunched = false
-            pushClusterEvent(
-              'error',
-              `${node.label} failed its last health check; replacement requested`,
-            )
-          }
-        } else if (
-          node.lifecycleState === 'unhealthy' &&
-          age > UNHEALTHY_DURATION &&
-          !node.replacementLaunched &&
-          !nodesRef.current.some(
-            (candidate) =>
-              candidate.role === 'appPod' &&
-              candidate.lifecycleState === 'starting',
-          )
-        ) {
-          createReplacementPod(node)
-          node.replacementLaunched = true
-          pushClusterEvent(
-            currentEmergencyState === 'emergency' ? 'error' : 'info',
-            `scheduler is bringing up a replacement for ${node.label} before shutdown`,
-          )
-        } else if (
-          node.lifecycleState === 'terminating' &&
-          age > TERMINATING_DURATION
-        ) {
-          return []
-        } else if (
-          node.lifecycleState === 'starting' &&
-          age > STARTING_DURATION
-        ) {
-          node.lifecycleState = 'ready'
-          node.acceptingTraffic = true
-          node.scaleDownTarget = false
-          node.statusSince = timeRef.current
-          node.replacementLaunched = true
-          if (node.replacementFor) {
-            const previousPod = nodesRef.current.find(
-              (candidate) =>
-                candidate.role === 'appPod' &&
-                candidate.label === node.replacementFor &&
-                candidate.lifecycleState === 'unhealthy',
-            )
-
-            if (previousPod) {
-              previousPod.lifecycleState = 'terminating'
-              previousPod.statusSince = timeRef.current
-              pushClusterEvent(
-                currentEmergencyState === 'emergency' ? 'error' : 'warn',
-                `rolling update is shutting down ${previousPod.label} after ${node.label} joined the pool`,
-              )
-            }
-          } else {
-            pushClusterEvent(
-              'success',
-              `${node.label} is ready; ${node.replicaGroup} has one more pod on the private network`,
-            )
-          }
-          if (node.replicaGroup === 'edge') {
-            pushClusterEvent(
-              currentEmergencyState === 'emergency' && node.replacementFor
-                ? 'error'
-                : 'success',
-              `${node.label} became ready; lb-ext added it back into rotation`,
-            )
-          }
-        }
-
-        return [node]
+        return updateAppPodLifecycle({
+          node,
+          allNodes: nodesRef.current,
+          time: timeRef.current,
+          currentEmergencyState,
+          createReplacementPod,
+          pushClusterEvent,
+        })
       })
 
       syncConnections()
@@ -3345,33 +4607,32 @@ const HexagonServiceNetwork: React.FC = () => {
         )
         return a.z - b.z
       })
-
-      connectionsRef.current.forEach((connection) => {
+      const projectNode = (node: ServiceNode) =>
+        project3D(node.x, node.y, node.z, centerX, centerY, rotX, rotY)
+      const projectConnectionEndpoints = (connection: Connection) => {
         const fromNode = nodeMap.get(connection.fromNodeId)
         const toNode = nodeMap.get(connection.toNodeId)
 
         if (!fromNode || !toNode) {
+          return null
+        }
+
+        return {
+          fromNode,
+          toNode,
+          from: projectNode(fromNode),
+          to: projectNode(toNode),
+        }
+      }
+
+      connectionsRef.current.forEach((connection) => {
+        const endpoints = projectConnectionEndpoints(connection)
+
+        if (!endpoints) {
           return
         }
 
-        const from = project3D(
-          fromNode.x,
-          fromNode.y,
-          fromNode.z,
-          centerX,
-          centerY,
-          rotX,
-          rotY,
-        )
-        const to = project3D(
-          toNode.x,
-          toNode.y,
-          toNode.z,
-          centerX,
-          centerY,
-          rotX,
-          rotY,
-        )
+        const { fromNode, toNode, from, to } = endpoints
 
         const lineProgress = connection.establishProgress
         const currentX =
@@ -3384,14 +4645,8 @@ const HexagonServiceNetwork: React.FC = () => {
           0.28,
           1,
         )
-        const fromIncident =
-          fromNode.lifecycleState === 'draining' ||
-          fromNode.lifecycleState === 'unhealthy' ||
-          fromNode.lifecycleState === 'terminating'
-        const toIncident =
-          toNode.lifecycleState === 'draining' ||
-          toNode.lifecycleState === 'unhealthy' ||
-          toNode.lifecycleState === 'terminating'
+        const fromIncident = isConnectionEndpointIncident(fromNode)
+        const toIncident = isConnectionEndpointIncident(toNode)
         const baseOpacity =
           getConnectionBaseOpacity(connection.kind, focusLevel) * depthFade
         const opacity = baseOpacity * (toIncident || fromIncident ? 0.9 : 1)
@@ -3402,33 +4657,8 @@ const HexagonServiceNetwork: React.FC = () => {
           isDark,
           opacity,
         )
-        ctx.lineWidth =
-          connection.kind === 'ingress'
-            ? isDark
-              ? 1.45
-              : 1.75
-            : connection.kind === 'loadBalancer'
-              ? isDark
-                ? 1.1
-                : 1.3
-              : connection.kind === 'telemetry'
-                ? isDark
-                  ? 0.95
-                  : 1.15
-                : isDark
-                  ? 0.75
-                  : 1.05
-
-        if (
-          connection.kind === 'loadBalancer' ||
-          connection.kind === 'service'
-        ) {
-          const dashOffset = (timeRef.current * 18) % 24
-          ctx.setLineDash(connection.kind === 'loadBalancer' ? [5, 7] : [4, 9])
-          ctx.lineDashOffset = -dashOffset
-        } else if (connection.kind === 'telemetry') {
-          ctx.setLineDash([2, 8])
-        }
+        ctx.lineWidth = getConnectionLineWidth(connection.kind, isDark)
+        applyConnectionDash(ctx, connection, timeRef.current)
 
         ctx.beginPath()
         ctx.lineCap = 'round'
@@ -3453,44 +4683,15 @@ const HexagonServiceNetwork: React.FC = () => {
         ctx.stroke()
         ctx.setLineDash([])
 
-        const targetReady =
-          connection.kind === 'loadBalancer'
-            ? toNode.lifecycleState === 'ready' && toNode.acceptingTraffic
-            : connection.kind === 'ingress'
-              ? true
-              : connection.kind === 'telemetry'
-                ? toNode.lifecycleState !== 'starting' &&
-                  toNode.lifecycleState !== 'terminating'
-                : (fromNode.lifecycleState === 'ready' ||
-                    fromNode.lifecycleState === 'healthy') &&
-                  (toNode.lifecycleState === 'healthy' ||
-                    toNode.lifecycleState === 'ready')
-
-        const packetIntervalMultiplier =
-          1.55 -
-          focusLevel * 0.72 -
-          (currentEmergencyState === 'emergency' ? 0.25 : 0)
-        if (
-          connection.isEstablished &&
-          targetReady &&
-          timeRef.current - connection.lastPacketTime >
-            connection.packetInterval * packetIntervalMultiplier
-        ) {
-          packetsRef.current.push(createPacket(connection))
-          connection.lastPacketTime = timeRef.current
-          connection.packetInterval = getBasePacketInterval(connection.kind)
-
-          if (
-            connection.kind === 'loadBalancer' &&
-            Math.random() < 0.2 + focusLevel * 0.25
-          ) {
-            const response = createPacket(connection)
-            response.direction = -1
-            response.type = 'udp'
-            response.size = 2
-            packetsRef.current.push(response)
-          }
-        }
+        maybeEmitConnectionPackets({
+          connection,
+          targetReady: isConnectionTargetReady(connection, fromNode, toNode),
+          focusLevel,
+          currentEmergencyState,
+          time: timeRef.current,
+          createPacket,
+          packets: packetsRef.current,
+        })
       })
 
       const connectionMap = new Map(
@@ -3515,33 +4716,14 @@ const HexagonServiceNetwork: React.FC = () => {
         packet.progress += packet.speed * (0.62 + focusLevel * 0.9)
         if (packet.progress >= 1) {
           const targetNode = packet.direction === 1 ? toNode : fromNode
-          let statusType: StatusIndicator['type'] = 'success'
-          let label: string | undefined
-          let shouldShowIndicator = false
-          const scenarioAffectsTargetNode = isScenarioAffectingNode(
-            targetNode,
-            currentEmergencyState,
-            emergencyRef.current.scenarioKey,
-          )
-
-          if (
-            targetNode.lifecycleState === 'draining' ||
-            targetNode.lifecycleState === 'unhealthy' ||
-            scenarioAffectsTargetNode
-          ) {
-            statusType = 'failure'
-            shouldShowIndicator = Math.random() < 0.5
-          } else if (targetNode.lifecycleState === 'starting') {
-            statusType = 'warning'
-            shouldShowIndicator = Math.random() < 0.3
-          } else if (currentEmergencyState === 'recovery') {
-            shouldShowIndicator = Math.random() < 0.12
-          } else if (connection.kind === 'telemetry') {
-            statusType = 'warning'
-            shouldShowIndicator = false
-          } else {
-            shouldShowIndicator = Math.random() < 0.05 + focusLevel * 0.03
-          }
+          const { shouldShowIndicator, statusType } =
+            getPacketIndicatorDecision({
+              targetNode,
+              connection,
+              currentEmergencyState,
+              scenarioKey: emergencyRef.current.scenarioKey,
+              focusLevel,
+            })
 
           if (shouldShowIndicator) {
             statusIndicatorsRef.current.push(
@@ -3550,31 +4732,17 @@ const HexagonServiceNetwork: React.FC = () => {
                 timeRef.current,
                 targetNode.id,
                 statusType,
-                label,
               ),
             )
           }
           return false
         }
 
-        const from = project3D(
-          fromNode.x,
-          fromNode.y,
-          fromNode.z,
-          centerX,
-          centerY,
-          rotX,
-          rotY,
-        )
-        const to = project3D(
-          toNode.x,
-          toNode.y,
-          toNode.z,
-          centerX,
-          centerY,
-          rotX,
-          rotY,
-        )
+        const endpoints = projectConnectionEndpoints(connection)
+        if (!endpoints) {
+          return false
+        }
+        const { from, to } = endpoints
 
         const control = getConnectionControlPoint(
           connection,
@@ -3587,253 +4755,32 @@ const HexagonServiceNetwork: React.FC = () => {
           rotX,
           rotY,
         )
-        const headT =
-          packet.direction === 1 ? packet.progress : 1 - packet.progress
-        const headPoint = getQuadraticPoint(
-          from.screenX,
-          from.screenY,
-          control.x,
-          control.y,
-          to.screenX,
-          to.screenY,
-          headT,
-        )
-        const x = headPoint.x
-        const y = headPoint.y
-        const packetZ = from.z + (to.z - from.z) * headT
-        const depthFade = clamp(
-          (PERSPECTIVE + packetZ) / (PERSPECTIVE * 1.9),
-          0.35,
-          1,
-        )
-        const targetNode = packet.direction === 1 ? toNode : fromNode
-        const palette =
-          COLORS[
-            getNodePalette(
-              targetNode,
-              timeRef.current,
-              currentEmergencyState,
-              emergencyRef.current.scenarioKey,
-            ).colorKey
-          ]
-
-        const trailLength = packet.type === 'tcp' ? 0.16 : 0.1
-        const tailT =
-          packet.direction === 1
-            ? Math.max(0, headT - trailLength)
-            : Math.min(1, headT + trailLength)
-        const tailPoint = getQuadraticPoint(
-          from.screenX,
-          from.screenY,
-          control.x,
-          control.y,
-          to.screenX,
-          to.screenY,
-          tailT,
-        )
-        const trailX = tailPoint.x
-        const trailY = tailPoint.y
-
-        const gradient = ctx.createLinearGradient(trailX, trailY, x, y)
-        gradient.addColorStop(0, 'transparent')
-        gradient.addColorStop(
-          1,
-          withOpacity(palette.main, (isDark ? 0.38 : 0.46) * depthFade),
-        )
-
-        ctx.beginPath()
-        drawQuadraticSegment(
+        drawPacketFrame({
           ctx,
-          from.screenX,
-          from.screenY,
-          control.x,
-          control.y,
-          to.screenX,
-          to.screenY,
-          tailT,
-          headT,
-        )
-        ctx.strokeStyle = gradient
-        ctx.lineWidth =
-          connection.kind === 'ingress'
-            ? 2.4
-            : connection.kind === 'loadBalancer'
-              ? 2
-              : packet.type === 'tcp'
-                ? 1.8
-                : 1.35
-        if (packet.type === 'udp') {
-          ctx.setLineDash([4, 4])
-        }
-        ctx.stroke()
-        ctx.setLineDash([])
-
-        const headOpacity = (isDark ? 0.78 : 0.88) * depthFade
-        const size =
-          packet.size *
-          depthFade *
-          (Math.sin(timeRef.current * 8 + packet.id) * 0.22 + 1)
-        ctx.fillStyle = withOpacity(palette.main, headOpacity)
-
-        if (packet.type === 'tcp') {
-          ctx.beginPath()
-          ctx.moveTo(x, y - size)
-          ctx.lineTo(x + size, y)
-          ctx.lineTo(x, y + size)
-          ctx.lineTo(x - size, y)
-          ctx.closePath()
-          ctx.fill()
-        } else {
-          ctx.beginPath()
-          ctx.arc(x, y, size * 0.82, 0, Math.PI * 2)
-          ctx.fill()
-        }
+          packet,
+          connection,
+          fromNode,
+          toNode,
+          from,
+          to,
+          control,
+          time: timeRef.current,
+          currentEmergencyState,
+          scenarioKey: emergencyRef.current.scenarioKey,
+          isDark,
+        })
         return true
       })
 
       sortedNodes.forEach((node) => {
-        const { colorKey, attention } = getNodePalette(
+        drawServiceNodeFrame({
+          ctx,
           node,
-          timeRef.current,
+          time: timeRef.current,
           currentEmergencyState,
-          emergencyRef.current.scenarioKey,
-        )
-        const palette = COLORS[colorKey]
-        const visibility = getNodeVisibility(node, timeRef.current)
-        const scaleMultiplier = getNodeScaleMultiplier(node, timeRef.current)
-        const scale = node.screenScale * scaleMultiplier
-        const currentSize = node.size * scale
-        const depthFade = clamp(scale, 0.28, 1)
-        const pulseOpacity =
-          (attention + Math.sin(node.pulse) * 0.05) * depthFade * visibility
-        const fillColor = withOpacity(palette.fill, pulseOpacity * 0.22)
-        const strokeColor = withOpacity(palette.main, pulseOpacity * 0.95)
-
-        if (visibility <= 0) {
-          return
-        }
-
-        if (node.role === 'appPod') {
-          const microSize = currentSize * 0.46
-          const microOpacity = pulseOpacity * 0.28
-
-          drawHexagon(
-            ctx,
-            node.screenX,
-            node.screenY,
-            microSize,
-            withOpacity(palette.main, microOpacity * 0.9),
-            withOpacity(palette.fill, microOpacity * 0.16),
-            0.9 * depthFade,
-          )
-          return
-        }
-
-        const topologyNodeBoost =
-          node.role === 'loadBalancer' || node.role === 'ingress'
-            ? 1.2
-            : node.role === 'database' || node.role === 'cache'
-              ? 1.1
-              : 1.04
-        const topologyGlowOpacity =
-          node.role === 'loadBalancer' || node.role === 'ingress' ? 0.2 : 0.14
-
-        drawHexagon(
-          ctx,
-          node.screenX,
-          node.screenY,
-          currentSize * 1.34 * topologyNodeBoost,
-          withOpacity(palette.glow, pulseOpacity * topologyGlowOpacity),
-          withOpacity(palette.fill, pulseOpacity * 0.06),
-          0.72 * depthFade,
-        )
-        drawHexagon(
-          ctx,
-          node.screenX,
-          node.screenY,
-          currentSize * topologyNodeBoost,
-          strokeColor,
-          withOpacity(palette.fill, pulseOpacity * 0.3),
-          1.35 * depthFade,
-        )
-        drawHexagon(
-          ctx,
-          node.screenX,
-          node.screenY,
-          currentSize * 0.52 * topologyNodeBoost,
-          withOpacity(palette.glow, pulseOpacity * 0.34),
-          withOpacity(palette.fill, pulseOpacity * 0.12),
-          0.72 * depthFade,
-        )
-        drawHexagon(
-          ctx,
-          node.screenX,
-          node.screenY,
-          currentSize * 0.24 * topologyNodeBoost,
-          withOpacity(palette.main, pulseOpacity * 0.4),
-          null,
-          0.68 * depthFade,
-        )
-
-        if (depthFade > 0.6) {
-          const labelOpacity = (isDark ? 0.82 : 0.86) * depthFade * visibility
-          const fontSize =
-            node.role === 'loadBalancer' || node.role === 'ingress'
-              ? 9
-              : node.role === 'database' || node.role === 'cache'
-                ? 7
-                : node.label.length > 7
-                  ? 5.5
-                  : 6.5
-          const labelY =
-            node.role === 'ingress' || node.role === 'loadBalancer'
-              ? node.screenY - currentSize * 1.55
-              : node.screenY + currentSize * 1.38
-          const labelText = node.label
-          const font = `bold ${Math.round(fontSize * depthFade)}px ui-monospace, monospace`
-          ctx.font = font
-          const labelWidth = ctx.measureText(labelText).width
-          const pillWidth = labelWidth + 18
-          const pillHeight = Math.max(16, fontSize * 1.9)
-
-          ctx.save()
-          drawRoundedRectPath(
-            ctx,
-            node.screenX - pillWidth / 2,
-            labelY - pillHeight / 2,
-            pillWidth,
-            pillHeight,
-            3,
-          )
-          ctx.fillStyle = isDark
-            ? `rgba(2, 6, 23, ${0.74 * labelOpacity})`
-            : `rgba(255, 255, 255, ${0.84 * labelOpacity})`
-          ctx.fill()
-          ctx.strokeStyle = withOpacity(
-            palette.main,
-            isDark ? 0.34 * labelOpacity : 0.3 * labelOpacity,
-          )
-          ctx.lineWidth = 1
-          ctx.stroke()
-          ctx.restore()
-
-          ctx.textAlign = 'center'
-          ctx.textBaseline = 'middle'
-          drawPanelText(ctx, {
-            text: labelText,
-            x: node.screenX,
-            y: labelY,
-            font,
-            fillStyle: isDark
-              ? `rgba(248, 250, 252, ${labelOpacity})`
-              : `rgba(15, 23, 42, ${labelOpacity})`,
-            plateIsDark: isDark,
-            emphasis:
-              node.role === 'loadBalancer' || node.role === 'ingress'
-                ? 'title'
-                : 'meta',
-          })
-        }
+          scenarioKey: emergencyRef.current.scenarioKey,
+          isDark,
+        })
       })
 
       statusIndicatorsRef.current = statusIndicatorsRef.current.filter(
@@ -3877,96 +4824,164 @@ const HexagonServiceNetwork: React.FC = () => {
           height: number
         }
       >()
+      const getRenderableServiceCluster = (service: AppServiceConfig) => {
+        const serviceProjection = serviceProjectionMap.get(service.name)
+        if (!serviceProjection) {
+          return null
+        }
+
+        const projected = project3D(
+          service.centerX,
+          service.centerY - 52,
+          service.centerZ,
+          centerX,
+          centerY,
+          rotX,
+          rotY,
+        )
+        const depthFade = clamp(projected.scale, 0.3, 1)
+        const servicePods = nodesRef.current.filter(
+          (node) =>
+            node.role === 'appPod' &&
+            node.replicaGroup === service.name &&
+            node.lifecycleState !== 'terminating',
+        )
+
+        if (depthFade < 0.48 || servicePods.length === 0) {
+          return null
+        }
+
+        return { serviceProjection, projected, depthFade, servicePods }
+      }
+      const getServicePodCounts = (
+        service: AppServiceConfig,
+        servicePods: ServiceNode[],
+      ) => {
+        const ready = servicePods.filter(
+          (node) => node.lifecycleState === 'ready' && node.acceptingTraffic,
+        ).length
+        const starting = servicePods.filter(
+          (node) => node.lifecycleState === 'starting',
+        ).length
+        const draining = servicePods.filter(
+          (node) => node.lifecycleState === 'draining',
+        ).length
+        const unhealthy = servicePods.filter(
+          (node) =>
+            node.lifecycleState === 'unhealthy' ||
+            node.lifecycleState === 'terminating',
+        ).length
+        const desired =
+          clusterRef.current.desiredServiceReplicas[service.name] ??
+          servicePods.length
+
+        return {
+          ready,
+          starting,
+          draining,
+          unhealthy,
+          desired,
+          total: servicePods.length,
+          capacity: service.maxReplicas,
+          footprint: getServiceClusterFootprintPodCount({
+            ready,
+            starting,
+            draining,
+          }),
+        }
+      }
+      const measureServicePanel = ({
+        service,
+        counts,
+        depthFade,
+        statusText,
+        scale,
+      }: {
+        service: AppServiceConfig
+        counts: ReturnType<typeof getServicePodCounts>
+        depthFade: number
+        statusText: string
+        scale: number
+      }) => {
+        const titleFont = `bold ${Math.max(10, Math.round(10 * depthFade))}px ui-monospace, monospace`
+        const metaFont = `${Math.max(9, Math.round(9 * depthFade))}px ui-monospace, monospace`
+        const statusFont = `${Math.max(8, Math.round(8 * depthFade))}px ui-monospace, monospace`
+
+        ctx.font = titleFont
+        const titleWidth = ctx.measureText(service.displayLabel).width
+        ctx.font = metaFont
+        const readyWidth = ctx.measureText(
+          `${counts.ready}/${counts.capacity} ready`,
+        ).width
+        ctx.font = statusFont
+        const statusWidth = ctx.measureText(statusText).width
+
+        return {
+          titleFont,
+          metaFont,
+          statusFont,
+          panelWidth: Math.max(titleWidth, readyWidth, statusWidth, 92) + 34,
+          panelHeight: 60,
+          clusterRadius: getServiceClusterShellRadius(
+            counts.footprint,
+            counts.capacity,
+            scale,
+          ),
+        }
+      }
+      const getServiceStatusForCounts = ({
+        service,
+        counts,
+        statusIsDark,
+        metaOpacity,
+      }: {
+        service: AppServiceConfig
+        counts: ReturnType<typeof getServicePodCounts>
+        statusIsDark: boolean
+        metaOpacity: number
+      }) =>
+        getServiceStatusDisplay(
+          service.name,
+          {
+            ready: counts.ready,
+            starting: counts.starting,
+            draining: counts.draining,
+            unhealthy: counts.unhealthy,
+            total: counts.total,
+            desired: counts.desired,
+          },
+          {
+            emergencyState: currentEmergencyState,
+            emergencyScenarioKey: emergencyRef.current.scenarioKey,
+            isTrafficSpike: clusterRef.current.isTrafficSpike,
+            isDark: statusIsDark,
+            metaOpacity,
+          },
+        )
 
       appServicesRef.current
         .map((service) => {
-          const serviceProjection = serviceProjectionMap.get(service.name)
-          if (!serviceProjection) {
+          const renderable = getRenderableServiceCluster(service)
+          if (!renderable) {
             return null
           }
 
-          const projected = project3D(
-            service.centerX,
-            service.centerY - 52,
-            service.centerZ,
-            centerX,
-            centerY,
-            rotX,
-            rotY,
-          )
-          const depthFade = clamp(projected.scale, 0.3, 1)
-          const servicePods = nodesRef.current.filter(
-            (node) =>
-              node.role === 'appPod' &&
-              node.replicaGroup === service.name &&
-              node.lifecycleState !== 'terminating',
-          )
-
-          if (depthFade < 0.48 || servicePods.length === 0) {
-            return null
-          }
-
-          const readyPods = servicePods.filter(
-            (node) => node.lifecycleState === 'ready' && node.acceptingTraffic,
-          ).length
-          const startingPods = servicePods.filter(
-            (node) => node.lifecycleState === 'starting',
-          ).length
-          const desiredPods =
-            clusterRef.current.desiredServiceReplicas[service.name] ??
-            servicePods.length
-          const capacityPods = service.maxReplicas
-          const drainingPods = servicePods.filter(
-            (node) => node.lifecycleState === 'draining',
-          ).length
-          const unhealthyPods = servicePods.filter(
-            (node) =>
-              node.lifecycleState === 'unhealthy' ||
-              node.lifecycleState === 'terminating',
-          ).length
-          const footprintPods = getServiceClusterFootprintPodCount({
-            ready: readyPods,
-            starting: startingPods,
-            draining: drainingPods,
+          const { serviceProjection, depthFade, servicePods } = renderable
+          const counts = getServicePodCounts(service, servicePods)
+          const statusDisplay = getServiceStatusForCounts({
+            service,
+            counts,
+            statusIsDark: isDark,
+            metaOpacity: 0.9,
           })
-          const titleFont = `bold ${Math.max(10, Math.round(10 * depthFade))}px ui-monospace, monospace`
-          const metaFont = `${Math.max(9, Math.round(9 * depthFade))}px ui-monospace, monospace`
-          const statusFont = `${Math.max(8, Math.round(8 * depthFade))}px ui-monospace, monospace`
-          const statusDisplay = getServiceStatusDisplay(
-            service.name,
-            {
-              ready: readyPods,
-              starting: startingPods,
-              draining: drainingPods,
-              unhealthy: unhealthyPods,
-              total: servicePods.length,
-              desired: desiredPods,
-            },
-            {
-              emergencyState: currentEmergencyState,
-              emergencyScenarioKey: emergencyRef.current.scenarioKey,
-              isTrafficSpike: clusterRef.current.isTrafficSpike,
-              isDark,
-              metaOpacity: 0.9,
-            },
-          )
-
-          ctx.font = titleFont
-          const titleWidth = ctx.measureText(service.displayLabel).width
-          ctx.font = metaFont
-          const readyWidth = ctx.measureText(
-            `${readyPods}/${capacityPods} ready`,
-          ).width
-          ctx.font = statusFont
-          const statusWidth = ctx.measureText(statusDisplay.text).width
-          const panelWidth =
-            Math.max(titleWidth, readyWidth, statusWidth, 92) + 34
-          const panelHeight = 60
-          const clusterRadius = getServiceClusterShellRadius(
-            footprintPods,
-            capacityPods,
-            serviceProjection.scale,
-          )
+          const { clusterRadius, panelWidth, panelHeight } =
+            measureServicePanel({
+              service,
+              counts,
+              depthFade,
+              statusText: statusDisplay.text,
+              scale: serviceProjection.scale,
+            })
 
           return {
             serviceName: service.name,
@@ -4036,42 +5051,13 @@ const HexagonServiceNetwork: React.FC = () => {
         })
 
       appServicesRef.current.forEach((service) => {
-        const serviceProjection = serviceProjectionMap.get(service.name)
-        if (!serviceProjection) {
+        const renderable = getRenderableServiceCluster(service)
+        if (!renderable) {
           return
         }
 
-        const projected = project3D(
-          service.centerX,
-          service.centerY - 52,
-          service.centerZ,
-          centerX,
-          centerY,
-          rotX,
-          rotY,
-        )
-        const depthFade = clamp(projected.scale, 0.3, 1)
-        const servicePods = nodesRef.current.filter(
-          (node) =>
-            node.role === 'appPod' &&
-            node.replicaGroup === service.name &&
-            node.lifecycleState !== 'terminating',
-        )
-
-        if (depthFade < 0.48 || servicePods.length === 0) {
-          return
-        }
-
-        const readyPods = servicePods.filter(
-          (node) => node.lifecycleState === 'ready' && node.acceptingTraffic,
-        ).length
-        const startingPods = servicePods.filter(
-          (node) => node.lifecycleState === 'starting',
-        ).length
-        const desiredPods =
-          clusterRef.current.desiredServiceReplicas[service.name] ??
-          servicePods.length
-        const capacityPods = service.maxReplicas
+        const { serviceProjection, depthFade, servicePods } = renderable
+        const counts = getServicePodCounts(service, servicePods)
         const plateIsDark = isDark
         const captionOpacity = clamp(
           (isDark ? 0.82 : 0.86) * depthFade + 0.14,
@@ -4083,145 +5069,18 @@ const HexagonServiceNetwork: React.FC = () => {
           0.76,
           0.98,
         )
-        const drainingPods = servicePods.filter(
-          (node) => node.lifecycleState === 'draining',
-        ).length
-        const unhealthyPods = servicePods.filter(
-          (node) =>
-            node.lifecycleState === 'unhealthy' ||
-            node.lifecycleState === 'terminating',
-        ).length
-        const footprintPods = getServiceClusterFootprintPodCount({
-          ready: readyPods,
-          starting: startingPods,
-          draining: drainingPods,
-        })
         const degradedPods = getServiceClusterDegradedPodCount({
-          draining: drainingPods,
-          unhealthy: unhealthyPods,
+          draining: counts.draining,
+          unhealthy: counts.unhealthy,
         })
         const motionState = serviceClusterMotionRef.current[service.name]
-        const footprintDelta = Math.abs(
-          footprintPods - motionState.footprintCount,
-        )
-        const degradedDelta = Math.abs(degradedPods - motionState.degradedCount)
-        const desiredShift = desiredPods - motionState.desiredCount
-        const desiredDelta = Math.abs(desiredShift)
-        const scaleOutStarted = desiredPods > motionState.desiredCount
-        const scaleInStarted = desiredPods < motionState.desiredCount
-        const impactTarget = clamp(
-          footprintDelta * 0.09 +
-            Math.min(3, degradedDelta) * 0.04 +
-            desiredDelta * 0.025 +
-            (scaleOutStarted ? 0.028 : 0) +
-            (scaleInStarted && degradedPods === 0 ? 0.02 : 0) +
-            (footprintDelta >= 2 ? 0.035 : 0),
-          0,
-          0.32,
-        )
-
-        if (impactTarget > 0.015) {
-          motionState.energy = clamp(
-            motionState.energy * 0.88 + impactTarget,
-            0,
-            0.44,
-          )
-        } else {
-          motionState.energy *= 0.95
-        }
-
-        if (desiredShift > 0) {
-          motionState.pendingScaleOutSteps += desiredShift
-        } else if (desiredShift < 0) {
-          motionState.pendingScaleInSteps += Math.abs(desiredShift)
-        }
-
-        if (motionState.scaleRingDirection === 0) {
-          motionState.scaleRingDirection =
-            motionState.pendingScaleOutSteps > 0
-              ? 1
-              : motionState.pendingScaleInSteps > 0
-                ? -1
-                : 0
-        }
-
-        if (motionState.scaleRingDirection !== 0) {
-          const activeQueueDepth =
-            motionState.scaleRingDirection > 0
-              ? motionState.pendingScaleOutSteps
-              : motionState.pendingScaleInSteps
-          const ringDuration = clamp(
-            1.08 - Math.min(Math.max(activeQueueDepth - 1, 0), 5) * 0.13,
-            0.34,
-            1.08,
-          )
-
-          motionState.scaleRingProgress = clamp(
-            motionState.scaleRingProgress + 0.016 / ringDuration,
-            0,
-            1.2,
-          )
-
-          if (motionState.scaleRingProgress >= 1) {
-            motionState.scaleRingProgress -= 1
-
-            if (motionState.scaleRingDirection > 0) {
-              motionState.pendingScaleOutSteps = Math.max(
-                0,
-                motionState.pendingScaleOutSteps - 1,
-              )
-            } else {
-              motionState.pendingScaleInSteps = Math.max(
-                0,
-                motionState.pendingScaleInSteps - 1,
-              )
-            }
-
-            motionState.energy = clamp(motionState.energy + 0.035, 0, 0.44)
-
-            const hasMoreInCurrentDirection =
-              motionState.scaleRingDirection > 0
-                ? motionState.pendingScaleOutSteps > 0
-                : motionState.pendingScaleInSteps > 0
-
-            if (!hasMoreInCurrentDirection) {
-              motionState.scaleRingDirection =
-                motionState.pendingScaleOutSteps > 0
-                  ? 1
-                  : motionState.pendingScaleInSteps > 0
-                    ? -1
-                    : 0
-
-              if (motionState.scaleRingDirection === 0) {
-                motionState.scaleRingProgress = 0
-              }
-            }
-          }
-        } else {
-          motionState.scaleRingProgress = 0
-        }
-
-        motionState.footprintCount = footprintPods
-        motionState.degradedCount = degradedPods
-        motionState.desiredCount = desiredPods
-        const statusDisplay = getServiceStatusDisplay(
-          service.name,
-          {
-            ready: readyPods,
-            starting: startingPods,
-            draining: drainingPods,
-            unhealthy: unhealthyPods,
-            total: servicePods.length,
-            desired: desiredPods,
-          },
-          {
-            emergencyState: currentEmergencyState,
-            emergencyScenarioKey: emergencyRef.current.scenarioKey,
-            isTrafficSpike: clusterRef.current.isTrafficSpike,
-            isDark: plateIsDark,
-            metaOpacity,
-          },
-        )
+        updateServiceClusterMotionState({ motionState, counts, degradedPods })
+        const statusDisplay = getServiceStatusForCounts({
+          service,
+          counts,
+          statusIsDark: plateIsDark,
+          metaOpacity,
+        })
 
         const clusterProjected = {
           ...serviceProjection,
@@ -4246,13 +5105,13 @@ const HexagonServiceNetwork: React.FC = () => {
           bouncePhase: motionState.phase,
           localRotation: clusterRotation,
           counts: {
-            ready: readyPods,
-            starting: startingPods,
-            draining: drainingPods,
-            unhealthy: unhealthyPods,
-            total: servicePods.length,
-            desired: desiredPods,
-            capacity: capacityPods,
+            ready: counts.ready,
+            starting: counts.starting,
+            draining: counts.draining,
+            unhealthy: counts.unhealthy,
+            total: counts.total,
+            desired: counts.desired,
+            capacity: counts.capacity,
           },
           scaleRing: {
             progress: motionState.scaleRingProgress,
@@ -4269,29 +5128,23 @@ const HexagonServiceNetwork: React.FC = () => {
           0.86,
           1,
         )
-        const titleFont = `bold ${Math.max(10, Math.round(10 * depthFade))}px ui-monospace, monospace`
-        const metaFont = `${Math.max(9, Math.round(9 * depthFade))}px ui-monospace, monospace`
-        const statusFont = `${Math.max(8, Math.round(8 * depthFade))}px ui-monospace, monospace`
-        ctx.font = titleFont
-        const titleWidth = ctx.measureText(service.displayLabel).width
-        ctx.font = metaFont
-        const readyWidth = ctx.measureText(
-          `${readyPods}/${capacityPods} ready`,
-        ).width
-        ctx.font = statusFont
-        const statusWidth = ctx.measureText(statusDisplay.text).width
-        const panelWidth =
-          Math.max(titleWidth, readyWidth, statusWidth, 92) + 34
-        const panelHeight = 60
+        const {
+          titleFont,
+          metaFont,
+          statusFont,
+          panelWidth,
+          panelHeight,
+          clusterRadius,
+        } = measureServicePanel({
+          service,
+          counts,
+          depthFade,
+          statusText: statusDisplay.text,
+          scale: clusterProjected.scale,
+        })
         const panelAccent = withOpacity(
           COLORS[service.color].main,
           isDark ? panelOpacity * 0.88 : panelOpacity * 0.78,
-        )
-        const activePodsForSizing = footprintPods
-        const clusterRadius = getServiceClusterShellRadius(
-          activePodsForSizing,
-          capacityPods,
-          clusterProjected.scale,
         )
         const panelPlacement = servicePanelPlacementMap.get(service.name)
         const panelPosition = panelPlacement
@@ -4352,7 +5205,7 @@ const HexagonServiceNetwork: React.FC = () => {
         })
 
         drawPanelText(ctx, {
-          text: `${readyPods}/${capacityPods} ready`,
+          text: `${counts.ready}/${counts.capacity} ready`,
           x: panelCenterX,
           y: panelLayout.body.y + panelLayout.body.height * 0.72,
           font: metaFont,
@@ -4392,6 +5245,7 @@ const HexagonServiceNetwork: React.FC = () => {
         }
       })
 
+      const emergency = emergencyRef.current
       if (emergency.isActive) {
         const emergencyAge = timeRef.current - emergency.startTime
         const blinkOn = Math.sin(emergencyAge * Math.PI * 1.8) > 0
@@ -4478,81 +5332,9 @@ const HexagonServiceNetwork: React.FC = () => {
 
       {isFocused && visibleToasts.length > 0 ? (
         <div className="pointer-events-none fixed right-6 bottom-6 z-10 flex w-[min(22rem,calc(100vw-3rem))] origin-bottom-right scale-[0.6] flex-col-reverse items-end gap-3">
-          {visibleToasts.map((toast) => {
-            const accentColor =
-              toast.mode === 'emergency'
-                ? isDark
-                  ? 'rgba(248, 113, 113, 0.92)'
-                  : 'rgba(220, 38, 38, 0.9)'
-                : isDark
-                  ? 'rgba(74, 222, 128, 0.84)'
-                  : 'rgba(22, 163, 74, 0.84)'
-
-            return (
-              <div
-                key={toast.id}
-                className="pointer-events-auto flex min-h-[6.75rem] w-full flex-col overflow-hidden rounded-sm border px-4 py-3 shadow-2xl backdrop-blur-md transition-[opacity,transform] duration-300 ease-out will-change-[opacity,transform]"
-                style={{
-                  opacity: toast.exitingAt === null ? 1 : 0,
-                  transform:
-                    toast.exitingAt === null
-                      ? 'translateY(0) scale(1)'
-                      : 'translateY(10px) scale(0.985)',
-                  backgroundColor: isDark
-                    ? 'rgba(10, 14, 24, 0.92)'
-                    : 'rgba(255, 255, 255, 0.94)',
-                  borderColor: isDark
-                    ? 'rgba(148, 163, 184, 0.14)'
-                    : 'rgba(148, 163, 184, 0.28)',
-                  boxShadow: `0 0 0 1px ${accentColor}, 0 18px 44px ${
-                    isDark ? 'rgba(2, 6, 23, 0.35)' : 'rgba(15, 23, 42, 0.12)'
-                  }`,
-                }}
-              >
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <span
-                    className="font-mono text-[11px] tracking-[0.18em] uppercase"
-                    style={{ color: accentColor }}
-                  >
-                    {toast.mode === 'emergency'
-                      ? 'Incident'
-                      : toast.mode === 'recovery'
-                        ? 'Recovery'
-                        : 'Autoscale'}
-                  </span>
-                  <span
-                    className="h-2.5 w-2.5 rounded-full"
-                    style={{
-                      backgroundColor: accentColor,
-                      boxShadow: `0 0 10px ${accentColor}`,
-                    }}
-                  />
-                </div>
-                <div className="flex-1">
-                  <div
-                    className="font-mono text-[13px] font-semibold tracking-[0.08em] break-words uppercase"
-                    style={{
-                      color: isDark
-                        ? 'rgba(248, 250, 252, 0.96)'
-                        : 'rgba(15, 23, 42, 0.92)',
-                    }}
-                  >
-                    {toast.title}
-                  </div>
-                  <div
-                    className="mt-1 text-sm leading-5 break-words"
-                    style={{
-                      color: isDark
-                        ? 'rgba(226, 232, 240, 0.78)'
-                        : 'rgba(51, 65, 85, 0.8)',
-                    }}
-                  >
-                    {toast.subtitle}
-                  </div>
-                </div>
-              </div>
-            )
-          })}
+          {visibleToasts.map((toast) => (
+            <NetworkToast key={toast.id} isDark={isDark} toast={toast} />
+          ))}
         </div>
       ) : null}
     </>

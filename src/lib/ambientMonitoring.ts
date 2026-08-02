@@ -7,7 +7,7 @@ import {
 export type AmbientSemanticMode =
   'steady' | 'preview' | 'surge' | 'incident' | 'recovery'
 
-export type TerminalLogLevel = 'INFO' | 'WARN' | 'ERROR' | 'OK' | 'DEBUG'
+type TerminalLogLevel = 'INFO' | 'WARN' | 'ERROR' | 'OK' | 'DEBUG'
 
 const SCENARIO_LABELS: Record<EmergencyScenarioKey, string> = {
   failover: 'failover',

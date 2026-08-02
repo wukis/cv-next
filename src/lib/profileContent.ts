@@ -9,18 +9,18 @@ import {
 } from '@/lib/experience'
 import { type RecommendationInterface } from '@/lib/recommendations'
 
-export interface ProfileLink {
+interface ProfileLink {
   label: string
   href: string
 }
 
-export interface ImpactCard {
+interface ImpactCard {
   value: string
   label: string
   detail: string
 }
 
-export interface ImpactStory {
+interface ImpactStory {
   title: string
   context: string
   role: string

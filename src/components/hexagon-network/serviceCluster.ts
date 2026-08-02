@@ -78,7 +78,7 @@ export function resolveServiceClusterCenters(
       centerX: 0,
       centerY: 0,
       centerZ: 0,
-    } as AppServiceConfig)
+    })
 
     return {
       name: service.name,
@@ -452,6 +452,447 @@ function drawServiceClusterScaleRing(
   ctx.restore()
 }
 
+type ServiceClusterPalette = (typeof COLORS)[keyof typeof COLORS]
+
+interface ServiceClusterHoneycombCounts {
+  ready: number
+  starting: number
+  draining: number
+  unhealthy: number
+  total: number
+  desired: number
+  capacity: number
+}
+
+interface ServiceClusterHoneycombState {
+  service: AppServiceConfig
+  time: number
+  isDark: boolean
+  bounceEnergy: number
+  bouncePhase: number
+  palette: ServiceClusterPalette
+  readyCellCount: number
+  warmCellCount: number
+  footprintCellCount: number
+  degradedCellCount: number
+  pressure: number
+  density: number
+  cellSize: number
+  stepX: number
+  stepY: number
+  shellRadius: number
+  fillOpacity: number
+  strokeOpacity: number
+  shellGhostOpacity: number
+  warmFillOpacity: number
+  warmStrokeOpacity: number
+  degradedStrokeOpacity: number
+  degradedFillOpacity: number
+}
+
+function getServiceClusterHoneycombState(options: {
+  service: AppServiceConfig
+  x: number
+  y: number
+  scale: number
+  time: number
+  isDark: boolean
+  bounceEnergy: number
+  bouncePhase: number
+  counts: ServiceClusterHoneycombCounts
+}): ServiceClusterHoneycombState {
+  const {
+    service,
+    x,
+    y,
+    scale,
+    time,
+    isDark,
+    bounceEnergy,
+    bouncePhase,
+    counts,
+  } = options
+  const colorKey = getServiceClusterColorKey(service)
+  const palette = COLORS[colorKey]
+  const activeCount = getServiceClusterActivePodCount(counts)
+  const footprintCount = getServiceClusterFootprintPodCount(counts)
+  const degradedCount = getServiceClusterDegradedPodCount(counts)
+  const readyCellCount = getRenderedHoneycombCellCount(counts.ready)
+  const warmCellCountBase = Math.max(
+    0,
+    getRenderedHoneycombCellCount(counts.ready + counts.starting) -
+      readyCellCount,
+  )
+  const warmCellCount = counts.starting > 0 ? Math.max(1, warmCellCountBase) : 0
+  const footprintCellCount = Math.max(
+    readyCellCount + warmCellCount,
+    getRenderedHoneycombCellCount(footprintCount),
+  )
+  const degradedCellCount = Math.min(
+    12,
+    Math.max(
+      degradedCount,
+      getRenderedHoneycombCellCount(activeCount + degradedCount) -
+        Math.max(readyCellCount + warmCellCount, 0),
+    ),
+  )
+  const pressure = getServiceClusterPressure(counts)
+  const bounce = getServiceClusterBounce(time, bounceEnergy, bouncePhase, x, y)
+  const density = clamp(footprintCount / counts.capacity, 0.16, 1)
+  const cellSize = clamp(
+    (6.4 + footprintCellCount * 0.2 + (0.76 + scale * 0.4) * 4.6) * bounce,
+    8,
+    17.2,
+  )
+
+  return {
+    service,
+    time,
+    isDark,
+    bounceEnergy,
+    bouncePhase,
+    palette,
+    readyCellCount,
+    warmCellCount,
+    footprintCellCount,
+    degradedCellCount,
+    pressure,
+    density,
+    cellSize,
+    stepX: cellSize * 1.58,
+    stepY: cellSize * 1.36,
+    shellRadius: getServiceClusterShellRadius(
+      footprintCount,
+      counts.capacity,
+      scale,
+      bounce,
+    ),
+    fillOpacity: isDark ? 0.16 + density * 0.12 : 0.18 + density * 0.1,
+    strokeOpacity: isDark ? 0.68 + density * 0.18 : 0.72 + density * 0.12,
+    shellGhostOpacity: isDark ? 0.11 : 0.14,
+    warmFillOpacity: isDark ? 0.18 + density * 0.12 : 0.2 + density * 0.1,
+    warmStrokeOpacity: isDark ? 0.74 : 0.76,
+    degradedStrokeOpacity: isDark ? 0.2 : 0.24,
+    degradedFillOpacity: isDark ? 0.04 : 0.05,
+  }
+}
+
+function getServiceClusterPressure(counts: ServiceClusterHoneycombCounts) {
+  return clamp(
+    counts.starting * 0.18 +
+      counts.draining * 0.16 +
+      counts.unhealthy * 0.24 +
+      Math.max(counts.desired - counts.total, 0) * 0.08,
+    0,
+    1,
+  )
+}
+
+function getServiceClusterBounce(
+  time: number,
+  bounceEnergy: number,
+  bouncePhase: number,
+  x: number,
+  y: number,
+) {
+  return (
+    1 +
+    Math.sin(
+      time * (5.4 + bounceEnergy * 3.6) + bouncePhase + x * 0.012 + y * 0.014,
+    ) *
+      bounceEnergy *
+      0.08
+  )
+}
+
+function getRippledPoint(
+  state: ServiceClusterHoneycombState,
+  baseX: number,
+  baseY: number,
+  strength = 1,
+) {
+  const ripple = getServiceClusterRippleOffset({
+    x: baseX,
+    y: baseY,
+    shellRadius: state.shellRadius,
+    time: state.time,
+    bounceEnergy: state.bounceEnergy * strength,
+    bouncePhase: state.bouncePhase,
+  })
+
+  return {
+    x: baseX + ripple.x,
+    y: baseY + ripple.y,
+  }
+}
+
+function drawRippledEllipsePath(
+  ctx: CanvasRenderingContext2D,
+  state: ServiceClusterHoneycombState,
+  radius: number,
+  strength: number,
+) {
+  const shellSegments = 40
+  ctx.beginPath()
+
+  for (let index = 0; index <= shellSegments; index += 1) {
+    const angle = (index / shellSegments) * Math.PI * 2
+    const ringX = Math.cos(angle) * radius
+    const ringY = Math.sin(angle) * radius * Y_AXIS_COMPRESSION
+    const point = getRippledPoint(state, ringX, ringY, strength)
+
+    if (index === 0) {
+      ctx.moveTo(point.x, point.y)
+    } else {
+      ctx.lineTo(point.x, point.y)
+    }
+  }
+
+  ctx.closePath()
+}
+
+function getHoneycombCellPoint(
+  state: ServiceClusterHoneycombState,
+  index: number,
+  strength: number,
+) {
+  const slot = getHoneycombSlot(index)
+  const baseCellX = (slot.q + slot.r / 2) * state.stepX
+  const baseCellY = slot.r * state.stepY
+  return getRippledPoint(state, baseCellX, baseCellY, strength)
+}
+
+function drawHoneycombFootprintCells(
+  ctx: CanvasRenderingContext2D,
+  state: ServiceClusterHoneycombState,
+) {
+  for (let index = 0; index < state.footprintCellCount; index += 1) {
+    const { x: cellX, y: cellY } = getHoneycombCellPoint(state, index, 1.02)
+
+    drawHexagon(
+      ctx,
+      cellX,
+      cellY,
+      state.cellSize * 0.7,
+      withOpacity(state.palette.main, state.shellGhostOpacity),
+      null,
+      0.9,
+    )
+  }
+}
+
+function drawHoneycombWarmCells(
+  ctx: CanvasRenderingContext2D,
+  state: ServiceClusterHoneycombState,
+) {
+  for (
+    let index = state.readyCellCount;
+    index < state.readyCellCount + state.warmCellCount;
+    index += 1
+  ) {
+    drawHoneycombWarmCell(ctx, state, index)
+  }
+}
+
+function drawHoneycombWarmCell(
+  ctx: CanvasRenderingContext2D,
+  state: ServiceClusterHoneycombState,
+  index: number,
+) {
+  const { x: cellX, y: cellY } = getHoneycombCellPoint(state, index, 1.38)
+  const arrivalPhase =
+    state.time * 3.8 -
+    index * 0.62 +
+    state.bouncePhase +
+    state.service.centerY * 0.004
+  const arrivalWave = Math.sin(arrivalPhase)
+  const reveal = 0.72 + (arrivalWave * 0.5 + 0.5) * 0.48
+  const pulse =
+    1 +
+    Math.sin(
+      state.time * 5.4 +
+        state.bouncePhase +
+        index * 0.7 +
+        state.service.centerY * 0.008,
+    ) *
+      (0.014 + state.bounceEnergy * 0.04)
+  const currentSize = state.cellSize * 0.7 * pulse * reveal
+
+  ctx.beginPath()
+  ctx.moveTo(0, 0)
+  ctx.lineTo(cellX, cellY)
+  ctx.strokeStyle = withOpacity(
+    state.palette.glow,
+    (state.isDark ? 0.18 : 0.14) * reveal,
+  )
+  ctx.lineWidth = 1
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.arc(cellX, cellY, currentSize * 1.45, 0, Math.PI * 2)
+  ctx.fillStyle = withOpacity(
+    state.palette.glow,
+    (state.isDark ? 0.16 : 0.14) * reveal,
+  )
+  ctx.fill()
+
+  drawHexagon(
+    ctx,
+    cellX,
+    cellY,
+    currentSize * 1.22,
+    withOpacity(state.palette.glow, (state.isDark ? 0.44 : 0.34) * reveal),
+    withOpacity(state.palette.fill, (state.isDark ? 0.08 : 0.07) * reveal),
+    1,
+  )
+  drawHexagon(
+    ctx,
+    cellX,
+    cellY,
+    currentSize,
+    withOpacity(state.palette.main, state.warmStrokeOpacity * reveal),
+    withOpacity(state.palette.fill, state.warmFillOpacity * reveal),
+    1.1,
+  )
+  drawHexagon(
+    ctx,
+    cellX,
+    cellY,
+    currentSize * 0.46,
+    withOpacity(state.palette.main, (state.isDark ? 0.46 : 0.38) * reveal),
+    null,
+    0.8,
+  )
+}
+
+function drawHoneycombReadyCells(
+  ctx: CanvasRenderingContext2D,
+  state: ServiceClusterHoneycombState,
+) {
+  for (let index = 0; index < state.readyCellCount; index += 1) {
+    const { x: cellX, y: cellY } = getHoneycombCellPoint(state, index, 1.22)
+    const pulse =
+      1 +
+      Math.sin(
+        state.time * 6.2 +
+          state.bouncePhase +
+          index * 0.8 +
+          state.service.centerX * 0.01,
+      ) *
+        (0.012 + state.bounceEnergy * 0.055)
+    const currentSize = state.cellSize * 0.78 * pulse
+
+    drawHexagon(
+      ctx,
+      cellX,
+      cellY,
+      currentSize * 1.14,
+      withOpacity(state.palette.glow, state.isDark ? 0.18 : 0.15),
+      withOpacity(state.palette.fill, state.isDark ? 0.06 : 0.07),
+      0.9,
+    )
+    drawHexagon(
+      ctx,
+      cellX,
+      cellY,
+      currentSize,
+      withOpacity(state.palette.main, state.strokeOpacity),
+      withOpacity(state.palette.fill, state.fillOpacity),
+      1.4,
+    )
+    drawHexagon(
+      ctx,
+      cellX,
+      cellY,
+      currentSize * 0.42,
+      withOpacity(state.palette.main, state.isDark ? 0.26 : 0.22),
+      null,
+      0.8,
+    )
+  }
+}
+
+function drawHoneycombDegradedCells(
+  ctx: CanvasRenderingContext2D,
+  state: ServiceClusterHoneycombState,
+) {
+  for (let index = 0; index < state.degradedCellCount; index += 1) {
+    const angle =
+      (-Math.PI / 2 +
+        (index / Math.max(state.degradedCellCount, 1)) * Math.PI * 2 +
+        state.bouncePhase * 0.45 +
+        state.time * 0.04) %
+      (Math.PI * 2)
+    const ringRadius =
+      state.shellRadius + state.cellSize * (1.35 + (index % 3) * 0.28)
+    const baseCellX =
+      Math.cos(angle) * ringRadius +
+      Math.sin(index * 0.9 + state.bouncePhase) * 2.4
+    const baseCellY =
+      Math.sin(angle) * ringRadius * 0.92 +
+      Math.cos(index * 0.72 + state.bouncePhase) * 2
+    const { x: cellX, y: cellY } = getRippledPoint(
+      state,
+      baseCellX,
+      baseCellY,
+      1.28,
+    )
+    const degradedSize =
+      state.cellSize *
+      (0.52 + ((index + 1) % 3) * 0.04) *
+      (1 + Math.sin(state.time * 2.6 + index) * 0.03)
+
+    ctx.save()
+    ctx.setLineDash([3, 4])
+    drawHexagon(
+      ctx,
+      cellX,
+      cellY,
+      degradedSize,
+      withOpacity(state.palette.main, state.degradedStrokeOpacity),
+      withOpacity(state.palette.fill, state.degradedFillOpacity),
+      0.95,
+    )
+    ctx.restore()
+  }
+}
+
+function drawHoneycombShellAndCore(
+  ctx: CanvasRenderingContext2D,
+  state: ServiceClusterHoneycombState,
+) {
+  drawRippledEllipsePath(ctx, state, state.shellRadius, 1.08)
+  ctx.fillStyle = withOpacity(
+    state.palette.glow,
+    state.isDark ? 0.09 + state.pressure * 0.07 : 0.08 + state.pressure * 0.05,
+  )
+  ctx.fill()
+}
+
+function drawHoneycombInnerRingAndCore(
+  ctx: CanvasRenderingContext2D,
+  state: ServiceClusterHoneycombState,
+) {
+  drawRippledEllipsePath(ctx, state, state.shellRadius * 0.72, 0.84)
+  ctx.strokeStyle = withOpacity(
+    state.palette.main,
+    state.isDark ? 0.24 + state.pressure * 0.14 : 0.2 + state.pressure * 0.1,
+  )
+  ctx.lineWidth = 1.1
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.arc(
+    0,
+    0,
+    Math.max(3.8, state.cellSize * (0.24 + state.density * 0.15)),
+    0,
+    Math.PI * 2,
+  )
+  ctx.fillStyle = withOpacity(state.palette.glow, state.isDark ? 0.5 : 0.36)
+  ctx.fill()
+}
+
 export function drawServiceClusterHoneycomb(
   ctx: CanvasRenderingContext2D,
   options: {
@@ -500,66 +941,17 @@ export function drawServiceClusterHoneycomb(
     return
   }
 
-  const colorKey = getServiceClusterColorKey(service)
-  const palette = COLORS[colorKey]
-  const activeCount = getServiceClusterActivePodCount(counts)
-  const footprintCount = getServiceClusterFootprintPodCount(counts)
-  const degradedCount = getServiceClusterDegradedPodCount(counts)
-  const readyCellCount = getRenderedHoneycombCellCount(counts.ready)
-  const warmCellCountBase = Math.max(
-    0,
-    getRenderedHoneycombCellCount(counts.ready + counts.starting) -
-      readyCellCount,
-  )
-  const warmCellCount = counts.starting > 0 ? Math.max(1, warmCellCountBase) : 0
-  const footprintCellCount = Math.max(
-    readyCellCount + warmCellCount,
-    getRenderedHoneycombCellCount(footprintCount),
-  )
-  const degradedCellCount = Math.min(
-    12,
-    Math.max(
-      degradedCount,
-      getRenderedHoneycombCellCount(activeCount + degradedCount) -
-        Math.max(readyCellCount + warmCellCount, 0),
-    ),
-  )
-  const pressure = clamp(
-    counts.starting * 0.18 +
-      counts.draining * 0.16 +
-      counts.unhealthy * 0.24 +
-      Math.max(counts.desired - counts.total, 0) * 0.08,
-    0,
-    1,
-  )
-  const bounce =
-    1 +
-    Math.sin(
-      time * (5.4 + bounceEnergy * 3.6) + bouncePhase + x * 0.012 + y * 0.014,
-    ) *
-      bounceEnergy *
-      0.08
-  const density = clamp(footprintCount / counts.capacity, 0.16, 1)
-  const cellSize = clamp(
-    (6.4 + footprintCellCount * 0.2 + (0.76 + scale * 0.4) * 4.6) * bounce,
-    8,
-    17.2,
-  )
-  const stepX = cellSize * 1.58
-  const stepY = cellSize * 1.36
-  const shellRadius = getServiceClusterShellRadius(
-    footprintCount,
-    counts.capacity,
+  const honeycomb = getServiceClusterHoneycombState({
+    service,
+    x,
+    y,
     scale,
-    bounce,
-  )
-  const fillOpacity = isDark ? 0.16 + density * 0.12 : 0.18 + density * 0.1
-  const strokeOpacity = isDark ? 0.68 + density * 0.18 : 0.72 + density * 0.12
-  const shellGhostOpacity = isDark ? 0.11 : 0.14
-  const warmFillOpacity = isDark ? 0.18 + density * 0.12 : 0.2 + density * 0.1
-  const warmStrokeOpacity = isDark ? 0.74 : 0.76
-  const degradedStrokeOpacity = isDark ? 0.2 : 0.24
-  const degradedFillOpacity = isDark ? 0.04 : 0.05
+    time,
+    isDark,
+    bounceEnergy,
+    bouncePhase,
+    counts,
+  })
 
   ctx.save()
   ctx.translate(x, y)
@@ -567,236 +959,21 @@ export function drawServiceClusterHoneycomb(
 
   if (scaleRing.direction !== 0 && scaleRing.progress > 0) {
     drawServiceClusterScaleRing(ctx, {
-      shellRadius,
+      shellRadius: honeycomb.shellRadius,
       progress: scaleRing.progress,
       direction: scaleRing.direction,
       queueDepth: scaleRing.queueDepth,
-      palette,
+      palette: honeycomb.palette,
       isDark,
     })
   }
 
-  const applyRipple = (baseX: number, baseY: number, strength = 1) => {
-    const ripple = getServiceClusterRippleOffset({
-      x: baseX,
-      y: baseY,
-      shellRadius,
-      time,
-      bounceEnergy: bounceEnergy * strength,
-      bouncePhase,
-    })
-
-    return {
-      x: baseX + ripple.x,
-      y: baseY + ripple.y,
-    }
-  }
-
-  ctx.beginPath()
-  const shellSegments = 40
-  for (let index = 0; index <= shellSegments; index += 1) {
-    const angle = (index / shellSegments) * Math.PI * 2
-    const ringX = Math.cos(angle) * shellRadius
-    const ringY = Math.sin(angle) * shellRadius * Y_AXIS_COMPRESSION
-    const point = applyRipple(ringX, ringY, 1.08)
-    if (index === 0) {
-      ctx.moveTo(point.x, point.y)
-    } else {
-      ctx.lineTo(point.x, point.y)
-    }
-  }
-  ctx.closePath()
-  ctx.fillStyle = withOpacity(
-    palette.glow,
-    isDark ? 0.09 + pressure * 0.07 : 0.08 + pressure * 0.05,
-  )
-  ctx.fill()
-
-  for (let index = 0; index < footprintCellCount; index += 1) {
-    const slot = getHoneycombSlot(index)
-    const baseCellX = (slot.q + slot.r / 2) * stepX
-    const baseCellY = slot.r * stepY
-    const { x: cellX, y: cellY } = applyRipple(baseCellX, baseCellY, 1.02)
-
-    drawHexagon(
-      ctx,
-      cellX,
-      cellY,
-      cellSize * 0.7,
-      withOpacity(palette.main, shellGhostOpacity),
-      null,
-      0.9,
-    )
-  }
-
-  for (
-    let index = readyCellCount;
-    index < readyCellCount + warmCellCount;
-    index += 1
-  ) {
-    const slot = getHoneycombSlot(index)
-    const baseCellX = (slot.q + slot.r / 2) * stepX
-    const baseCellY = slot.r * stepY
-    const { x: cellX, y: cellY } = applyRipple(baseCellX, baseCellY, 1.38)
-    const arrivalPhase =
-      time * 3.8 - index * 0.62 + bouncePhase + service.centerY * 0.004
-    const arrivalWave = Math.sin(arrivalPhase)
-    const reveal = 0.72 + (arrivalWave * 0.5 + 0.5) * 0.48
-    const pulse =
-      1 +
-      Math.sin(
-        time * 5.4 + bouncePhase + index * 0.7 + service.centerY * 0.008,
-      ) *
-        (0.014 + bounceEnergy * 0.04)
-    const currentSize = cellSize * 0.7 * pulse * reveal
-
-    ctx.beginPath()
-    ctx.moveTo(0, 0)
-    ctx.lineTo(cellX, cellY)
-    ctx.strokeStyle = withOpacity(palette.glow, (isDark ? 0.18 : 0.14) * reveal)
-    ctx.lineWidth = 1
-    ctx.stroke()
-
-    ctx.beginPath()
-    ctx.arc(cellX, cellY, currentSize * 1.45, 0, Math.PI * 2)
-    ctx.fillStyle = withOpacity(palette.glow, (isDark ? 0.16 : 0.14) * reveal)
-    ctx.fill()
-
-    drawHexagon(
-      ctx,
-      cellX,
-      cellY,
-      currentSize * 1.22,
-      withOpacity(palette.glow, (isDark ? 0.44 : 0.34) * reveal),
-      withOpacity(palette.fill, (isDark ? 0.08 : 0.07) * reveal),
-      1,
-    )
-    drawHexagon(
-      ctx,
-      cellX,
-      cellY,
-      currentSize,
-      withOpacity(palette.main, warmStrokeOpacity * reveal),
-      withOpacity(palette.fill, warmFillOpacity * reveal),
-      1.1,
-    )
-    drawHexagon(
-      ctx,
-      cellX,
-      cellY,
-      currentSize * 0.46,
-      withOpacity(palette.main, (isDark ? 0.46 : 0.38) * reveal),
-      null,
-      0.8,
-    )
-  }
-
-  for (let index = 0; index < readyCellCount; index += 1) {
-    const slot = getHoneycombSlot(index)
-    const baseCellX = (slot.q + slot.r / 2) * stepX
-    const baseCellY = slot.r * stepY
-    const { x: cellX, y: cellY } = applyRipple(baseCellX, baseCellY, 1.22)
-    const pulse =
-      1 +
-      Math.sin(
-        time * 6.2 + bouncePhase + index * 0.8 + service.centerX * 0.01,
-      ) *
-        (0.012 + bounceEnergy * 0.055)
-    const currentSize = cellSize * 0.78 * pulse
-
-    drawHexagon(
-      ctx,
-      cellX,
-      cellY,
-      currentSize * 1.14,
-      withOpacity(palette.glow, isDark ? 0.18 : 0.15),
-      withOpacity(palette.fill, isDark ? 0.06 : 0.07),
-      0.9,
-    )
-    drawHexagon(
-      ctx,
-      cellX,
-      cellY,
-      currentSize,
-      withOpacity(palette.main, strokeOpacity),
-      withOpacity(palette.fill, fillOpacity),
-      1.4,
-    )
-    drawHexagon(
-      ctx,
-      cellX,
-      cellY,
-      currentSize * 0.42,
-      withOpacity(palette.main, isDark ? 0.26 : 0.22),
-      null,
-      0.8,
-    )
-  }
-
-  for (let index = 0; index < degradedCellCount; index += 1) {
-    const angle =
-      (-Math.PI / 2 +
-        (index / Math.max(degradedCellCount, 1)) * Math.PI * 2 +
-        bouncePhase * 0.45 +
-        time * 0.04) %
-      (Math.PI * 2)
-    const ringRadius = shellRadius + cellSize * (1.35 + (index % 3) * 0.28)
-    const baseCellX =
-      Math.cos(angle) * ringRadius + Math.sin(index * 0.9 + bouncePhase) * 2.4
-    const baseCellY =
-      Math.sin(angle) * ringRadius * 0.92 +
-      Math.cos(index * 0.72 + bouncePhase) * 2
-    const { x: cellX, y: cellY } = applyRipple(baseCellX, baseCellY, 1.28)
-    const degradedSize =
-      cellSize *
-      (0.52 + ((index + 1) % 3) * 0.04) *
-      (1 + Math.sin(time * 2.6 + index) * 0.03)
-
-    ctx.save()
-    ctx.setLineDash([3, 4])
-    drawHexagon(
-      ctx,
-      cellX,
-      cellY,
-      degradedSize,
-      withOpacity(palette.main, degradedStrokeOpacity),
-      withOpacity(palette.fill, degradedFillOpacity),
-      0.95,
-    )
-    ctx.restore()
-  }
-
-  ctx.beginPath()
-  const innerRingRadius = shellRadius * 0.72
-  for (let index = 0; index <= shellSegments; index += 1) {
-    const angle = (index / shellSegments) * Math.PI * 2
-    const ringX = Math.cos(angle) * innerRingRadius
-    const ringY = Math.sin(angle) * innerRingRadius * Y_AXIS_COMPRESSION
-    const point = applyRipple(ringX, ringY, 0.84)
-    if (index === 0) {
-      ctx.moveTo(point.x, point.y)
-    } else {
-      ctx.lineTo(point.x, point.y)
-    }
-  }
-  ctx.closePath()
-  ctx.strokeStyle = withOpacity(
-    palette.main,
-    isDark ? 0.24 + pressure * 0.14 : 0.2 + pressure * 0.1,
-  )
-  ctx.lineWidth = 1.1
-  ctx.stroke()
-
-  ctx.beginPath()
-  ctx.arc(
-    0,
-    0,
-    Math.max(3.8, cellSize * (0.24 + density * 0.15)),
-    0,
-    Math.PI * 2,
-  )
-  ctx.fillStyle = withOpacity(palette.glow, isDark ? 0.5 : 0.36)
-  ctx.fill()
+  drawHoneycombShellAndCore(ctx, honeycomb)
+  drawHoneycombFootprintCells(ctx, honeycomb)
+  drawHoneycombWarmCells(ctx, honeycomb)
+  drawHoneycombReadyCells(ctx, honeycomb)
+  drawHoneycombDegradedCells(ctx, honeycomb)
+  drawHoneycombInnerRingAndCore(ctx, honeycomb)
 
   ctx.restore()
 }

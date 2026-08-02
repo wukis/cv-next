@@ -90,6 +90,169 @@ function Recommendation({
   )
 }
 
+function groupRecommendations(recommendations: RecommendationInterface[]) {
+  const featured: RecommendationInterface[] = []
+  const long: RecommendationInterface[] = []
+  const regular: RecommendationInterface[] = []
+
+  recommendations.forEach((recommendation) => {
+    if (recommendation.body.length > 1500) {
+      featured.push(recommendation)
+      return
+    }
+
+    if (recommendation.body.length > 700) {
+      long.push(recommendation)
+      return
+    }
+
+    regular.push(recommendation)
+  })
+
+  return { featured, long, regular }
+}
+
+function RecommendationList({
+  recommendations,
+  highlightedSlug,
+}: {
+  recommendations: RecommendationInterface[]
+  highlightedSlug: string | null
+}) {
+  return (
+    <div className="space-y-4">
+      {recommendations.map((recommendation) => (
+        <Recommendation
+          key={recommendation.slug}
+          recommendation={recommendation}
+          isHighlighted={highlightedSlug === recommendation.slug}
+        />
+      ))}
+    </div>
+  )
+}
+
+function NaturalRecommendationLayout({
+  recommendations,
+  highlightedSlug,
+}: {
+  recommendations: RecommendationInterface[]
+  highlightedSlug: string | null
+}) {
+  const { featured, long, regular } = groupRecommendations(recommendations)
+
+  return (
+    <>
+      {featured.map((recommendation) => (
+        <Recommendation
+          key={recommendation.slug}
+          recommendation={recommendation}
+          isHighlighted={highlightedSlug === recommendation.slug}
+        />
+      ))}
+      {long.length > 0 ? (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {long.map((recommendation) => (
+            <Recommendation
+              key={recommendation.slug}
+              recommendation={recommendation}
+              isHighlighted={highlightedSlug === recommendation.slug}
+            />
+          ))}
+        </div>
+      ) : null}
+      {regular.length > 0 ? (
+        <div className="columns-1 gap-4 sm:columns-2 lg:columns-3">
+          {regular.map((recommendation) => (
+            <div key={recommendation.slug} className="mb-4 break-inside-avoid">
+              <Recommendation
+                recommendation={recommendation}
+                isHighlighted={highlightedSlug === recommendation.slug}
+              />
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </>
+  )
+}
+
+function clearRecommendationHighlight({
+  interactionUnlockAtRef,
+  setHighlightedSlug,
+}: {
+  interactionUnlockAtRef: React.RefObject<number>
+  setHighlightedSlug: React.Dispatch<React.SetStateAction<string | null>>
+}) {
+  if (Date.now() <= interactionUnlockAtRef.current) return
+
+  setHighlightedSlug(null)
+
+  if (!window.location.hash) return
+
+  const url = new URL(window.location.href)
+  url.hash = ''
+  window.history.replaceState(window.history.state, '', url)
+}
+
+function RecommendationsHeader({
+  allowSorting,
+  headingId,
+  headingLabel,
+  headerLabel,
+  sortMode,
+  setSortMode,
+}: {
+  allowSorting: boolean
+  headingId: string
+  headingLabel: string
+  headerLabel?: string
+  sortMode: 'natural' | 'recent'
+  setSortMode: React.Dispatch<React.SetStateAction<'natural' | 'recent'>>
+}) {
+  if (!allowSorting && !headerLabel) {
+    return (
+      <h2 id={headingId} className="sr-only">
+        {headingLabel}
+      </h2>
+    )
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <h2
+        id={headingId}
+        className="font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:text-neutral-300"
+      >
+        {headingLabel}
+      </h2>
+      {allowSorting ? (
+        <button
+          type="button"
+          onClick={() => {
+            setSortMode((current) =>
+              current === 'recent' ? 'natural' : 'recent',
+            )
+          }}
+          className={`hidden items-center gap-1.5 rounded-sm border px-3 py-1.5 font-mono text-xs transition-all sm:inline-flex ${
+            sortMode === 'recent'
+              ? 'border-emerald-300 bg-emerald-50 text-emerald-800 shadow-xs dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200'
+              : 'border-neutral-200/70 text-neutral-500 hover:border-emerald-300 hover:bg-emerald-50/70 hover:text-emerald-700 dark:border-neutral-800 dark:text-neutral-400 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-300'
+          }`}
+          aria-pressed={sortMode === 'recent'}
+        >
+          <SortIcon
+            className={`h-3.5 w-3.5 transition-transform ${
+              sortMode === 'recent' ? 'rotate-180' : ''
+            }`}
+          />
+          most recent
+        </button>
+      ) : null}
+    </div>
+  )
+}
+
 export function RecommendationsWall({
   recommendations,
   allowSorting = false,
@@ -105,15 +268,10 @@ export function RecommendationsWall({
   const interactionUnlockAtRef = useRef(0)
 
   const clearHighlight = () => {
-    if (Date.now() <= interactionUnlockAtRef.current) return
-
-    setHighlightedSlug(null)
-
-    if (!window.location.hash) return
-
-    const url = new URL(window.location.href)
-    url.hash = ''
-    window.history.replaceState(window.history.state, '', url)
+    clearRecommendationHighlight({
+      interactionUnlockAtRef,
+      setHighlightedSlug,
+    })
   }
 
   useEffect(() => {
@@ -181,109 +339,30 @@ export function RecommendationsWall({
         )
       : recommendations
 
-  const featured: RecommendationInterface[] = []
-  const long: RecommendationInterface[] = []
-  const regular: RecommendationInterface[] = []
-
-  displayedRecommendations.forEach((recommendation) => {
-    if (recommendation.body.length > 1500) {
-      featured.push(recommendation)
-    } else if (recommendation.body.length > 700) {
-      long.push(recommendation)
-    } else {
-      regular.push(recommendation)
-    }
-  })
-
   const headingId = 'recommendations-wall-heading'
   const headingLabel = headerLabel ?? 'Recommendations'
 
   return (
     <section className="space-y-6" aria-labelledby={headingId}>
-      {allowSorting || headerLabel ? (
-        <div className="flex items-center justify-between gap-3">
-          <h2
-            id={headingId}
-            className="font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:text-neutral-300"
-          >
-            {headingLabel}
-          </h2>
-          {allowSorting ? (
-            <button
-              type="button"
-              onClick={() => {
-                setSortMode((current) =>
-                  current === 'recent' ? 'natural' : 'recent',
-                )
-              }}
-              className={`hidden items-center gap-1.5 rounded-sm border px-3 py-1.5 font-mono text-xs transition-all sm:inline-flex ${
-                sortMode === 'recent'
-                  ? 'border-emerald-300 bg-emerald-50 text-emerald-800 shadow-xs dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200'
-                  : 'border-neutral-200/70 text-neutral-500 hover:border-emerald-300 hover:bg-emerald-50/70 hover:text-emerald-700 dark:border-neutral-800 dark:text-neutral-400 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-300'
-              }`}
-              aria-pressed={sortMode === 'recent'}
-            >
-              <SortIcon
-                className={`h-3.5 w-3.5 transition-transform ${
-                  sortMode === 'recent' ? 'rotate-180' : ''
-                }`}
-              />
-              most recent
-            </button>
-          ) : null}
-        </div>
-      ) : (
-        <h2 id={headingId} className="sr-only">
-          {headingLabel}
-        </h2>
-      )}
+      <RecommendationsHeader
+        allowSorting={allowSorting}
+        headingId={headingId}
+        headingLabel={headingLabel}
+        sortMode={sortMode}
+        setSortMode={setSortMode}
+        {...(headerLabel === undefined ? {} : { headerLabel })}
+      />
 
       {sortMode === 'recent' ? (
-        <div className="space-y-4">
-          {displayedRecommendations.map((recommendation) => (
-            <Recommendation
-              key={recommendation.slug}
-              recommendation={recommendation}
-              isHighlighted={highlightedSlug === recommendation.slug}
-            />
-          ))}
-        </div>
+        <RecommendationList
+          recommendations={displayedRecommendations}
+          highlightedSlug={highlightedSlug}
+        />
       ) : (
-        <>
-          {featured.map((recommendation) => (
-            <Recommendation
-              key={recommendation.slug}
-              recommendation={recommendation}
-              isHighlighted={highlightedSlug === recommendation.slug}
-            />
-          ))}
-          {long.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {long.map((recommendation) => (
-                <Recommendation
-                  key={recommendation.slug}
-                  recommendation={recommendation}
-                  isHighlighted={highlightedSlug === recommendation.slug}
-                />
-              ))}
-            </div>
-          ) : null}
-          {regular.length > 0 ? (
-            <div className="columns-1 gap-4 sm:columns-2 lg:columns-3">
-              {regular.map((recommendation) => (
-                <div
-                  key={recommendation.slug}
-                  className="mb-4 break-inside-avoid"
-                >
-                  <Recommendation
-                    recommendation={recommendation}
-                    isHighlighted={highlightedSlug === recommendation.slug}
-                  />
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </>
+        <NaturalRecommendationLayout
+          recommendations={displayedRecommendations}
+          highlightedSlug={highlightedSlug}
+        />
       )}
     </section>
   )

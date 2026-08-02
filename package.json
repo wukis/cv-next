@@ -17,7 +17,10 @@
     "format:check": "prettier . --check",
     "typecheck": "tsc --noEmit",
     "typecheck:strict": "tsc -p tsconfig.quality.json --noEmit",
-    "quality": "npm run format:check && npm run lint && npm run typecheck && npm run typecheck:strict && npm run knip && npm run build",
+    "test": "vitest run",
+    "fallow": "fallow dead-code --fail-on-issues --summary && fallow dupes --threshold 0 --summary && fallow health --min-score 85 --summary",
+    "fallow:report": "fallow --summary --format compact",
+    "quality": "npm run format:check && npm run lint && npm run typecheck && npm run typecheck:strict && npm run test && npm run knip && npm run fallow && npm run build",
     "knip": "knip",
     "prepare": "husky",
     "cv:pdf": "npx playwright install chromium && npm run build && node scripts/generate-cv-pdf.mjs",
@@ -54,7 +57,6 @@
   "dependencies": {
     "@sentry/nextjs": "^10.69.0",
     "@tailwindcss/postcss": "^4.3.3",
-    "@tailwindcss/typography": "^0.5.20",
     "clsx": "^2.1.0",
     "next": "^16.2.12",
     "next-themes": "^0.4.4",
@@ -68,6 +70,7 @@
     "@types/node": "^26.1.2",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
+    "@tailwindcss/typography": "^0.5.20",
     "adm-zip": "^0.6.0",
     "csv-parse": "^7.0.1",
     "eslint": "^9.39.5",
@@ -75,6 +78,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-simple-import-sort": "^14.0.0",
     "eslint-plugin-unused-imports": "^4.4.1",
+    "fallow": "^3.11.0",
     "globals": "^17.9.0",
     "husky": "^9.1.7",
     "knip": "^6.31.0",
@@ -85,6 +89,7 @@
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "tsx": "^4.23.4",
-    "typescript-eslint": "^8.65.0"
+    "typescript-eslint": "^8.65.0",
+    "vitest": "^4.1.10"
   }
 }

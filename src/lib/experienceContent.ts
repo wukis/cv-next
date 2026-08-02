@@ -1,4 +1,9 @@
-import { getDuration, type WorkInterface } from '@/lib/experience'
+import {
+  addDuration,
+  calculateDurationYears,
+  getDuration,
+  type WorkInterface,
+} from '@/lib/experience'
 
 export type FormattedDuration = {
   years: number
@@ -71,15 +76,10 @@ export function groupWorkExperiencesForDisplay(
       acc[name].experiences.push(experience)
 
       const experienceDuration = getDuration(startDate, endDate)
-      acc[name].totalDuration.years += experienceDuration.years
-      acc[name].totalDuration.months += experienceDuration.months
-
-      if (acc[name].totalDuration.months >= 12) {
-        acc[name].totalDuration.years += Math.floor(
-          acc[name].totalDuration.months / 12,
-        )
-        acc[name].totalDuration.months = acc[name].totalDuration.months % 12
-      }
+      acc[name].totalDuration = addDuration(
+        acc[name].totalDuration,
+        experienceDuration,
+      )
 
       const companyDateRange = getCompanyDateRange(acc[name].experiences)
       acc[name].startDate = companyDateRange.startDate
@@ -91,19 +91,14 @@ export function groupWorkExperiencesForDisplay(
   )
 }
 
-export function calculateTotalExperienceYears(
+export function calculateGroupedExperienceYears(
   groupedWorkExperiences: Record<string, GroupedWorkExperience>,
 ) {
-  const total = Object.values(groupedWorkExperiences).reduce(
-    (acc, { totalDuration }) => {
-      acc.years += totalDuration.years
-      acc.months += totalDuration.months
-      return acc
-    },
-    { years: 0, months: 0 },
+  return calculateDurationYears(
+    Object.values(groupedWorkExperiences).map(
+      ({ totalDuration }) => totalDuration,
+    ),
   )
-
-  return total.years + Math.floor(total.months / 12)
 }
 
 export function getAllUniqueItems(arrays: string[][]): string[] {
