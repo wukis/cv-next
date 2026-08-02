@@ -10,4 +10,4 @@
   package = "netlify-plugin-cloudinary"
 
   [plugins.inputs]
-    imagesPath = "/_next/static/media"
+    imagesPath = "/static/media"
