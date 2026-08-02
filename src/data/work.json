@@ -32,7 +32,9 @@
       "MySQL",
       "AWS",
       "Datadog",
+      "Blackfire",
       "React",
+      "Redux",
       "TypeScript",
       "REST",
       "Microservices",
@@ -43,6 +45,7 @@
       "Jest",
       "Cypress",
       "Playwright",
+      "Claude",
       "k6",
       "gRPC"
     ],
