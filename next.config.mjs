@@ -25,7 +25,7 @@ const securityHeaders = [
 ]
 
 const nextConfig = {
-  productionBrowserSourceMaps: false,
+  productionBrowserSourceMaps: true,
   // Performance optimizations
   compress: true,
   // Optimize images
@@ -81,6 +81,7 @@ export default withSentryConfig(nextConfig, {
 
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
+  telemetry: false,
 
   // For all available options, see:
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
@@ -100,6 +101,9 @@ export default withSentryConfig(nextConfig, {
 
   // Hides source maps from generated client bundles
   hideSourceMaps: true,
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
 
   // Reduce bundle size by excluding unused Sentry features
   bundleSizeOptimizations: {
