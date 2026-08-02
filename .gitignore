@@ -22,6 +22,9 @@
 .lighthouse-*.json
 .claude/
 .cursor/
+.agents/
+SKILL.md
+skills-lock.json
 petrik-cv/
 
 # debug
