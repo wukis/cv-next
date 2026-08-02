@@ -1,72 +1,61 @@
 # Jonas Petrik CV Site
 
-This repository contains the personal site, recruiter-friendly CV page, and the checked-in PDF export.
+Personal site, recruiter-friendly CV page, public resume JSON endpoint, and checked-in PDF export.
 
-Reusable profile content is centralized in `src/lib/profileContent.ts`. Platform-specific outputs, like the public resume builder, should read from that module instead of reaching into `linkedin.json` or `work.json` directly.
+The canonical public profile content lives in `src/lib/profileContent.ts`. Pages, structured data, resume JSON, and sync tooling should read from that module or its helpers instead of reaching into raw data files directly.
 
-## Getting started
+## Local Development
 
-Install dependencies:
+Use npm with Node 26:
 
 ```bash
 npm install
-```
-
-Run the local development server:
-
-```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to preview the site.
+Open `http://localhost:3000`.
 
-## Quality checks
+## Quality
 
-Run the blocking quality commands before finishing changes:
+Run the full gate before finishing substantial changes:
 
 ```bash
-npm run format:check
-npm run lint
-npm run typecheck
-npm run typecheck:strict
-npm run knip
-npm run build
+npm run quality
 ```
 
-Project guidance for contributors and AI agents lives in [`AGENTS.md`](./AGENTS.md) and [`docs/stack-and-workflows.md`](./docs/stack-and-workflows.md).
+That covers formatting, linting, both TypeScript lanes, tests, Knip, Fallow, and a production build.
 
-## Regenerate the CV PDF
+For narrower checks, use the scripts in `package.json`.
 
-Use the dedicated export command:
+## CV PDF
+
+The static PDF lives at `public/jonas-petrik-cv.pdf`. Regenerate it with:
 
 ```bash
 npm run cv:pdf
 ```
 
-What it does:
+The command installs Playwright Chromium when needed, builds the app, starts it locally, renders `/cv` in print mode, and writes the PDF.
 
-- Installs the Playwright Chromium browser if it is not already available.
-- Builds the site in production mode.
-- Starts the built app locally.
-- Renders `/cv` in print mode with a fixed light theme.
-- Writes the result to `public/jonas-petrik-cv.pdf`.
+The pre-commit hook also regenerates and stages the PDF when staged portfolio content changes require it. If related content is unstaged, the hook stops to avoid committing a PDF that does not match the committed source.
 
-The PDF export intentionally excludes the ambient background animation, top navigation, footer, back-to-top button, and other elements wrapped in `print:hidden`.
+## Deployment
 
-When a commit includes staged portfolio content changes, the pre-commit hook also regenerates `public/jonas-petrik-cv.pdf` and stages it automatically. If you have unstaged content edits at the same time, the hook stops so the committed PDF cannot drift from the committed source.
+Netlify configuration is versioned in `netlify.toml`.
 
-## Notes
+- Build command: `npm run build`
+- Publish directory: `.next`
+- Runtime pins: Node 26 and npm 12.0.2
+- Build plugins: Cloudinary image rewrites and Netlify Lighthouse
 
-- The CV page itself lives at `/cv`.
-- The static PDF committed to the repo lives at `public/jonas-petrik-cv.pdf`.
-- Production builds rely on Next.js minification and hidden source maps, not custom post-build obfuscation.
+Sentry uploads hidden production source maps during `next build`. Browser source maps are generated for upload, then hidden/deleted from the published static output.
 
 ## LinkedIn sync
 
-The LinkedIn sync tooling uses:
+LinkedIn sync is a backup-first manual workflow. It uses:
 
 - `src/lib/profileContent.ts` as the desired state
-- `src/data/linkedin-sync/` for tracked baselines, snapshots, and rollback history
+- `src/data/linkedin-sync/` for tracked sanitized baselines, snapshots, and status
 - `.generated/linkedin/` for local working outputs
 
 Commands:
@@ -78,101 +67,23 @@ npm run linkedin:accept
 npm run linkedin:restore -- <snapshot-id>
 ```
 
-### What gets written where
-
-- `src/data/linkedin-sync/imported.json`: latest sanitized imported LinkedIn baseline
-- `src/data/linkedin-sync/history/<snapshot-id>.json`: versioned backup snapshot containing baseline, desired state, and diff summary
-- `src/data/linkedin-sync/latest.json`: pointer to the newest snapshot
-- `src/data/linkedin-sync/applied.json`: pointer to the last snapshot confirmed as manually applied on LinkedIn
-- `src/data/linkedin-sync/status.json`: tracked local status summary
-- `.generated/linkedin/payload.json`: current desired LinkedIn payload
-- `.generated/linkedin/diff.json`: diff between imported baseline and desired payload
-- `.generated/linkedin/copy-pack.md`: manual update pack to apply in LinkedIn
-- `.generated/linkedin/restore-pack.md`: rollback pack generated from a saved snapshot baseline
-
-### Backup-first workflow
+Typical flow:
 
 1. Update the desired source content in `src/lib/profileContent.ts` or `src/data/linkedin-sync/overrides.json`.
-2. Export your current LinkedIn data from LinkedIn, then import it:
+2. Export current LinkedIn data and import it with `npm run linkedin:import -- /path/to/linkedin-export`.
+3. Run `npm run linkedin:sync` to create a tracked snapshot and a local copy pack.
+4. Review `.generated/linkedin/copy-pack.md`, `.generated/linkedin/diff.json`, and `src/data/linkedin-sync/latest.json`.
+5. Apply the copy pack manually in LinkedIn.
+6. After verifying LinkedIn, run `npm run linkedin:accept`.
 
-```bash
-npm run linkedin:import -- /path/to/linkedin-export
-```
-
-3. Create a backup snapshot and generate the sync pack:
-
-```bash
-npm run linkedin:sync
-```
-
-This is the critical backup step. Every sync run creates a versioned snapshot in `src/data/linkedin-sync/history/` before you apply any manual LinkedIn changes.
-
-4. Review the generated files:
-
-- `.generated/linkedin/copy-pack.md`
-- `.generated/linkedin/diff.json`
-- `src/data/linkedin-sync/latest.json`
-
-5. Apply the changes manually in LinkedIn using the copy pack.
-6. After the LinkedIn profile looks correct, confirm the snapshot as applied:
-
-```bash
-npm run linkedin:accept
-```
-
-### Recovery workflow
-
-If the LinkedIn update is wrong or incomplete:
-
-1. Find the snapshot id in `src/data/linkedin-sync/latest.json` or in `src/data/linkedin-sync/history/`.
-2. Generate a rollback pack from the saved baseline:
+For rollback, run:
 
 ```bash
 npm run linkedin:restore -- <snapshot-id>
 ```
 
-3. Use `.generated/linkedin/restore-pack.md` to manually restore the previous LinkedIn content.
+Do not commit raw LinkedIn exports or `.generated/`; only sanitized sync state under `src/data/linkedin-sync/` belongs in git.
 
-### Agent checklist
+## Contributor Notes
 
-An agent making LinkedIn sync changes should follow this sequence:
-
-1. Update the desired content sources.
-2. Run `npm run linkedin:import -- /path/to/linkedin-export`.
-3. Run `npm run linkedin:sync`.
-4. Run `npm run lint`.
-5. Run `npm run typecheck`.
-6. Run `npm run typecheck:strict`.
-7. Run `npm run knip`.
-8. Run `npm run build`.
-9. Confirm that the tracked backup files changed as expected:
-   - `src/data/linkedin-sync/imported.json`
-   - `src/data/linkedin-sync/latest.json`
-   - `src/data/linkedin-sync/status.json`
-   - `src/data/linkedin-sync/history/`
-10. Do not commit `.generated/linkedin/`.
-11. After the user manually updates LinkedIn and verifies the result, run `npm run linkedin:accept`.
-12. Re-run `npm run quality` if any tracked files changed afterward.
-
-### Commit and push latest changes
-
-After the snapshot and status files are correct:
-
-```bash
-git status
-git add README.md package.json package-lock.json \
-  src/lib/profileContent.ts src/lib/linkedinSync.ts scripts/linkedin-sync.ts \
-  src/data/linkedin-sync .gitignore
-git commit -m "Add backup-first LinkedIn sync workflow"
-git push
-```
-
-If the branch name matters, create or use a branch with the `codex/` prefix before pushing.
-
-### Safety rules
-
-- `linkedin:sync` must not be used without a fresh import baseline.
-- Never commit the raw LinkedIn export ZIP or extracted raw export files.
-- Only the sanitized files under `src/data/linkedin-sync/` should be tracked.
-- Nothing in the LinkedIn sync flow should be exposed through `public/` or imported into the app runtime.
-- `.generated/linkedin/` is local working output and must stay untracked.
+Project guidance for contributors and AI agents lives in `AGENTS.md` and `docs/stack-and-workflows.md`.

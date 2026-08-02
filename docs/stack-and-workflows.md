@@ -1,13 +1,8 @@
 # Stack And Workflows
 
-## What this project is
+## Project Shape
 
-This repo is a personal CV and portfolio site built with Next.js App Router. Next.js provides routing, server rendering, metadata handling, asset optimization, and production builds. React is the component model used inside that framework.
-
-If you are new to React and Next.js, the most useful mental model is:
-
-- React is how the UI is composed from components.
-- Next.js is the application framework that decides routing, rendering, data boundaries, metadata, and deployment behavior.
+This repo is a personal CV and portfolio site built with Next.js App Router, React 19, TypeScript, Tailwind CSS, Sentry, Netlify, and Playwright.
 
 ## How the repo is organized
 
@@ -19,30 +14,22 @@ If you are new to React and Next.js, the most useful mental model is:
 
 The key content entrypoint is [`src/lib/profileContent.ts`](../src/lib/profileContent.ts). When you want to change public profile content, start there first.
 
-## React and Next.js standards used here
+## App Conventions
 
-### Server Components first
-
-In App Router, files are Server Components by default. That is a good default because it reduces client-side JavaScript and keeps content rendering simple.
-
-Add `'use client'` only when a component needs:
+App Router files are Server Components by default. Add `'use client'` only when a component needs:
 
 - React hooks like `useEffect` or `useState`
 - browser APIs like `window` or `document`
 - direct event handling or UI state on the client
 
-### Next.js primitives
-
 - Use `next/link` for internal navigation between pages.
 - Use `next/image` for local and optimized images.
 - Use route metadata in `src/app/*` for titles, descriptions, Open Graph tags, and related SEO fields.
 - Use route handlers like [`src/app/resume.json/route.ts`](../src/app/resume.json/route.ts) when the app needs a structured response instead of a page.
+- Use the typed image registry in [`src/lib/imageAssets.ts`](../src/lib/imageAssets.ts) instead of dynamic image requires.
+- Prefer shared content modules and helpers over hardcoded copy deep inside components.
 
-### Content and presentation
-
-This repo is closer to a structured content site than a typical product app. A lot of changes should happen in shared content modules and helpers, not by hardcoding copy deep inside components.
-
-## Important workflows
+## Workflows
 
 ### Local development
 
@@ -53,16 +40,15 @@ npm run dev
 
 ### Quality checks
 
-Blocking checks:
+Full gate:
 
 ```bash
-npm run format:check
-npm run lint
-npm run typecheck
-npm run typecheck:strict
-npm run knip
-npm run build
+npm run quality
 ```
+
+This runs format, lint, regular and strict typecheck, tests, Knip, Fallow, and build.
+
+GitHub Actions runs the same checks in separate steps. `next-env.d.ts` may reference generated `.next` route types before build; Fallow is configured to ignore that generated import.
 
 ### PDF export
 
@@ -73,6 +59,20 @@ npm run cv:pdf
 ```
 
 This builds the app, starts it locally, renders `/cv`, and writes the PDF to `public/jonas-petrik-cv.pdf`.
+
+The pre-commit hook refreshes the PDF automatically when staged portfolio content changes require it.
+
+### Deployment
+
+Netlify build configuration lives in [`netlify.toml`](../netlify.toml):
+
+- `npm run build`
+- publish directory `.next`
+- Node 26 and npm 12.0.2
+- Cloudinary image plugin pointed at the built static media path
+- Netlify Lighthouse configured from the repo
+
+Sentry is configured in [`next.config.mjs`](../next.config.mjs). Production browser source maps are generated so Sentry can upload them, then hidden/deleted from published client output.
 
 ### LinkedIn sync
 
@@ -89,10 +89,10 @@ npm run linkedin:restore -- <snapshot-id>
 
 Keep `.generated/linkedin/` untracked.
 
-## Working effectively as a newcomer
+## Working Effectively
 
 - Start from route files in `src/app/` when you want to understand what page renders where.
 - Move into `src/components/` to understand the UI tree.
 - Check `src/lib/` to find the actual content source or transformation logic before editing.
 - If a change touches copy, resume data, recommendations, or SEO, look for a shared source module before editing JSX.
-- Run the full quality commands before wrapping up changes so the repo stays agent-friendly and easy to maintain.
+- Run `npm run quality` before wrapping up substantial changes.

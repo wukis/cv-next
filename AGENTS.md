@@ -2,7 +2,7 @@
 
 ## Project focus
 
-This repository is a content-heavy personal site built with Next.js App Router, React 19, TypeScript, Tailwind CSS, Sentry, and a Playwright-based PDF export flow.
+This repository is a content-heavy personal site built with Next.js App Router, React 19, TypeScript, Tailwind CSS, Sentry, Netlify, and a Playwright-based PDF export flow.
 
 ## Load this extra context when relevant
 
@@ -28,13 +28,14 @@ This repository is a content-heavy personal site built with Next.js App Router, 
 - Preserve the staged-content PDF hook in `scripts/ensure-cv-pdf-staged.mjs`.
 - Preserve the LinkedIn sync flow in `scripts/linkedin-sync.ts`.
 - Do not commit `.generated/`.
-- Keep build-time behavior in `next.config.mjs` intact unless the task explicitly targets it.
+- Keep build-time behavior in `next.config.mjs` and `netlify.toml` intact unless the task explicitly targets build or deployment.
 
 ## Quality baseline
 
-- Run `npm run quality` before finishing substantial changes. It includes format, lint, both typecheck lanes, Knip, and build.
-- Treat `npm run typecheck:strict` and `npm run knip` failures as stop-the-line issues. Do not leave them behind as “future cleanup.”
+- Run `npm run quality` before finishing substantial changes. It includes format, lint, both typecheck lanes, tests, Knip, Fallow, and build.
+- Treat `npm run typecheck:strict`, `npm run knip`, and `npm run fallow` failures as stop-the-line issues. Do not leave them behind as “future cleanup.”
 - Use `npm`, not Yarn, for all package management in this repo.
+- Keep Node/npm pins aligned with `.nvmrc`, `package.json`, and `netlify.toml`.
 - If staged portfolio content changes, refresh `public/jonas-petrik-cv.pdf` before finishing work. The pre-commit hook enforces this and will block if there are unstaged content edits that would make the PDF ambiguous.
 
 ## Agent context notes
@@ -43,6 +44,7 @@ This repository is a content-heavy personal site built with Next.js App Router, 
 - Use the typed image registry in `src/lib/imageAssets.ts` instead of dynamic `require(...)`.
 - `src/app/global-error.tsx` is part of the typed app surface and should stay TypeScript.
 - Do not add post-build client chunk rewriting or custom obfuscation back into the pipeline unless there is a very specific deployment reason.
+- Sentry source maps are generated for upload and hidden from published client output; do not disable that flow casually.
 
 ## Future Next.js docs integration
 
