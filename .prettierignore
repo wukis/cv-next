@@ -2,5 +2,6 @@
 .next
 .lighthouse-*.json
 LICENSE.md
+next-env.d.ts
 public/**/*.pdf
 src/data/linkedin-sync/history/**

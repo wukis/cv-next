@@ -1,44 +1,20 @@
 import { MetadataRoute } from 'next'
 
+const canonicalPages = [
+  { path: '', priority: 1 },
+  { path: '/about', priority: 0.8 },
+  { path: '/experience', priority: 0.8 },
+  { path: '/cv', priority: 0.8 },
+  { path: '/recommendations', priority: 0.7 },
+] as const
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://petrik.dev'
 
-  return [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 1,
-    },
-    {
-      url: `${baseUrl}/about`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/experience`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/cv`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/recommendations`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/resume.json`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-  ]
+  return canonicalPages.map((page) => ({
+    url: `${baseUrl}${page.path}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly',
+    priority: page.priority,
+  }))
 }

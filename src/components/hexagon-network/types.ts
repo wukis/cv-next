@@ -21,19 +21,10 @@ export type ColorKey =
   | 'coral'
   | 'blue'
 export type ConnectionKind =
-  | 'ingress'
-  | 'loadBalancer'
-  | 'service'
-  | 'storage'
-  | 'telemetry'
+  'ingress' | 'loadBalancer' | 'service' | 'storage' | 'telemetry'
 
 export type AppServiceGroup =
-  | 'edge'
-  | 'auth'
-  | 'catalog'
-  | 'basket'
-  | 'checkout'
-  | 'warehouse'
+  'edge' | 'auth' | 'catalog' | 'basket' | 'checkout' | 'warehouse'
 
 export interface AppServiceConfig {
   name: AppServiceGroup

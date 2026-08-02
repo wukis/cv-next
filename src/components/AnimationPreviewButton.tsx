@@ -20,8 +20,7 @@ interface TooltipTimerState {
 }
 
 type TooltipTimerAction =
-  | { type: 'activate'; durationMs: number }
-  | { type: 'suppress' }
+  { type: 'activate'; durationMs: number } | { type: 'suppress' }
 
 function tooltipTimerReducer(
   state: TooltipTimerState,
@@ -150,6 +149,10 @@ export default function AnimationPreviewButton() {
     return null
   }
   const canTriggerEmergency = cluster.emergencyState === 'normal'
+  const tooltipTimingProps =
+    tooltipTimer.durationMs == null
+      ? {}
+      : { expiryDurationMs: tooltipTimer.durationMs }
 
   return (
     <DesktopTooltip
@@ -157,9 +160,9 @@ export default function AnimationPreviewButton() {
       label={monitoring.buttonLabel}
       description={tooltipDescription}
       isSuppressed={tooltipTimer.suppressed}
-      expiryDurationMs={tooltipTimer.durationMs ?? undefined}
       expiryKey={tooltipTimer.expiryKey}
       panelClassName="min-w-[20rem] max-w-104"
+      {...tooltipTimingProps}
     >
       <button
         type="button"

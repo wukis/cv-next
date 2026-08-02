@@ -8,17 +8,9 @@ export type EmergencyState = 'normal' | 'emergency' | 'recovery'
 export type FocusMode = 'idle' | 'preview'
 export type TriggerSource = 'hover-auto' | 'button-click' | null
 export type AmbientServiceName =
-  | 'edge'
-  | 'auth'
-  | 'catalog'
-  | 'basket'
-  | 'checkout'
-  | 'warehouse'
+  'edge' | 'auth' | 'catalog' | 'basket' | 'checkout' | 'warehouse'
 export type EmergencyScenarioKey =
-  | 'failover'
-  | 'dbDown'
-  | 'cacheReload'
-  | 'queueFull'
+  'failover' | 'dbDown' | 'cacheReload' | 'queueFull'
 
 export type ClusterNodeRole =
   | 'ingress'
@@ -31,12 +23,7 @@ export type ClusterNodeRole =
   | 'observability'
 
 export type ClusterNodeLifecycle =
-  | 'healthy'
-  | 'starting'
-  | 'ready'
-  | 'draining'
-  | 'unhealthy'
-  | 'terminating'
+  'healthy' | 'starting' | 'ready' | 'draining' | 'unhealthy' | 'terminating'
 
 export type ClusterEventLevel = 'info' | 'warn' | 'error' | 'success'
 

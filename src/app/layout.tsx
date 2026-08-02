@@ -74,6 +74,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full antialiased" suppressHydrationWarning>
+      <head>
+        <link
+          rel="alternate"
+          type="application/json"
+          href={`${siteUrl}/resume.json`}
+          title="JSON Resume"
+        />
+      </head>
       <body className="flex h-full bg-neutral-50 dark:bg-black print:bg-white">
         <div className="print:hidden">
           <DesktopAmbientGate />

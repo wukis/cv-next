@@ -16,6 +16,7 @@ import {
   publicWork,
   selectedImpactStories,
 } from '@/lib/siteProfile'
+import { buildPersonJsonLd } from '@/lib/structuredData'
 
 export const metadata: Metadata = {
   title: 'CV',
@@ -217,150 +218,158 @@ function CompanyWorkEntry({ company }: { company: WorkGroup }) {
 
 export default function CvPage() {
   return (
-    <Container className="mt-10 sm:mt-16 print:mt-0">
-      <div className="print:hidden">
-        <TerminalPageHeader
-          command="cat"
-          argument="jonas-petrik-cv.md"
-          description="Recruiter-friendly summary"
-        />
-      </div>
-
-      <div className="rounded-sm border border-neutral-200/70 bg-white/95 p-6 shadow-xs dark:border-neutral-800 dark:bg-neutral-950/95 print:border-none print:bg-white print:p-0 print:shadow-none">
-        <div className="flex flex-col gap-6 border-b border-neutral-200 pb-6 dark:border-neutral-700 print:gap-3 print:pb-3">
-          <div className="hidden border-b border-neutral-200 pb-4 dark:border-neutral-700 print:block print:pb-2.5">
-            <div className="grid grid-cols-2 gap-4 text-sm text-neutral-700 print:gap-2 print:text-[12px]">
-              <div>
-                <p className="font-mono text-[11px] tracking-[0.2em] text-neutral-500 uppercase">
-                  email
-                </p>
-                <p className="mt-1">{publicEmail}</p>
-              </div>
-              <div>
-                <p className="font-mono text-[11px] tracking-[0.2em] text-neutral-500 uppercase">
-                  portfolio
-                </p>
-                <p className="mt-1">{publicBasics.url}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-3xl">
-              <p className="font-mono text-[11px] tracking-[0.2em] text-neutral-500 uppercase dark:text-neutral-400">
-                {publicBasics.label}
-              </p>
-              <h1 className="mt-2 text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 print:mt-1 print:text-[26px]">
-                {publicBasics.name}
-              </h1>
-              <p className="mt-3 text-base leading-relaxed text-neutral-700 dark:text-neutral-200 print:mt-1.5 print:text-[13px] print:leading-[1.35]">
-                {cvSummary}
-              </p>
-              <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-300 print:mt-1.5 print:text-[12px]">
-                {totalExperienceYears}+ years of experience · Based in{' '}
-                {publicBasics.location}
-              </p>
-            </div>
-
-            <div className="space-y-2 text-sm text-neutral-700 dark:text-neutral-200 print:hidden">
-              <Link
-                href={`mailto:${publicEmail}`}
-                className="block hover:text-emerald-700 dark:hover:text-emerald-300"
-              >
-                {publicEmail}
-              </Link>
-              <Link
-                href={publicBasics.url}
-                className="block hover:text-emerald-700 dark:hover:text-emerald-300"
-              >
-                {publicBasics.url}
-              </Link>
-              {publicProfileLinks.map((profile) => (
-                <Link
-                  key={profile.href}
-                  href={profile.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block hover:text-emerald-700 dark:hover:text-emerald-300"
-                >
-                  {profile.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-3 print:hidden">
-            <Button
-              href="/jonas-petrik-cv.pdf"
-              variant="secondary"
-              className="rounded-sm border border-emerald-300 bg-neutral-50 font-mono text-emerald-900 hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-neutral-900/50 dark:text-emerald-100 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/70"
-            >
-              <DownloadIcon className="h-4 w-4" />
-              download PDF
-            </Button>
-            <Button
-              href="/resume.json"
-              variant="secondary"
-              className="rounded-sm border border-neutral-300 bg-neutral-50 font-mono text-neutral-900 hover:border-emerald-300 hover:text-emerald-800 dark:border-neutral-800 dark:bg-neutral-900/50 dark:text-neutral-100 dark:hover:border-emerald-700 dark:hover:text-emerald-200"
-            >
-              <CodeFileIcon className="h-4 w-4" />
-              view JSON resume
-            </Button>
-          </div>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(buildPersonJsonLd()),
+        }}
+      />
+      <Container className="mt-10 sm:mt-16 print:mt-0">
+        <div className="print:hidden">
+          <TerminalPageHeader
+            command="cat"
+            argument="jonas-petrik-cv.md"
+            description="Recruiter-friendly summary"
+          />
         </div>
 
-        <section className="mt-8 print:mt-5">
-          <h2 className="border-l-2 border-emerald-500/30 pl-2.5 font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:border-emerald-400/30 dark:text-neutral-300">
-            selected impact
-          </h2>
-          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3 print:mt-2.5 print:gap-2">
-            {selectedImpactStories.map((story) => (
-              <article
-                key={story.title}
-                className="rounded-sm border border-neutral-200/70 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950/60 print:break-inside-avoid print:p-2.5"
-              >
-                <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100 print:text-[14px]">
-                  {story.title}
-                </h3>
-                <div className="mt-3 space-y-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 print:mt-1.5 print:space-y-1 print:text-[12px] print:leading-[1.3]">
-                  <p>{story.context}</p>
-                  <p>{story.role}</p>
-                  <p>{story.impact}</p>
+        <div className="rounded-sm border border-neutral-200/70 bg-white/95 p-6 shadow-xs dark:border-neutral-800 dark:bg-neutral-950/95 print:border-none print:bg-white print:p-0 print:shadow-none">
+          <div className="flex flex-col gap-6 border-b border-neutral-200 pb-6 dark:border-neutral-700 print:gap-3 print:pb-3">
+            <div className="hidden border-b border-neutral-200 pb-4 dark:border-neutral-700 print:block print:pb-2.5">
+              <div className="grid grid-cols-2 gap-4 text-sm text-neutral-700 print:gap-2 print:text-[12px]">
+                <div>
+                  <p className="font-mono text-[11px] tracking-[0.2em] text-neutral-500 uppercase">
+                    email
+                  </p>
+                  <p className="mt-1">{publicEmail}</p>
                 </div>
-              </article>
-            ))}
-          </div>
-        </section>
+                <div>
+                  <p className="font-mono text-[11px] tracking-[0.2em] text-neutral-500 uppercase">
+                    portfolio
+                  </p>
+                  <p className="mt-1">{publicBasics.url}</p>
+                </div>
+              </div>
+            </div>
 
-        <section className="mt-8 print:mt-5">
-          <h2 className="border-l-2 border-emerald-500/30 pl-2.5 font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:border-emerald-400/30 dark:text-neutral-300 print:hidden">
-            experience
-          </h2>
-          <div className="mt-4 space-y-4 print:mt-2.5 print:space-y-2.5">
-            {groupedPublicWork.map((company) => (
-              <CompanyWorkEntry
-                key={`${company.company}-${company.startDate}`}
-                company={company}
-              />
-            ))}
-          </div>
-        </section>
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="max-w-3xl">
+                <p className="font-mono text-[11px] tracking-[0.2em] text-neutral-500 uppercase dark:text-neutral-400">
+                  {publicBasics.label}
+                </p>
+                <h1 className="mt-2 text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100 print:mt-1 print:text-[26px]">
+                  {publicBasics.name}
+                </h1>
+                <p className="mt-3 text-base leading-relaxed text-neutral-700 dark:text-neutral-200 print:mt-1.5 print:text-[13px] print:leading-[1.35]">
+                  {cvSummary}
+                </p>
+                <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-300 print:mt-1.5 print:text-[12px]">
+                  {totalExperienceYears}+ years of experience · Based in{' '}
+                  {publicBasics.location}
+                </p>
+              </div>
 
-        <section className="mt-8 border-t border-neutral-200 pt-6 dark:border-neutral-700 print:mt-5 print:pt-3">
-          <h2 className="border-l-2 border-emerald-500/30 pl-2.5 font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:border-emerald-400/30 dark:text-neutral-300">
-            education
-          </h2>
-          <div className="mt-4 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 print:mt-2.5 print:text-[12px] print:leading-[1.3]">
-            <p className="font-medium text-neutral-900 dark:text-neutral-100">
-              Vilniaus Universitetas
-            </p>
-            <p>Bachelor&apos;s degree in Software Engineering</p>
-            <p className="text-neutral-600 dark:text-neutral-300">
-              2011 - 2015
-            </p>
+              <div className="space-y-2 text-sm text-neutral-700 dark:text-neutral-200 print:hidden">
+                <Link
+                  href={`mailto:${publicEmail}`}
+                  className="block hover:text-emerald-700 dark:hover:text-emerald-300"
+                >
+                  {publicEmail}
+                </Link>
+                <Link
+                  href={publicBasics.url}
+                  className="block hover:text-emerald-700 dark:hover:text-emerald-300"
+                >
+                  {publicBasics.url}
+                </Link>
+                {publicProfileLinks.map((profile) => (
+                  <Link
+                    key={profile.href}
+                    href={profile.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block hover:text-emerald-700 dark:hover:text-emerald-300"
+                  >
+                    {profile.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-3 print:hidden">
+              <Button
+                href="/jonas-petrik-cv.pdf"
+                variant="secondary"
+                className="rounded-sm border border-emerald-300 bg-neutral-50 font-mono text-emerald-900 hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-neutral-900/50 dark:text-emerald-100 dark:hover:border-emerald-700 dark:hover:bg-emerald-950/70"
+              >
+                <DownloadIcon className="h-4 w-4" />
+                download PDF
+              </Button>
+              <Button
+                href="/resume.json"
+                variant="secondary"
+                className="rounded-sm border border-neutral-300 bg-neutral-50 font-mono text-neutral-900 hover:border-emerald-300 hover:text-emerald-800 dark:border-neutral-800 dark:bg-neutral-900/50 dark:text-neutral-100 dark:hover:border-emerald-700 dark:hover:text-emerald-200"
+              >
+                <CodeFileIcon className="h-4 w-4" />
+                view JSON resume
+              </Button>
+            </div>
           </div>
-        </section>
-      </div>
-    </Container>
+
+          <section className="mt-8 print:mt-5">
+            <h2 className="border-l-2 border-emerald-500/30 pl-2.5 font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:border-emerald-400/30 dark:text-neutral-300">
+              selected impact
+            </h2>
+            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3 print:mt-2.5 print:gap-2">
+              {selectedImpactStories.map((story) => (
+                <article
+                  key={story.title}
+                  className="rounded-sm border border-neutral-200/70 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950/60 print:break-inside-avoid print:p-2.5"
+                >
+                  <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100 print:text-[14px]">
+                    {story.title}
+                  </h3>
+                  <div className="mt-3 space-y-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 print:mt-1.5 print:space-y-1 print:text-[12px] print:leading-[1.3]">
+                    <p>{story.context}</p>
+                    <p>{story.role}</p>
+                    <p>{story.impact}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="mt-8 print:mt-5">
+            <h2 className="border-l-2 border-emerald-500/30 pl-2.5 font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:border-emerald-400/30 dark:text-neutral-300 print:hidden">
+              experience
+            </h2>
+            <div className="mt-4 space-y-4 print:mt-2.5 print:space-y-2.5">
+              {groupedPublicWork.map((company) => (
+                <CompanyWorkEntry
+                  key={`${company.company}-${company.startDate}`}
+                  company={company}
+                />
+              ))}
+            </div>
+          </section>
+
+          <section className="mt-8 border-t border-neutral-200 pt-6 dark:border-neutral-700 print:mt-5 print:pt-3">
+            <h2 className="border-l-2 border-emerald-500/30 pl-2.5 font-mono text-[11px] tracking-[0.2em] text-neutral-600 uppercase dark:border-emerald-400/30 dark:text-neutral-300">
+              education
+            </h2>
+            <div className="mt-4 text-sm leading-relaxed text-neutral-700 dark:text-neutral-200 print:mt-2.5 print:text-[12px] print:leading-[1.3]">
+              <p className="font-medium text-neutral-900 dark:text-neutral-100">
+                Vilniaus Universitetas
+              </p>
+              <p>Bachelor&apos;s degree in Software Engineering</p>
+              <p className="text-neutral-600 dark:text-neutral-300">
+                2011 - 2015
+              </p>
+            </div>
+          </section>
+        </div>
+      </Container>
+    </>
   )
 }

@@ -10,6 +10,17 @@ const nextConfig = {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
   },
+  headers: async () => [
+    {
+      source: '/jonas-petrik-cv.pdf',
+      headers: [
+        {
+          key: 'X-Robots-Tag',
+          value: 'noindex',
+        },
+      ],
+    },
+  ],
   // Experimental optimizations
   experimental: {
     optimizeCss: true,

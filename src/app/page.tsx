@@ -2,7 +2,8 @@ import { type Metadata } from 'next'
 
 import HomePageContent from '@/components/HomePageContent'
 import { profileContent } from '@/lib/profileContent'
-import { personKnowsAbout, seoDescription, siteUrl } from '@/lib/siteProfile'
+import { seoDescription } from '@/lib/siteProfile'
+import { buildPersonJsonLd } from '@/lib/structuredData'
 
 export const metadata: Metadata = {
   title: `${profileContent.person.name} - ${profileContent.person.label}`,
@@ -12,39 +13,14 @@ export const metadata: Metadata = {
   },
 }
 
-// JSON-LD structured data for Person schema
-const jsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'Person',
-  name: profileContent.person.name,
-  url: siteUrl,
-  image: `${siteUrl}/jonas-petrik-portrait.png`,
-  email: profileContent.person.email,
-  jobTitle: profileContent.person.label,
-  description: seoDescription,
-  address: {
-    '@type': 'PostalAddress',
-    addressCountry: profileContent.person.location,
-  },
-  alumniOf: {
-    '@type': 'EducationOrganization',
-    name: profileContent.education[0]?.institution ?? 'Vilniaus Universitetas',
-  },
-  worksFor: {
-    '@type': 'Organization',
-    name: profileContent.currentRole.name,
-    url: profileContent.currentRole.url,
-  },
-  sameAs: profileContent.links.map((profile) => profile.href),
-  knowsAbout: personKnowsAbout,
-}
-
 export default function Home() {
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(buildPersonJsonLd()),
+        }}
       />
       <HomePageContent />
     </>

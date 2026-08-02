@@ -5,11 +5,7 @@ import {
 } from '@/lib/ambientCluster'
 
 export type AmbientSemanticMode =
-  | 'steady'
-  | 'preview'
-  | 'surge'
-  | 'incident'
-  | 'recovery'
+  'steady' | 'preview' | 'surge' | 'incident' | 'recovery'
 
 export type TerminalLogLevel = 'INFO' | 'WARN' | 'ERROR' | 'OK' | 'DEBUG'
 
